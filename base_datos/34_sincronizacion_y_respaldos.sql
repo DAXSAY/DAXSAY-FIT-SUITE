@@ -28,6 +28,12 @@ GRANT SHOW VIEW, TRIGGER ON gestion_radicalgym.* TO 'radicalgym_app'@'localhost'
 -- MySQL 8.0.20 o superior: permite copiar también los procedimientos.
 -- (Si tu MySQL es más antiguo y esta línea da error, ignórala.)
 GRANT SHOW_ROUTINE ON *.* TO 'radicalgym_app'@'localhost';
+-- Si también existe la cuenta 'radicalgym_app'@'127.0.0.1', darle los mismos permisos
+SET @h := (SELECT COUNT(*) FROM mysql.user WHERE user = 'radicalgym_app' AND host = '127.0.0.1');
+SET @sql := IF(@h > 0, "GRANT SHOW VIEW, TRIGGER ON gestion_radicalgym.* TO 'radicalgym_app'@'127.0.0.1'", 'SELECT 1');
+PREPARE p FROM @sql; EXECUTE p; DEALLOCATE PREPARE p;
+SET @sql := IF(@h > 0, "GRANT SHOW_ROUTINE ON *.* TO 'radicalgym_app'@'127.0.0.1'", 'SELECT 1');
+PREPARE p FROM @sql; EXECUTE p; DEALLOCATE PREPARE p;
 FLUSH PRIVILEGES;
 
 SELECT 'Listo: actualizaciones parciales y copias completas activadas' AS resultado;

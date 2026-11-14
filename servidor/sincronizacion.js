@@ -113,8 +113,11 @@ const OBJETIVO_EQUIVALENTE = {
 };
 // Si la tabla rutinas ya acepta los objetivos nuevos (script 35), se guardan tal cual
 let OBJETIVOS_RUTINA_BD = null;
+let OBJETIVOS_RUTINA_LEIDO = 0;
 const cargarObjetivosRutina = async (cx) => {
-  if (OBJETIVOS_RUTINA_BD) return OBJETIVOS_RUTINA_BD;
+  // Se relee cada 5 minutos por si un script agregó opciones nuevas
+  if (OBJETIVOS_RUTINA_BD && Date.now() - OBJETIVOS_RUTINA_LEIDO < 5 * 60 * 1000) return OBJETIVOS_RUTINA_BD;
+  OBJETIVOS_RUTINA_LEIDO = Date.now();
   const [[c]] = await cx.query(
     "SELECT COLUMN_TYPE AS t FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rutinas' AND COLUMN_NAME = 'objetivo'",
   );

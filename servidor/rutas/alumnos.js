@@ -209,14 +209,19 @@ const EQUIVALENTE = {
   movilidad: "rehabilitacion", postura: "rehabilitacion", adulto_mayor: "rehabilitacion", deportivo: "fuerza",
 };
 let OBJETIVOS = ["hipertrofia", "perdida_peso", "fuerza", "resistencia", "tonificacion", "rehabilitacion"];
-consultar(
-  "SELECT COLUMN_TYPE AS t FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'alumnos' AND COLUMN_NAME = 'objetivo'",
-)
-  .then(([c]) => {
-    const vals = [...String(c?.t || "").matchAll(/'([^']+)'/g)].map((m) => m[1]);
-    if (vals.length) OBJETIVOS = vals;
-  })
-  .catch(() => {});
+// Lee las opciones permitidas de la base; se vuelve a leer cada 5 minutos
+// (así, si se ejecuta un script que agrega opciones, no hace falta reiniciar el servidor)
+const leerObjetivos = () =>
+  consultar(
+    "SELECT COLUMN_TYPE AS t FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'alumnos' AND COLUMN_NAME = 'objetivo'",
+  )
+    .then(([c]) => {
+      const vals = [...String(c?.t || "").matchAll(/'([^']+)'/g)].map((m) => m[1]);
+      if (vals.length) OBJETIVOS = vals;
+    })
+    .catch(() => {});
+leerObjetivos();
+setInterval(leerObjetivos, 5 * 60 * 1000).unref?.();
 // Uno o varios objetivos ("perdida_peso,tonificacion" o un arreglo) -> texto para la columna SET
 const objetivosValidos = (v) => {
   const l = (Array.isArray(v) ? v : String(v || "").split(","))
