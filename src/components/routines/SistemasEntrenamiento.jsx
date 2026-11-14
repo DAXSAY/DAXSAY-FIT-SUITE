@@ -24,15 +24,20 @@ const COLOR = {
   amber: { chip: "bg-amber-50 text-amber-800 border-amber-200", on: "bg-amber-600 text-white border-amber-600", caja: "bg-amber-50 border-amber-200", texto: "text-amber-700" },
   teal: { chip: "bg-teal-50 text-teal-700 border-teal-200", on: "bg-teal-600 text-white border-teal-600", caja: "bg-teal-50 border-teal-200", texto: "text-teal-700" },
   indigo: { chip: "bg-indigo-50 text-indigo-800 border-indigo-200", on: "bg-indigo-600 text-white border-indigo-600", caja: "bg-indigo-50 border-indigo-200", texto: "text-indigo-700" },
+  emerald: { chip: "bg-emerald-50 text-emerald-800 border-emerald-200", on: "bg-emerald-600 text-white border-emerald-600", caja: "bg-emerald-50 border-emerald-200", texto: "text-emerald-700" },
+  pink: { chip: "bg-pink-50 text-pink-800 border-pink-200", on: "bg-pink-600 text-white border-pink-600", caja: "bg-pink-50 border-pink-200", texto: "text-pink-700" },
 };
 
 export const FAMILIAS = [
   { id: "base", nombre: "Clásico", color: "slate" },
   { id: "combinar", nombre: "Combinar ejercicios", color: "violet" },
   { id: "intensidad", nombre: "Técnicas de intensidad", color: "rose" },
+  { id: "fuerza", nombre: "Fuerza y volumen", color: "indigo" },
   { id: "control", nombre: "Tempo y control", color: "sky" },
   { id: "metabolico", nombre: "Funcional / metabólico", color: "orange" },
+  { id: "cardio", nombre: "Cardio y resistencia", color: "pink" },
   { id: "potencia", nombre: "Potencia", color: "amber" },
+  { id: "terapeutico", nombre: "Terapéutico / rehabilitación", color: "emerald" },
 ];
 
 // p = parámetro: [clave, etiqueta, tipo ("n" número | "t" texto), valor por defecto, sufijo]
@@ -160,6 +165,214 @@ export const SISTEMAS = {
     desc: "Carga ligera-media movida a la máxima velocidad posible.",
     p: [["pct", "Carga", "n", 40, "% 1RM"], ["intencion", "Indicación", "t", "máxima velocidad en la subida", ""]],
   },
+  // ---------- Combinar (más) ----------
+  serie_gigante: {
+    nombre: "Serie gigante", icono: "🦍", familia: "combinar", agrupa: [4, 6],
+    desc: "4 o más ejercicios del MISMO músculo seguidos, sin descanso entre ellos.",
+    p: [["rondas", "Vueltas", "n", 3, ""], ["descansoRonda", "Descanso entre vueltas", "n", 120, "s"]],
+  },
+  superserie_compuesta: {
+    nombre: "Superserie compuesta", icono: "🎯", familia: "combinar", agrupa: [2, 2],
+    desc: "2 ejercicios del mismo músculo seguidos (ej. press banca + aperturas).",
+    p: [["descansoEntre", "Descanso entre ejercicios", "n", 0, "s"]],
+  },
+  pre_agotamiento: {
+    nombre: "Pre-agotamiento", icono: "🔋", familia: "combinar", agrupa: [2, 2],
+    desc: "Primero un ejercicio aislado y enseguida uno compuesto del mismo músculo (ej. extensión de cuádriceps + sentadilla).",
+    p: [["descansoEntre", "Descanso entre ejercicios", "n", 0, "s"]],
+  },
+  post_agotamiento: {
+    nombre: "Post-agotamiento", icono: "🪫", familia: "combinar", agrupa: [2, 2],
+    desc: "Primero el compuesto pesado y luego el aislado para terminar el músculo.",
+    p: [["descansoEntre", "Descanso entre ejercicios", "n", 0, "s"]],
+  },
+  contraste: {
+    nombre: "Contraste / complejo (PAP)", icono: "⚡", familia: "combinar", agrupa: [2, 2],
+    desc: "Un ejercicio pesado y luego uno explosivo similar (ej. sentadilla + salto al cajón) para potenciar el segundo.",
+    p: [["pct", "Carga del pesado", "n", 85, "% 1RM"], ["descansoEntre", "Pausa entre ambos", "n", 30, "s"]],
+  },
+  // ---------- Intensidad (más) ----------
+  forzadas: {
+    nombre: "Repeticiones forzadas", icono: "🤝", familia: "intensidad",
+    desc: "Al llegar al fallo, el compañero ayuda lo justo para 2-3 repeticiones más.",
+    p: [["extra", "Reps forzadas", "t", "2-3", ""], ["peso", "Peso", "n", "", "kg"]],
+  },
+  myo_reps: {
+    nombre: "Myo-reps", icono: "🔂", familia: "intensidad",
+    desc: "Serie de activación de 12-20 reps; luego mini-series de 3-5 reps con 3-5 respiraciones de pausa.",
+    p: [["activacion", "Serie de activación", "t", "15", "reps"], ["mini", "Mini-series", "n", 4, ""], ["repsMini", "Reps por mini-serie", "t", "4", ""], ["pausa", "Pausa", "n", 5, "s"]],
+  },
+  drop_mecanico: {
+    nombre: "Drop set mecánico", icono: "🔀", familia: "intensidad",
+    desc: "Mismo peso, pero se cambia a una variante más fácil al llegar al fallo (ej. inclinado → plano → declinado).",
+    p: [["variantes", "Variantes", "t", "difícil → media → fácil", ""]],
+  },
+  fallo: {
+    nombre: "Serie al fallo", icono: "🧨", familia: "intensidad",
+    desc: "La última serie se lleva al fallo técnico (sin perder la técnica).",
+    p: [["cual", "Serie al fallo", "t", "la última", ""]],
+  },
+  uno_y_medio: {
+    nombre: "Repeticiones 1½", icono: "1½", familia: "intensidad",
+    desc: "Bajada completa, media subida, otra vez abajo y subida completa = 1 rep.",
+    p: [["reps", "Reps", "t", "8", ""]],
+  },
+  // ---------- Fuerza y volumen ----------
+  cinco_por_cinco: {
+    nombre: "5 × 5", icono: "🖐️", familia: "fuerza",
+    desc: "5 series de 5 reps con el mismo peso pesado; descanso largo.",
+    p: [["pct", "Carga", "n", 80, "% 1RM"], ["peso", "Peso", "n", "", "kg"], ["descansoLargo", "Descanso", "n", 180, "s"]],
+  },
+  gvt: {
+    nombre: "Volumen alemán 10 × 10", icono: "🇩🇪", familia: "fuerza",
+    desc: "10 series de 10 reps con ~60% del 1RM y 60-90 s de descanso.",
+    p: [["pct", "Carga", "n", 60, "% 1RM"], ["peso", "Peso", "n", "", "kg"]],
+  },
+  ondulante: {
+    nombre: "Ondulante / oleadas", icono: "🌊", familia: "fuerza",
+    desc: "Oleadas de repeticiones decrecientes y cargas crecientes (ej. 3-2-1, 3-2-1).",
+    p: [["ola", "Oleada", "t", "3-2-1", "reps"], ["olas", "Oleadas", "n", 2, ""], ["pesos", "Pesos", "t", "", "kg"]],
+  },
+  rpe_top: {
+    nombre: "Top set + back-off", icono: "🔝", familia: "fuerza",
+    desc: "Una serie pesada principal y después series más ligeras (-10/15%).",
+    p: [["top", "Serie principal", "t", "1 × 3 @ RPE 8", ""], ["backoff", "Series ligeras", "t", "3 × 5 al -10%", ""]],
+  },
+  doble_progresion: {
+    nombre: "Doble progresión", icono: "📶", familia: "fuerza",
+    desc: "Se suben reps dentro del rango; al llegar al tope se sube el peso y se vuelve al mínimo.",
+    p: [["rango", "Rango de reps", "t", "8-12", ""], ["subir", "Subir peso", "t", "+2.5 kg", ""]],
+  },
+  resistencia_variable: {
+    nombre: "Bandas / cadenas", icono: "⛓️", familia: "fuerza",
+    desc: "Resistencia que aumenta al subir (bandas elásticas o cadenas sobre la barra).",
+    p: [["accesorio", "Accesorio", "t", "banda media", ""], ["peso", "Peso de la barra", "n", "", "kg"]],
+  },
+  // ---------- Control (más) ----------
+  pausa_reps: {
+    nombre: "Repeticiones con pausa", icono: "⏯️", familia: "control",
+    desc: "Pausa quieta en el punto más difícil (ej. 2 s abajo en la sentadilla), sin rebote.",
+    p: [["pausa", "Pausa", "n", 2, "s"], ["donde", "Dónde", "t", "abajo", ""]],
+  },
+  tut: {
+    nombre: "Tiempo bajo tensión", icono: "⌛", familia: "control",
+    desc: "La serie dura un tiempo objetivo con movimiento lento y continuo.",
+    p: [["segundos", "Duración de la serie", "n", 40, "s"]],
+  },
+  iso_maximo: {
+    nombre: "Isométrico de empuje", icono: "🪨", familia: "control",
+    desc: "Empujar o jalar contra algo fijo con máxima intención (isométrico de superación).",
+    p: [["segundos", "Empuje", "n", 6, "s"], ["repeticiones", "Repeticiones", "n", 5, ""]],
+  },
+  // ---------- Metabólico (más) ----------
+  for_time: {
+    nombre: "Por tiempo (For time)", icono: "🏁", familia: "metabolico",
+    desc: "Completar el trabajo lo más rápido posible; se anota el tiempo.",
+    p: [["trabajo", "Trabajo", "t", "3 rondas", ""], ["limite", "Tiempo límite", "n", 15, "min"]],
+  },
+  escalera: {
+    nombre: "Escalera", icono: "🪜", familia: "metabolico",
+    desc: "Las reps suben (o bajan) cada ronda: 1-2-3-4… o 10-9-8…",
+    p: [["secuencia", "Secuencia", "t", "1-2-3-4-5-6-7-8-9-10", ""]],
+  },
+  chipper: {
+    nombre: "Chipper", icono: "🪓", familia: "metabolico",
+    desc: "Una lista larga de ejercicios con muchas reps, se hace una sola vez de corrido.",
+    p: [["reps", "Reps por ejercicio", "t", "50-40-30-20-10", ""]],
+  },
+  death_by: {
+    nombre: "Death by…", icono: "💀", familia: "metabolico",
+    desc: "Minuto 1: 1 rep, minuto 2: 2 reps… hasta no poder completar el minuto.",
+    p: [["incremento", "Aumentar por minuto", "n", 1, "rep"]],
+  },
+  intervalos_dist: {
+    nombre: "Intervalos por distancia", icono: "📏", familia: "metabolico",
+    desc: "Tramos de distancia a ritmo alto con pausa (ej. 8 × 200 m).",
+    p: [["tramos", "Tramos", "n", 8, ""], ["distancia", "Distancia", "n", 200, "m"], ["descanso", "Descanso", "n", 60, "s"]],
+  },
+  // ---------- Cardio y resistencia ----------
+  continuo: {
+    nombre: "Continuo zona 2 (LISS)", icono: "🚶", familia: "cardio",
+    desc: "Ritmo cómodo y sostenido, se puede conversar (60-70% FC máx).",
+    p: [["minutos", "Duración", "n", 30, "min"], ["fc", "Frecuencia cardiaca", "t", "60-70% FC máx", ""]],
+  },
+  fartlek: {
+    nombre: "Fartlek", icono: "🎢", familia: "cardio",
+    desc: "Cambios de ritmo libres durante el trabajo continuo.",
+    p: [["minutos", "Duración", "n", 25, "min"], ["cambios", "Cambios", "t", "30 s rápido cada 3 min", ""]],
+  },
+  noruego_4x4: {
+    nombre: "Intervalos 4 × 4", icono: "🫀", familia: "cardio",
+    desc: "4 bloques de 4 min al 85-95% FC máx con 3 min de recuperación activa.",
+    p: [["bloques", "Bloques", "n", 4, ""], ["trabajo", "Trabajo", "n", 4, "min"], ["recuperacion", "Recuperación", "n", 3, "min"]],
+  },
+  progresivo: {
+    nombre: "Progresivo", icono: "📈", familia: "cardio",
+    desc: "Se empieza suave y se sube el ritmo cada cierto tiempo.",
+    p: [["minutos", "Duración", "n", 20, "min"], ["subir", "Subir ritmo cada", "n", 5, "min"]],
+  },
+  // ---------- Potencia (más) ----------
+  balistico: {
+    nombre: "Balístico / lanzamientos", icono: "🏐", familia: "potencia",
+    desc: "Lanzar o soltar la carga (balón medicinal, kettlebell swing) a máxima potencia.",
+    p: [["reps", "Lanzamientos", "n", 6, ""], ["carga", "Carga", "t", "balón 4 kg", ""]],
+  },
+  sprint: {
+    nombre: "Sprints / aceleraciones", icono: "🏃", familia: "potencia",
+    desc: "Arranques cortos al 100% con recuperación completa.",
+    p: [["tramos", "Sprints", "n", 6, ""], ["distancia", "Distancia", "n", 20, "m"], ["descanso", "Descanso", "n", 90, "s"]],
+  },
+  // ---------- Terapéutico / rehabilitación ----------
+  iso_analgesico: {
+    nombre: "Isométrico analgésico", icono: "🩹", familia: "terapeutico",
+    desc: "Contracciones sostenidas para bajar el dolor del tendón (ej. 5 × 45 s al 70%).",
+    p: [["segundos", "Mantener", "n", 45, "s"], ["intensidad", "Intensidad", "t", "70% esfuerzo", ""], ["dolor", "Dolor permitido", "t", "≤ 3/10", ""]],
+  },
+  excentrico_tendon: {
+    nombre: "Excéntrico (tendinopatía)", icono: "🦵", familia: "terapeutico",
+    desc: "Solo la bajada, lenta, con la pierna/brazo afectado (protocolo tipo Alfredson: 3 × 15, 2 veces al día).",
+    p: [["excentrica", "Bajada", "n", 3, "s"], ["vecesDia", "Veces al día", "n", 2, ""], ["dolor", "Dolor permitido", "t", "≤ 5/10", ""]],
+  },
+  hsr: {
+    nombre: "Carga pesada lenta (HSR)", icono: "🐌", familia: "terapeutico",
+    desc: "Peso alto con subida y bajada de 3 s cada una; progresar de 15 a 6 reps.",
+    p: [["tempo", "Tempo", "t", "3-0-3", ""], ["fase", "Fase", "t", "15 RM → 6 RM", ""]],
+  },
+  estiramiento: {
+    nombre: "Estiramiento estático", icono: "🧘", familia: "terapeutico",
+    desc: "Llevar a tensión suave y sostener, sin rebotes ni dolor.",
+    p: [["segundos", "Sostener", "n", 30, "s"], ["lado", "Lado", "t", "ambos", ""]],
+  },
+  fnp: {
+    nombre: "FNP contracción-relajación", icono: "🔁", familia: "terapeutico",
+    desc: "Estirar, contraer el músculo 5-6 s contra resistencia, relajar y ganar rango.",
+    p: [["contraccion", "Contracción", "n", 6, "s"], ["sostener", "Estiramiento", "n", 20, "s"], ["ciclos", "Ciclos", "n", 3, ""]],
+  },
+  movilidad: {
+    nombre: "Movilidad activa / control", icono: "🌀", familia: "terapeutico",
+    desc: "Movimientos lentos y controlados por todo el rango sin dolor (CARs).",
+    p: [["reps", "Repeticiones", "t", "5 por lado", ""], ["rango", "Rango", "t", "sin dolor", ""]],
+  },
+  propiocepcion: {
+    nombre: "Equilibrio / propiocepción", icono: "⚖️", familia: "terapeutico",
+    desc: "Estabilidad sobre una pierna o superficie inestable; se progresa cerrando los ojos.",
+    p: [["segundos", "Mantener", "n", 30, "s"], ["superficie", "Superficie", "t", "piso → colchoneta → bosu", ""], ["ojos", "Ojos", "t", "abiertos", ""]],
+  },
+  bfr: {
+    nombre: "Restricción de flujo (BFR)", icono: "🩸", familia: "terapeutico",
+    desc: "Carga muy ligera (20-30%) con oclusión parcial: 30-15-15-15 reps. Solo con supervisión.",
+    p: [["esquema", "Esquema", "t", "30-15-15-15", ""], ["pct", "Carga", "n", 25, "% 1RM"], ["presion", "Presión", "t", "40-80% oclusión", ""]],
+  },
+  activacion: {
+    nombre: "Activación / control motor", icono: "🎯", familia: "terapeutico",
+    desc: "Activar músculos estabilizadores con poca carga y buena técnica (ej. transverso, glúteo medio).",
+    p: [["segundos", "Mantener", "n", 10, "s"], ["reps", "Repeticiones", "n", 10, ""], ["respiracion", "Respiración", "t", "exhalar al activar", ""]],
+  },
+  respiracion: {
+    nombre: "Respiración diafragmática", icono: "🌬️", familia: "terapeutico",
+    desc: "Respirar con el abdomen, inhalación nasal y exhalación larga.",
+    p: [["ciclos", "Respiraciones", "n", 10, ""], ["ritmo", "Ritmo", "t", "4 s inhalar · 6 s exhalar", ""]],
+  },
 };
 
 export const DESCANSOS = [30, 45, 60, 90, 120];
@@ -182,7 +395,6 @@ export const tipoDia = (k) => TIPOS_DIA.find((t) => t[0] === k);
 // ---------------------------------------------------------------------
 // Utilidades (sin React): resumen y grupos
 // ---------------------------------------------------------------------
-const conSuf = (v, s) => (v === "" || v == null ? "" : `${v}${s ? (/^[%a-z]/i.test(s) && s.length <= 3 && s !== "min" ? s : ` ${s}`) : ""}`);
 
 /** Texto corto del sistema, ej. "Rest-pause · 60 kg · 8 reps + 2×(3-2) · pausa 15 s" */
 export function resumenMetodo(m) {
@@ -195,6 +407,9 @@ export function resumenMetodo(m) {
     case "superserie":
     case "biserie":
     case "triserie":
+    case "superserie_compuesta":
+    case "pre_agotamiento":
+    case "post_agotamiento":
       partes.push(Number(p.descansoEntre) > 0 ? `${p.descansoEntre} s entre ejercicios` : "sin descanso entre ejercicios");
       break;
     case "circuito":
@@ -268,8 +483,20 @@ export function resumenMetodo(m) {
       partes.push(`${p.pct}% 1RM`);
       if (p.intencion) partes.push(p.intencion);
       break;
+    case "serie_gigante":
+      partes.push(`${p.rondas} vueltas`, `descanso ${p.descansoRonda} s entre vueltas`);
+      break;
+    case "contraste":
+      partes.push(`pesado al ${p.pct}% 1RM`, `pausa ${p.descansoEntre} s`, "luego explosivo");
+      break;
+    case "cinco_por_cinco":
+      partes.push(p.peso ? `${p.peso} kg` : `${p.pct}% 1RM`, `descanso ${p.descansoLargo} s`);
+      break;
+    case "gvt":
+      partes.push("10 × 10", p.peso ? `${p.peso} kg` : `${p.pct}% 1RM`);
+      break;
     default:
-      s.p.forEach(([k, l, , , suf]) => p[k] !== "" && p[k] != null && partes.push(`${l} ${conSuf(p[k], suf)}`));
+      s.p.forEach(([k, l, , , suf]) => p[k] !== "" && p[k] != null && partes.push(`${l.toLowerCase()} ${p[k]}${suf ? ` ${suf}` : ""}`));
   }
   return [s.nombre, ...partes.filter(Boolean)].join(" · ");
 }
@@ -403,11 +630,14 @@ export const ConfigEjercicio = ({
   repsSugeridas = ["6-8", "8-10", "10-12", "12-15", "15-20", "30 seg", "45 seg", "60 seg"],
   readOnly = false,
   placeholderEsfuerzo = "RIR 1-2",
+  familiaInicial = "base",
 }) => {
   const metodo = ex.metodo;
   const sis = SISTEMAS[metodo?.tipo || "normal"];
   const [abierto, setAbierto] = useState(false);
-  const [famVista, setFamVista] = useState(sis?.familia || "base");
+  const [famVista, setFamVista] = useState(metodo ? sis?.familia : familiaInicial);
+  const [buscar, setBuscar] = useState("");
+  const sinT = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const series = Number(ex[campos.series]) || 0;
   const descanso = Number(ex[campos.descanso]);
   const otroDescanso = !DESCANSOS.includes(descanso);
@@ -515,23 +745,32 @@ export const ConfigEjercicio = ({
 
         {abierto && !readOnly && (
           <div className="px-2.5 pb-2.5 space-y-2.5">
+            <input
+              value={buscar}
+              onChange={(e) => setBuscar(e.target.value)}
+              placeholder={`Buscar entre ${Object.keys(SISTEMAS).length} sistemas (ej. tabata, pirámide, excéntrico)…`}
+              className={`${INP} !py-1.5 text-xs`}
+            />
             {/* Familias */}
-            <div className="flex flex-wrap gap-1">
+            <div className={`flex flex-wrap gap-1 ${buscar.trim() ? "opacity-40" : ""}`}>
               {FAMILIAS.map((f) => (
                 <button
                   key={f.id}
                   type="button"
-                  onClick={() => setFamVista(f.id)}
+                  onClick={() => {
+                  setFamVista(f.id);
+                  setBuscar("");
+                }}
                   className={`px-2 py-1 rounded-full border text-[11px] font-bold cursor-pointer ${famVista === f.id ? COLOR[f.color].on : COLOR[f.color].chip}`}
                 >
-                  {f.nombre}
+                  {f.nombre} <span className="opacity-70">{Object.values(SISTEMAS).filter((x) => x.familia === f.id).length}</span>
                 </button>
               ))}
             </div>
             {/* Sistemas de la familia */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               {Object.entries(SISTEMAS)
-                .filter(([, s]) => s.familia === famVista)
+                .filter(([, s]) => (buscar.trim() ? sinT(`${s.nombre} ${s.desc}`).includes(sinT(buscar.trim())) : s.familia === famVista))
                 .map(([k, s]) => {
                   const on = (metodo?.tipo || "normal") === k;
                   const col = COLOR[FAMILIAS.find((f) => f.id === s.familia).color];

@@ -251,6 +251,7 @@ export const ExercisePrescriptionCard = ({
                   campos={{ series: "series", reps: "repsOrTime", descanso: "restSeconds", esfuerzo: "esfuerzo" }}
                   repsSugeridas={REPS}
                   placeholderEsfuerzo="Dolor ≤ 3/10"
+                  familiaInicial="terapeutico"
                   readOnly={readOnly}
                   onPatch={(c) => !readOnly && onChange(exercises.map((x, k) => (k === i ? { ...x, ...c } : x)))}
                   onMetodo={(m) => !readOnly && onChange(cambiarMetodo(exercises, i, m))}

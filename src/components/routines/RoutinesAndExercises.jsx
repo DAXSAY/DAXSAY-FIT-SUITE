@@ -43,6 +43,7 @@ import {
   etiquetasGrupo,
 } from "./SistemasEntrenamiento";
 import { FormEjercicioPropio } from "./FormEjercicioPropio";
+import { RutinasAsignadas } from "./RutinasAsignadas";
 export const RoutinesAndExercises = () => {
   const {
     exercises,
@@ -93,7 +94,17 @@ export const RoutinesAndExercises = () => {
   // Edición: null = rutina nueva · { id, modo: "general" | "alumno", alumno }
   const [editando, setEditando] = useState(null);
   const [incluirPersonalizadas, setIncluirPersonalizadas] = useState(false);
-  const [verCopias, setVerCopias] = useState(false);
+  const [alumnoSel, setAlumnoSel] = useState("");
+  const plantillas = useMemo(() => routines.filter((r) => !r.targetStudentId), [routines]);
+  const conRutina = useMemo(() => {
+    const ids = new Set(routines.filter((r) => r.targetStudentId).map((r) => String(r.targetStudentId)));
+    members.forEach((m) => m.assignedRoutineId && routines.some((r) => String(r.id) === String(m.assignedRoutineId)) && ids.add(String(m.id)));
+    return ids.size;
+  }, [routines, members]);
+  const irAAlumno = (id) => {
+    setAlumnoSel(String(id));
+    setActiveSubTab("asignadas");
+  };
   // Día al que se agrega el "ejercicio propio" recién creado
   const [propioParaDia, setPropioParaDia] = useState(null);
 
@@ -184,8 +195,9 @@ export const RoutinesAndExercises = () => {
     window.scrollTo?.({ top: 0, behavior: "smooth" });
   };
   // Editar solo para un alumno: si aún no tiene copia propia, se crea
-  const editarParaAlumno = (routine, a) => {
-    const copia = a.copia || assignRoutineToMember(a.id, routine.id);
+  const editarParaAlumno = (rutina, alumno) => {
+    setAlumnoSel(String(alumno.id));
+    const copia = rutina.targetStudentId ? rutina : assignRoutineToMember(alumno.id, rutina.id);
     if (copia) abrirEditor(copia, "alumno");
   };
 
@@ -273,8 +285,10 @@ export const RoutinesAndExercises = () => {
       targetStudentName: memberObj?.fullName,
       days: routineDays,
     };
+    const volver = editando?.modo === "alumno" ? "asignadas" : "routines";
     if (!editando) {
       addRoutine(datos);
+      if (datos.targetStudentId) setAlumnoSel(String(datos.targetStudentId));
     } else if (editando.modo === "alumno") {
       // Solo para este alumno: su copia queda marcada como personalizada
       updateRoutine(editando.id, { ...datos, personalizada: true });
@@ -290,7 +304,7 @@ export const RoutinesAndExercises = () => {
       origin: { y: 0.6 },
     });
 
-    setActiveSubTab("routines");
+    setActiveSubTab(!editando && datos.targetStudentId ? "asignadas" : volver);
   };
 
   const handleConfirmAssignment = (e) => {
@@ -334,7 +348,20 @@ export const RoutinesAndExercises = () => {
                 : "text-gray-600 hover:text-slate-900"
             }`}
           >
-            Rutinas ({routines.length})
+            Plantillas ({plantillas.length})
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab("asignadas")}
+            className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 ${
+              activeSubTab === "asignadas"
+                ? "bg-white text-slate-900 shadow-xs"
+                : "text-gray-600 hover:text-slate-900"
+            }`}
+          >
+            <Users className="w-3.5 h-3.5 text-violet-600" />
+            <span>Rutinas asignadas</span>
+            <span className="px-1.5 bg-violet-100 text-violet-800 text-xs rounded-full font-bold">{conRutina}</span>
           </button>
 
           <button
@@ -382,11 +409,13 @@ export const RoutinesAndExercises = () => {
       {/* SUBTAB 1: ROUTINES LIST */}
       {activeSubTab === "routines" && (
         <div className="space-y-4">
-          {routines.length === 0 && (
+          {plantillas.length === 0 && (
             <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center">
               <Dumbbell className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-base font-bold text-slate-800">Aún no hay rutinas creadas</p>
-              <p className="text-sm text-slate-500 mb-4">Arme la primera usando el banco de ejercicios con GIF.</p>
+              <p className="text-base font-bold text-slate-800">Aún no hay plantillas generales</p>
+              <p className="text-sm text-slate-500 mb-4">
+                Crea una con el banco de ejercicios, o en <b>Rutinas asignadas</b> usa «Guardar como plantilla» sobre la rutina de un alumno.
+              </p>
               <button
                 onClick={nuevaRutina}
                 className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold cursor-pointer"
@@ -396,26 +425,18 @@ export const RoutinesAndExercises = () => {
             </div>
           )}
           {(() => {
-            const existe = new Set(routines.map((r) => r.id));
-            const copiasEnlazadas = routines.filter((r) => r.baseRoutineId && existe.has(r.baseRoutineId));
-            const visibles = verCopias ? routines : routines.filter((r) => !(r.baseRoutineId && existe.has(r.baseRoutineId)));
+            const visibles = plantillas;
             return (
               <>
-                {copiasEnlazadas.length > 0 && (
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                    <p className="text-xs text-slate-600">
-                      <Users className="w-3.5 h-3.5 inline -mt-0.5 mr-1 text-violet-600" />
-                      Las copias de cada alumno están dentro de su plantilla (<b>Asignada a</b>).
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setVerCopias((v) => !v)}
-                      className={`px-3 py-1 rounded-full border text-xs font-bold cursor-pointer ${verCopias ? "bg-violet-600 border-violet-600 text-white" : "bg-violet-50 border-violet-200 text-violet-800"}`}
-                    >
-                      {verCopias ? "Ocultar copias por alumno" : `Ver copias por alumno (${copiasEnlazadas.length})`}
-                    </button>
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-violet-200 bg-violet-50/60 px-3 py-2">
+                  <p className="text-xs text-slate-700">
+                    <b>Plantillas generales:</b> «Editar» cambia la plantilla y llega a todos sus alumnos. La rutina de un alumno se edita en{" "}
+                    <b>Rutinas asignadas</b>.
+                  </p>
+                  <button type="button" onClick={() => setActiveSubTab("asignadas")} className="px-3 py-1 rounded-full bg-violet-600 text-white text-xs font-bold cursor-pointer flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5" /> Buscar alumno por código
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                   {visibles.map((routine) => {
                     const assignedStudent = members.find((m) => String(m.id) === String(routine.targetStudentId));
@@ -483,22 +504,20 @@ export const RoutinesAndExercises = () => {
                                     {asignados.length === 0 ? (
                                       <p className="text-[11px] text-slate-500 italic">Aún nadie. Usa «Asignar».</p>
                                     ) : (
-                                      asignados.map((a) => (
-                                        <div key={a.id} className="flex items-center justify-between gap-2">
-                                          <span className="truncate font-semibold text-slate-800">
-                                            {a.nombre}
-                                            {a.copia?.personalizada && <span className="ml-1 px-1 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">personalizada</span>}
-                                          </span>
+                                      <div className="flex flex-wrap gap-1">
+                                        {asignados.map((a) => (
                                           <button
+                                            key={a.id}
                                             type="button"
-                                            onClick={() => editarParaAlumno(routine, a)}
-                                            className="shrink-0 px-2 py-0.5 rounded-md border border-violet-200 text-violet-800 text-[11px] font-bold hover:bg-violet-50 cursor-pointer flex items-center gap-1"
-                                            title="Editar solo para este alumno"
+                                            onClick={() => irAAlumno(a.id)}
+                                            className="px-2 py-0.5 rounded-full border border-violet-200 bg-violet-50 text-violet-800 text-[11px] font-bold hover:bg-violet-100 cursor-pointer"
+                                            title="Ver su rutina"
                                           >
-                                            <Pencil className="w-3 h-3" /> Solo para él/ella
+                                            {a.nombre.split(" ").slice(0, 2).join(" ")}
+                                            {a.copia?.personalizada ? " ✎" : ""}
                                           </button>
-                                        </div>
-                                      ))
+                                        ))}
+                                      </div>
                                     )}
                                   </div>
                                 </details>
@@ -517,12 +536,12 @@ export const RoutinesAndExercises = () => {
                               <span>Ver / Imprimir</span>
                             </button>
                             <button
-                              onClick={() => abrirEditor(routine, routine.targetStudentId ? "alumno" : "general")}
+                              onClick={() => abrirEditor(routine, "general")}
                               className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-semibold rounded-md flex items-center gap-1 cursor-pointer"
                               title={routine.targetStudentId ? "Editar la rutina de este alumno" : "Editar la plantilla (llega a todos sus alumnos)"}
                             >
                               <Pencil className="w-3.5 h-3.5" />
-                              <span>{routine.targetStudentId ? "Editar" : "Editar general"}</span>
+                              <span>Editar</span>
                             </button>
                           </div>
 
@@ -557,6 +576,38 @@ export const RoutinesAndExercises = () => {
             );
           })()}
         </div>
+      )}
+
+      {/* SUBTAB: RUTINAS ASIGNADAS (por alumno, búsqueda por código) */}
+      {activeSubTab === "asignadas" && (
+        <RutinasAsignadas
+          routines={routines}
+          members={members}
+          plantillas={plantillas}
+          seleccionInicial={alumnoSel}
+          onVer={setViewingRoutine}
+          onEditar={editarParaAlumno}
+          onAsignar={(mid, rid) => {
+            assignRoutineToMember(mid, rid);
+            const a = members.find((m) => String(m.id) === String(mid));
+            avisoBreve(`✓ Rutina asignada a ${a?.fullName || "el alumno"}`);
+          }}
+          onPlantilla={(r) => {
+            const { id, targetStudentId, targetStudentName, baseRoutineId, personalizada, cambios, actualizadaEn, actualizadaPor, actualizadaPorId, ultimoCambio, ...resto } = r;
+            const titulo = String(r.title || "Rutina").replace(/\s*·\s*[^·]+$/, "");
+            addRoutine({ ...resto, title: titulo, days: JSON.parse(JSON.stringify(r.days || [])) });
+            avisoBreve(`✓ «${titulo}» guardada como plantilla general`);
+          }}
+          onRestablecer={(r, base) =>
+            updateRoutine(r.id, {
+              days: JSON.parse(JSON.stringify(base.days || [])),
+              level: base.level,
+              objective: base.objective,
+              description: base.description,
+              personalizada: false,
+            })
+          }
+        />
       )}
 
       {/* SUBTAB 2: BANCO DE EJERCICIOS */}
@@ -611,7 +662,7 @@ export const RoutinesAndExercises = () => {
                   <b>Editando solo la rutina de {editando.alumno || "este alumno"}.</b> El cambio no afecta a la plantilla ni a otros alumnos
                   {editando.base ? "; esta copia quedará como personalizada." : "."}
                 </p>
-                <button type="button" onClick={() => { limpiarCreador(); setActiveSubTab("routines"); }} className="px-3 py-1.5 rounded-lg border border-violet-300 bg-white text-violet-800 text-xs font-bold cursor-pointer">
+                <button type="button" onClick={() => { limpiarCreador(); setActiveSubTab("asignadas"); }} className="px-3 py-1.5 rounded-lg border border-violet-300 bg-white text-violet-800 text-xs font-bold cursor-pointer">
                   Cancelar edición
                 </button>
               </div>
@@ -895,8 +946,9 @@ export const RoutinesAndExercises = () => {
               <button
                 type="button"
                 onClick={() => {
+                  const t = editando?.modo === "alumno" ? "asignadas" : "routines";
                   if (editando) limpiarCreador();
-                  setActiveSubTab("routines");
+                  setActiveSubTab(t);
                 }}
                 className="px-3.5 py-1.5 text-gray-500 hover:text-slate-800 text-xs font-semibold cursor-pointer"
               >
