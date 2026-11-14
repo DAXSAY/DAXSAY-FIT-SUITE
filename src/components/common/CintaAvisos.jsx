@@ -80,7 +80,7 @@ export const CintaAvisos = ({ fila = false, verCrm = true, verGym = true }) => {
     >
       {/* Campana que "suena" (sin texto) */}
       <span
-        title={destello ? "Hay contactos del CRM pendientes" : "Avisos"}
+        title={destello ? "Hay contactos del CRM pendientes" : "Avisos del CRM"}
         className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${destello ? "bg-rose-600 text-white" : "rd-cinta-etiqueta"}`}
       >
         <BellRing className={`w-4 h-4 rd-campana ${destello ? "rd-campana-fuerte" : ""}`} />

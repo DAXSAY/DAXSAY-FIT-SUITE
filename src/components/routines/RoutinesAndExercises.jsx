@@ -933,15 +933,12 @@ export const RoutinesAndExercises = () => {
       {assigningRoutine && (
         <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
           <div className="rd-compacta w-full max-w-3xl mx-auto min-h-full sm:px-8 sm:py-8 bg-white p-5 text-slate-800">
-            <h3 className="text-sm font-bold text-slate-900 mb-0.5">
-              Asignar Rutina a Alumno
-            </h3>
-            <p className="text-xs text-gray-500 mb-3">
-              Rutina seleccionada:{" "}
-              <span className="text-blue-700 font-bold">
-                {assigningRoutine.title}
-              </span>
-            </p>
+            <BarraVolver
+              className="mb-4"
+              onVolver={() => setAssigningRoutine(null)}
+              titulo="Asignar Rutina a Alumno"
+              subtitulo={<>Rutina seleccionada: <span className="text-blue-700 font-bold">{assigningRoutine.title}</span></>}
+            />
 
             <form
               onSubmit={handleConfirmAssignment}
