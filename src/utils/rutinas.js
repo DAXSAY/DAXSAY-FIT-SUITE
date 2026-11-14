@@ -21,6 +21,7 @@ export const NIVELES_RUTINA = [
   ["principiante", "🟢", "Principiante", "Menos de 6 meses entrenando"],
   ["intermedio", "🟡", "Intermedio", "6 meses a 2 años"],
   ["avanzado", "🔴", "Avanzado", "Más de 2 años, buena técnica"],
+  ["experto", "🏆", "Experto", "Atleta o competidor, más de 5 años y técnica dominada"],
 ];
 
 export const textoObjetivoRutina = (k) => {

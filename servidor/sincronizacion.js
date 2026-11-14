@@ -135,7 +135,7 @@ const objetivo = (v) => {
   return OBJETIVOS.includes(o) ? o : "tonificacion";
 };
 const NIVELES = ["principiante", "intermedio", "avanzado"];
-const nivel = (v) => (NIVELES.includes(v) ? v : "principiante"); // acondicionamiento -> principiante
+const nivel = (v) => (NIVELES.includes(v) ? v : v === "experto" ? "avanzado" : "principiante"); // acondicionamiento -> principiante · experto -> avanzado (el detalle queda en el JSON)
 const METODOS_PAGO = ["efectivo", "tarjeta", "transferencia", "yape_plin"];
 const METODO_ASISTENCIA = { qr_app: "qr_app", dni_manual: "dni_manual", barcode: "codigo_barras", quick_pass: "pase_rapido" };
 const CANAL = { push: "push", email: "correo", whatsapp: "whatsapp", sms: "sms" };

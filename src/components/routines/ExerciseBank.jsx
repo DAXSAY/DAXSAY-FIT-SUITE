@@ -1,3 +1,5 @@
+import { tipoDia } from "./SistemasEntrenamiento";
+import { textoNivelRutina } from "../../utils/rutinas";
 import React, { useEffect, useMemo, useState } from "react";
 import { Search, Plus, X, Dumbbell, Target, Layers, ListOrdered, Info } from "lucide-react";
 
@@ -23,6 +25,17 @@ export const MUSCLE_LABELS = {
   pantorrillas: "Pantorrillas",
   cardio_funcional: "Cardio y funcional",
   cuello: "Cuello",
+  trapecio: "Trapecio",
+  lumbar: "Zona lumbar",
+  oblicuos: "Oblicuos",
+  gluteos: "Glúteos",
+  isquiotibiales: "Isquiotibiales",
+  aductores: "Aductores",
+  abductores: "Abductores",
+  tibial: "Tibial anterior",
+  cadera: "Flexores de cadera",
+  manguito: "Manguito rotador",
+  cuerpo_completo: "Cuerpo completo",
   otros: "Otros",
 };
 
@@ -266,6 +279,13 @@ export const ExerciseDetail = ({ ex, onClose, onAdd }) => {
           </span>
           <h2 className="text-xl font-extrabold truncate">{ex.name}</h2>
           {ex.nameEn && ex.nameEn !== ex.name && <p className="text-sm text-slate-400 truncate">{ex.nameEn}</p>}
+          {(ex.tipo || ex.custom) && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {ex.custom && <span className="px-2 py-0.5 rounded-full bg-white/15 text-[11px] font-bold">Ejercicio propio del gimnasio</span>}
+              {tipoDia(ex.tipo) && <span className="px-2 py-0.5 rounded-full bg-white/15 text-[11px] font-bold">{tipoDia(ex.tipo)[1]} {tipoDia(ex.tipo)[2]}</span>}
+              {ex.difficulty && <span className="px-2 py-0.5 rounded-full bg-white/15 text-[11px] font-bold">{textoNivelRutina(ex.difficulty)}</span>}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {onAdd && (

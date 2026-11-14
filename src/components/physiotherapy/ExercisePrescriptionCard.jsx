@@ -330,7 +330,7 @@ export const ExercisePrescriptionCard = ({
       )}
       </div>
 
-      {formPropio && <FormEjercicioPropio tipoInicial="terapeutico" titulo="Nuevo ejercicio terapéutico propio" onClose={() => setFormPropio(false)} onGuardar={guardarPropio} />}
+      {formPropio && <FormEjercicioPropio tipoInicial="rehabilitacion" titulo="Ejercicio propio (fisioterapia)" onClose={() => setFormPropio(false)} onGuardar={guardarPropio} />}
 
       {exercises.length > 0 && (
         <p className="text-xs text-slate-500 flex items-center gap-1">
