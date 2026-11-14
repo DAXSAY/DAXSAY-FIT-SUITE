@@ -528,35 +528,45 @@ export const GymProvider = ({ children }) => {
     updateMember(memberId, { assignedTrainerId: trainerId || "" });
 
   const assignRoutineToMember = (memberId, routineId) => {
-    const member = members.find((m) => m.id === memberId);
+    const member = members.find((m) => String(m.id) === String(memberId));
     const rutina = routines.find((r) => r.id === routineId);
-    // Si la rutina ya es personal de otro alumno, se le hace una copia al nuevo
-    // (antes se le quitaba al alumno anterior y desaparecía de su portal).
-    if (member && rutina && rutina.targetStudentId && String(rutina.targetStudentId) !== String(member.id)) {
-      const primer = String(member.fullName || "").trim().split(/\s+/)[0];
-      const base = String(rutina.name || "Rutina").replace(/\s*·\s*[^·]+$/, "");
-      const copia = {
-        ...rutina,
-        id: `routine-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        name: `${base} · ${primer}`,
-        createdDate: hoyISO(),
-        targetStudentId: member.id,
-        targetStudentName: member.fullName,
-      };
-      setRoutines((prev) => [copia, ...prev]);
-      setRoutineAssignments((prev) => ({ ...prev, [memberId]: copia.id }));
-      return;
+    if (!member || !rutina) {
+      setRoutineAssignments((prev) => ({ ...prev, [memberId]: routineId }));
+      return null;
     }
-    setRoutineAssignments((prev) => ({ ...prev, [memberId]: routineId }));
-    if (member && routineId) {
-      setRoutines((prev) =>
-        prev.map((r) =>
-          r.id === routineId
-            ? { ...r, targetStudentId: member.id, targetStudentName: member.fullName }
-            : r,
-        ),
-      );
+    // Ya es su rutina personal: solo se marca como la activa
+    if (rutina.targetStudentId && String(rutina.targetStudentId) === String(member.id)) {
+      setRoutineAssignments((prev) => ({ ...prev, [memberId]: routineId }));
+      return rutina;
     }
+    // La plantilla queda general: el alumno recibe su propia copia enlazada
+    // (baseRoutineId). Así "Editar general" llega a todos y "Editar para este
+    // alumno" solo cambia su copia.
+    const baseId = rutina.targetStudentId ? rutina.baseRoutineId || null : rutina.id;
+    const existente = baseId
+      ? routines.find((r) => r.baseRoutineId === baseId && String(r.targetStudentId) === String(member.id))
+      : null;
+    if (existente) {
+      setRoutineAssignments((prev) => ({ ...prev, [memberId]: existente.id }));
+      return existente;
+    }
+    const primer = String(member.fullName || "").trim().split(/\s+/)[0];
+    // Si se parte de la copia de otro alumno, se quita su nombre del título
+    const titulo = rutina.targetStudentId ? String(rutina.title || "Rutina").replace(/\s*·\s*[^·]+$/, "") : rutina.title || "Rutina";
+    const copia = {
+      ...rutina,
+      id: `routine-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      title: `${titulo} · ${primer}`,
+      createdDate: hoyISO(),
+      baseRoutineId: baseId || undefined,
+      personalizada: false,
+      targetStudentId: member.id,
+      targetStudentName: member.fullName,
+      cambios: [],
+    };
+    setRoutines((prev) => [copia, ...prev]);
+    setRoutineAssignments((prev) => ({ ...prev, [memberId]: copia.id }));
+    return copia;
   };
 
   // =================================================================
@@ -624,6 +634,7 @@ export const GymProvider = ({ children }) => {
       id: `ex-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     };
     setExercises((prev) => [newExercise, ...prev]);
+    return newExercise;
   };
 
   const updateExercise = (id, exerciseData) => {
@@ -687,6 +698,41 @@ export const GymProvider = ({ children }) => {
         ? `✓ Rutina actualizada · se avisará a ${asignados.size} alumno(s) que la tienen asignada`
         : "✓ Rutina actualizada",
     );
+  };
+
+  /**
+   * Edición general de una plantilla: se guarda y llega a las copias de los
+   * alumnos (baseRoutineId). Las copias "personalizadas" solo se pisan si se pide.
+   */
+  const updateRoutineGeneral = (id, routineData, { incluirPersonalizadas = false } = {}) => {
+    updateRoutine(id, routineData);
+    const copias = routines.filter((r) => r.baseRoutineId === id && (incluirPersonalizadas || !r.personalizada));
+    if (!copias.length) return 0;
+    const ahora = new Date().toLocaleString("sv-SE", { timeZone: "America/Lima" });
+    const ids = new Set(copias.map((c) => c.id));
+    const { title, ...resto } = routineData;
+    setRoutines((prev) =>
+      prev.map((r) => {
+        if (!ids.has(r.id)) return r;
+        const primer = String(r.targetStudentName || "").trim().split(/\s+/)[0];
+        const cambio = "rutina actualizada por tu entrenador";
+        return {
+          ...r,
+          ...resto,
+          title: title ? `${title}${primer ? ` · ${primer}` : ""}` : r.title,
+          targetStudentId: r.targetStudentId,
+          targetStudentName: r.targetStudentName,
+          baseRoutineId: id,
+          personalizada: incluirPersonalizadas ? false : r.personalizada,
+          actualizadaEn: ahora,
+          actualizadaPor: currentUser?.fullName || "",
+          actualizadaPorId: currentUser?.id,
+          ultimoCambio: cambio,
+          cambios: [{ fecha: ahora, por: currentUser?.fullName || "", cambio }, ...((r.cambios || []).slice(0, 9))],
+        };
+      }),
+    );
+    return copias.length;
   };
 
   const deleteRoutine = (id) => {
@@ -1582,6 +1628,7 @@ export const GymProvider = ({ children }) => {
         deleteExercise,
         addRoutine,
         updateRoutine,
+        updateRoutineGeneral,
         deleteRoutine,
         addProduct,
         updateProduct,

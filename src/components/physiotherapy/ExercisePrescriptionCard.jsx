@@ -1,17 +1,19 @@
 // Ejercicios terapéuticos de la sesión (fisioterapia)
 // Cada ejercicio con su imagen: del banco de ejercicios (animación), subida desde la PC/celular
 // o pegando un enlace. La imagen se puede copiar (enlace) o descargar. El alumno lo ve en su portal.
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Check, Copy, Download, Dumbbell, ImagePlus, Link2, Plus, Trash2, Upload, X } from "lucide-react";
 import { ExercisePicker, useExerciseBank, MUSCLE_LABELS } from "../routines/ExerciseBank";
 import { subirImagen, copiarEnlace, descargarImagen } from "../../utils/imagenes";
+import { useGym } from "../../context/GymContext";
+import { ConfigEjercicio, alternarCompanero, cambiarMetodo, etiquetasGrupo } from "../routines/SistemasEntrenamiento";
+import { FormEjercicioPropio } from "../routines/FormEjercicioPropio";
 
 // Se mantiene por compatibilidad con evaluaciones antiguas (ya no se ofrece)
 export const CLINICAL_EXERCISE_IMAGE_PRESETS = [];
 
 const FRECUENCIAS = ["Diario", "5 veces por semana", "3 veces por semana", "2 veces por semana", "Solo en la sesión"];
 const REPS = ["8 reps", "10 reps", "12 reps", "15 reps", "20 reps", "20 seg", "30 seg", "45 seg", "60 seg"];
-const DESCANSOS = [30, 45, 60, 90];
 const INP = "w-full text-sm px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-blue-500";
 
 /** Herramientas de una imagen: subir, enlace, copiar, descargar, quitar */
@@ -94,8 +96,15 @@ export const ExercisePrescriptionCard = ({
   onCardFrequencyChange,
   readOnly = false,
 }) => {
-  const banco = useExerciseBank();
+  const bancoGif = useExerciseBank();
+  const { exercises: propios = [], addExercise } = useGym();
+  // Mismo banco que el entrenador: ejercicios del gimnasio + banco con animación
+  const banco = useMemo(
+    () => [...propios.map((e) => ({ ...e, gifUrl: e.gifUrl || e.videoUrl, custom: true })), ...bancoGif],
+    [propios, bancoGif],
+  );
   const [cambiarImagenDe, setCambiarImagenDe] = useState(null);
+  const [formPropio, setFormPropio] = useState(false);
 
   const actualizar = (i, campo, valor) => {
     if (readOnly) return;
@@ -131,9 +140,24 @@ export const ExercisePrescriptionCard = ({
     }
     onChange([
       ...exercises,
-      nuevo({ name: ex.name, imageUrl: ex.gifUrl || ex.thumbnailUrl || "", targetZone: MUSCLE_LABELS[ex.muscleGroup] || "", bankId: ex.id }),
+      nuevo({
+        name: ex.name,
+        imageUrl: ex.gifUrl || ex.thumbnailUrl || "",
+        targetZone: MUSCLE_LABELS[ex.muscleGroup] || "",
+        bankId: ex.id,
+        ...(ex.defaultSets ? { series: ex.defaultSets } : {}),
+        ...(ex.defaultReps ? { repsOrTime: ex.defaultReps } : {}),
+        ...(ex.defaultRest ? { restSeconds: ex.defaultRest } : {}),
+        ...(ex.steps?.length && !ex.techniqueTips ? { techniqueTips: ex.steps.join(" ") } : {}),
+      }),
     ]);
   };
+  const guardarPropio = (ej) => {
+    const creado = addExercise?.(ej) || ej;
+    setFormPropio(false);
+    agregarDelBanco({ ...ej, ...creado });
+  };
+  const etiquetas = etiquetasGrupo(exercises);
 
   const pautas = (i) => exercises[i].commentsWithImages || [];
   const setPautas = (i, lista) => actualizar(i, "commentsWithImages", lista);
@@ -172,9 +196,14 @@ export const ExercisePrescriptionCard = ({
           <p className="text-xs font-black uppercase tracking-wider text-slate-500">
             Ejercicios elegidos <span className="ml-1 px-1.5 rounded-md bg-blue-100 text-blue-800">{exercises.length}</span>
           </p>
-          <button type="button" onClick={() => onChange([...exercises, nuevo()])} className="px-3 py-1.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer hover:bg-slate-50">
-            <Plus className="w-3.5 h-3.5" /> Ejercicio propio
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button type="button" onClick={() => onChange([...exercises, nuevo()])} className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold cursor-pointer hover:bg-slate-50" title="Agregar una fila vacía para escribir el ejercicio">
+              + Fila rápida
+            </button>
+            <button type="button" onClick={() => setFormPropio(true)} className="px-3 py-1.5 rounded-xl border border-blue-300 bg-white text-blue-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-blue-50">
+              <Plus className="w-3.5 h-3.5" /> Ejercicio propio
+            </button>
+          </div>
         </div>
       )}
 
@@ -185,11 +214,11 @@ export const ExercisePrescriptionCard = ({
       ) : (
         <div className="space-y-3">
           {exercises.map((ex, i) => (
-            <div key={ex.id} className="rounded-xl border border-slate-200 p-2.5 grid grid-cols-[64px_1fr] gap-2.5">
+            <div key={ex.id} className={`rounded-xl border p-2.5 grid grid-cols-[80px_1fr] gap-2.5 ${ex.metodo?.grupo ? "border-violet-300 border-l-4 border-l-violet-500" : "border-slate-200"}`}>
               {/* Imagen (pequeña, la tarjeta queda plana) */}
               <div className="space-y-1">
-                <div className="relative w-16 h-16 rounded-lg border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center">
-                  <span className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                <div className="relative w-20 h-20 rounded-lg border border-slate-200 bg-white overflow-hidden flex items-center justify-center">
+                  <span className="absolute top-0.5 left-0.5 z-10 min-w-5 h-5 px-1 rounded-full bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center">{etiquetas[i] || i + 1}</span>
                   {ex.imageUrl ? (
                     <img src={ex.imageUrl} alt={ex.name} className="w-full h-full object-contain" loading="lazy" />
                   ) : (
@@ -197,7 +226,7 @@ export const ExercisePrescriptionCard = ({
                   )}
                 </div>
                 {!readOnly && (
-                  <button type="button" onClick={() => setCambiarImagenDe(i)} className="w-16 text-[10px] font-semibold text-blue-700 hover:underline cursor-pointer leading-tight">
+                  <button type="button" onClick={() => setCambiarImagenDe(i)} className="w-20 text-[10px] font-semibold text-blue-700 hover:underline cursor-pointer leading-tight">
                     Cambiar imagen
                   </button>
                 )}
@@ -217,27 +246,20 @@ export const ExercisePrescriptionCard = ({
                     </div>
                   )}
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-[70px_1fr_1.3fr] gap-2">
-                  <label>
-                    <span className="block text-[11px] font-bold text-slate-500">Series</span>
-                    <input disabled={readOnly} type="number" min="1" max="10" value={ex.series ?? ""} onChange={(e) => actualizar(i, "series", Number(e.target.value))} className={INP} />
-                  </label>
-                  <label>
-                    <span className="block text-[11px] font-bold text-slate-500">Repeticiones o tiempo</span>
-                    <input disabled={readOnly} value={ex.repsOrTime || ""} onChange={(e) => actualizar(i, "repsOrTime", e.target.value)} placeholder="10 reps / 30 seg" className={INP} list={`reps-${ex.id}`} />
-                    <datalist id={`reps-${ex.id}`}>{REPS.map((r) => <option key={r} value={r} />)}</datalist>
-                  </label>
-                  <div>
-                    <span className="block text-[11px] font-bold text-slate-500">Descanso</span>
-                    <div className="flex gap-1">
-                      {DESCANSOS.map((d) => (
-                        <button key={d} type="button" disabled={readOnly} onClick={() => actualizar(i, "restSeconds", d)} className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer ${Number(ex.restSeconds) === d ? "bg-slate-900 border-slate-900 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
-                          {d}s
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <ConfigEjercicio
+                  ex={ex}
+                  campos={{ series: "series", reps: "repsOrTime", descanso: "restSeconds", esfuerzo: "esfuerzo" }}
+                  repsSugeridas={REPS}
+                  placeholderEsfuerzo="Dolor ≤ 3/10"
+                  readOnly={readOnly}
+                  onPatch={(c) => !readOnly && onChange(exercises.map((x, k) => (k === i ? { ...x, ...c } : x)))}
+                  onMetodo={(m) => !readOnly && onChange(cambiarMetodo(exercises, i, m))}
+                  etiqueta={etiquetas[i]}
+                  companeros={exercises
+                    .map((x, k) => ({ i: k, nombre: x.name || "Ejercicio", enGrupo: !!ex.metodo?.grupo && x.metodo?.grupo === ex.metodo.grupo }))
+                    .filter((x) => x.i !== i)}
+                  onCompanero={(k) => !readOnly && onChange(alternarCompanero(exercises, i, k))}
+                />
                 <details className="rounded-lg border border-slate-200 bg-slate-50/60 group">
                   <summary className="px-2.5 py-1.5 text-[11px] font-bold text-slate-600 cursor-pointer select-none">
                     Indicaciones, zona, imagen y pautas {(ex.techniqueTips || pautas(i).length) ? "· ✓" : "(opcional)"}
@@ -306,6 +328,8 @@ export const ExercisePrescriptionCard = ({
         </div>
       )}
       </div>
+
+      {formPropio && <FormEjercicioPropio tipoInicial="terapeutico" titulo="Nuevo ejercicio terapéutico propio" onClose={() => setFormPropio(false)} onGuardar={guardarPropio} />}
 
       {exercises.length > 0 && (
         <p className="text-xs text-slate-500 flex items-center gap-1">

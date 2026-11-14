@@ -157,7 +157,7 @@ export const PhysioTextualRecordsView = ({
     if (r.exerciseDosage && r.exerciseDosage.customExercises.length > 0) {
       out += `Título: ${r.exerciseDosage.customCardTitle} (${r.exerciseDosage.customCardFrequency})\n`;
       r.exerciseDosage.customExercises.forEach((ex, i) => {
-        out += `${i + 1}. ${ex.name} - ${ex.series} series x ${ex.repsOrTime} (Descanso: ${ex.restSeconds}s)\n`;
+        out += `${i + 1}. ${ex.name} - ${ex.series} series x ${ex.repsOrTime} (Descanso: ${ex.restSeconds}s)${ex.metodo?.resumen ? ` · ${ex.metodo.resumen}` : ""}\n`;
         out += `   Indicación Técnica: ${ex.techniqueTips}\n`;
         if (ex.commentsWithImages && ex.commentsWithImages.length > 0) {
           ex.commentsWithImages.forEach((c) => {

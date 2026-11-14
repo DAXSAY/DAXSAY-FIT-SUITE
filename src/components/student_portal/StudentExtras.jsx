@@ -3,6 +3,7 @@ import { CATEGORIAS as CAT_IND, LUGARES as LUGARES_IND, textoDosis } from "../in
 import { Dumbbell, HeartPulse, ListOrdered, ShieldAlert, Home, CalendarCheck } from "lucide-react";
 import { useExerciseBank, ExerciseThumb, ExerciseDetail, MUSCLE_LABELS, ATRIBUCION_MEDIA } from "../routines/ExerciseBank";
 import { zoneLabel } from "../physiotherapy/BodyMapVisual";
+import { InsigniaMetodo, InsigniaTipoDia, etiquetasGrupo } from "../routines/SistemasEntrenamiento";
 import { GuiaPorciones, VistaPlatos, platosDePlan } from "../nutrition/PlatoNutricional";
 
 /** Recomendaciones de porciones con la mano (se ven aunque no tenga dieta) */
@@ -100,8 +101,13 @@ export const MiRutina = ({ routines, memberId, assignedRoutineId }) => {
 
       {d && (
         <div className="space-y-3">
-          {d.focus && <p className="text-sm text-slate-600">Enfoque: {d.focus}</p>}
-          {(d.exercises || []).map((ex, i) => {
+          {(d.focus || d.tipo) && (
+            <p className="text-sm text-slate-600 flex flex-wrap items-center gap-2">
+              <InsigniaTipoDia tipo={d.tipo} />
+              {d.focus && <span>Enfoque: {d.focus}</span>}
+            </p>
+          )}
+          {(() => { const etq = etiquetasGrupo(d.exercises || []); return (d.exercises || []).map((ex, i) => {
             const base = buscar(ex);
             const pasos = ex.steps || base?.steps || [];
             return (
@@ -111,7 +117,7 @@ export const MiRutina = ({ routines, memberId, assignedRoutineId }) => {
                 </button>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-slate-400 font-bold">{i + 1}.</span>
+                    <span className="text-slate-400 font-bold">{etq[i] || `${i + 1}.`}</span>
                     <h4 className="text-base font-extrabold text-slate-900">{ex.exerciseName}</h4>
                     <span className="text-xs font-bold uppercase text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
                       {MUSCLE_LABELS[ex.muscleGroup] || ex.muscleGroup}
@@ -130,6 +136,7 @@ export const MiRutina = ({ routines, memberId, assignedRoutineId }) => {
                       </div>
                     ))}
                   </div>
+                  <InsigniaMetodo metodo={ex.metodo} etiqueta={etq[i]} className="mt-2" />
                   {ex.notes && (
                     <p className="mt-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                       Indicación de tu entrenador: {ex.notes}
@@ -150,7 +157,7 @@ export const MiRutina = ({ routines, memberId, assignedRoutineId }) => {
                 </div>
               </div>
             );
-          })}
+          }); })()}
           <p className="text-xs text-slate-400 text-center">{ATRIBUCION_MEDIA}</p>
         </div>
       )}
@@ -361,8 +368,9 @@ export const MiFisioterapia = ({ records }) => {
                         <div className="min-w-0 flex-1">
                           <p className="font-bold text-slate-900">{e.name}</p>
                           <p className="text-slate-600">
-                            <b>{e.series} × {e.repsOrTime}</b> · descanso {e.restSeconds}s
+                            <b>{e.series} × {e.repsOrTime}</b> · descanso {e.restSeconds}s{e.esfuerzo ? ` · ${e.esfuerzo}` : ""}
                           </p>
+                          <InsigniaMetodo metodo={e.metodo} etiqueta={etiquetasGrupo(ejercicios)[n]} className="mt-1" />
                           {e.techniqueTips && <p className="text-slate-500 mt-1">{e.techniqueTips}</p>}
                           {(e.commentsWithImages || []).filter((p) => p.comment || p.imageUrl).length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-2">

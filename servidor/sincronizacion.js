@@ -257,7 +257,7 @@ const MAPAS = {
     for (const [i, dia] of dias.entries()) {
       const [r] = await cx.query(
         "INSERT INTO rutina_dias (idrutina, orden, nombre, enfoque, notas) VALUES (?,?,?,?,?)",
-        [idrutina, Math.min(i + 1, 127), txt(dia.dayName, 120) || `Día ${i + 1}`, txt(dia.focus, 120), txt(dia.notes, 300)],
+        [idrutina, Math.min(i + 1, 127), txt(dia.dayName, 120) || `Día ${i + 1}`, txt(dia.focus || dia.tipo, 120), txt(dia.notes, 300)],
       );
       for (const [j, e] of (dia.exercises || []).entries()) {
         const [[propio]] = await cx.query("SELECT idejercicio FROM ejercicios WHERE idregistro_app = ?", [String(e.exerciseId || "")]);
@@ -277,7 +277,8 @@ const MAPAS = {
             txt(e.reps, 20) || "-",
             txt(e.rir, 10),
             entero(e.restSeconds, 0, 3600) ?? 60,
-            txt(e.notes, 200),
+            // El sistema de entrenamiento (biserie, rest-pause…) va delante de la nota
+            txt([e.metodo?.resumen && `[${e.metodo.grupo ? e.metodo.grupo + " · " : ""}${e.metodo.resumen}]`, e.notes].filter(Boolean).join(" "), 200),
           ],
         );
       }

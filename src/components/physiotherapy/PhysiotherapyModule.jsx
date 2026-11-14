@@ -2168,6 +2168,7 @@ export const PhysiotherapyModule = () => {
                                                 {ex.series}x{ex.repsOrTime}
                                               </span>
                                             </div>
+                                            {ex.metodo?.resumen && <p className="text-[11px] font-bold text-violet-700 mt-0.5">⚙ {ex.metodo.resumen}</p>}
                                             {ex.techniqueTips && (
                                               <p className="text-xs text-slate-500 italic mt-0.5">
                                                 💡 {ex.techniqueTips}

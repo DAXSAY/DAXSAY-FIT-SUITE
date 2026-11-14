@@ -1,5 +1,6 @@
 import { williamsElegidos, textoRespuestaWilliams, textoToleranciaWilliams } from "./WilliamsVisuals";
 import React, { useState } from "react";
+import { InsigniaMetodo } from "../routines/SistemasEntrenamiento";
 import { BodyMapVisual, ZONE_DETAILS, zoneLabel } from "./BodyMapVisual";
 import { POSTURE_PRESETS } from "./PostureVisuals";
 import { estadoEvolucion, ADHERENCIA, PRONOSTICO, etiqueta } from "./evolucion";
@@ -1017,6 +1018,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
                             </span>
                           )}
                         </div>
+                        <InsigniaMetodo metodo={ex.metodo} />
                         {ex.techniqueTips && (
                           <p className="text-xs text-slate-600 italic bg-white p-2 rounded-lg border border-slate-200">
                             💡 <strong>Técnica:</strong> {ex.techniqueTips}
