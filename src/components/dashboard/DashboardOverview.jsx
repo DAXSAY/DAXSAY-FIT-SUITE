@@ -836,12 +836,12 @@ export const DashboardOverview = ({
               </div>
 
               {/* Responsive Chart Container with Advanced Tooltip and Zoom Brush */}
-              <div className="h-80 w-full pt-2">
+              <div className="h-56 w-full pt-1">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     key={`${timePeriod}-${zoomLevel}`}
                     data={cashflowData}
-                    margin={{ top: 10, right: 15, left: -10, bottom: 0 }}
+                    margin={{ top: 8, right: 15, left: 4, bottom: 0 }}
                   >
                     <defs>
                       <linearGradient
@@ -917,14 +917,20 @@ export const DashboardOverview = ({
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(val) => `S/${val}`}
+                      width={62}
+                      tickFormatter={(val) => {
+                        const n = Number(val) || 0;
+                        const a = Math.abs(n);
+                        const t = a >= 1000 ? `${(a / 1000).toLocaleString("es-PE", { maximumFractionDigits: 1 })}k` : `${a}`;
+                        return `${n < 0 ? "-" : ""}S/ ${t}`;
+                      }}
                     />
 
                     {/* ADVANCED CUSTOM TOOLTIP WITH STATUS AND RATIO BAR */}
                     <Tooltip content={<AdvancedCustomTooltip />} />
 
                     <Legend
-                      wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
+                      wrapperStyle={{ fontSize: "11px", paddingTop: "4px" }}
                       formatter={(value) => (
                         <span className="text-slate-700 font-semibold uppercase text-xs tracking-wider">
                           {value === "ingresos"
@@ -975,7 +981,7 @@ export const DashboardOverview = ({
                     {showBrush && (
                       <Brush
                         dataKey="label"
-                        height={26}
+                        height={18}
                         stroke="var(--color-blue-500)"
                         fill="rgba(14,167,179,0.08)"
                         travellerWidth={10}
@@ -1010,11 +1016,11 @@ export const DashboardOverview = ({
                 </div>
               </div>
 
-              <div className="h-72 w-full pt-2">
+              <div className="h-56 w-full pt-1">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart
                     data={occupancyData}
-                    margin={{ top: 10, right: 15, left: -10, bottom: 0 }}
+                    margin={{ top: 8, right: 15, left: 0, bottom: 0 }}
                   >
                     <CartesianGrid
                       strokeDasharray="3 3"
@@ -1058,7 +1064,7 @@ export const DashboardOverview = ({
                     />
 
                     <Legend
-                      wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
+                      wrapperStyle={{ fontSize: "11px", paddingTop: "4px" }}
                       formatter={(val) => (
                         <span className="text-slate-700 font-semibold uppercase text-xs tracking-wider">
                           {val === "general"
@@ -1275,11 +1281,11 @@ export const DashboardOverview = ({
                 </div>
               </div>
 
-              <div className="h-72 w-full pt-2">
+              <div className="h-56 w-full pt-1">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart
                     data={growthData}
-                    margin={{ top: 10, right: 15, left: -10, bottom: 0 }}
+                    margin={{ top: 8, right: 15, left: 0, bottom: 0 }}
                   >
                     <CartesianGrid
                       strokeDasharray="3 3"
@@ -1324,7 +1330,7 @@ export const DashboardOverview = ({
                     />
 
                     <Legend
-                      wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
+                      wrapperStyle={{ fontSize: "11px", paddingTop: "4px" }}
                       formatter={(val) => (
                         <span className="text-slate-700 font-semibold uppercase text-xs tracking-wider">
                           {val === "activos"
