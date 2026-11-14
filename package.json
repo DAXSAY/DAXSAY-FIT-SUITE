@@ -12,7 +12,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "node servidor/index.js",
-    "produccion": "npm ci && npm run build && npm start"
+    "produccion": "npm ci && npm run build && npm start",
+    "cambiar-claves": "node scripts/cambiar-claves.js",
+    "respaldo": "node -e \"import('./servidor/config.js').then(()=>import('./servidor/respaldo.js')).then(m=>m.hacerRespaldo('manual')).then(()=>process.exit(0)).catch(e=>{console.error(e.message);process.exit(1)})\""
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",

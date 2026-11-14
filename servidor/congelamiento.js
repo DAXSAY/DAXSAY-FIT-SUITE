@@ -46,8 +46,8 @@ export function reglas(f) {
 /** Texto corto de las reglas, para tarjetas de plan, reportes y portal */
 export function textoReglas(r) {
   if (!r.total) return "Sin congelamiento";
-  if (r.partes === 1) return `${r.total} días de congelamiento (todo de una vez)`;
-  return `${r.total} días de congelamiento, hasta ${r.partes} partes de mínimo ${r.minimo} días`;
+  if (r.partes === 1) return `Congelamiento único de ${r.total} días`;
+  return `Congelamiento fraccionado: ${r.total} días en hasta ${r.partes} periodos (mínimo ${r.minimo} días c/u)`;
 }
 
 /** Estado de un congelamiento según sus fechas */

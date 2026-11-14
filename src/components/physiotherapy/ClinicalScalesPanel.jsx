@@ -53,13 +53,34 @@ export const MRC_GRADES = [
   { v: 5, label: "5 · Normal" },
 ];
 
+// Grupos musculares por región (se eligen los que se evalúan)
 export const MRC_GROUPS = [
-  { id: "abd_hombro", label: "Abductores de hombro" },
-  { id: "flex_codo", label: "Flexores de codo" },
-  { id: "ext_muneca", label: "Extensores de muñeca" },
-  { id: "flex_cadera", label: "Flexores de cadera" },
-  { id: "ext_rodilla", label: "Extensores de rodilla" },
-  { id: "dorsi_tobillo", label: "Dorsiflexores de tobillo" },
+  { id: "flex_cuello", label: "Flexores de cuello", region: "Cuello" },
+  { id: "ext_cuello", label: "Extensores de cuello", region: "Cuello" },
+  { id: "abd_hombro", label: "Abductores de hombro", region: "Hombro" },
+  { id: "flex_hombro", label: "Flexores de hombro", region: "Hombro" },
+  { id: "re_hombro", label: "Rotadores externos de hombro", region: "Hombro" },
+  { id: "ri_hombro", label: "Rotadores internos de hombro", region: "Hombro" },
+  { id: "esc_estab", label: "Estabilizadores escapulares", region: "Hombro" },
+  { id: "flex_codo", label: "Flexores de codo", region: "Brazo" },
+  { id: "ext_codo", label: "Extensores de codo", region: "Brazo" },
+  { id: "ext_muneca", label: "Extensores de muñeca", region: "Antebrazo y mano" },
+  { id: "flex_muneca", label: "Flexores de muñeca", region: "Antebrazo y mano" },
+  { id: "prension", label: "Prensión (flexores de dedos)", region: "Antebrazo y mano" },
+  { id: "intrinsecos_mano", label: "Intrínsecos de la mano / pinza", region: "Antebrazo y mano" },
+  { id: "abdominales", label: "Abdominales (core anterior)", region: "Tronco" },
+  { id: "ext_tronco", label: "Extensores de tronco", region: "Tronco" },
+  { id: "flex_cadera", label: "Flexores de cadera", region: "Cadera" },
+  { id: "ext_cadera", label: "Extensores de cadera (glúteo mayor)", region: "Cadera" },
+  { id: "abd_cadera", label: "Abductores de cadera (glúteo medio)", region: "Cadera" },
+  { id: "adu_cadera", label: "Aductores de cadera", region: "Cadera" },
+  { id: "ext_rodilla", label: "Extensores de rodilla (cuádriceps)", region: "Rodilla" },
+  { id: "flex_rodilla", label: "Flexores de rodilla (isquiotibiales)", region: "Rodilla" },
+  { id: "dorsi_tobillo", label: "Dorsiflexores de tobillo", region: "Tobillo y pie" },
+  { id: "plantiflex", label: "Flexores plantares (gemelos, sóleo)", region: "Tobillo y pie" },
+  { id: "inv_ev", label: "Inversores / eversores de tobillo", region: "Tobillo y pie" },
+  { id: "ext_hallux", label: "Extensor del hallux", region: "Tobillo y pie" },
+  { id: "intrinsecos_pie", label: "Intrínsecos del pie", region: "Tobillo y pie" },
 ];
 
 /* Articulaciones y movimientos con valores de referencia AAOS (grados).
@@ -80,6 +101,7 @@ export const ROM_JOINTS = [
     zones: ["hombro"],
     movs: [
       { id: "hom_flex", mov: "Flexión", norm: 180 },
+      { id: "hom_ext", mov: "Extensión", norm: 60 },
       { id: "hom_abd", mov: "Abducción", norm: 180 },
       { id: "hom_re", mov: "Rotación externa", norm: 90 },
       { id: "hom_ri", mov: "Rotación interna", norm: 70 },
@@ -105,8 +127,19 @@ export const ROM_JOINTS = [
     ],
   },
   {
+    id: "Dedos de la mano",
+    zones: ["dedos_mano", "muneca_mano"],
+    movs: [
+      { id: "mcf_flex", mov: "Flexión MCF", norm: 90 },
+      { id: "ifp_flex", mov: "Flexión IFP", norm: 100 },
+      { id: "ifd_flex", mov: "Flexión IFD", norm: 90 },
+      { id: "pul_abd", mov: "Abducción del pulgar", norm: 70 },
+      { id: "pul_flex", mov: "Flexión del pulgar (MCF)", norm: 50 },
+    ],
+  },
+  {
     id: "Tronco",
-    zones: ["columna_dorsal", "lumbar"],
+    zones: ["columna_dorsal", "lumbar", "toracica", "sacroiliaca"],
     movs: [
       { id: "tr_flex", mov: "Flexión", norm: 80, bilateral: false },
       { id: "tr_ext", mov: "Extensión", norm: 25, bilateral: false },
@@ -116,7 +149,7 @@ export const ROM_JOINTS = [
   },
   {
     id: "Cadera",
-    zones: ["cadera"],
+    zones: ["cadera", "sacroiliaca", "muslo"],
     movs: [
       { id: "cad_flex", mov: "Flexión", norm: 120 },
       { id: "cad_ext", mov: "Extensión", norm: 30 },
@@ -127,8 +160,9 @@ export const ROM_JOINTS = [
   },
   {
     id: "Rodilla",
-    zones: ["rodilla"],
+    zones: ["rodilla", "muslo", "pierna"],
     movs: [{ id: "rod_flex", mov: "Flexión", norm: 135 }],
+    zonesExtra: true,
   },
   {
     id: "Tobillo",
@@ -136,6 +170,17 @@ export const ROM_JOINTS = [
     movs: [
       { id: "tob_df", mov: "Dorsiflexión", norm: 20 },
       { id: "tob_pf", mov: "Flexión plantar", norm: 50 },
+      { id: "tob_inv", mov: "Inversión", norm: 35 },
+      { id: "tob_ev", mov: "Eversión", norm: 15 },
+    ],
+  },
+  {
+    id: "Dedos del pie",
+    zones: ["dedos_pie", "talon", "tobillo_pie"],
+    movs: [
+      { id: "hal_ext", mov: "Extensión del hallux (MTF)", norm: 70 },
+      { id: "hal_flex", mov: "Flexión del hallux (MTF)", norm: 45 },
+      { id: "dedos_flex", mov: "Flexión de dedos", norm: 40 },
     ],
   },
 ];
@@ -202,11 +247,11 @@ export const odiResult = (odi) => {
   const total = answered.reduce((s, a) => s + Number(a), 0);
   const pct = Math.round((total / (answered.length * 5)) * 100);
   let label = "Discapacidad mínima";
-  let color = "#16a34a";
+  let color = "var(--color-green-600)";
   if (pct > 80) { label = "Postrado / posible magnificación"; color = "#7f1d1d"; }
-  else if (pct > 60) { label = "Discapacidad invalidante"; color = "#b91c1c"; }
-  else if (pct > 40) { label = "Discapacidad severa"; color = "#ea580c"; }
-  else if (pct > 20) { label = "Discapacidad moderada"; color = "#ca8a04"; }
+  else if (pct > 60) { label = "Discapacidad invalidante"; color = "var(--color-red-700)"; }
+  else if (pct > 40) { label = "Discapacidad severa"; color = "var(--color-orange-600)"; }
+  else if (pct > 20) { label = "Discapacidad moderada"; color = "var(--color-yellow-600)"; }
   return { pct, label, color, answered: answered.length };
 };
 
@@ -243,15 +288,15 @@ export const romStatusLabel = (pct) =>
   pct == null
     ? null
     : pct >= 90
-      ? ["Normal", "bg-emerald-100 text-emerald-700", "#16a34a"]
+      ? ["Normal", "bg-emerald-100 text-emerald-700", "var(--color-green-600)"]
       : pct >= 70
-        ? ["Limitación leve", "bg-amber-100 text-amber-700", "#d97706"]
+        ? ["Limitación leve", "bg-amber-100 text-amber-700", "var(--color-amber-600)"]
         : pct >= 45
-          ? ["Limitación moderada", "bg-orange-100 text-orange-700", "#ea580c"]
-          : ["Limitación severa", "bg-rose-100 text-rose-700", "#dc2626"];
+          ? ["Limitación moderada", "bg-orange-100 text-orange-700", "var(--color-orange-600)"]
+          : ["Limitación severa", "bg-rose-100 text-rose-700", "var(--color-red-600)"];
 
 const painColor = (v) =>
-  v === null || v === undefined ? "#cbd5e1" : v <= 3 ? "#16a34a" : v <= 6 ? "#f59e0b" : "#dc2626";
+  v === null || v === undefined ? "#cbd5e1" : v <= 3 ? "var(--color-green-600)" : v <= 6 ? "var(--color-amber-500)" : "var(--color-red-600)";
 
 export const Card = ({ icon: Icon, title, subtitle, color = "text-blue-700", right, children }) => (
   <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
@@ -434,18 +479,18 @@ const RomGauge = ({ norm, izq, der, val }) => {
   const ticks = Array.from({ length: 11 }, (_, k) => (norm * k) / 10);
   const [nx, ny] = pt(norm, r + 15);
   const etiquetas = [
-    izq != null && izq !== "" ? [`I ${izq}°`, "#4f46e5"] : null,
-    der != null && der !== "" ? [`D ${der}°`, "#0891b2"] : null,
-    val != null && val !== "" ? [`${val}°`, "#7c3aed"] : null,
+    izq != null && izq !== "" ? [`I ${izq}°`, "var(--color-indigo-600)"] : null,
+    der != null && der !== "" ? [`D ${der}°`, "var(--color-cyan-600)"] : null,
+    val != null && val !== "" ? [`${val}°`, "var(--color-violet-600)"] : null,
   ].filter(Boolean);
   return (
     <svg viewBox="0 0 200 128" className="w-full h-auto">
       <defs>
         <linearGradient id={`g${uid}`} x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0%" stopColor="#f43f5e" />
+          <stop offset="0%" stopColor="var(--color-rose-500)" />
           <stop offset="40%" stopColor="#fb923c" />
-          <stop offset="68%" stopColor="#facc15" />
-          <stop offset="100%" stopColor="#22c55e" />
+          <stop offset="68%" stopColor="var(--color-yellow-400)" />
+          <stop offset="100%" stopColor="var(--color-green-500)" />
         </linearGradient>
       </defs>
       <path d={arc(0, max)} stroke="#f1f5f9" strokeWidth="18" fill="none" strokeLinecap="round" />
@@ -458,9 +503,9 @@ const RomGauge = ({ norm, izq, der, val }) => {
       })}
       <text x={nx} y={ny} fontSize="10" fontWeight="800" fill="#15803d" textAnchor="middle">{norm}°</text>
       <text x={cx - r} y={cy + 15} fontSize="9" fill="#94a3b8" textAnchor="middle">0°</text>
-      {needle(val, "#7c3aed")}
-      {needle(izq, "#4f46e5")}
-      {needle(der, "#0891b2")}
+      {needle(val, "var(--color-violet-600)")}
+      {needle(izq, "var(--color-indigo-600)")}
+      {needle(der, "var(--color-cyan-600)")}
       <circle cx={cx} cy={cy} r="7" fill="white" stroke="#0f172a" strokeWidth="3" />
       {etiquetas.length > 0 ? (
         etiquetas.map(([t, c], k) => (
@@ -488,8 +533,8 @@ const NumIn = ({ value, onChange, color, label }) => (
         max="200"
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
-        className="w-full text-base font-bold p-2 pr-6 rounded-lg border-2 text-center"
-        style={{ borderColor: `${color}55` }}
+        className="w-full text-sm font-bold py-1 px-1.5 pr-5 rounded-lg border-2 text-center select-text"
+        style={{ borderColor: `color-mix(in srgb, ${color} 33%, transparent)` }}
       />
       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">°</span>
     </div>
@@ -541,7 +586,7 @@ export const RomSection = ({ scales, set, zones = [] }) => {
               type="button"
               key={j.id}
               onClick={() => toggleJoint(j.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex items-center gap-1.5 select-none ${
                 on
                   ? "bg-cyan-600 border-cyan-600 text-white shadow"
                   : sug
@@ -619,7 +664,7 @@ export const RomSection = ({ scales, set, zones = [] }) => {
                     </button>
                   </div>
                 </div>
-                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="p-3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5 select-none">
                   {j.movs.map((m) => {
                     const bil = m.bilateral !== false;
                     const v = scales.rom[m.id] || {};
@@ -634,23 +679,25 @@ export const RomSection = ({ scales, set, zones = [] }) => {
                     return (
                       <div
                         key={m.id}
-                        className={`bg-white rounded-xl border border-slate-200 border-t-4 p-3 ${
+                        className={`bg-white rounded-xl border border-slate-200 border-t-4 p-2 ${
                           worst == null ? "border-t-slate-200" : worst >= 90 ? "border-t-emerald-500" : worst >= 70 ? "border-t-amber-400" : "border-t-rose-500"
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-slate-800">{m.mov}</span>
-                          <span className="text-xs font-mono text-slate-500">Normal 0–{m.norm}°</span>
+                          <span className="text-xs font-bold text-slate-800 leading-tight">{m.mov}</span>
+                          <span className="text-[10px] font-mono text-slate-500 shrink-0">0–{m.norm}°</span>
                         </div>
-                        <RomGauge norm={m.norm} izq={bil ? v.izq : null} der={bil ? v.der : null} val={bil ? null : v.val} />
+                        <div className="max-w-[150px] mx-auto">
+                          <RomGauge norm={m.norm} izq={bil ? v.izq : null} der={bil ? v.der : null} val={bil ? null : v.val} />
+                        </div>
                         <div className="flex gap-2">
                           {bil ? (
                             <>
-                              <NumIn label="Izquierdo" color="#4f46e5" value={v.izq} onChange={(x) => setVal(m.id, "izq", x)} />
-                              <NumIn label="Derecho" color="#0891b2" value={v.der} onChange={(x) => setVal(m.id, "der", x)} />
+                              <NumIn label="Izquierdo" color="var(--color-indigo-600)" value={v.izq} onChange={(x) => setVal(m.id, "izq", x)} />
+                              <NumIn label="Derecho" color="var(--color-cyan-600)" value={v.der} onChange={(x) => setVal(m.id, "der", x)} />
                             </>
                           ) : (
-                            <NumIn label="Medido" color="#7c3aed" value={v.val} onChange={(x) => setVal(m.id, "val", x)} />
+                            <NumIn label="Medido" color="var(--color-violet-600)" value={v.val} onChange={(x) => setVal(m.id, "val", x)} />
                           )}
                         </div>
                         <div className="flex flex-wrap gap-1 mt-2 min-h-[22px]">
@@ -686,10 +733,10 @@ export const RomSection = ({ scales, set, zones = [] }) => {
                     <YAxis type="category" dataKey="name" width={190} tick={{ fontSize: 13, fill: "#334155" }} />
                     <Tooltip formatter={(v) => (v == null ? "–" : `${v}%`)} />
                     <Legend wrapperStyle={{ fontSize: 13 }} />
-                    <ReferenceLine x={100} stroke="#16a34a" strokeWidth={2} />
-                    <ReferenceLine x={70} stroke="#f59e0b" strokeDasharray="4 4" />
-                    <Bar dataKey="Izquierdo" name="Izquierdo / único" fill="#6366f1" radius={[0, 6, 6, 0]} barSize={16} />
-                    <Bar dataKey="Derecho" fill="#06b6d4" radius={[0, 6, 6, 0]} barSize={16} />
+                    <ReferenceLine x={100} stroke="var(--color-green-600)" strokeWidth={2} />
+                    <ReferenceLine x={70} stroke="var(--color-amber-500)" strokeDasharray="4 4" />
+                    <Bar isAnimationActive={false} maxBarSize={56} dataKey="Izquierdo" name="Izquierdo / único" fill="var(--color-indigo-500)" radius={[0, 6, 6, 0]} barSize={16} />
+                    <Bar isAnimationActive={false} maxBarSize={56} dataKey="Derecho" fill="var(--color-cyan-500)" radius={[0, 6, 6, 0]} barSize={16} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -705,7 +752,15 @@ export const RomSection = ({ scales, set, zones = [] }) => {
 export const MrcSection = ({ scales, set }) => {
   const setMRC = (gid, lado, v) =>
     set({ mrc: { ...scales.mrc, [gid]: { ...(scales.mrc[gid] || {}), [lado]: v === "" ? null : Number(v) } } });
-  const data = MRC_GROUPS.map((g) => ({
+  const conValor = (g) => scales.mrc[g.id]?.izq != null || scales.mrc[g.id]?.der != null;
+  const [visibles, setVisibles] = useState(() => {
+    const v = MRC_GROUPS.filter(conValor).map((g) => g.id);
+    return v.length ? v : ["abd_hombro", "flex_codo", "ext_muneca", "flex_cadera", "ext_rodilla", "dorsi_tobillo"];
+  });
+  const regiones = [...new Set(MRC_GROUPS.map((g) => g.region))];
+  const alternar = (id) => setVisibles((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
+  const lista = MRC_GROUPS.filter((g) => visibles.includes(g.id) || conValor(g));
+  const data = lista.map((g) => ({
     corto: g.label,
     Izquierdo: scales.mrc[g.id]?.izq ?? null,
     Derecho: scales.mrc[g.id]?.der ?? null,
@@ -717,7 +772,7 @@ export const MrcSection = ({ scales, set }) => {
       icon={Dumbbell}
       color="text-indigo-600"
       title="Fuerza muscular (escala MRC 0-5)"
-      subtitle="Test muscular manual bilateral. Evalúe solo los grupos relevantes; la suma total normal es 60."
+      subtitle="Test muscular manual bilateral. Toque los grupos que va a evaluar; la suma se compara con el máximo (5 por lado)."
       right={
         <div className="text-right">
           <span className="block text-xs font-bold uppercase text-slate-500">Suma MRC</span>
@@ -728,7 +783,29 @@ export const MrcSection = ({ scales, set }) => {
         </div>
       }
     >
+      <div className="space-y-1.5 mb-4 select-none">
+        {regiones.map((r) => (
+          <div key={r} className="flex flex-wrap items-center gap-1.5">
+            <span className="w-28 shrink-0 text-[11px] font-black uppercase text-slate-500">{r}</span>
+            {MRC_GROUPS.filter((g) => g.region === r).map((g) => {
+              const on = visibles.includes(g.id) || conValor(g);
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => alternar(g.id)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold border cursor-pointer ${on ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-indigo-300"}`}
+                >
+                  {on ? "✓ " : "+ "}
+                  {g.label}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="rounded-xl border border-slate-200 bg-white px-3 py-1 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-500 text-xs uppercase">
@@ -738,7 +815,7 @@ export const MrcSection = ({ scales, set }) => {
             </tr>
           </thead>
           <tbody>
-            {MRC_GROUPS.map((g) => (
+            {lista.map((g) => (
               <tr key={g.id} className="border-t border-slate-100">
                 <td className="py-2 font-semibold text-slate-800">{g.label}</td>
                 {["izq", "der"].map((lado) => (
@@ -761,7 +838,8 @@ export const MrcSection = ({ scales, set }) => {
             ))}
           </tbody>
         </table>
-        <div className="h-[340px] bg-slate-50 rounded-xl border border-slate-200 p-3">
+        </div>
+        <div className="bg-slate-50 rounded-xl border border-slate-200 p-3" style={{ height: Math.max(260, data.length * 34 + 60) }}>
           {any ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} layout="vertical" margin={{ left: 10, right: 20, top: 10, bottom: 10 }}>
@@ -770,9 +848,9 @@ export const MrcSection = ({ scales, set }) => {
                 <YAxis type="category" dataKey="corto" width={160} tick={{ fontSize: 13, fill: "#334155" }} />
                 <Tooltip formatter={(v) => (v == null ? "–" : `${v}/5`)} />
                 <Legend wrapperStyle={{ fontSize: 13 }} />
-                <ReferenceLine x={5} stroke="#16a34a" strokeDasharray="4 4" />
-                <Bar dataKey="Izquierdo" fill="#6366f1" radius={[0, 6, 6, 0]} barSize={14} />
-                <Bar dataKey="Derecho" fill="#06b6d4" radius={[0, 6, 6, 0]} barSize={14} />
+                <ReferenceLine x={5} stroke="var(--color-green-600)" strokeDasharray="4 4" />
+                <Bar isAnimationActive={false} maxBarSize={56} dataKey="Izquierdo" fill="var(--color-indigo-500)" radius={[0, 6, 6, 0]} barSize={14} />
+                <Bar isAnimationActive={false} maxBarSize={56} dataKey="Derecho" fill="var(--color-cyan-500)" radius={[0, 6, 6, 0]} barSize={14} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -798,7 +876,15 @@ const TEST_ZONE_KEYWORDS = {
   lumbar: ["lumbar"],
   cadera: ["cadera"],
   rodilla: ["rodilla"],
-  tobillo_pie: ["tobillo", "pie"],
+  tobillo_pie: ["tobillo", "pie", "talón"],
+  dedos_mano: ["dedos de la mano", "mano"],
+  dedos_pie: ["dedos del pie", "hallux"],
+  talon: ["talón", "fascia", "tobillo"],
+  sacroiliaca: ["sacroilíaca", "lumbar"],
+  toracica: ["dorsal"],
+  muslo: ["cadera", "rodilla"],
+  pierna: ["tobillo", "rodilla"],
+  atm: ["cervical"],
 };
 
 export const SpecialTestsSection = ({ tests = [], onChange, zones = [] }) => {
@@ -810,6 +896,7 @@ export const SpecialTestsSection = ({ tests = [], onChange, zones = [] }) => {
   const indexed = tests.map((t, i) => ({ t, i }));
   const visible = showAll || keys.length === 0 ? indexed : indexed.filter(({ t }) => relevant(t) || t.custom);
   const positives = tests.filter((t) => t.result === "positivo").length;
+  const evaluadas = tests.filter((t) => t.result && t.result !== "no_evaluado").length;
 
   const setResult = (i, result) => onChange(tests.map((t, k) => (k === i ? { ...t, result } : t)));
   const remove = (i) => onChange(tests.filter((_, k) => k !== i));
@@ -828,7 +915,7 @@ export const SpecialTestsSection = ({ tests = [], onChange, zones = [] }) => {
       subtitle="Se muestran las pruebas de las zonas marcadas en el mapa corporal. Registre el resultado de las que realice."
       right={
         <span className={`text-sm font-bold px-3 py-1 rounded-full ${positives ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-600"}`}>
-          {positives} positiva(s)
+          {evaluadas} evaluada(s) · {positives} positiva(s)
         </span>
       }
     >
@@ -842,12 +929,14 @@ export const SpecialTestsSection = ({ tests = [], onChange, zones = [] }) => {
         {visible.map(({ t, i }) => (
           <div
             key={`${t.testName}-${i}`}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${
+            className={`flex flex-wrap items-center gap-2 px-3 py-2 rounded-xl border ${
               t.result === "positivo"
                 ? "border-rose-300 bg-rose-50"
                 : t.result === "dudoso"
                   ? "border-amber-300 bg-amber-50"
-                  : "border-slate-200 bg-white"
+                  : t.result === "negativo"
+                    ? "border-emerald-300 bg-emerald-50/60"
+                    : "border-slate-200 bg-white"
             }`}
           >
             <div className="flex-1 min-w-0">
@@ -856,22 +945,26 @@ export const SpecialTestsSection = ({ tests = [], onChange, zones = [] }) => {
             </div>
             <div className="flex gap-1 shrink-0">
               {[
-                ["negativo", "−", "bg-emerald-600"],
-                ["dudoso", "?", "bg-amber-500"],
-                ["positivo", "+", "bg-rose-600"],
-              ].map(([r, s, c]) => (
-                <button
-                  type="button"
-                  key={r}
-                  title={r}
-                  onClick={() => setResult(i, r)}
-                  className={`w-9 h-9 rounded-lg text-base font-black cursor-pointer border ${
-                    t.result === r ? `${c} text-white border-transparent` : "bg-white text-slate-500 border-slate-300"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+                ["no_evaluado", "No evaluado", "bg-slate-500"],
+                ["negativo", "Negativo", "bg-emerald-600"],
+                ["dudoso", "Dudoso", "bg-amber-500"],
+                ["positivo", "Positivo", "bg-rose-600"],
+              ].map(([r, l, c]) => {
+                const actual = t.result || "no_evaluado";
+                return (
+                  <button
+                    type="button"
+                    key={r}
+                    title={r === "negativo" ? "Normal: no reproduce síntomas" : r === "positivo" ? "Reproduce el síntoma / hallazgo" : r === "dudoso" ? "Respuesta poco clara" : "No se realizó"}
+                    onClick={() => setResult(i, r)}
+                    className={`px-2 h-8 rounded-lg text-[11px] font-black cursor-pointer border select-none ${
+                      actual === r ? `${c} text-white border-transparent` : "bg-white text-slate-500 border-slate-300 hover:border-slate-400"
+                    }`}
+                  >
+                    {l}
+                  </button>
+                );
+              })}
               {t.custom && (
                 <button type="button" onClick={() => remove(i)} className="p-2 text-slate-400 hover:text-rose-600 cursor-pointer">
                   <Trash2 className="w-4 h-4" />
@@ -1030,10 +1123,10 @@ export const OdiSection = ({ scales, set }) => {
             {odi && <span className="text-xs text-slate-400 mt-1">{odi.answered}/10 secciones</span>}
             <div className="w-full mt-6 space-y-1 text-left text-xs">
               {[
-                ["0–20 %", "Mínima", "#16a34a"],
-                ["21–40 %", "Moderada", "#ca8a04"],
-                ["41–60 %", "Severa", "#ea580c"],
-                ["61–80 %", "Invalidante", "#b91c1c"],
+                ["0–20 %", "Mínima", "var(--color-green-600)"],
+                ["21–40 %", "Moderada", "var(--color-yellow-600)"],
+                ["41–60 %", "Severa", "var(--color-orange-600)"],
+                ["61–80 %", "Invalidante", "var(--color-red-700)"],
                 ["81–100 %", "Postrado / magnificación", "#7f1d1d"],
               ].map(([r, l, c]) => (
                 <div key={r} className="flex items-center gap-2">

@@ -42,6 +42,7 @@ async function resumen(idturno) {
     ingresos: { efectivo: 0, tarjeta: 0, transferencia: 0, yape_plin: 0 },
     egresos: { efectivo: 0, tarjeta: 0, transferencia: 0, yape_plin: 0 },
     porCategoria: {},
+    conteo: {}, // cuántas operaciones por tipo:categoría (para el detalle del arqueo)
     operaciones: 0,
     ventas: 0,
     matriculas: 0,
@@ -51,6 +52,7 @@ async function resumen(idturno) {
     lado[f.metodo_pago] = r2(lado[f.metodo_pago] + Number(f.total));
     const clave = `${f.tipo}:${f.categoria}`;
     r.porCategoria[clave] = r2((r.porCategoria[clave] || 0) + Number(f.total));
+    r.conteo[clave] = (r.conteo[clave] || 0) + Number(f.n);
     r.operaciones += Number(f.n);
     if (f.categoria === "venta") r.ventas += Number(f.n);
     if (f.categoria === "matricula") r.matriculas += Number(f.n);

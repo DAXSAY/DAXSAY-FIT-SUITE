@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 
+import { SelectorObjetivos } from "../common/SelectorObjetivos";
 const OBJETIVOS = [
   ["hipertrofia", "Ganancia muscular / Hipertrofia"],
   ["perdida_peso", "Pérdida de grasa / peso"],
@@ -82,9 +83,9 @@ export const EditMemberScreen = ({ member, onVolver }) => {
                 {["Madre", "Padre", "Pareja", "Hermano(a)", "Hijo(a)", "Familiar", "Amigo(a)", "Otro"].map((p) => <option key={p}>{p}</option>)}
               </select>
             </label>
-            <label className="block"><span className="font-bold text-slate-700">Objetivo</span>
-              <select value={f.objective} onChange={set("objective")} className={campo}>{OBJETIVOS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
-            </label>
+            <div className="block sm:col-span-2"><span className="font-bold text-slate-700 block mb-1">Objetivos</span>
+              <SelectorObjetivos value={f.objective} onChange={(v) => setF((x) => ({ ...x, objective: v }))} />
+            </div>
             <label className="block"><span className="font-bold text-slate-700">Entrenador asignado</span>
               <select value={f.assignedTrainerId} onChange={set("assignedTrainerId")} className={campo}>
                 <option value="">Sin entrenador</option>

@@ -1,7 +1,9 @@
+import { williamsElegidos, textoRespuestaWilliams, textoToleranciaWilliams } from "./WilliamsVisuals";
 import React, { useState, useMemo } from "react";
 import { etiquetaPostura } from "./PosturaEvaluacion";
 import { FileText, Search, Copy, Check, Share2 } from "lucide-react";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 
 export const PhysioTextualRecordsView = ({
   records,
@@ -132,9 +134,9 @@ export const PhysioTextualRecordsView = ({
     out += `• Rango Articular (ROM): ${r.rangeOfMotion}\n`;
     if (williams && williams.enabled) {
       out += `• PROTOCOLO DE FLEXIÓN DE WILLIAMS (COLUMNA LUMBO-SACRA):\n`;
-      out += `  - Tolerancia Global: ${williams.overallTolerance.toUpperCase()}\n`;
-      williams.exercises.forEach((w) => {
-        out += `  [Ej #${w.number}] ${w.name}: ${w.executionStatus} | Dolor EVA: ${w.painEVA}/10 | ${w.clinicalComment}\n`;
+      out += `  - Tolerancia Global: ${textoToleranciaWilliams(williams.overallTolerance)}\n`;
+      williamsElegidos(williams).forEach((w) => {
+        out += `  [Ej #${w.number}] ${w.name}: ${textoRespuestaWilliams(w.executionStatus)} | Dolor EVA: ${w.painEVA}/10 | ${w.clinicalComment || ""}\n`;
       });
       if (williams.summaryNotes)
         out += `  - Conclusión Williams: ${williams.summaryNotes}\n`;
@@ -195,7 +197,7 @@ export const PhysioTextualRecordsView = ({
   return (
     <div className="space-y-4">
       {/* Top Controls & Search Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 rd-panel-oscuro">
         <div>
           <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase bg-cyan-400 text-slate-950 inline-block mb-1">
             Historial Clínico Integral
@@ -307,7 +309,7 @@ export const PhysioTextualRecordsView = ({
         {/* Right Column: Full Textual Record Inspector */}
         <div className="lg:col-span-8">
           {activeRecord ? (
-            <div className="bg-slate-950 rounded-3xl border border-slate-800 shadow-2xl p-5 sm:p-6 text-white space-y-4">
+            <div className="bg-slate-950 rounded-3xl border border-slate-800 shadow-2xl p-5 sm:p-6 text-white space-y-4 rd-panel-oscuro">
               {/* Action Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                 <div>

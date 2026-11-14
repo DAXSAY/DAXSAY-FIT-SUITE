@@ -7,24 +7,54 @@ import React from "react";
 const n = (v) => (v === null || v === undefined || v === "" || Number.isNaN(Number(v)) ? null : Number(v));
 const r1 = (v) => Math.round(v * 10) / 10;
 
-// Rangos de referencia (orientativos, adultos)
-export function rangos(sexo) {
+// Rangos de referencia por sexo y edad (adultos).
+//  - Grasa: Gallagher et al. 2000 (Am J Clin Nutr) / ACSM, por grupo de edad
+//  - Músculo esquelético %: tablas de bioimpedancia (Tanita/Omron) por edad
+//  - IMC: OMS · Grasa visceral: escala 1-59 de bioimpedancia (1-9 normal)
+//  - Agua: 50-65 % hombres, 45-60 % mujeres · Cintura: OMS/IDF · ICC: OMS 2008
+const grupoEdad = (edad) => (edad == null ? "20-39" : edad < 40 ? "20-39" : edad < 60 ? "40-59" : "60+");
+const GRASA = {
+  M: { "20-39": [8, 19, 25], "40-59": [11, 21, 28], "60+": [13, 24, 30] },
+  F: { "20-39": [21, 32, 39], "40-59": [23, 33, 40], "60+": [24, 35, 42] },
+};
+const MUSCULO = {
+  M: { "20-39": [33.3, 39.3, 44], "40-59": [33.1, 39.1, 43.8], "60+": [32.9, 38.9, 43.6] },
+  F: { "20-39": [24.3, 30.3, 35.3], "40-59": [24.1, 30.1, 35.1], "60+": [23.9, 29.9, 34.9] },
+};
+export function rangos(sexo, edad) {
   const m = sexo === "F";
+  const s = m ? "F" : "M";
+  const ge = grupoEdad(edad);
+  const [gMin, gMax, gAlto] = GRASA[s][ge];
+  const [mMin, mMax, mAlto] = MUSCULO[s][ge];
+  const quien = `${m ? "mujer" : "hombre"} ${ge === "60+" ? "de 60 años a más" : `de ${ge} años`}`;
   return {
-    imc: { min: 14, max: 40, tramos: [[18.5, "#38bdf8", "Bajo"], [25, "#22c55e", "Normal"], [30, "#f59e0b", "Sobrepeso"], [40, "#ef4444", "Obesidad"]] },
-    grasa: m
-      ? { min: 10, max: 50, tramos: [[21, "#38bdf8", "Bajo"], [33, "#22c55e", "Saludable"], [39, "#f59e0b", "Alto"], [50, "#ef4444", "Muy alto"]] }
-      : { min: 3, max: 40, tramos: [[8, "#38bdf8", "Bajo"], [20, "#22c55e", "Saludable"], [25, "#f59e0b", "Alto"], [40, "#ef4444", "Muy alto"]] },
-    musculo: m
-      ? { min: 15, max: 45, tramos: [[24, "#f59e0b", "Bajo"], [30, "#22c55e", "Normal"], [35, "#10b981", "Alto"], [45, "#0ea5e9", "Muy alto"]] }
-      : { min: 25, max: 55, tramos: [[33, "#f59e0b", "Bajo"], [39, "#22c55e", "Normal"], [44, "#10b981", "Alto"], [55, "#0ea5e9", "Muy alto"]] },
-    visceral: { min: 1, max: 30, tramos: [[9.5, "#22c55e", "Normal"], [14.5, "#f59e0b", "Alto"], [30, "#ef4444", "Muy alto"]] },
+    imc: { min: 14, max: 40, optimo: [18.5, 24.9], fuente: "OMS", tramos: [[18.5, "var(--color-sky-400)", "Bajo"], [25, "var(--color-green-500)", "Normal"], [30, "var(--color-amber-500)", "Sobrepeso"], [40, "var(--color-red-500)", "Obesidad"]] },
+    grasa: {
+      min: m ? 10 : 3,
+      max: m ? 50 : 40,
+      optimo: [gMin, gMax],
+      fuente: `Gallagher 2000 · ${quien}`,
+      tramos: [[gMin, "var(--color-sky-400)", "Bajo"], [gMax, "var(--color-green-500)", "Saludable"], [gAlto, "var(--color-amber-500)", "Alto"], [m ? 50 : 40, "var(--color-red-500)", "Muy alto"]],
+    },
+    musculo: {
+      min: m ? 15 : 25,
+      max: m ? 45 : 55,
+      optimo: [mMin, m ? 45 : 55],
+      fuente: `Bioimpedancia · ${quien}`,
+      tramos: [[mMin, "var(--color-amber-500)", "Bajo"], [mMax, "var(--color-green-500)", "Normal"], [mAlto, "var(--color-emerald-500)", "Alto"], [m ? 45 : 55, "var(--color-sky-500)", "Muy alto"]],
+    },
+    visceral: { min: 1, max: 30, optimo: [1, 9], fuente: "Escala de bioimpedancia", tramos: [[9.5, "var(--color-green-500)", "Normal"], [14.5, "var(--color-amber-500)", "Alto"], [30, "var(--color-red-500)", "Muy alto"]] },
     agua: m
-      ? { min: 35, max: 70, tramos: [[45, "#f59e0b", "Baja"], [60, "#22c55e", "Normal"], [70, "#0ea5e9", "Alta"]] }
-      : { min: 40, max: 75, tramos: [[50, "#f59e0b", "Baja"], [65, "#22c55e", "Normal"], [75, "#0ea5e9", "Alta"]] },
+      ? { min: 35, max: 70, optimo: [45, 60], fuente: "Referencia mujer adulta", tramos: [[45, "var(--color-amber-500)", "Baja"], [60, "var(--color-green-500)", "Normal"], [70, "var(--color-sky-500)", "Alta"]] }
+      : { min: 40, max: 75, optimo: [50, 65], fuente: "Referencia hombre adulto", tramos: [[50, "var(--color-amber-500)", "Baja"], [65, "var(--color-green-500)", "Normal"], [75, "var(--color-sky-500)", "Alta"]] },
     icc: m
-      ? { min: 0.6, max: 1.1, tramos: [[0.8, "#22c55e", "Bajo riesgo"], [0.85, "#f59e0b", "Moderado"], [1.1, "#ef4444", "Alto"]] }
-      : { min: 0.7, max: 1.2, tramos: [[0.95, "#22c55e", "Bajo riesgo"], [1.0, "#f59e0b", "Moderado"], [1.2, "#ef4444", "Alto"]] },
+      ? { min: 0.6, max: 1.1, optimo: [0.6, 0.8], fuente: "OMS 2008", tramos: [[0.8, "var(--color-green-500)", "Bajo riesgo"], [0.85, "var(--color-amber-500)", "Moderado"], [1.1, "var(--color-red-500)", "Alto"]] }
+      : { min: 0.7, max: 1.2, optimo: [0.7, 0.9], fuente: "OMS 2008", tramos: [[0.9, "var(--color-green-500)", "Bajo riesgo"], [1.0, "var(--color-amber-500)", "Moderado"], [1.2, "var(--color-red-500)", "Alto"]] },
+    cintura: m
+      ? { min: 55, max: 120, optimo: [55, 80], fuente: "OMS / IDF", tramos: [[80, "var(--color-green-500)", "Saludable"], [88, "var(--color-amber-500)", "Riesgo aumentado"], [120, "var(--color-red-500)", "Riesgo alto"]] }
+      : { min: 65, max: 130, optimo: [65, 94], fuente: "OMS / IDF", tramos: [[94, "var(--color-green-500)", "Saludable"], [102, "var(--color-amber-500)", "Riesgo aumentado"], [130, "var(--color-red-500)", "Riesgo alto"]] },
+    cinturaTalla: { min: 0.35, max: 0.75, optimo: [0.4, 0.49], fuente: "Ashwell 2012", tramos: [[0.4, "var(--color-sky-400)", "Bajo"], [0.5, "var(--color-green-500)", "Saludable"], [0.6, "var(--color-amber-500)", "Riesgo"], [0.75, "var(--color-red-500)", "Riesgo alto"]] },
   };
 }
 
@@ -32,7 +62,7 @@ const pct = (p, kg, peso) => n(p) ?? (n(kg) && n(peso) ? (kg / peso) * 100 : nul
 const tramoDe = (v, cfg) => cfg.tramos.find(([h]) => v <= h) || cfg.tramos[cfg.tramos.length - 1];
 
 /** Barra horizontal con zonas de color y un marcador en el valor */
-export function BarraRango({ titulo, icono, valor, unidad = "", cfg, previo, invertido = false, decimales = 1 }) {
+export function BarraRango({ titulo, icono, valor, unidad = "", cfg, previo, invertido = false, decimales = 1, compacto = false }) {
   const v = n(valor);
   const pos = (x) => Math.max(0, Math.min(100, ((x - cfg.min) / (cfg.max - cfg.min)) * 100));
   const t = v != null ? tramoDe(v, cfg) : null;
@@ -41,7 +71,7 @@ export function BarraRango({ titulo, icono, valor, unidad = "", cfg, previo, inv
   const bueno = cambio == null || cambio === 0 ? null : invertido ? cambio < 0 : cambio > 0;
   let ini = cfg.min;
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3">
+    <div className={`rounded-xl border border-slate-200 bg-white ${compacto ? "p-2" : "p-3"}`}>
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
           {icono && <span className="text-base">{icono}</span>} {titulo}
@@ -53,7 +83,7 @@ export function BarraRango({ titulo, icono, valor, unidad = "", cfg, previo, inv
         )}
       </div>
       <div className="flex items-baseline gap-2 mt-0.5">
-        <span className="text-2xl font-black text-slate-900">{v != null ? (decimales === 0 ? Math.round(v) : r1(v)) : "—"}</span>
+        <span className={`${compacto ? "text-lg" : "text-2xl"} font-black text-slate-900`}>{v != null ? (decimales === 0 ? Math.round(v) : decimales === 2 ? Math.round(v * 100) / 100 : r1(v)) : "—"}</span>
         <span className="text-sm text-slate-500">{unidad}</span>
         {cambio != null && cambio !== 0 && (
           <span className={`text-xs font-bold ${bueno ? "text-emerald-600" : "text-rose-600"}`}>
@@ -81,6 +111,13 @@ export function BarraRango({ titulo, icono, valor, unidad = "", cfg, previo, inv
           <span key={k}>{l}</span>
         ))}
       </div>
+      {cfg.optimo && v != null && (
+        <p className={`mt-1.5 text-[11px] font-bold ${v >= cfg.optimo[0] && v <= cfg.optimo[1] ? "text-emerald-700" : "text-rose-600"}`} title={cfg.fuente}>
+          {v >= cfg.optimo[0] && v <= cfg.optimo[1] ? "✓ En rango óptimo" : "⚠ Fuera del rango óptimo"} · óptimo {cfg.optimo[0]}–{cfg.optimo[1]}
+          {unidad && unidad !== "nivel" ? ` ${unidad}` : ""}
+          {cfg.fuente && <span className="block font-normal text-slate-400">{cfg.fuente}</span>}
+        </p>
+      )}
     </div>
   );
 }
@@ -94,10 +131,10 @@ export function DonaComposicion({ peso, grasaKg, musculoKg, huesoKg }) {
   const h = n(huesoKg) || 0;
   const resto = Math.max(0, P - g - mu - h);
   const partes = [
-    ["Grasa", g, "#f59e0b"],
-    ["Músculo", mu, "#10b981"],
+    ["Grasa", g, "var(--color-amber-500)"],
+    ["Músculo", mu, "var(--color-emerald-500)"],
     ["Hueso", h, "#94a3b8"],
-    ["Agua y órganos", resto, "#38bdf8"],
+    ["Agua y órganos", resto, "var(--color-sky-400)"],
   ].filter(([, v]) => v > 0);
   const R = 52;
   const C = 2 * Math.PI * R;
@@ -145,7 +182,7 @@ export function PanelComposicion({ a, previo, sexo, edad }) {
   if (!a) return null;
   const b = a.bioimpedance || {};
   const bp = previo?.bioimpedance || {};
-  const R = rangos(sexo);
+  const R = rangos(sexo, edad);
   const icc = n(a.waistHipRatio) ?? (n(a.perimeters?.waist) && n(a.perimeters?.hip) ? a.perimeters.waist / a.perimeters.hip : null);
   const iccPrev = n(previo?.waistHipRatio);
   const imc = n(a.bmi) ?? (n(a.weightKg) && n(a.heightCm) ? a.weightKg / (a.heightCm / 100) ** 2 : null);
@@ -188,8 +225,9 @@ export function PanelComposicion({ a, previo, sexo, edad }) {
         <BarraRango titulo="Grasa visceral" icono="🫀" valor={b.visceralFatLevel} unidad="nivel" cfg={R.visceral} previo={bp.visceralFatLevel} invertido decimales={0} />
         <BarraRango titulo="Agua corporal" icono="💧" valor={b.totalBodyWaterPercentage} unidad="%" cfg={R.agua} previo={bp.totalBodyWaterPercentage} />
         {icc != null && <BarraRango titulo="Cintura / cadera" icono="📏" valor={icc} cfg={R.icc} previo={iccPrev} invertido decimales={2} />}
+        {n(a.perimeters?.waist) != null && <BarraRango titulo="Perímetro de cintura" icono="📐" valor={a.perimeters.waist} unidad="cm" cfg={R.cintura} previo={previo?.perimeters?.waist} invertido />}
       </div>
-      <p className="text-[11px] text-slate-400">Rangos orientativos para adultos. La línea gris marca la evaluación anterior.</p>
+      <p className="text-[11px] text-slate-400">Rangos de referencia por sexo y edad{edad ? ` (${edad} años)` : ""}. La línea gris marca la evaluación anterior.</p>
     </div>
   );
 }
@@ -233,13 +271,13 @@ export function SiluetaMedidas({ p = {}, previo = {}, sexo }) {
           const xl = lado === "izq" ? 130 : 270;
           return (
             <g key={k} opacity={v != null ? 1 : 0.35}>
-              <line x1={x0} y1={y} x2={x1} y2={y} stroke="#0c8794" strokeWidth="2" strokeDasharray="4 3" />
+              <line x1={x0} y1={y} x2={x1} y2={y} stroke="var(--color-blue-600)" strokeWidth="2" strokeDasharray="4 3" />
               <line x1={lado === "izq" ? x0 : x1} y1={y} x2={xl} y2={y} stroke="#cbd5e1" strokeWidth="1" />
               <rect x={xt} y={y - 14} width="118" height="28" rx="8" fill={v != null ? "#ebfcfc" : "#f8fafc"} stroke={v != null ? "#a0ecef" : "#e2e8f0"} />
               <text x={xt + 8} y={y - 2} fontSize="9" fill="#64748b" fontWeight="600">{l}</text>
               <text x={xt + 8} y={y + 10} fontSize="12" fill="#0f172a" fontWeight="800">{v != null ? `${v} cm` : "—"}</text>
               {c != null && c !== 0 && (
-                <text x={xt + 110} y={y + 10} fontSize="10" textAnchor="end" fontWeight="800" fill={bueno ? "#059669" : "#e11d48"}>
+                <text x={xt + 110} y={y + 10} fontSize="10" textAnchor="end" fontWeight="800" fill={bueno ? "var(--color-emerald-600)" : "var(--color-rose-600)"}>
                   {c > 0 ? "▲" : "▼"}{Math.abs(c)}
                 </text>
               )}
@@ -248,6 +286,60 @@ export function SiluetaMedidas({ p = {}, previo = {}, sexo }) {
         })}
       </svg>
       <p className="text-[11px] text-slate-400 text-center">▲▼ cambio respecto a la evaluación anterior (verde = mejora)</p>
+    </div>
+  );
+}
+
+// Dónde se mide cada perímetro (y cómo)
+export const COMO_MEDIR = {
+  neck: ["Cuello", 62, 200, 14, "Por debajo de la nuez (cartílago tiroides), cinta perpendicular al eje del cuello."],
+  shoulders: ["Hombros", 82, 200, 52, "Por la parte más ancha de los deltoides, brazos relajados al costado."],
+  chest: ["Pecho / tórax", 108, 200, 42, "A la altura de los pezones (mesoesternal), al final de una espiración normal."],
+  waist: ["Cintura mínima", 150, 200, 30, "En el punto más estrecho entre la última costilla y la cresta ilíaca."],
+  abdomen: ["Abdomen", 168, 200, 34, "A la altura del ombligo, abdomen relajado, sin meter la barriga."],
+  hip: ["Cadera / glúteos", 192, 200, 40, "En la máxima protuberancia de los glúteos, pies juntos."],
+  bicepsRel: ["Brazo relajado", 125, 262, 9, "Punto medio entre acromion y olécranon, brazo colgando relajado."],
+  bicepsFlex: ["Brazo contraído", 120, 262, 11, "En el pico del bíceps con el codo a 90° y el puño cerrado, contraído al máximo."],
+  forearm: ["Antebrazo", 160, 268, 8, "En la parte más ancha del antebrazo, mano relajada y palma hacia arriba."],
+  thighSup: ["Muslo superior", 222, 222, 18, "1 cm por debajo del pliegue glúteo, peso repartido en ambas piernas."],
+  thighMid: ["Muslo medio", 250, 222, 16, "Punto medio entre el pliegue inguinal y el borde superior de la rótula."],
+  calf: ["Pantorrilla", 300, 220, 11, "En la parte más ancha de la pantorrilla, de pie con el peso repartido."],
+};
+
+/** Figura que resalta dónde se mide el perímetro que se está escribiendo */
+export function GuiaPerimetros({ activo, sexo, valores = {} }) {
+  const m = sexo === "F";
+  const a = COMO_MEDIR[activo];
+  return (
+    <div className="rounded-2xl border border-cyan-200 bg-gradient-to-b from-cyan-50 to-white p-3 flex flex-col items-center gap-2">
+      <svg viewBox="100 0 200 360" className="w-full max-w-[220px]">
+        <g fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1.2">
+          <circle cx="200" cy="36" r="22" />
+          <rect x="190" y="56" width="20" height="14" rx="4" />
+          <path d={m ? "M152 78 Q200 70 248 78 L240 140 Q232 152 228 160 Q246 182 244 205 L156 205 Q154 182 172 160 Q168 152 160 140 Z" : "M148 78 Q200 70 252 78 L242 150 Q236 165 234 175 L238 205 L162 205 L166 175 Q164 165 158 150 Z"} />
+          <path d="M148 82 L132 150 L140 152 L158 92 Z" />
+          <path d="M252 82 L268 150 L260 152 L242 92 Z" />
+          <path d="M162 205 L170 340 L194 340 L198 215 L202 215 L206 340 L230 340 L238 205 Z" />
+        </g>
+        {Object.entries(COMO_MEDIR).map(([k, [, y, x, w]]) => {
+          const on = k === activo;
+          const tiene = n(valores[k]) != null;
+          return (
+            <g key={k}>
+              <ellipse cx={x} cy={y} rx={w} ry={on ? 5 : 3.5} fill="none" stroke={on ? "var(--color-rose-500)" : tiene ? "var(--color-blue-600)" : "#cbd5e1"} strokeWidth={on ? 3 : 1.6} strokeDasharray={on ? "" : "4 3"} />
+              {on && <circle cx={x + w} cy={y} r="4" fill="var(--color-rose-500)" />}
+            </g>
+          );
+        })}
+      </svg>
+      {a ? (
+        <div className="text-center">
+          <p className="text-sm font-black text-rose-600">📏 {a[0]}</p>
+          <p className="text-xs text-slate-600 leading-snug">{a[4]}</p>
+        </div>
+      ) : (
+        <p className="text-xs text-slate-500 text-center">Toca una medida para ver dónde se toma. Las ya registradas se marcan en verde.</p>
+      )}
     </div>
   );
 }

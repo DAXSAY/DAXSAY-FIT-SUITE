@@ -25,8 +25,11 @@ import indicaciones from "./rutas/indicaciones.js";
 import mensajes from "./rutas/mensajes.js";
 import archivos, { CARPETA_UPLOADS } from "./rutas/archivos.js";
 import prospectos from "./rutas/prospectos.js";
+import progreso from "./rutas/progreso.js";
+import avisos from "./rutas/avisos.js";
 import { verificarSincronizacion, sincronizarPendientes } from "./sincronizacion.js";
 import { aplicarActualizaciones } from "./actualizaciones.js";
+import { programarRespaldos, estadoRespaldos, hacerRespaldo } from "./respaldo.js";
 
 for (const clave of ["DB_USER", "DB_PASSWORD", "JWT_SECRET"]) {
   if (!process.env[clave]) {
@@ -47,7 +50,8 @@ if (String(process.env.JWT_SECRET).length < 32) {
 const app = express();
 app.disable("x-powered-by");
 // Detrás de Nginx, Apache o el proxy del hosting: así req.ip es la IP real del visitante
-if (process.env.TRUST_PROXY) app.set("trust proxy", Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
+// Detrás del proxy de Vite (mismo equipo) se confía solo en 127.0.0.1 para leer la IP real
+app.set("trust proxy", process.env.TRUST_PROXY ? Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY : "loopback");
 
 // Cabeceras de seguridad básicas
 app.use((req, res, next) => {
@@ -81,6 +85,16 @@ app.use("/api/planes", requiereSesion, planes);
 app.use("/api/entrenadores", requiereSesion, entrenadores);
 app.use("/api/caja", requiereSesion, caja);
 app.use("/api/registros", requiereSesion, registros);
+// Copias de seguridad (solo administración): ver estado y hacer una ahora
+const soloAdmin = (req, res, next) => (req.usuario?.rol === "admin" ? next() : next(new ErrorHttp(403, "Solo administración")));
+app.get("/api/respaldos", requiereSesion, soloAdmin, (req, res) => res.json(estadoRespaldos()));
+app.post("/api/respaldos", requiereSesion, soloAdmin, async (req, res, next) => {
+  try {
+    res.json({ ok: true, archivo: await hacerRespaldo("manual"), ...estadoRespaldos() });
+  } catch (e) {
+    next(e);
+  }
+});
 app.use("/api/personal", requiereSesion, personal);
 app.use("/api/turnos-caja", requiereSesion, turnosCaja);
 app.use("/api/usuarios", requiereSesion, usuarios);
@@ -94,6 +108,8 @@ app.use("/api/indicaciones", requiereSesion, indicaciones);
 app.use("/api/mensajes", requiereSesion, mensajes);
 app.use("/api/archivos", requiereSesion, archivos);
 app.use("/api/prospectos", requiereSesion, prospectos);
+app.use("/api/progreso", requiereSesion, progreso);
+app.use("/api/avisos", requiereSesion, avisos);
 
 // Imágenes subidas (públicas por enlace, nombres imposibles de adivinar)
 app.use("/uploads", express.static(CARPETA_UPLOADS, { maxAge: "30d" }));
@@ -146,6 +162,7 @@ const servidor = app.listen(puerto, host, async () => {
   try {
     await pool.query("SELECT 1");
     console.log(`Conectada a MySQL: ${process.env.DB_NAME || "gestion_radicalgym"}`);
+    programarRespaldos();
     // Actualizaciones de la base que falten (scripts 22 y 23: pases libres del CRM)
     try {
       const hechos = await aplicarActualizaciones();

@@ -10,11 +10,9 @@ import {
   Calendar,
   Clock,
   CheckCircle2,
-  AlertTriangle,
   XCircle,
   Plus,
   Search,
-  Sliders,
   Check,
   RefreshCw,
   MessageCircle,
@@ -22,7 +20,8 @@ import {
 import { useGym } from "../../context/GymContext";
 import { TelWhatsApp } from "../common/TelWhatsApp";
 import { userCan } from "../../config/roles";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 import { PanelAlertasAdmin } from "../alerts/AlertasAdmin";
 import { MensajesCategorias } from "./MensajesCategorias";
@@ -349,19 +348,18 @@ export const NotificationCenter = () => {
   return (
     <div className="space-y-4">
       {/* Top Banner / System Summary */}
-      <div className="rd-portada p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="rd-portada rd-cabecera flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-blue-600 text-xs font-bold uppercase tracking-wider mb-0.5">
             <BellRing className="w-3.5 h-3.5" />
-            <span>Sistema Multicanal de Notificaciones & Automatizaciones</span>
+            <span>Mensajes y alertas</span>
           </div>
           <h1 className="text-base sm:text-lg font-bold text-slate-900">
-            Centro de Notificaciones, Alertas de Renovación y Avisos de Clases
+            Notificaciones
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Configuración por el administrador para recordatorios automáticos de
-            vencimiento, avisos de clases grupales y promociones especiales con
-            envío por Push, Email y WhatsApp.
+            Ordenado por importancia: primero vencidos, deudas y por vencer; luego seguimiento y fidelización.
+            Elige la categoría, el mensaje y envíalo por WhatsApp.
           </p>
         </div>
 
@@ -372,7 +370,7 @@ export const NotificationCenter = () => {
             title="Activar permisos de notificaciones push en el navegador"
           >
             <Smartphone className="w-3.5 h-3.5 text-purple-600" />
-            <span>Probar Push Web</span>
+            <span>Probar avisos del navegador</span>
           </button>
 
           <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold rounded-md">
@@ -439,30 +437,6 @@ export const NotificationCenter = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab("rules")}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
-            activeTab === "rules"
-              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md [&_svg]:text-white"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <Sliders className="w-3.5 h-3.5 text-blue-600" />
-          <span>Reglas Automáticas (Admin)</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("alerts")}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
-            activeTab === "alerts"
-              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md [&_svg]:text-white"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-          <span>Vencimientos Activos ({renewalAlerts.length})</span>
-        </button>
-
-        <button
           onClick={() => setActiveTab("classes")}
           className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === "classes"
@@ -471,7 +445,7 @@ export const NotificationCenter = () => {
           }`}
         >
           <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Avisos de Clases ({classes.length})</span>
+          <span>Avisos de clases ({classes.length})</span>
         </button>
 
         <button
@@ -483,7 +457,7 @@ export const NotificationCenter = () => {
           }`}
         >
           <Send className="w-3.5 h-3.5 text-purple-600" />
-          <span>Promociones Especiales</span>
+          <span>Promociones</span>
         </button>
 
         <button
@@ -495,7 +469,7 @@ export const NotificationCenter = () => {
           }`}
         >
           <Clock className="w-3.5 h-3.5 text-slate-600" />
-          <span>Historial de Envíos ({notificationLogs.length})</span>
+          <span>Historial de envíos ({notificationLogs.length})</span>
         </button>
       </div>
 

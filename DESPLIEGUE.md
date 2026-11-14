@@ -3,7 +3,7 @@
 El sistema es **una sola aplicación Node.js** (API + web) y **una base MySQL**.
 En producción, la API sirve también la web compilada (`dist/`), así que los
 alumnos y el personal entran por una sola dirección, por ejemplo
-`https://radicalgym.daxsay.app` (sistema DAXSAY Gym OS).
+`https://radicalgym.daxsay.app` (sistema DAXSAY Fit Suite).
 
 ## Qué hosting comprar
 

@@ -157,8 +157,8 @@ export const POSTURE_PRESETS = [
 ];
 
 export const PostureSilhouetteSVG = ({ type, active }) => {
-  const strokeColor = active ? "#38bdf8" : "#64748b";
-  const plumbLineColor = "#ef4444";
+  const strokeColor = active ? "var(--color-sky-400)" : "#64748b";
+  const plumbLineColor = "var(--color-red-500)";
 
   switch (type) {
     case "neutral":
@@ -185,7 +185,7 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             r="10"
             stroke={strokeColor}
             strokeWidth="2.5"
-            fill={active ? "#0284c7" : "#1e293b"}
+            fill={active ? "var(--color-sky-600)" : "#1e293b"}
             fillOpacity="0.4"
           />
           <path d="M49 32 L49 42" stroke={strokeColor} strokeWidth="2.5" />
@@ -221,10 +221,10 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             strokeWidth="2.5"
             strokeLinecap="round"
           />
-          <circle cx="50" cy="22" r="2" fill="#22c55e" />
-          <circle cx="50" cy="45" r="2" fill="#22c55e" />
-          <circle cx="50" cy="110" r="2" fill="#22c55e" />
-          <circle cx="50" cy="150" r="2" fill="#22c55e" />
+          <circle cx="50" cy="22" r="2" fill="var(--color-green-500)" />
+          <circle cx="50" cy="45" r="2" fill="var(--color-green-500)" />
+          <circle cx="50" cy="110" r="2" fill="var(--color-green-500)" />
+          <circle cx="50" cy="150" r="2" fill="var(--color-green-500)" />
         </svg>
       );
 
@@ -252,12 +252,12 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             r="10"
             stroke={strokeColor}
             strokeWidth="2.5"
-            fill={active ? "#f59e0b" : "#1e293b"}
+            fill={active ? "var(--color-amber-500)" : "#1e293b"}
             fillOpacity="0.4"
           />
           <path
             d="M58 29 L46 44"
-            stroke="#f43f5e"
+            stroke="var(--color-rose-500)"
             strokeWidth="3"
             strokeLinecap="round"
           />
@@ -310,12 +310,12 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             r="10"
             stroke={strokeColor}
             strokeWidth="2.5"
-            fill={active ? "#ef4444" : "#1e293b"}
+            fill={active ? "var(--color-red-500)" : "#1e293b"}
             fillOpacity="0.4"
           />
           <path
             d="M52 32 C38 48, 26 62, 38 82 C44 95, 46 102, 46 112"
-            stroke="#ef4444"
+            stroke="var(--color-red-500)"
             strokeWidth="3.5"
             strokeLinecap="round"
           />
@@ -335,7 +335,7 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             stroke={strokeColor}
             strokeWidth="2.5"
           />
-          <circle cx="31" cy="62" r="3" fill="#ef4444" />
+          <circle cx="31" cy="62" r="3" fill="var(--color-red-500)" />
         </svg>
       );
 
@@ -363,12 +363,12 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             r="10"
             stroke={strokeColor}
             strokeWidth="2.5"
-            fill={active ? "#f59e0b" : "#1e293b"}
+            fill={active ? "var(--color-amber-500)" : "#1e293b"}
             fillOpacity="0.4"
           />
           <path
             d="M48 30 C44 48, 48 65, 46 78 C44 88, 65 96, 52 112"
-            stroke="#f59e0b"
+            stroke="var(--color-amber-500)"
             strokeWidth="3.5"
             strokeLinecap="round"
           />
@@ -378,7 +378,7 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             rx="10"
             ry="6"
             transform="rotate(25 50 112)"
-            stroke="#f59e0b"
+            stroke="var(--color-amber-500)"
             strokeWidth="2"
           />
           <line
@@ -424,12 +424,12 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             r="10"
             stroke={strokeColor}
             strokeWidth="2.5"
-            fill={active ? "#a855f7" : "#1e293b"}
+            fill={active ? "var(--color-purple-500)" : "#1e293b"}
             fillOpacity="0.4"
           />
           <path
             d="M50 30 C62 48, 64 64, 50 78 C36 92, 38 104, 50 114"
-            stroke="#a855f7"
+            stroke="var(--color-purple-500)"
             strokeWidth="3.5"
             strokeLinecap="round"
           />
@@ -438,7 +438,7 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             y1="46"
             x2="72"
             y2="40"
-            stroke="#f43f5e"
+            stroke="var(--color-rose-500)"
             strokeWidth="2"
             strokeLinecap="round"
           />
@@ -447,7 +447,7 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             y1="112"
             x2="70"
             y2="116"
-            stroke="#f43f5e"
+            stroke="var(--color-rose-500)"
             strokeWidth="2"
             strokeLinecap="round"
           />
@@ -495,7 +495,7 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             r="10"
             stroke={strokeColor}
             strokeWidth="2.5"
-            fill={active ? "#6366f1" : "#1e293b"}
+            fill={active ? "var(--color-indigo-500)" : "#1e293b"}
             fillOpacity="0.4"
           />
           <path
@@ -507,14 +507,14 @@ export const PostureSilhouetteSVG = ({ type, active }) => {
             cx="60"
             cy="52"
             r="6"
-            stroke="#6366f1"
+            stroke="var(--color-indigo-500)"
             strokeWidth="2.5"
-            fill="#6366f1"
+            fill="var(--color-indigo-500)"
             fillOpacity="0.3"
           />
           <path
             d="M60 58 Q66 85 58 110"
-            stroke="#6366f1"
+            stroke="var(--color-indigo-500)"
             strokeWidth="2.5"
             strokeLinecap="round"
           />
@@ -625,16 +625,16 @@ export const LateralSilhouetteAnatomySVG = ({
         y1="8"
         x2="49"
         y2="210"
-        stroke="#ef4444"
+        stroke="var(--color-red-500)"
         strokeWidth="1.5"
         strokeDasharray="4 3"
         opacity="0.85"
       />
-      <circle cx="49" cy="8" r="3" fill="#ef4444" />
+      <circle cx="49" cy="8" r="3" fill="var(--color-red-500)" />
       <text
         x="54"
         y="14"
-        fill="#ef4444"
+        fill="var(--color-red-500)"
         fontSize="7"
         fontWeight="bold"
         fontFamily="monospace"
@@ -648,9 +648,9 @@ export const LateralSilhouetteAnatomySVG = ({
         cx={headX}
         cy="30"
         r="13"
-        stroke="#38bdf8"
+        stroke="var(--color-sky-400)"
         strokeWidth="2.5"
-        fill="#0284c7"
+        fill="var(--color-sky-600)"
         fillOpacity="0.25"
       />
       {/* Ear tragus marker */}
@@ -658,11 +658,11 @@ export const LateralSilhouetteAnatomySVG = ({
         cx={earX}
         cy="30"
         r="2.5"
-        fill="#facc15"
+        fill="var(--color-yellow-400)"
         stroke="#000"
         strokeWidth="0.8"
       />
-      <text x={earX + 5} y="32" fill="#facc15" fontSize="6" fontWeight="bold">
+      <text x={earX + 5} y="32" fill="var(--color-yellow-400)" fontSize="6" fontWeight="bold">
         Oreja
       </text>
 
@@ -670,21 +670,21 @@ export const LateralSilhouetteAnatomySVG = ({
       {isHeadForward ? (
         <path
           d={`M${earX - 3} 38 C${shoulderX + 4} 45, ${shoulderX + 6} 55, ${shoulderX} 62`}
-          stroke="#f43f5e"
+          stroke="var(--color-rose-500)"
           strokeWidth="3.5"
           strokeLinecap="round"
         />
       ) : isCervicalHypo ? (
         <path
           d={`M${earX} 40 L${shoulderX} 62`}
-          stroke="#38bdf8"
+          stroke="var(--color-sky-400)"
           strokeWidth="3"
           strokeLinecap="round"
         />
       ) : (
         <path
           d={`M${earX} 40 C${shoulderX + 2} 48, ${shoulderX + 2} 56, ${shoulderX} 62`}
-          stroke="#38bdf8"
+          stroke="var(--color-sky-400)"
           strokeWidth="3"
           strokeLinecap="round"
         />
@@ -694,14 +694,14 @@ export const LateralSilhouetteAnatomySVG = ({
       {isCifosis ? (
         <path
           d={`M${shoulderX} 62 C34 78, 32 98, ${shoulderX} 118`}
-          stroke="#f43f5e"
+          stroke="var(--color-rose-500)"
           strokeWidth="4"
           strokeLinecap="round"
         />
       ) : (
         <path
           d={`M${shoulderX} 62 C43 78, 43 98, ${shoulderX} 118`}
-          stroke="#38bdf8"
+          stroke="var(--color-sky-400)"
           strokeWidth="3.2"
           strokeLinecap="round"
         />
@@ -711,14 +711,14 @@ export const LateralSilhouetteAnatomySVG = ({
         cx={shoulderX}
         cy="62"
         r="2.5"
-        fill="#22c55e"
+        fill="var(--color-green-500)"
         stroke="#000"
         strokeWidth="0.8"
       />
       <text
         x={shoulderX + 5}
         y="64"
-        fill="#22c55e"
+        fill="var(--color-green-500)"
         fontSize="6"
         fontWeight="bold"
       >
@@ -729,14 +729,14 @@ export const LateralSilhouetteAnatomySVG = ({
       {isLordosis ? (
         <path
           d={`M${shoulderX} 118 C64 128, 64 140, ${hipX} 150`}
-          stroke="#f59e0b"
+          stroke="var(--color-amber-500)"
           strokeWidth="4"
           strokeLinecap="round"
         />
       ) : (
         <path
           d={`M${shoulderX} 118 C54 128, 54 140, ${hipX} 150`}
-          stroke="#38bdf8"
+          stroke="var(--color-sky-400)"
           strokeWidth="3.2"
           strokeLinecap="round"
         />
@@ -751,9 +751,9 @@ export const LateralSilhouetteAnatomySVG = ({
         transform={
           isAnteversion ? `rotate(22 ${hipX} 150)` : `rotate(5 ${hipX} 150)`
         }
-        stroke={isAnteversion ? "#f59e0b" : "#38bdf8"}
+        stroke={isAnteversion ? "var(--color-amber-500)" : "var(--color-sky-400)"}
         strokeWidth="2.2"
-        fill={isAnteversion ? "#f59e0b" : "#38bdf8"}
+        fill={isAnteversion ? "var(--color-amber-500)" : "var(--color-sky-400)"}
         fillOpacity="0.2"
       />
 
@@ -761,11 +761,11 @@ export const LateralSilhouetteAnatomySVG = ({
         cx={hipX}
         cy="150"
         r="2.5"
-        fill="#facc15"
+        fill="var(--color-yellow-400)"
         stroke="#000"
         strokeWidth="0.8"
       />
-      <text x={hipX + 8} y="152" fill="#facc15" fontSize="6" fontWeight="bold">
+      <text x={hipX + 8} y="152" fill="var(--color-yellow-400)" fontSize="6" fontWeight="bold">
         Trocánter
       </text>
 
@@ -775,7 +775,7 @@ export const LateralSilhouetteAnatomySVG = ({
         y1="154"
         x2={kneeX}
         y2="182"
-        stroke="#38bdf8"
+        stroke="var(--color-sky-400)"
         strokeWidth="3.5"
         strokeLinecap="round"
       />
@@ -784,14 +784,14 @@ export const LateralSilhouetteAnatomySVG = ({
         cx={kneeX}
         cy="182"
         r="3"
-        fill={isRecurvatum || isFlexo ? "#f43f5e" : "#22c55e"}
+        fill={isRecurvatum || isFlexo ? "var(--color-rose-500)" : "var(--color-green-500)"}
         stroke="#000"
         strokeWidth="0.8"
       />
       <text
         x={kneeX + 6}
         y="184"
-        fill={isRecurvatum || isFlexo ? "#f43f5e" : "#22c55e"}
+        fill={isRecurvatum || isFlexo ? "var(--color-rose-500)" : "var(--color-green-500)"}
         fontSize="6"
         fontWeight="bold"
       >
@@ -804,7 +804,7 @@ export const LateralSilhouetteAnatomySVG = ({
         y1="184"
         x2={ankleX}
         y2="205"
-        stroke="#38bdf8"
+        stroke="var(--color-sky-400)"
         strokeWidth="3.2"
         strokeLinecap="round"
       />
@@ -813,14 +813,14 @@ export const LateralSilhouetteAnatomySVG = ({
         cx={ankleX}
         cy="205"
         r="2.5"
-        fill="#22c55e"
+        fill="var(--color-green-500)"
         stroke="#000"
         strokeWidth="0.8"
       />
       <text
         x={ankleX + 5}
         y="207"
-        fill="#22c55e"
+        fill="var(--color-green-500)"
         fontSize="6"
         fontWeight="bold"
       >
@@ -842,7 +842,7 @@ export const LateralSilhouetteAnatomySVG = ({
             width="40"
             height="13"
             rx="3"
-            fill="#ef4444"
+            fill="var(--color-red-500)"
             fillOpacity="0.9"
           />
           <text x="79" y="33" fill="#fff" fontSize="6" fontWeight="bold">
@@ -858,7 +858,7 @@ export const LateralSilhouetteAnatomySVG = ({
             width="34"
             height="13"
             rx="3"
-            fill="#ef4444"
+            fill="var(--color-red-500)"
             fillOpacity="0.9"
           />
           <text x="8" y="84" fill="#fff" fontSize="6" fontWeight="bold">
@@ -874,7 +874,7 @@ export const LateralSilhouetteAnatomySVG = ({
             width="40"
             height="13"
             rx="3"
-            fill="#f59e0b"
+            fill="var(--color-amber-500)"
             fillOpacity="0.9"
           />
           <text x="79" y="134" fill="#fff" fontSize="6" fontWeight="bold">
@@ -922,12 +922,12 @@ export const KneesAnklesVisualSVG = ({
         y1="20"
         x2="82"
         y2="20"
-        stroke="#38bdf8"
+        stroke="var(--color-sky-400)"
         strokeWidth="4"
         strokeLinecap="round"
       />
-      <circle cx="38" cy="20" r="3" fill="#38bdf8" />
-      <circle cx="82" cy="20" r="3" fill="#38bdf8" />
+      <circle cx="38" cy="20" r="3" fill="var(--color-sky-400)" />
+      <circle cx="82" cy="20" r="3" fill="var(--color-sky-400)" />
       <text x="44" y="14" fill="#94a3b8" fontSize="7" fontWeight="bold">
         EIPS / Pelvis
       </text>
@@ -938,7 +938,7 @@ export const KneesAnklesVisualSVG = ({
         y1="20"
         x2={leftKneeX}
         y2="78"
-        stroke="#38bdf8"
+        stroke="var(--color-sky-400)"
         strokeWidth="4"
         strokeLinecap="round"
       />
@@ -947,7 +947,7 @@ export const KneesAnklesVisualSVG = ({
         y1="20"
         x2={rightKneeX}
         y2="78"
-        stroke="#38bdf8"
+        stroke="var(--color-sky-400)"
         strokeWidth="4"
         strokeLinecap="round"
       />
@@ -957,18 +957,18 @@ export const KneesAnklesVisualSVG = ({
         cx={leftKneeX}
         cy="78"
         r="6"
-        stroke="#f59e0b"
+        stroke="var(--color-amber-500)"
         strokeWidth="2"
-        fill="#f59e0b"
+        fill="var(--color-amber-500)"
         fillOpacity="0.3"
       />
       <circle
         cx={rightKneeX}
         cy="78"
         r="6"
-        stroke="#f59e0b"
+        stroke="var(--color-amber-500)"
         strokeWidth="2"
-        fill="#f59e0b"
+        fill="var(--color-amber-500)"
         fillOpacity="0.3"
       />
 
@@ -978,7 +978,7 @@ export const KneesAnklesVisualSVG = ({
         y1="20"
         x2="38"
         y2="160"
-        stroke="#ef4444"
+        stroke="var(--color-red-500)"
         strokeWidth="1"
         strokeDasharray="3 3"
         opacity="0.4"
@@ -988,7 +988,7 @@ export const KneesAnklesVisualSVG = ({
         y1="20"
         x2="82"
         y2="160"
-        stroke="#ef4444"
+        stroke="var(--color-red-500)"
         strokeWidth="1"
         strokeDasharray="3 3"
         opacity="0.4"
@@ -1000,7 +1000,7 @@ export const KneesAnklesVisualSVG = ({
         y1="84"
         x2={leftFootX}
         y2="148"
-        stroke="#38bdf8"
+        stroke="var(--color-sky-400)"
         strokeWidth="3.5"
         strokeLinecap="round"
       />
@@ -1009,14 +1009,14 @@ export const KneesAnklesVisualSVG = ({
         y1="84"
         x2={rightFootX}
         y2="148"
-        stroke="#38bdf8"
+        stroke="var(--color-sky-400)"
         strokeWidth="3.5"
         strokeLinecap="round"
       />
 
       {/* Ankle Malleoli */}
-      <ellipse cx={leftFootX} cy="150" rx="4.5" ry="3" fill="#22c55e" />
-      <ellipse cx={rightFootX} cy="150" rx="4.5" ry="3" fill="#22c55e" />
+      <ellipse cx={leftFootX} cy="150" rx="4.5" ry="3" fill="var(--color-green-500)" />
+      <ellipse cx={rightFootX} cy="150" rx="4.5" ry="3" fill="var(--color-green-500)" />
 
       {/* Feet Base */}
       <ellipse
@@ -1024,14 +1024,14 @@ export const KneesAnklesVisualSVG = ({
         cy="162"
         rx="7"
         ry="3.5"
-        fill={isFlatFoot ? "#ef4444" : "#64748b"}
+        fill={isFlatFoot ? "var(--color-red-500)" : "#64748b"}
       />
       <ellipse
         cx={rightFootX}
         cy="162"
         rx="7"
         ry="3.5"
-        fill={isFlatFoot ? "#ef4444" : "#64748b"}
+        fill={isFlatFoot ? "var(--color-red-500)" : "#64748b"}
       />
 
       {/* Badges on diagram */}
@@ -1042,7 +1042,7 @@ export const KneesAnklesVisualSVG = ({
           width="40"
           height="13"
           rx="3"
-          fill={isValgo || isVaro ? "#ef4444" : "#10b981"}
+          fill={isValgo || isVaro ? "var(--color-red-500)" : "var(--color-emerald-500)"}
         />
         <text x="18" y="97" fill="#fff" fontSize="6.5" fontWeight="bold">
           {isValgo ? "Genu Valgo" : isVaro ? "Genu Varo" : "Rodilla Normal"}
@@ -1056,7 +1056,7 @@ export const KneesAnklesVisualSVG = ({
           width="50"
           height="13"
           rx="3"
-          fill={isFlatFoot || isValgoAnkle ? "#f59e0b" : "#10b981"}
+          fill={isFlatFoot || isValgoAnkle ? "var(--color-amber-500)" : "var(--color-emerald-500)"}
         />
         <text x="68" y="161" fill="#fff" fontSize="6.5" fontWeight="bold">
           {isFlatFoot
@@ -1153,7 +1153,7 @@ export const PostureVisualSelector = ({
   };
 
   return (
-    <div className="space-y-4 bg-slate-900/60 p-4 sm:p-5 rounded-2xl border border-slate-800 text-white shadow-xl">
+    <div className="space-y-4 bg-slate-900/60 p-4 sm:p-5 rounded-2xl border border-slate-800 text-white shadow-xl rd-panel-oscuro">
       {/* Top Header & Sub-Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
         <div>

@@ -1,29 +1,35 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Dumbbell,
   CreditCard,
-  UserCheck,
   ShoppingBag,
   Bell,
   Plus,
   Search,
-  AlertTriangle,
   Download,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  LogOut,
-  KeyRound,
   Activity,
   Vault,
+  UserCheck,
+  CheckCircle2,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { ROLE_COLORS, getRole, userCan, userCanAccess } from "../../config/roles";
 import { buscarAlumno } from "../../utils/codigo";
 import { esCodigoPase, validarPaseLibre } from "../../utils/pase";
-import confetti from "canvas-confetti";
+import { esCodigoPersonal, buscarPersonal, ingresoDeHoy, NOMBRE_SUFIJO } from "../../utils/codigoPersonal";
+import { mostrarIngreso, avisoAlumno } from "../attendances/AvisoIngreso";
+import { abrirCorreccion } from "../attendances/CorregirIngreso";
+import { hoyISO } from "../../utils/fecha";
 import { useAlertasAdmin, AlertaFechaPago } from "../alerts/AlertasAdmin";
 import { LogoRadical, NombreRadical, BotonTema } from "./Marca";
+import { CampanaAvisos, SeccionAvisos, useAvisos } from "./Avisos";
+import { CrmCampana } from "../crm/CrmAvisos";
+import { PanelLateral, CabeceraPanel, fechaHoyTexto } from "./PanelLateral";
+import { CintaAvisos } from "./CintaAvisos";
+import { candidatosPorCodigo } from "../../utils/buscarPersona";
+import { ListaCandidatos } from "./ListaCandidatos";
+import { useMenuPlegado } from "../../utils/menu";
+import { Menu as IconoMenu } from "lucide-react";
+import { TrendingUp as IconoIngreso, TrendingDown as IconoGasto } from "lucide-react";
 
 const fc = (f) => (f ? String(f).slice(0, 10).split("-").reverse().join("/") : "");
 
@@ -44,100 +50,208 @@ export const Header = ({
     logout,
     recordAttendance,
     cashShift,
+    attendances = [],
+    staffContracts = [],
+    todoElPersonal,
   } = useGym();
   const role = getRole(currentUser.role);
+  const [menuPlegado, alternarMenu] = useMenuPlegado();
+  // Alto de la barra superior: el menú lateral se fija justo debajo
+  useEffect(() => {
+    const h = document.querySelector(".rd-cabecera-app");
+    if (!h) return;
+    const medir = () => document.documentElement.style.setProperty("--rd-alto-cabecera", `${h.offsetHeight}px`);
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(h);
+    return () => ro.disconnect();
+  }, []);
   const roleColors = ROLE_COLORS[role.color];
   const isStudent = currentUser.role === "student";
   const can = (tab) => userCanAccess(currentUser, tab);
   const canRegisterMembers = userCan(currentUser, "members", "crear");
   const [showNotifications, setShowNotifications] = useState(false);
+  // La cinta de avisos abre este panel
+  React.useEffect(() => {
+    const abrir = () => setShowNotifications(true);
+    window.addEventListener("radical:alertas-panel", abrir);
+    return () => window.removeEventListener("radical:alertas-panel", abrir);
+  }, []);
+  // Accesos rápidos de caja: van a Finanzas y abren el formulario
+  const abrirCaja = (que) => {
+    try {
+      sessionStorage.setItem("radical_abrir_caja", que);
+    } catch {
+      /* nada */
+    }
+    setActiveTab("finance");
+    setTimeout(() => window.dispatchEvent(new CustomEvent("radical:abrir-caja", { detail: que })), 60);
+  };
   const [searchCheckIn, setSearchCheckIn] = useState("");
   const [checkInResult, setCheckInResult] = useState(null);
 
   const esAdmin = currentUser.role === "admin";
   const alertasAdmin = useAlertasAdmin(esAdmin, 10);
   const nuevasAdmin = alertasAdmin.alertas.filter((a) => !a.seen);
-  const totalUrgentAlerts = renewalAlerts.length + lowStockProducts.length + (esAdmin ? alertasAdmin.pendientes : 0);
+  const avisosRol = useAvisos();
+  const totalUrgentAlerts =
+    renewalAlerts.length + lowStockProducts.length + (esAdmin ? alertasAdmin.pendientes : 0) + avisosRol.avisos.length;
 
-  const handleQuickCheckIn = async (e) => {
-    e.preventDefault();
-    if (!searchCheckIn.trim()) return;
+  // Quién coincide con lo escrito (código exacto: "2" = alumno 2, 2-COACH, 2-EXT…)
+  const candidatosCheckIn = React.useMemo(
+    () => (esCodigoPase(searchCheckIn.trim()) ? [] : candidatosPorCodigo(searchCheckIn, members, todoElPersonal || staffContracts)),
+    [searchCheckIn, members, todoElPersonal, staffContracts],
+  );
+  const [elegidoIdx, setElegidoIdx] = useState(0);
+  const [verLista, setVerLista] = useState(false);
 
-    // Pase libre del CRM (lo escribe el lector de QR)
-    if (esCodigoPase(searchCheckIn)) {
-      const r = await validarPaseLibre(searchCheckIn);
-      setCheckInResult({ found: false, pase: r.prospecto || null, status: r.ok ? "active" : "expired", message: r.mensaje });
-      if (r.ok) confetti({ particleCount: 40, spread: 60, origin: { y: 0.1 } });
-      setSearchCheckIn("");
+  const handleQuickCheckIn = async (e, elegidoForzado) => {
+    e?.preventDefault?.();
+    const texto = searchCheckIn.trim();
+    if (!texto) return;
+    // Varias personas con el mismo código: se elige de la lista
+    let elegido = elegidoForzado || null;
+    if (!elegido && !esCodigoPase(texto)) {
+      if (candidatosCheckIn.length > 1) {
+        elegido = verLista ? candidatosCheckIn[elegidoIdx] : null;
+        if (!elegido) {
+          setVerLista(true);
+          return;
+        }
+      } else if (candidatosCheckIn.length === 1) elegido = candidatosCheckIn[0];
+    }
+    setSearchCheckIn("");
+    setVerLista(false);
+    setElegidoIdx(0);
+    const hoy = hoyISO();
+    const primer = (n) => String(n || "").trim().split(/\s+/)[0];
+
+    // 1) Pase libre del CRM (lo escribe el lector de QR)
+    if (esCodigoPase(texto)) {
+      const r = await validarPaseLibre(texto);
+      if (r.ok) {
+        mostrarIngreso({
+          tipo: "pase",
+          codigo: texto.toUpperCase(),
+          titulo: `¡Bienvenido(a) a tu clase de prueba, ${primer(r.prospecto?.fullName)}!`,
+          detalle: `Pase libre válido por hoy${r.prospecto?.planName ? ` · le interesa ${r.prospecto.planName}` : ""}. ¡Disfruta tu entrenamiento!`,
+        });
+      } else if (/ya se us/i.test(r.mensaje)) {
+        mostrarIngreso({ tipo: "repetido", codigo: texto.toUpperCase(), titulo: "Este pase libre ya fue usado", detalle: r.mensaje.replace(/^Pase libre no válido: /, "") });
+      } else {
+        mostrarIngreso({ tipo: "error", codigo: texto.toUpperCase(), titulo: "Pase libre no válido", detalle: r.mensaje.replace(/^Pase libre no válido: /, "") });
+      }
       return;
     }
 
-    const hallado = buscarAlumno(members, searchCheckIn);
-    const foundMember = hallado?.member;
-
-    if (foundMember) {
-      setCheckInResult({
-        found: true,
-        member: foundMember,
-        status: foundMember.status,
-        message:
-          foundMember.status === "frozen"
-            ? `❄️ Acceso Denegado. Membresía congelada hasta el ${fc(foundMember.freeze?.current?.endDate)} (vuelve el ${fc(foundMember.freeze?.current?.returnDate)}). Si regresó antes, termina el congelamiento en Alumnos.`
-            : foundMember.status === "active"
-            ? `¡Acceso Autorizado! Membresía vigente hasta ${foundMember.membershipEndDate}`
-            : foundMember.status === "expiring_soon"
-              ? `⚠️ Acceso permitido. Membresía por vencer el ${foundMember.membershipEndDate}`
-              : `⛔ Acceso Denegado. Membresía vencida el ${foundMember.membershipEndDate}`,
-      });
-
-      if (foundMember.status === "active") {
-        confetti({
-          particleCount: 30,
-          spread: 60,
-          origin: { y: 0.1 },
-        });
+    // 2) Personal de trabajo: código 1-COACH, 1-NUTRI… (o su DNI si no es de un alumno)
+    const hallado = elegido ? (elegido.tipo === "alumno" ? { member: elegido.member } : null) : buscarAlumno(members, texto);
+    const personal = elegido
+      ? elegido.tipo === "personal"
+        ? elegido.contrato
+        : null
+      : esCodigoPersonal(texto) || (/^\d{8}$/.test(texto) && !hallado)
+        ? buscarPersonal(todoElPersonal || staffContracts, texto)
+        : null;
+    if (personal) {
+      const previo = ingresoDeHoy(attendances, personal.staffId, hoy);
+      if (previo) {
+        mostrarIngreso({ tipo: "repetido", codigo: personal.staffCode, titulo: `${primer(personal.fullName)} ya marcó su entrada hoy`, detalle: `Registrada a las ${previo.time}. No se volvió a registrar.` });
+        return;
       }
-
-      // Record in attendance log
-      recordAttendance({
-        userId: foundMember.id,
-        userName: foundMember.fullName,
-        userRole: "student",
-        userDni: foundMember.dni,
+      const r = recordAttendance({
+        userId: personal.staffId,
+        userName: personal.fullName,
+        userRole: personal.role === "trainer" ? "trainer" : "staff",
+        userDni: personal.dni,
+        staffCode: personal.staffCode,
         type: "in",
-        status: foundMember.status === "expired" || foundMember.status === "frozen" ? "warning" : "authorized",
-        checkInMethod: "quick_pass",
-        membershipPlan: foundMember.planName,
-        notes: `Check-in rápido en barra superior (${foundMember.status})`,
+        status: "puntual",
+        category: "staff",
+        contractId: personal.id,
+        checkInMethod: "codigo_personal",
+        notes: `Marcación de entrada (${personal.roleTitle})`,
       });
-    } else {
-      setCheckInResult({
-        found: false,
-        message: "No se encontró ningún alumno con ese código, DNI o nombre.",
+      mostrarIngreso({
+        tipo: "personal",
+        codigo: personal.staffCode,
+        titulo: `¡Buen turno, ${primer(personal.fullName)}!`,
+        detalle: `${personal.roleTitle || NOMBRE_SUFIJO[personal.staffCode?.split("-")[1]] || "Personal"} · entrada registrada a las ${r?.record?.time || ""}`,
+        accion: r?.record ? { texto: "¿Error? Corregir", fn: () => abrirCorreccion(r.record) } : undefined,
       });
+      return;
     }
+    if (esCodigoPersonal(texto)) {
+      mostrarIngreso({ tipo: "error", codigo: texto.toUpperCase(), titulo: "No hay personal con ese código", detalle: "Revisa el código en Contratos de Personal (ej. 1-COACH, 1-NUTRI)." });
+      return;
+    }
+
+    // 3) Alumno: código (DR-12 o 12), DNI o nombre
+    const m = hallado?.member;
+    if (!m) {
+      mostrarIngreso({ tipo: "error", titulo: "No se encontró a nadie", detalle: `Ningún alumno ni personal con «${texto}» (código, DNI o nombre).` });
+      return;
+    }
+    const previo = ingresoDeHoy(attendances, m.id, hoy);
+    if (previo) {
+      mostrarIngreso(avisoAlumno(m, { repetido: previo }));
+      return;
+    }
+    const visitasPrevias = attendances.filter((a) => String(a.userId) === String(m.id)).length;
+    const reg = recordAttendance({
+      userId: m.id,
+      userName: m.fullName,
+      userRole: "student",
+      userDni: m.dni,
+      type: "in",
+      status: m.status === "expired" || m.status === "frozen" ? "warning" : "authorized",
+      category: "student",
+      checkInMethod: "quick_pass",
+      membershipPlan: m.planName,
+      notes: `Check-in rápido en barra superior (${m.status})`,
+    });
+    mostrarIngreso({ ...avisoAlumno(m, { visitasPrevias }), accion: reg?.record ? { texto: "¿Error? Corregir", fn: () => abrirCorreccion(reg.record) } : undefined });
   };
 
   return (
-    <header className="sticky top-0 z-30 rd-vidrio border-b border-slate-200/80 px-4 lg:px-6 py-2 text-slate-800 shadow-[0_1px_0_rgba(16,181,167,0.15)] transition-all">
+    <header className="rd-cabecera-app sticky top-0 z-30 rd-vidrio border-b border-slate-200/80 pl-4 lg:pl-6 pr-2 lg:pr-3 py-2 text-slate-800 shadow-[0_1px_0_rgba(16,181,167,0.15)] transition-all">
       <div className="w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Brand logo */}
         <div className="flex items-center justify-between w-full md:w-auto gap-3">
+          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={alternarMenu}
+            title={menuPlegado ? "Mostrar el menú" : "Ocultar el menú (solo íconos)"}
+            aria-label="Mostrar u ocultar el menú"
+            className="hidden lg:flex w-9 h-9 items-center justify-center rounded-xl text-slate-500 hover:text-blue-600 hover:bg-slate-100 cursor-pointer transition-colors"
+          >
+            <IconoMenu className="w-5 h-5" />
+          </button>
           <div
             onClick={() => setActiveTab(role.defaultTab)}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <LogoRadical size={38} className="ring-2 ring-blue-500/30 group-hover:ring-blue-500/70 transition-all" />
+            <span
+              className="rounded-full p-[2px] shrink-0 transition-transform group-hover:scale-105"
+              style={{ background: roleColors?.hex || "var(--color-blue-500)", boxShadow: `0 0 12px -2px ${roleColors?.hex || "var(--color-blue-500)"}` }}
+              title={`Conectado como ${role.label}`}
+            >
+              <LogoRadical size={36} className="ring-2 ring-white/80" />
+            </span>
             <div className="leading-none">
               <NombreRadical className="text-lg" />
               <span className="block whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 mt-0.5">
-                Gestión del gym
+                <span className="rd-texto-rol" style={{ "--c": roleColors?.hex }}>{role.label}</span>
               </span>
             </div>
+          </div>
           </div>
 
           {/* Mobile alerts icon */}
           <div className="flex items-center gap-2 md:hidden">
+            {can("crm") && <CrmCampana setActiveTab={setActiveTab} />}
+            {!can("alerts") && <CampanaAvisos setActiveTab={setActiveTab} />}
             {can("alerts") && (
             <button
               onClick={() => setActiveTab("alerts")}
@@ -156,72 +270,47 @@ export const Header = ({
 
         {/* Middle Section: Staff Check-in bar OR Student Quick Navigator */}
         {can("attendances") ? (
-          <div className="w-full md:w-80 lg:w-96 relative">
+          <div className={`w-full relative ${!isStudent && (can("crm") || can("alerts")) ? "md:w-80 xl:w-[28rem] 2xl:w-[32rem] shrink-0" : "md:flex-1 md:max-w-[42rem]"}`}>
             <form onSubmit={handleQuickCheckIn} className="relative">
               <input
                 type="text"
-                placeholder="Check-in: código, DNI, nombre o pase"
+                placeholder="Marcar asistencia: código, DNI o pase"
                 value={searchCheckIn}
-                onChange={(e) => setSearchCheckIn(e.target.value)}
-                className="w-full pl-8 pr-20 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-1 focus:ring-blue-600 transition-colors"
+                onChange={(e) => {
+                  setSearchCheckIn(e.target.value);
+                  setElegidoIdx(0);
+                  setVerLista(true);
+                }}
+                onKeyDown={(e) => {
+                  if (!candidatosCheckIn.length) return;
+                  if (e.key === "ArrowDown") (e.preventDefault(), setVerLista(true), setElegidoIdx((i) => Math.min(i + 1, candidatosCheckIn.length - 1)));
+                  if (e.key === "ArrowUp") (e.preventDefault(), setElegidoIdx((i) => Math.max(i - 1, 0)));
+                  if (e.key === "Escape") setVerLista(false);
+                }}
+                onFocus={() => setVerLista(true)}
+                onBlur={() => setTimeout(() => setVerLista(false), 150)}
+                className="rd-campo-checkin w-full pl-9 pr-24 py-2 rounded-xl text-sm font-semibold focus:outline-none transition-all"
               />
 
-              <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" />
+              <UserCheck className="rd-icono-checkin w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <button
                 type="submit"
-                className="absolute right-1 top-1 bottom-1 px-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium rounded transition-colors cursor-pointer"
+                className="rd-boton-marcar absolute right-1 top-1 bottom-1 px-3 text-white text-xs font-black rounded-lg transition-colors cursor-pointer flex items-center gap-1"
               >
-                Validar
+                <CheckCircle2 className="w-3.5 h-3.5" /> Marcar
               </button>
             </form>
-
-            {/* Quick Check-in Result Popover */}
-            {checkInResult && (
-              <div className="absolute left-0 mt-2 w-80 lg:w-96 bg-white border border-gray-200 rounded-xl shadow-xl p-3 z-50 animate-in fade-in slide-in-from-top-2 text-slate-800">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    {checkInResult.status === "active" ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    ) : checkInResult.status === "expiring_soon" ? (
-                      <Clock className="w-5 h-5 text-amber-500 shrink-0" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                    )}
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900">
-                        {checkInResult.member
-                          ? checkInResult.member.fullName
-                          : checkInResult.pase
-                            ? `Pase libre · ${checkInResult.pase.fullName}`
-                            : "Resultado de búsqueda"}
-                      </h4>
-                      <p className="text-xs text-slate-600 mt-0.5">
-                        {checkInResult.message}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setCheckInResult(null)}
-                    className="text-gray-400 hover:text-gray-700 text-xs px-1 cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-                {checkInResult.member && (
-                  <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-slate-500">
-                    <span>
-                      <strong className="text-blue-700 font-mono">{checkInResult.member.codeLabel}</strong> · DNI{" "}
-                      <strong className="text-slate-800">
-                        {checkInResult.member.dni}
-                      </strong>
-                    </span>
-                    <span className="font-semibold text-blue-600">
-                      {checkInResult.member.planName}
-                    </span>
-                  </div>
-                )}
-              </div>
+            {/* A quién se va a marcar */}
+            {searchCheckIn.trim() && verLista && (
+              <ListaCandidatos
+                candidatos={candidatosCheckIn}
+                indice={elegidoIdx}
+                onIndice={setElegidoIdx}
+                onElegir={(c) => handleQuickCheckIn(null, c)}
+                pase={esCodigoPase(searchCheckIn.trim())}
+              />
             )}
+
           </div>
         ) : isStudent ? (
           <div className="flex items-center gap-2 overflow-x-auto py-1">
@@ -244,13 +333,16 @@ export const Header = ({
           <div className="hidden md:block flex-1" />
         )}
 
-        {/* Action buttons, Avatars & Role Switcher */}
-        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+        {/* Cinta de avisos (CRM y gimnasio) */}
+        {!isStudent && (can("crm") || can("alerts")) && <CintaAvisos verCrm={can("crm")} verGym={can("alerts")} />}
+
+        {/* Accesos rápidos y avisos */}
+        <div className="flex items-center gap-1.5 w-full md:w-auto justify-end shrink-0 md:ml-auto">
           {/* Estado de la caja por turnos */}
           {can("cash") && cashShift && (
             <button
               onClick={() => setActiveTab("cash")}
-              className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold whitespace-nowrap cursor-pointer transition-colors ${
+              className={`hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold whitespace-nowrap cursor-pointer transition-colors ${
                 cashShift.open
                   ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
                   : "bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100"
@@ -266,72 +358,65 @@ export const Header = ({
             </button>
           )}
 
-          {/* Asistencias Quick Button */}
-          {can("attendances") && (
-            <button
-              onClick={() => setActiveTab("attendances")}
-              className={`p-2 rounded-md transition-colors cursor-pointer border ${
-                activeTab === "attendances"
-                  ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
-                  : "bg-slate-100/80 hover:bg-slate-200 text-slate-700 border-slate-200"
-              }`}
-              title="Control de Asistencias (Alumnos & Personal)"
-            >
-              <UserCheck className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Usuario conectado */}
-          <div
-            className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 transition-colors"
-            title={`${currentUser.fullName} (${role.label})`}
-          >
-            <div className="w-6 h-6 rounded-full overflow-hidden bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-              {currentUser.photoUrl ? (
-                <img
-                  src={currentUser.photoUrl}
-                  alt={currentUser.fullName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                currentUser.fullName.charAt(0)
-              )}
-            </div>
-            <div className="hidden sm:block text-left">
-              <div className="flex items-center space-x-1">
-                <span className="font-extrabold text-xs text-slate-900 leading-tight">
-                  {currentUser.fullName.split(" ")[0]}
-                </span>
-                <span
-                  className={`px-1 rounded text-xs font-black uppercase ${roleColors.badge}`}
-                >
-                  {role.short}
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* Venta rápida (admin y recepción) */}
           {can("store") && (
             <button
               onClick={onOpenQuickSaleModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 whitespace-nowrap bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer"
-              title="Venta rápida en tienda / POS"
+              className="flex items-center gap-1 px-2.5 py-1.5 whitespace-nowrap bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer"
+              title="Venta rápida en tienda"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Venta POS</span>
+              <span className="hidden 2xl:inline">Vender</span>
             </button>
+          )}
+
+          {/* Ingreso y gasto de caja (accesos rápidos) */}
+          {can("finance") && (
+            <>
+              <button
+                onClick={() => abrirCaja("ingreso")}
+                className="flex items-center gap-1 px-2.5 py-1.5 whitespace-nowrap bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
+                title="Registrar ingreso de caja (pase del día, servicios, otros)"
+              >
+                <IconoIngreso className="w-3.5 h-3.5" />
+                <span className="hidden 2xl:inline">Ingreso</span>
+              </button>
+              <button
+                onClick={() => abrirCaja("gasto")}
+                className="flex items-center gap-1 px-2.5 py-1.5 whitespace-nowrap bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
+                title="Registrar gasto de caja"
+              >
+                <IconoGasto className="w-3.5 h-3.5" />
+                <span className="hidden 2xl:inline">Gasto</span>
+              </button>
+            </>
           )}
 
           {/* Nuevo alumno (admin y recepción) */}
           {canRegisterMembers && (
             <button
               onClick={onOpenNewMemberModal}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-lg text-xs font-bold rd-brillo transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-lg text-xs font-bold rd-brillo transition-all cursor-pointer"
+              title="Matricular a un alumno nuevo"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Nuevo Registro</span>
+              <span className="hidden xl:inline">Nuevo alumno</span>
             </button>
+          )}
+
+
+          {/* Avisos del CRM: icono propio, junto a la campanita */}
+          {can("crm") && (
+            <div className="hidden md:block">
+              <CrmCampana setActiveTab={setActiveTab} />
+            </div>
+          )}
+
+          {/* Avisos para quien no tiene el centro de alertas (entrenador, alumno...) */}
+          {!can("alerts") && (
+            <div className="hidden md:block">
+              <CampanaAvisos setActiveTab={setActiveTab} />
+            </div>
           )}
 
           {/* Notifications Center button */}
@@ -339,31 +424,38 @@ export const Header = ({
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-lg bg-slate-100/80 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
-              title="Centro de Alertas de Vencimiento"
+              className="relative p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow hover:brightness-110 cursor-pointer"
+              title="Alertas del gimnasio (vencimientos, deudas, stock)"
             >
               <Bell className="w-4 h-4" />
               {totalUrgentAlerts > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white text-xs font-extrabold flex items-center justify-center animate-pulse">
-                  {totalUrgentAlerts}
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-emerald-700 text-[10px] font-black flex items-center justify-center ring-2 ring-emerald-500">
+                  {totalUrgentAlerts > 99 ? "99+" : totalUrgentAlerts}
                 </span>
               )}
             </button>
 
-            {/* Notification drop */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 z-50 animate-in fade-in text-slate-800">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                      Alertas del Gimnasio
-                    </h3>
+            {/* Panel de alertas: mismo tamaño y forma que el del CRM */}
+            <PanelLateral abierto={showNotifications} onCerrar={() => setShowNotifications(false)}>
+              <CabeceraPanel
+                etiqueta="Alertas del gimnasio"
+                fecha={fechaHoyTexto()}
+                numero={totalUrgentAlerts}
+                textoNumero={totalUrgentAlerts === 1 ? "aviso pendiente" : "avisos pendientes"}
+                brillo="bg-amber-500/30"
+                brillo2="bg-rose-600/25"
+                colorEtiqueta="text-amber-300"
+                onCerrar={() => setShowNotifications(false)}
+                derecha={
+                  <div className="text-right text-[11px] font-bold text-white/70 space-y-0.5">
+                    <p>{renewalAlerts.filter((a) => a.isExpired).length} vencidos</p>
+                    <p>{renewalAlerts.filter((a) => !a.isExpired).length} por vencer</p>
+                    <p>{lowStockProducts.length} con poco stock</p>
                   </div>
-                  <span className="text-xs font-bold px-2 py-0.5 bg-red-50 text-red-600 border border-red-200 rounded-full">
-                    {totalUrgentAlerts} pendientes
-                  </span>
-                </div>
+                }
+              />
+              <div className="flex-1 overflow-y-auto p-3 space-y-3 text-slate-800">
+                <SeccionAvisos {...avisosRol} setActiveTab={(tab) => { setActiveTab(tab); setShowNotifications(false); }} />
 
                 {esAdmin && nuevasAdmin.length > 0 && (
                   <div className="mb-3 space-y-2">
@@ -383,41 +475,64 @@ export const Header = ({
                   </div>
                 )}
 
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                <div className="space-y-2">
                   {renewalAlerts.length === 0 &&
-                  lowStockProducts.length === 0 ? (
+                  lowStockProducts.length === 0 ? (avisosRol.avisos.length ? null : (
                     <p className="text-xs text-slate-500 text-center py-4">
                       ¡Todo al día! No hay vencimientos urgentes ni falta de
                       stock.
                     </p>
-                  ) : (
+                  )) : (
                     <>
-                      {renewalAlerts.slice(0, 4).map((alert) => (
-                        <div
-                          key={alert.memberId}
-                          onClick={() => {
-                            setActiveTab("alerts");
-                            setShowNotifications(false);
-                          }}
-                          className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${
-                            alert.isExpired
-                              ? "bg-red-50/60 border-red-200 hover:bg-red-50 text-red-900"
-                              : "bg-amber-50/60 border-amber-200 hover:bg-amber-50 text-amber-900"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between font-semibold">
-                            <span>{alert.memberName}</span>
-                            <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-white border border-gray-200">
-                              {alert.daysLeft < 0
-                                ? `Venció hace ${Math.abs(alert.daysLeft)}d`
-                                : `Vence en ${alert.daysLeft}d`}
-                            </span>
+                      {[
+                        ["Vencidos · renovar", renewalAlerts.filter((a) => a.isExpired), "rose"],
+                        ["Por vencer", renewalAlerts.filter((a) => !a.isExpired), "amber"],
+                      ].map(([titulo, lista, c]) =>
+                        lista.length ? (
+                          <div key={titulo} className="space-y-1.5">
+                            <p className={`text-[10px] font-black uppercase tracking-wider px-1 ${c === "rose" ? "text-rose-600" : "text-amber-600"}`}>
+                              {titulo} ({lista.length})
+                            </p>
+                            {lista
+                              .slice()
+                              .sort((a, b) => a.daysLeft - b.daysLeft)
+                              .map((alert) => (
+                                <button
+                                  type="button"
+                                  key={alert.memberId}
+                                  onClick={() => {
+                                    setActiveTab("alerts");
+                                    setShowNotifications(false);
+                                  }}
+                                  className={`w-full text-left flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 border-l-4 ${
+                                    c === "rose" ? "border-l-rose-500" : "border-l-amber-400"
+                                  } shadow-sm hover:shadow-md hover:-translate-y-px transition-all cursor-pointer`}
+                                >
+                                  <span
+                                    className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-[11px] font-black text-white bg-gradient-to-br ${
+                                      c === "rose" ? "from-rose-500 to-pink-600" : "from-amber-400 to-orange-500"
+                                    }`}
+                                  >
+                                    {alert.memberName.split(" ").slice(0, 2).map((x) => x[0]).join("")}
+                                  </span>
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block text-xs font-black text-slate-900 truncate">{alert.memberName}</span>
+                                    <span className="block text-[11px] text-slate-500 truncate">
+                                      {alert.planName} · fin {String(alert.endDate || "").split("-").reverse().join("/")}
+                                    </span>
+                                  </span>
+                                  <span
+                                    className={`shrink-0 text-[10px] font-black px-2 py-1 rounded-full ${
+                                      c === "rose" ? "bg-rose-50 text-rose-700 border border-rose-200" : "bg-amber-50 text-amber-800 border border-amber-200"
+                                    }`}
+                                  >
+                                    {alert.daysLeft < 0 ? `hace ${Math.abs(alert.daysLeft)} d` : alert.daysLeft === 0 ? "hoy" : `en ${alert.daysLeft} d`}
+                                  </span>
+                                </button>
+                              ))}
                           </div>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            Plan: {alert.planName} • Fin: {alert.endDate}
-                          </p>
-                        </div>
-                      ))}
+                        ) : null,
+                      )}
 
                       {lowStockProducts.map((prod) => (
                         <div
@@ -440,48 +555,27 @@ export const Header = ({
                   )}
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between">
-                  <button
-                    onClick={() => {
-                      setActiveTab("alerts");
-                      setShowNotifications(false);
-                    }}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
-                  >
-                    Ver todas las alertas →
-                  </button>
-                  <button
-                    onClick={exportDataJSON}
-                    className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
-                    title="Exportar copia de seguridad"
-                  >
-                    <Download className="w-3 h-3" /> Backup
-                  </button>
-                </div>
               </div>
-            )}
+              <div className="p-3 border-t border-slate-200 bg-white flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setActiveTab("alerts");
+                    setShowNotifications(false);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:brightness-110 text-white text-sm font-black cursor-pointer shadow-lg shadow-amber-500/30"
+                >
+                  Ver todas las alertas →
+                </button>
+                <button onClick={exportDataJSON} className="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-1 cursor-pointer" title="Exportar copia de seguridad">
+                  <Download className="w-3.5 h-3.5" /> Backup
+                </button>
+              </div>
+            </PanelLateral>
           </div>
           )}
 
-          <BotonTema />
-
-          {/* Cambiar contraseña */}
-          <button
-            onClick={() => window.dispatchEvent(new Event("radicalgym:cambiar-clave"))}
-            className="p-2 rounded-lg bg-slate-100/80 hover:bg-blue-50 hover:text-blue-600 text-slate-700 border border-gray-200 transition-colors cursor-pointer"
-            title="Cambiar contraseña"
-          >
-            <KeyRound className="w-4 h-4" />
-          </button>
-
-          {/* Cerrar sesión */}
-          <button
-            onClick={logout}
-            className="p-2 rounded-lg bg-slate-100/80 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-slate-700 border border-gray-200 transition-colors cursor-pointer"
-            title="Cerrar sesión"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+          {/* Modo claro / oscuro: en la esquina, separado de los avisos */}
+          <BotonTema vertical className="ml-1" />
         </div>
       </div>
     </header>

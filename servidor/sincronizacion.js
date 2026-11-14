@@ -103,12 +103,21 @@ const url = (v, max = 300) => {
 const json = (v) => (v === undefined || v === null ? null : JSON.stringify(v));
 
 const OBJETIVOS = ["hipertrofia", "perdida_peso", "fuerza", "resistencia", "tonificacion", "rehabilitacion"];
+// Objetivos nuevos de las rutinas -> el más parecido de la tabla
+const OBJETIVO_EQUIVALENTE = {
+  recomposicion: "perdida_peso", potencia: "fuerza", acondicionamiento: "resistencia", funcional: "resistencia",
+  movilidad: "rehabilitacion", postura: "rehabilitacion", adulto_mayor: "rehabilitacion", deportivo: "fuerza",
+  // objetivos de nutrición
+  grasa_visceral: "perdida_peso", aumento_peso: "hipertrofia", control_glucemico: "rehabilitacion", presion_arterial: "rehabilitacion",
+  colesterol: "rehabilitacion", digestivo: "rehabilitacion", embarazo_lactancia: "rehabilitacion",
+};
 const objetivo = (v) => {
-  const o = String(v || "").replace("salud_rehabilitacion", "rehabilitacion");
+  let o = String(v || "").split(",")[0].trim().replace("salud_rehabilitacion", "rehabilitacion");
+  o = OBJETIVO_EQUIVALENTE[o] || o;
   return OBJETIVOS.includes(o) ? o : "tonificacion";
 };
 const NIVELES = ["principiante", "intermedio", "avanzado"];
-const nivel = (v) => (NIVELES.includes(v) ? v : "principiante");
+const nivel = (v) => (NIVELES.includes(v) ? v : "principiante"); // acondicionamiento -> principiante
 const METODOS_PAGO = ["efectivo", "tarjeta", "transferencia", "yape_plin"];
 const METODO_ASISTENCIA = { qr_app: "qr_app", dni_manual: "dni_manual", barcode: "codigo_barras", quick_pass: "pase_rapido" };
 const CANAL = { push: "push", email: "correo", whatsapp: "whatsapp", sms: "sms" };
@@ -496,7 +505,7 @@ const MAPAS = {
     if (vacio(d.name)) throw new ErrorSincronizacion("El producto no tiene nombre");
     await guardarFila(cx, "productos", "idproducto", id, {
       nombre: txt(d.name, 100),
-      categoria: ["bebidas", "suplementos", "snacks", "accesorios", "ropa"].includes(d.category) ? d.category : "accesorios",
+      categoria: ["bebidas", "suplementos", "quemadores", "snacks", "accesorios", "ropa"].includes(d.category) ? d.category : "accesorios",
       precio_compra: rango(d.purchaseCost, 0, 99999999.99) ?? 0,
       precio_venta: rango(d.salePrice, 0, 99999999.99) ?? 0,
       stock: entero(d.stock, 0, 2147483647) ?? 0,
@@ -510,6 +519,8 @@ const MAPAS = {
   },
 
   async contratos(cx, id, d) {
+    // Los profesionales externos no tienen contrato ni planilla: solo viven en el sistema
+    if (d.external) return;
     // El trabajador: se busca y, si no existe, se registra en empleados
     let idemp = await idEmpleado(cx, d.staffId, null);
     const dni = /^\d{8}$/.test(String(d.dni || "")) ? String(d.dni) : null;
@@ -550,7 +561,7 @@ const MAPAS = {
     }
     await guardarFila(cx, "contratos", "idcontrato", id, {
       idempleado: idemp,
-      tipo: { "3_months": "3_meses", "6_months": "6_meses", "1_year": "1_anio", indefinite: "indefinido" }[d.contractType] || "indefinido",
+      tipo: { "1_month": "1_mes", "3_months": "3_meses", "6_months": "6_meses", "1_year": "1_anio", indefinite: "indefinido" }[d.contractType] || "indefinido",
       modalidad: { full_time: "tiempo_completo", part_time: "medio_tiempo", hourly: "por_horas" }[d.workModality] || "tiempo_completo",
       fecha_inicio: fecha(d.startDate) || hoy(),
       fecha_fin: fecha(d.endDate),

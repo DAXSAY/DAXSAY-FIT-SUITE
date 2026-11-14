@@ -16,18 +16,21 @@ import {
   CheckCircle2,
   Pencil,
   Share2,
+  Lock,
+  X,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { api } from "../../api/cliente";
 import { userCan, ROLES } from "../../config/roles";
+import { coincideAlumno } from "../../utils/buscarPersona";
 
 const ROLES_PERSONAL = ["admin", "reception", "trainer", "physio", "nutritionist"];
 const COLOR_ROL = {
-  admin: "bg-purple-100 text-purple-700",
-  reception: "bg-amber-100 text-amber-700",
-  trainer: "bg-blue-100 text-blue-700",
-  physio: "bg-cyan-100 text-cyan-700",
-  nutritionist: "bg-emerald-100 text-emerald-700",
+  admin: "var(--rd-rol-morado)",
+  reception: "var(--rd-rol-verde)",
+  trainer: "var(--rd-rol-naranja)",
+  physio: "var(--rd-rol-azul)",
+  nutritionist: "var(--rd-rol-rojo)",
 };
 const fecha = (dt) => (dt ? `${String(dt).slice(8, 10)}/${String(dt).slice(5, 7)}/${String(dt).slice(0, 4)} ${String(dt).slice(11, 16)}` : "Nunca");
 const sugerirUsuario = (n, a) =>
@@ -417,6 +420,212 @@ const TurnosRecepcion = () => {
   );
 };
 
+// ------------------------------------------------------------
+// SOCIOS: acceso de cada alumno al portal (usuario = DNI).
+// Las claves están cifradas y nadie puede leerlas; desde aquí se
+// restablecen al instante (a su DNI, una temporal o una que elijas).
+// ------------------------------------------------------------
+const SociosAccesos = ({ puedeEditar, onCredenciales }) => {
+  const [lista, setLista] = useState([]);
+  const [buscar, setBuscar] = useState("");
+  const [filtro, setFiltro] = useState("todos");
+  const [abierto, setAbierto] = useState(null); // socio al que se le restablece
+  const [modo, setModo] = useState("dni");
+  const [propia, setPropia] = useState("");
+  const [error, setError] = useState("");
+  const [mensaje, setMensaje] = useState("");
+  const [cargando, setCargando] = useState(true);
+
+  const cargar = () =>
+    api("/usuarios/socios")
+      .then(setLista)
+      .catch((e) => setError(e.message))
+      .finally(() => setCargando(false));
+  useEffect(() => {
+    cargar();
+  }, []);
+
+  const estado = (a) =>
+    !a.hasAccount ? "sin" : !a.active ? "off" : a.locked ? "bloq" : a.mustChangePassword ? "temp" : "ok";
+  const ESTADO = {
+    sin: ["Sin cuenta", "bg-slate-100 text-slate-600 border-slate-200"],
+    off: ["Desactivada", "bg-slate-100 text-slate-500 border-slate-200"],
+    bloq: ["Bloqueada (intentos fallidos)", "bg-rose-50 text-rose-700 border-rose-200"],
+    temp: ["Clave temporal (aún no la cambia)", "bg-amber-50 text-amber-700 border-amber-200"],
+    ok: ["Usa su propia clave", "bg-emerald-50 text-emerald-700 border-emerald-200"],
+  };
+  const t = buscar.trim().toLowerCase();
+  const vistos = lista.filter(
+    (a) =>
+      (filtro === "todos" || estado(a) === filtro) &&
+      (!t || coincideAlumno(a, t) || String(a.username || "").toLowerCase() === t),
+  );
+  const cuenta = (k) => lista.filter((a) => estado(a) === k).length;
+
+  const restablecer = async () => {
+    setError("");
+    try {
+      const r = await api(`/usuarios/socios/${abierto.id}/clave`, { method: "POST", body: { modo, clave: propia } });
+      const a = abierto;
+      setAbierto(null);
+      setPropia("");
+      await cargar();
+      onCredenciales({ nombre: a.fullName, rol: `Alumno · ${a.codeLabel}`, usuario: r.usuario, clave: r.claveTemporal, telefono: a.phone });
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+  const cambiarEstado = async (a) => {
+    setError("");
+    try {
+      await api(`/usuarios/socios/${a.id}/estado`, { method: "PUT", body: { activo: !a.active } });
+      setMensaje(a.active ? `${a.fullName} ya no puede entrar al portal.` : `${a.fullName} puede volver a entrar al portal.`);
+      cargar();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-900 flex items-start gap-2">
+        <Lock className="w-4 h-4 mt-0.5 shrink-0" />
+        <span>
+          Por seguridad las contraseñas se guardan <b>cifradas</b>: nadie puede leerlas, ni administración. Si un alumno no puede entrar,
+          restablécela aquí y se aplica <b>al instante</b>: su usuario es su DNI y al ingresar el sistema le pedirá crear su propia clave.
+        </span>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        {[["todos", "Todos", lista.length], ["ok", "Con su clave", cuenta("ok")], ["temp", "Clave temporal", cuenta("temp")], ["bloq", "Bloqueados", cuenta("bloq")], ["sin", "Sin cuenta", cuenta("sin") + cuenta("off")]].map(([k, l, n]) => (
+          <button
+            key={k}
+            onClick={() => setFiltro(filtro === k ? "todos" : k)}
+            className={`text-left bg-white rounded-2xl border p-3 cursor-pointer ${filtro === k ? "border-blue-500 ring-2 ring-blue-500/20" : "border-slate-200"}`}
+          >
+            <span className="text-[11px] font-bold text-slate-400 uppercase block">{l}</span>
+            <span className={`text-xl font-black ${k === "bloq" && n ? "text-rose-600" : "text-slate-900"}`}>{n}</span>
+          </button>
+        ))}
+      </div>
+      {mensaje && <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold">{mensaje}</div>}
+      {error && <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold">{error}</div>}
+
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar por código (12 o DR-12), nombre o DNI…" className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-sm" />
+        </div>
+        <div className="overflow-x-auto max-h-[560px] overflow-y-auto rounded-xl border border-slate-200">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-10">
+              <tr className="text-left text-xs uppercase text-slate-500">
+                <th className="py-2.5 px-3">Código</th>
+                <th className="py-2.5 px-3">Alumno</th>
+                <th className="py-2.5 px-3">Usuario</th>
+                <th className="py-2.5 px-3">Último ingreso</th>
+                <th className="py-2.5 px-3">Estado de la clave</th>
+                <th className="py-2.5 px-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cargando && (
+                <tr><td colSpan={6} className="py-8 text-center text-slate-400">Cargando…</td></tr>
+              )}
+              {vistos.map((a) => {
+                const [txt, cls] = ESTADO[estado(a)];
+                return (
+                  <tr key={a.id} className="border-b border-slate-100">
+                    <td className="py-2.5 px-3 font-mono font-bold text-blue-700">{a.codeLabel || "—"}</td>
+                    <td className="py-2.5 px-3">
+                      <strong className="text-slate-900 block">{a.fullName}</strong>
+                      <span className="text-xs text-slate-500">DNI {a.dni || "—"}{a.phone ? ` · ${a.phone}` : ""}</span>
+                    </td>
+                    <td className="py-2.5 px-3 font-mono text-slate-700">{a.username || "—"}</td>
+                    <td className="py-2.5 px-3 text-slate-500">{a.hasAccount ? fecha(a.lastAccess) : "—"}</td>
+                    <td className="py-2.5 px-3">
+                      <span className={`inline-block px-2 py-0.5 rounded-full border text-[11px] font-bold ${cls}`}>{txt}</span>
+                    </td>
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                      {puedeEditar && (
+                        <div className="inline-flex gap-1">
+                          <button
+                            onClick={() => {
+                              setAbierto(a);
+                              setModo("dni");
+                              setPropia("");
+                            }}
+                            title={a.hasAccount ? "Restablecer contraseña" : "Crear su cuenta"}
+                            className="px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold hover:bg-amber-100 cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <KeyRound className="w-3.5 h-3.5" /> {a.hasAccount ? "Restablecer" : "Crear cuenta"}
+                          </button>
+                          {a.hasAccount && (
+                            <button
+                              onClick={() => cambiarEstado(a)}
+                              title={a.active ? "Quitar acceso al portal" : "Dar acceso al portal"}
+                              className={`p-2 rounded-lg cursor-pointer ${a.active ? "hover:bg-rose-50" : "hover:bg-emerald-50"}`}
+                            >
+                              <Power className={`w-4 h-4 ${a.active ? "text-rose-600" : "text-emerald-600"}`} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {!cargando && vistos.length === 0 && (
+                <tr><td colSpan={6} className="py-8 text-center text-slate-500">No hay alumnos con ese filtro.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {abierto && (
+        <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setAbierto(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-5 space-y-4">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-bold uppercase text-amber-600 flex items-center gap-1"><KeyRound className="w-3.5 h-3.5" /> Restablecer acceso</p>
+                <p className="text-lg font-black text-slate-900">{abierto.fullName}</p>
+                <p className="text-xs text-slate-500">{abierto.codeLabel} · usuario: <b className="font-mono">{abierto.dni}</b></p>
+              </div>
+              <button onClick={() => setAbierto(null)} className="p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"><X className="w-5 h-5 text-slate-500" /></button>
+            </div>
+            <div className="space-y-2">
+              {[
+                ["dni", "Volver a su DNI", "La clave será su número de DNI, como al matricularse."],
+                ["temporal", "Clave temporal al azar", "El sistema crea una clave para que se la dictes o envíes."],
+                ["propia", "Escribir una clave", "Tú eliges la clave (8 o más caracteres, con letras y números)."],
+              ].map(([k, l, d]) => (
+                <label key={k} className={`flex items-start gap-2.5 p-3 rounded-xl border-2 cursor-pointer ${modo === k ? "border-blue-500 bg-blue-50" : "border-slate-200"}`}>
+                  <input type="radio" checked={modo === k} onChange={() => setModo(k)} className="mt-1 accent-blue-600" />
+                  <span>
+                    <span className="block text-sm font-bold text-slate-900">{l}</span>
+                    <span className="block text-xs text-slate-500">{d}</span>
+                  </span>
+                </label>
+              ))}
+              {modo === "propia" && (
+                <input value={propia} onChange={(e) => setPropia(e.target.value)} placeholder="Nueva clave" autoComplete="new-password" className="w-full p-2.5 rounded-xl border border-slate-300 text-sm font-mono" />
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500">Se cierran sus sesiones abiertas y, al entrar, el sistema le pedirá crear su propia contraseña.</p>
+            {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setAbierto(null)} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">Cancelar</button>
+              <button onClick={restablecer} disabled={modo === "propia" && propia.length < 8} className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-black cursor-pointer">
+                Restablecer ahora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const UsersAccessModule = () => {
   const { currentUser } = useGym();
   const [pestana, setPestana] = useState("usuarios");
@@ -485,12 +694,12 @@ export const UsersAccessModule = () => {
 
   return (
     <div className="space-y-5">
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-purple-900 rounded-3xl p-6 text-white shadow-lg flex flex-wrap items-start justify-between gap-4">
+      <div className="rd-portada rd-cabecera flex flex-wrap items-start justify-between gap-4">
         <div>
           <span className="text-xs font-black uppercase tracking-widest text-purple-300 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4" /> Seguridad
           </span>
-          <h1 className="text-2xl font-black mt-1">Usuarios & Accesos</h1>
+          <h1 className="text-2xl font-black mt-1">Usuarios y accesos</h1>
           <p className="text-sm text-slate-300 max-w-2xl">
             Crea una cuenta para cada trabajador. Así cada recepcionista abre y cierra su propia caja y queda registrado quién hizo
             cada cobro.
@@ -521,12 +730,12 @@ export const UsersAccessModule = () => {
         <div className="bg-white rounded-2xl border border-slate-200 p-4">
           <span className="text-xs font-bold text-slate-400 uppercase block">Alumnos con acceso</span>
           <span className="text-xl font-black text-slate-900">{datos.cuentasAlumnos.activas}</span>
-          <span className="text-xs text-slate-500 block">se gestionan en su ficha</span>
+          <button onClick={() => setPestana("socios")} className="text-xs text-blue-600 font-bold block cursor-pointer hover:underline">ver credenciales →</button>
         </div>
       </div>
 
       <div className="flex gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 w-fit">
-        {[["usuarios", "Usuarios"], ["turnos", "Turnos de recepción"], ["config", "Configuración del gimnasio"]].map(([k, l]) => (
+        {[["usuarios", "Usuarios del personal"], ["socios", "Socios (alumnos)"], ["turnos", "Turnos de recepción"], ["config", "Configuración del gimnasio"]].map(([k, l]) => (
           <button key={k} onClick={() => setPestana(k)} className={`px-3 py-2 rounded-lg text-sm font-bold cursor-pointer ${pestana === k ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
             {l}
           </button>
@@ -534,6 +743,7 @@ export const UsersAccessModule = () => {
       </div>
       {pestana === "config" && <ConfiguracionGimnasio />}
       {pestana === "turnos" && <TurnosRecepcion />}
+      {pestana === "socios" && <SociosAccesos puedeEditar={puedeEditar} onCredenciales={(c) => setVista({ credenciales: c })} />}
       {pestana === "usuarios" && <>
       {mensaje && <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold">{mensaje}</div>}
       {error && <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold">{error}</div>}
@@ -571,7 +781,7 @@ export const UsersAccessModule = () => {
                     </td>
                     <td className="py-3 pr-3 font-mono text-slate-700">{u.username}</td>
                     <td className="py-3 pr-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-black ${COLOR_ROL[u.role] || "bg-slate-100 text-slate-600"}`}>
+                      <span className="rd-chip-rol px-2 py-0.5 rounded-full text-xs font-black" style={{ "--c": COLOR_ROL[u.role] || "var(--color-slate-400)" }}>
                         {ROLES[u.role]?.label || u.roleName}
                       </span>
                       {u.receptionShift && <span className="block text-xs text-slate-500 mt-0.5">{u.receptionShift}</span>}

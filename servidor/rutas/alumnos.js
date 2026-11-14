@@ -1,15 +1,23 @@
 // Alumnos, matrículas y renovaciones
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { consultar, transaccion } from "../db.js";
+import { consultar, transaccion, enFila } from "../db.js";
 import { ErrorHttp, exigirCajaAbierta, requierePermiso, tienePermiso } from "../seguridad.js";
 import {
   SQL_CONGELAMIENTOS, aCongelamiento, diasEntre as diasCal, hoyLima as hoy, estadoCongelamiento, moverMembresia, reglas, saldo, sumarDias, validarDias,
 } from "../congelamiento.js";
 import { codigoAlumno } from "../codigoAlumno.js";
 import { alertaCambioFechaPago } from "./alertas.js";
+import { vincularMatricula } from "../crmCredito.js";
 
 const router = Router();
+
+// El entrenador, nutrición y fisioterapia solo consultan alumnos: no renuevan,
+// no congelan ni crean accesos (eso lo hacen recepción y administración).
+const soloGestion = (req, res, next) =>
+  ["trainer", "nutritionist", "physio"].includes(req.usuario?.rol)
+    ? next(new ErrorHttp(403, "Solo recepción o administración pueden hacer esto"))
+    : next();
 
 // Deuda del alumno: precio acordado - lo pagado al matricular - pagos posteriores
 export const SQL_DEUDA = `GREATEST(0,
@@ -193,13 +201,21 @@ function validarFicha(d, parcial = false) {
   }
 }
 const OBJETIVOS = ["hipertrofia", "perdida_peso", "fuerza", "resistencia", "tonificacion", "rehabilitacion"];
+// Uno o varios objetivos ("perdida_peso,tonificacion" o un arreglo) -> texto para la columna SET
+const objetivosValidos = (v) => {
+  const l = (Array.isArray(v) ? v : String(v || "").split(","))
+    .map((x) => String(x).trim())
+    .map((x) => (x === "salud_rehabilitacion" ? "rehabilitacion" : x))
+    .filter((x, i, a) => OBJETIVOS.includes(x) && a.indexOf(x) === i);
+  return l.length ? l.join(",") : null;
+};
 const vacio = (v) => (v === undefined || v === null || String(v).trim() === "" ? null : String(v).trim());
 
 /**
  * Crea (o restablece) la cuenta de acceso del alumno.
  * Usuario = DNI. Clave temporal = DNI (debe cambiarla en su primer ingreso).
  */
-async function crearOCambiarCuenta(cx, idalumno, dni, creadoPor) {
+export async function crearOCambiarCuenta(cx, idalumno, dni, creadoPor) {
   const hash = await bcrypt.hash(dni, 10);
   const ejecutar = cx ? (sql, p) => cx.execute(sql, p).then(([r]) => r) : consultar;
   const existentes = await ejecutar("SELECT idusuario FROM usuarios WHERE idalumno = ?", [idalumno]);
@@ -263,7 +279,8 @@ router.post("/", requierePermiso("members", "crear"), async (req, res, next) => 
     const correo = vacio(d.email);
 
     await exigirCajaAbierta(req);
-    const id = await transaccion(async (cx) => {
+    let crm = null;
+    const id = await enFila("alta-alumno", () => transaccion(async (cx) => {
       const [r] = await cx.execute(
         `INSERT INTO alumnos (dni, nombres, apellidos, sexo, fecha_nacimiento, telefono, correo, direccion,
                               contacto_emergencia, telefono_emergencia, parentesco_emergencia,
@@ -275,11 +292,11 @@ router.post("/", requierePermiso("members", "crear"), async (req, res, next) => 
           vacio(d.birthDate), vacio(d.phone), correo, vacio(d.address),
           vacio(d.emergencyContact?.name), vacio(d.emergencyContact?.phone), vacio(d.emergencyContact?.relationship),
           vacio(d.medicalNotes),
-          OBJETIVOS.includes(d.objective) ? d.objective : "tonificacion",
+          objetivosValidos(d.objective) || "tonificacion",
           vacio(d.assignedTrainerId), vacio(d.notes),
         ],
       );
-      await cx.execute(
+      const [rm] = await cx.execute(
         `INSERT INTO matriculas (idalumno, idplan, identrenador, fecha_inicio, monto, precio_total, fecha_limite_pago, metodo_pago, idusuario_registro,
                                  congelamiento_dias, congelamiento_partes, congelamiento_min_dias)
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
@@ -295,9 +312,17 @@ router.post("/", requierePermiso("members", "crear"), async (req, res, next) => 
         ],
       );
       await crearOCambiarCuenta(cx, r.insertId, dni, req.usuario.idusuario);
+      // CRM: si era un interesado, se cierra y la venta se acredita a su responsable
+      try {
+        crm = await vincularMatricula(cx, {
+          idalumno: r.insertId, idmatricula: rm.insertId, prospectId: d.prospectId, dni, phone: d.phone, idusuario: req.usuario.idusuario,
+        });
+      } catch (e) {
+        console.error("No se pudo vincular la matrícula con el CRM:", e.message);
+      }
       return r.insertId;
-    });
-    res.status(201).json({ ...(await obtener(id)), cuentaNueva: { usuario: dni, claveTemporal: dni } });
+    }));
+    res.status(201).json({ ...(await obtener(id)), cuentaNueva: { usuario: dni, claveTemporal: dni }, crm });
   } catch (e) {
     if (e.code === "ER_DUP_ENTRY" && e.message.includes("codigo")) {
       return next(new ErrorHttp(409, "Se registraron dos alumnos al mismo tiempo. Vuelve a guardar."));
@@ -326,7 +351,7 @@ router.put("/:id", requierePermiso("members", "editar"), async (req, res, next) 
     if (d.gender !== undefined) poner("sexo", d.gender);
     if (d.birthDate !== undefined) poner("fecha_nacimiento", vacio(d.birthDate));
     if (d.medicalNotes !== undefined) poner("restricciones_medicas", vacio(d.medicalNotes));
-    if (d.objective !== undefined && OBJETIVOS.includes(d.objective)) poner("objetivo", d.objective);
+    if (d.objective !== undefined && objetivosValidos(d.objective)) poner("objetivo", objetivosValidos(d.objective));
     if (d.notes !== undefined) poner("notas", vacio(d.notes));
     if (d.assignedTrainerId !== undefined) poner("identrenador", vacio(d.assignedTrainerId));
     if (d.emergencyContact) {
@@ -344,7 +369,7 @@ router.put("/:id", requierePermiso("members", "editar"), async (req, res, next) 
 });
 
 // POST /api/alumnos/:id/cuenta  -> crea o restablece el acceso del alumno (usuario y clave = DNI)
-router.post("/:id/cuenta", requierePermiso("members", "editar"), async (req, res, next) => {
+router.post("/:id/cuenta", requierePermiso("members", "editar"), soloGestion, async (req, res, next) => {
   try {
     const [a] = await consultar("SELECT idalumno, dni FROM alumnos WHERE idalumno = ? AND activo = 1", [req.params.id]);
     if (!a) throw new ErrorHttp(404, "Alumno no encontrado");
@@ -367,7 +392,7 @@ router.delete("/:id", requierePermiso("members", "eliminar"), async (req, res, n
 });
 
 // POST /api/alumnos/:id/renovar  { planId, paymentMethod, discount }
-router.post("/:id/renovar", requierePermiso(["members", "alerts"], "crear"), async (req, res, next) => {
+router.post("/:id/renovar", requierePermiso(["members", "alerts"], "crear"), soloGestion, async (req, res, next) => {
   try {
     const { planId, paymentMethod, discount = 0, amountPaid, debtDueDate } = req.body || {};
     const [plan] = await consultar("SELECT idplan, precio, congelamiento_dias, congelamiento_partes, congelamiento_min_dias FROM planes WHERE idplan = ? AND activo = 1", [planId]);
@@ -534,7 +559,7 @@ router.get("/:id/pagos", requierePermiso(["members", "finance"], "ver"), async (
 });
 
 // POST /api/alumnos/:id/pagos { monto, metodoPago, notas }  -> cobra saldo pendiente
-router.post("/:id/pagos", requierePermiso(["members", "finance"], "crear"), async (req, res, next) => {
+router.post("/:id/pagos", requierePermiso(["members", "finance"], "crear"), soloGestion, async (req, res, next) => {
   try {
     const monto = Math.round(Number(req.body?.monto) * 100) / 100;
     if (!(monto > 0)) throw new ErrorHttp(400, "Ingresa el monto a cobrar");
@@ -823,7 +848,7 @@ router.get("/:id/congelamientos", async (req, res, next) => {
 });
 
 // POST /api/alumnos/:id/congelamientos { startDate, days, reason }
-router.post("/:id/congelamientos", requierePermiso("members", "editar"), async (req, res, next) => {
+router.post("/:id/congelamientos", requierePermiso("members", "editar"), soloGestion, async (req, res, next) => {
   try {
     const inicio = String(req.body?.startDate || "");
     const dias = Number(req.body?.days);
@@ -922,7 +947,7 @@ async function cerrarCongelamiento(req, accion) {
 }
 
 // POST /api/alumnos/:id/congelamientos/:cid/terminar { reason } -> el alumno vuelve antes (los días no usados se pierden)
-router.post("/:id/congelamientos/:cid/terminar", requierePermiso("members", "editar"), async (req, res, next) => {
+router.post("/:id/congelamientos/:cid/terminar", requierePermiso("members", "editar"), soloGestion, async (req, res, next) => {
   try {
     res.json({ member: await cerrarCongelamiento(req, "terminar") });
   } catch (e) {
@@ -931,7 +956,7 @@ router.post("/:id/congelamientos/:cid/terminar", requierePermiso("members", "edi
 });
 
 // POST /api/alumnos/:id/congelamientos/:cid/anular { reason } -> se deshace y se devuelven los días
-router.post("/:id/congelamientos/:cid/anular", requierePermiso("members", "editar"), async (req, res, next) => {
+router.post("/:id/congelamientos/:cid/anular", requierePermiso("members", "editar"), soloGestion, async (req, res, next) => {
   try {
     res.json({ member: await cerrarCongelamiento(req, "anular") });
   } catch (e) {

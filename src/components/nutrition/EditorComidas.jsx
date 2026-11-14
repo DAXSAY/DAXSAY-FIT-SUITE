@@ -103,7 +103,12 @@ const SelectorHora = ({ value, onChange }) => {
   );
 };
 
-export const EditorComidas = ({ meals, setMeals, metas }) => {
+/**
+ * indices: solo se muestran esas comidas (las demás se editan dentro de su plato)
+ * soloTotales: muestra los totales del día y oculta "Agregar comida"
+ * compacto: sin cabecera ni totales (dentro de un plato)
+ */
+export const EditorComidas = ({ meals, setMeals, metas, indices, soloTotales = false, compacto = false }) => {
   const [selector, setSelector] = useState(null); // índice de la comida
   const cambiar = (mIdx, fn) =>
     setMeals((prev) => prev.map((m, i) => (i === mIdx ? totalesComida(fn(m)) : m)));
@@ -122,11 +127,16 @@ export const EditorComidas = ({ meals, setMeals, metas }) => {
 
   return (
     <div className="space-y-4">
+      {!compacto && (
+      <>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h4 className="font-extrabold text-sm text-slate-900">🍴 Comidas y alimentos</h4>
-          <p className="text-xs text-slate-500">Elige del catálogo y ajusta los gramos: calorías y macros se calculan solos.</p>
+          <h4 className="font-extrabold text-sm text-slate-900">{soloTotales ? "📊 Alimentos del día vs. metas" : "🍴 Comidas y alimentos"}</h4>
+          <p className="text-xs text-slate-500">
+            {soloTotales ? "Suma de los alimentos de todos los platos. Los alimentos se agregan dentro de cada plato." : "Elige del catálogo y ajusta los gramos: calorías y macros se calculan solos."}
+          </p>
         </div>
+        {!soloTotales && (
         <button
           type="button"
           onClick={() =>
@@ -139,17 +149,29 @@ export const EditorComidas = ({ meals, setMeals, metas }) => {
         >
           <Plus className="w-3.5 h-3.5" /> Agregar comida
         </button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         <Meta label="Calorías del día" valor={dia.kcal} meta={metas.kcal} color="#0f172a" unidad="kcal" />
-        <Meta label="Proteína" valor={dia.p} meta={metas.p} color="#e11d48" />
-        <Meta label="Carbohidratos" valor={dia.c} meta={metas.c} color="#f59e0b" />
-        <Meta label="Grasas" valor={dia.g} meta={metas.g} color="#65a30d" />
+        <Meta label="Proteína" valor={dia.p} meta={metas.p} color="var(--color-rose-600)" />
+        <Meta label="Carbohidratos" valor={dia.c} meta={metas.c} color="var(--color-amber-500)" />
+        <Meta label="Grasas" valor={dia.g} meta={metas.g} color="var(--color-lime-600)" />
       </div>
+      {soloTotales && indices?.length > 0 && <p className="text-xs font-bold text-amber-700">Comidas sin plato (de planes anteriores):</p>}
+      </>
+      )}
 
-      {meals.map((meal, mIdx) => (
+      {meals.map((meal, mIdx) => (indices && !indices.includes(mIdx) ? null : (
         <div key={meal.id || mIdx} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          {compacto ? (
+            <div className="flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs">
+              <span className="font-black text-slate-700">Alimentos de este plato</span>
+              <span className="text-slate-500">
+                <b className="text-slate-900">{meal.totalCalories || 0} kcal</b> · P {meal.totalProteins || 0} g · C {meal.totalCarbs || 0} g · G {meal.totalFats || 0} g
+              </span>
+            </div>
+          ) : (
           <div className="flex flex-wrap items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-200">
             <span className="w-7 h-7 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center">{mIdx + 1}</span>
             <input
@@ -160,7 +182,7 @@ export const EditorComidas = ({ meals, setMeals, metas }) => {
             <SelectorHora value={meal.time} onChange={(t) => cambiar(mIdx, (m) => ({ ...m, time: t }))} />
             <span className="text-xs font-black text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-1">{meal.totalCalories || 0} kcal</span>
             <span className="hidden sm:inline text-[11px] text-slate-500">
-              P {meal.totalProteins || 0} · C {meal.totalCarbs || 0} · G {meal.totalFats || 0}
+              Prot {meal.totalProteins || 0} g · Carb {meal.totalCarbs || 0} g · Grasa {meal.totalFats || 0} g
             </span>
             <div className="flex items-center">
               <button type="button" onClick={() => mover(mIdx, -1)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer" title="Subir">
@@ -181,7 +203,7 @@ export const EditorComidas = ({ meals, setMeals, metas }) => {
               </button>
             </div>
           </div>
-
+          )}
           <div className="p-3 space-y-2">
             {(meal.items || []).length === 0 && <p className="text-xs text-slate-400 text-center py-2">Sin alimentos todavía.</p>}
             {(meal.items || []).map((it) => {
@@ -203,7 +225,9 @@ export const EditorComidas = ({ meals, setMeals, metas }) => {
                       <p className="text-[11px] text-slate-500">{String(it.portion || "").split(" · ").slice(1).join(" · ")}</p>
                     </div>
                   )}
-                  <div className="flex items-center gap-1">
+                  <label className="flex flex-col items-center gap-0.5">
+                    <span className="text-[10px] font-bold uppercase text-slate-500">Porción</span>
+                    <span className="flex items-center gap-1">
                     <input
                       type="number"
                       min="0"
@@ -214,35 +238,40 @@ export const EditorComidas = ({ meals, setMeals, metas }) => {
                       className="w-16 px-1.5 py-1.5 rounded-lg border border-slate-200 bg-white text-sm font-bold text-center"
                     />
                     <span className="text-xs text-slate-400">g</span>
-                  </div>
+                    </span>
+                  </label>
                   {libre ? (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-end gap-1.5">
                       {[
-                        ["calories", "kcal", "w-16"],
-                        ["proteins", "P", "w-12"],
-                        ["carbs", "C", "w-12"],
-                        ["fats", "G", "w-12"],
-                      ].map(([k, l, w]) => (
-                        <input
-                          key={k}
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          title={l}
-                          placeholder={l}
-                          value={it[k] ?? ""}
-                          onChange={(e) =>
-                            cambiar(mIdx, (m) => ({ ...m, items: m.items.map((x) => (x.id === it.id ? { ...x, [k]: Number(e.target.value) } : x)) }))
-                          }
-                          className={`${w} px-1 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-center`}
-                        />
+                        ["calories", "Calorías", "kcal", "text-amber-600", "border-amber-200"],
+                        ["proteins", "Proteína", "g", "text-rose-600", "border-rose-200"],
+                        ["carbs", "Carbohid.", "g", "text-sky-600", "border-sky-200"],
+                        ["fats", "Grasa", "g", "text-violet-600", "border-violet-200"],
+                      ].map(([k, l, u, color, borde]) => (
+                        <label key={k} className="flex flex-col items-center gap-0.5" title={`${l} en ${u} (de la porción completa)`}>
+                          <span className={`text-[10px] font-bold uppercase ${color}`}>{l}</span>
+                          <span className="relative">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              placeholder="0"
+                              value={it[k] || it[k] === 0 ? it[k] : ""}
+                              onChange={(e) =>
+                                cambiar(mIdx, (m) => ({ ...m, items: m.items.map((x) => (x.id === it.id ? { ...x, [k]: Number(e.target.value) } : x)) }))
+                              }
+                              className={`w-[4.75rem] pl-1.5 pr-8 py-1.5 rounded-lg border ${borde} bg-white text-sm font-bold text-right [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none`}
+                            />
+                            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none">{u}</span>
+                          </span>
+                        </label>
                       ))}
                     </div>
                   ) : (
                     <div className="text-right shrink-0 w-28">
                       <p className="text-sm font-black text-amber-600">{it.calories} kcal</p>
                       <p className="text-[10px] text-slate-500">
-                        P {it.proteins} · C {it.carbs} · G {it.fats}
+                        Prot {it.proteins} g · Carb {it.carbs} g · Grasa {it.fats} g
                       </p>
                     </div>
                   )}
@@ -280,7 +309,7 @@ export const EditorComidas = ({ meals, setMeals, metas }) => {
             </div>
           </div>
         </div>
-      ))}
+      )))}
 
       {selector !== null && meals[selector] && (
         <SelectorAlimentos

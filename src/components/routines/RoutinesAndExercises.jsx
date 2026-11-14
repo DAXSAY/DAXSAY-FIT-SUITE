@@ -1,23 +1,22 @@
 import React, { useState, useMemo } from "react";
+import { BarraVolver } from "../common/BarraVolver";
 import {
   Dumbbell,
   Plus,
-  Search,
   Layers,
   Sparkles,
   Trash2,
   Check,
   Printer,
   UserCheck,
-  Zap,
   Video,
   PlayCircle,
   ExternalLink,
   Eye,
-  Play,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import {
   useExerciseBank,
   ExerciseLibrary,
@@ -28,6 +27,10 @@ import {
 } from "./ExerciseBank";
 import { PanelIndicaciones } from "../indicaciones/Indicaciones";
 
+import { OBJETIVOS_RUTINA, NIVELES_RUTINA, textoObjetivoRutina, textoNivelRutina } from "../../utils/rutinas";
+import { SelectorAlumno } from "../common/BuscarAlumno";
+import { avisoBreve } from "../../utils/avisoBreve";
+import { BotonesDescarga } from "../common/BotonesDescarga";
 export const RoutinesAndExercises = () => {
   const {
     exercises,
@@ -43,6 +46,7 @@ export const RoutinesAndExercises = () => {
     assignRoutineToMember,
   } = useGym();
 
+  // El progreso de pesos de los alumnos ahora está en Metas & Logros
   const [activeSubTab, setActiveSubTab] = useState("routines");
 
   // Exercise Filters
@@ -241,6 +245,8 @@ export const RoutinesAndExercises = () => {
     if (!assigningRoutine || !studentToAssignId) return;
 
     assignRoutineToMember(studentToAssignId, assigningRoutine.id);
+    const alumnoAsignado = members.find((m) => String(m.id) === String(studentToAssignId));
+    avisoBreve(`✓ Rutina asignada a ${alumnoAsignado?.fullName || "el alumno"}`);
     setAssigningRoutine(null);
     setStudentToAssignId("");
 
@@ -254,20 +260,19 @@ export const RoutinesAndExercises = () => {
   return (
     <div className="space-y-4">
       {/* Sub Navigation Bar */}
-      <div className="rd-portada flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-2xl">
-        <div>
+      <div className="rd-portada rd-cabecera flex flex-col 2xl:flex-row 2xl:items-center 2xl:justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
             <Dumbbell className="w-4 h-4 text-blue-600" />
-            <span>Módulo de Rutinas & Base de Datos de Ejercicios</span>
+            <span>Rutinas y ejercicios</span>
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Banco de {allExercises.length} ejercicios con animación GIF, creador de
-            rutinas y asignación directa a alumnos.
+            Banco de {allExercises.length} ejercicios con animación, creador de rutinas y asignación a alumnos.
           </p>
         </div>
 
         {/* Tab switcher */}
-        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+        <div className="flex flex-wrap items-center gap-1 bg-gray-100 p-1 rounded-lg self-start">
           <button
             onClick={() => setActiveSubTab("routines")}
             className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all ${
@@ -358,7 +363,7 @@ export const RoutinesAndExercises = () => {
                   <div>
                     <div className="flex items-start justify-between gap-2">
                       <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md border border-blue-200">
-                        {routine.level} • {routine.objective}
+                        {textoNivelRutina(routine.level)} • {textoObjetivoRutina(routine.objective)}
                       </span>
                       <span className="text-xs text-gray-500 font-mono">
                         {routine.days.length} Días / sem
@@ -462,24 +467,18 @@ export const RoutinesAndExercises = () => {
       {/* SUBTAB 3: ROUTINE BUILDER WIZARD */}
       {activeSubTab === "builder" && (
         <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-xs space-y-5 text-slate-800">
-          <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-            <div>
-              <div className="flex items-center gap-2 text-blue-600 text-xs font-bold uppercase tracking-wider mb-0.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Creador Interactivo de Rutinas para Entrenadores</span>
-              </div>
-              <h2 className="text-base font-bold text-slate-900">
+          <BarraVolver
+            onVolver={() => setActiveSubTab("routines")}
+            className="border-b border-gray-200 pb-3"
+            titulo={
+              <>
+                <span className="flex items-center gap-2 text-blue-600 text-xs font-bold uppercase tracking-wider mb-0.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Creador Interactivo de Rutinas para Entrenadores
+                </span>
                 Diseñar programa personalizado (series, repeticiones y descansos)
-              </h2>
-            </div>
-
-            <button
-              onClick={() => setActiveSubTab("routines")}
-              className="text-xs text-gray-500 hover:text-slate-800 cursor-pointer"
-            >
-              Cancelar y Volver
-            </button>
-          </div>
+              </>
+            }
+          />
 
           <form onSubmit={handleSaveRoutine} className="space-y-5">
             {/* General Info */}
@@ -507,17 +506,11 @@ export const RoutinesAndExercises = () => {
                   onChange={(e) => setRoutineObjective(e.target.value)}
                   className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                 >
-                  <option value="hipertrofia">
-                    Ganancia Muscular / Hipertrofia
-                  </option>
-                  <option value="perdida_peso">
-                    Pérdida de Grasa / Definición
-                  </option>
-                  <option value="fuerza">Fuerza Máxima</option>
-                  <option value="tonificacion">Tonificación General</option>
-                  <option value="resistencia">
-                    Resistencia & Acondicionamiento
-                  </option>
+                  {OBJETIVOS_RUTINA.map(([k, ic, l]) => (
+                    <option key={k} value={k}>
+                      {ic} {l}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -525,15 +518,19 @@ export const RoutinesAndExercises = () => {
                 <label className="block text-slate-700 font-semibold mb-1">
                   Nivel
                 </label>
-                <select
-                  value={routineLevel}
-                  onChange={(e) => setRoutineLevel(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
-                >
-                  <option value="principiante">Principiante</option>
-                  <option value="intermedio">Intermedio</option>
-                  <option value="avanzado">Avanzado</option>
-                </select>
+                <div className="grid grid-cols-2 gap-1">
+                  {NIVELES_RUTINA.map(([k, ic, l, d]) => (
+                    <button
+                      key={k}
+                      type="button"
+                      title={d}
+                      onClick={() => setRoutineLevel(k)}
+                      className={`px-1.5 py-1.5 rounded-md border text-[10.5px] leading-tight font-bold cursor-pointer ${routineLevel === k ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-gray-300 text-slate-700 hover:border-blue-400"}`}
+                    >
+                      {ic} {l}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="sm:col-span-2">
@@ -571,18 +568,7 @@ export const RoutinesAndExercises = () => {
                 <label className="block text-slate-700 font-semibold mb-1">
                   Asignar a Alumno Directo (Opcional)
                 </label>
-                <select
-                  value={routineTargetMemberId}
-                  onChange={(e) => setRoutineTargetMemberId(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
-                >
-                  <option value="">Dejar como plantilla general</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.fullName} ({m.planName}) - {m.objective}
-                    </option>
-                  ))}
-                </select>
+                <SelectorAlumno alumnos={members} value={routineTargetMemberId} onChange={(id) => setRoutineTargetMemberId(id)} vacio="Dejar como plantilla general" />
               </div>
             </div>
 
@@ -642,14 +628,10 @@ export const RoutinesAndExercises = () => {
                       </div>
                     </div>
 
-                    <ExercisePicker
-                      exercises={allExercises}
-                      onPick={(ex) => handleAddExerciseToDay(dIdx, ex.id)}
-                      picked={(day.exercises || []).map((e) => e.exerciseId)}
-                    />
-
-                    {/* Exercises in this Day */}
+                    {/* Ejercicios del día a la izquierda (arriba en celular) y el buscador a la derecha */}
+                    <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] gap-3 items-start">
                     <div className="space-y-2">
+                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Ejercicios de este día ({day.exercises.length})</p>
                       {day.exercises.length === 0 ? (
                         <p className="text-xs text-gray-400 italic py-1.5">
                           No hay ejercicios en este día. Selecciona un ejercicio
@@ -686,7 +668,7 @@ export const RoutinesAndExercises = () => {
                                 >
                                   <ExerciseThumb
                                     ex={{ ...ex, name: ex.exerciseName }}
-                                    className="w-16 h-16 rounded-lg border border-gray-200"
+                                    className="w-12 h-12 rounded-lg border border-gray-200"
                                   />
                                 </button>
                                 <div className="flex-1 min-w-0">
@@ -752,7 +734,7 @@ export const RoutinesAndExercises = () => {
                                   ✕
                                 </button>
                               </div>
-                              <div className="mt-3 sm:pl-[6.25rem] space-y-2">
+                              <div className="mt-2 sm:pl-[5rem] space-y-2">
                                 {pasos.length > 0 && (
                                   <details className="bg-slate-50 border border-slate-200 rounded-lg">
                                     <summary className="px-3 py-2 text-sm font-semibold text-blue-700 cursor-pointer select-none">
@@ -777,6 +759,16 @@ export const RoutinesAndExercises = () => {
                           );
                         })
                       )}
+                    </div>
+                    <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto rounded-xl border border-blue-200 bg-blue-50/40 p-2.5 space-y-1.5">
+                      <p className="text-[11px] font-black uppercase tracking-wider text-blue-700">Agregar ejercicios</p>
+                      <ExercisePicker
+                        compacto
+                        exercises={allExercises}
+                        onPick={(ex) => handleAddExerciseToDay(dIdx, ex.id)}
+                        picked={(day.exercises || []).map((e) => e.exerciseId)}
+                      />
+                    </div>
                     </div>
                   </div>
                 ))}
@@ -811,7 +803,7 @@ export const RoutinesAndExercises = () => {
             <div className="flex items-start justify-between border-b border-gray-200 pb-3">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md border border-blue-200">
-                  {viewingRoutine.level} • {viewingRoutine.objective}
+                  {textoNivelRutina(viewingRoutine.level)} • {textoObjetivoRutina(viewingRoutine.objective)}
                 </span>
                 <h3 className="text-base font-bold text-slate-900 mt-1">
                   {viewingRoutine.title}
@@ -833,6 +825,7 @@ export const RoutinesAndExercises = () => {
                 >
                   <Printer className="w-4 h-4" />
                 </button>
+                <BotonesDescarga compacto nombre={`Rutina_${viewingRoutine.title || ""}`} />
                 <button
                   onClick={() => setViewingRoutine(null)}
                   className="text-gray-400 hover:text-gray-700 p-1 cursor-pointer"
@@ -938,7 +931,7 @@ export const RoutinesAndExercises = () => {
       {/* Routine Assignment Modal */}
       {assigningRoutine && (
         <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
-          <div className="w-full max-w-3xl mx-auto min-h-full sm:px-8 sm:py-8 bg-white p-5 text-slate-800">
+          <div className="rd-compacta w-full max-w-3xl mx-auto min-h-full sm:px-8 sm:py-8 bg-white p-5 text-slate-800">
             <h3 className="text-sm font-bold text-slate-900 mb-0.5">
               Asignar Rutina a Alumno
             </h3>
@@ -957,19 +950,7 @@ export const RoutinesAndExercises = () => {
                 <label className="block text-slate-700 font-semibold mb-1">
                   Seleccionar Alumno
                 </label>
-                <select
-                  required
-                  value={studentToAssignId}
-                  onChange={(e) => setStudentToAssignId(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
-                >
-                  <option value="">Seleccionar alumno de la lista...</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.fullName} ({m.planName}) - {m.objective}
-                    </option>
-                  ))}
-                </select>
+                <SelectorAlumno alumnos={members} value={studentToAssignId} onChange={(id) => setStudentToAssignId(id)} required />
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
@@ -1081,6 +1062,7 @@ export const RoutinesAndExercises = () => {
                     onChange={(e) => setExDifficulty(e.target.value)}
                     className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
                   >
+                    <option value="acondicionamiento">Acondicionamiento</option>
                     <option value="principiante">Principiante</option>
                     <option value="intermedio">Intermedio</option>
                     <option value="avanzado">Avanzado</option>

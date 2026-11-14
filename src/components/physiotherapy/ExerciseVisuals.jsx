@@ -149,7 +149,7 @@ export const ExerciseVectorDrawing = ({ type }) => {
             y1="48"
             x2="32"
             y2="72"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="3"
             strokeLinecap="round"
           />
@@ -158,29 +158,29 @@ export const ExerciseVectorDrawing = ({ type }) => {
             y1="52"
             x2="102"
             y2="72"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="3"
             strokeLinecap="round"
           />
           {/* Arched Spine Cat Camel */}
           <path
             d="M32 48 Q67 24 102 52"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="4"
             strokeLinecap="round"
           />
           {/* Head looking down */}
-          <circle cx="20" cy="54" r="8" fill="#0284c7" />
+          <circle cx="20" cy="54" r="8" fill="var(--color-sky-600)" />
           {/* Flow movement arrows */}
           <path
             d="M67 36 L67 26"
-            stroke="#22c55e"
+            stroke="var(--color-green-500)"
             strokeWidth="2"
             markerEnd="url(#arrow)"
           />
           <path
             d="M67 44 L67 54"
-            stroke="#eab308"
+            stroke="var(--color-yellow-500)"
             strokeWidth="2"
             markerEnd="url(#arrow)"
           />
@@ -205,11 +205,11 @@ export const ExerciseVectorDrawing = ({ type }) => {
             strokeDasharray="3 3"
           />
           {/* Upper back on ground */}
-          <circle cx="26" cy="65" r="7" fill="#0284c7" />
+          <circle cx="26" cy="65" r="7" fill="var(--color-sky-600)" />
           {/* Elevated Pelvic Bridge Line */}
           <path
             d="M30 65 L65 38 L98 72"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="4"
             strokeLinecap="round"
           />
@@ -219,15 +219,15 @@ export const ExerciseVectorDrawing = ({ type }) => {
             y1="72"
             x2="108"
             y2="72"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="3.5"
             strokeLinecap="round"
           />
           {/* Glute highlight glow circle */}
-          <circle cx="65" cy="38" r="9" fill="#f43f5e" fillOpacity="0.5" />
+          <circle cx="65" cy="38" r="9" fill="var(--color-rose-500)" fillOpacity="0.5" />
           <path
             d="M65 48 L65 30"
-            stroke="#f43f5e"
+            stroke="var(--color-rose-500)"
             strokeWidth="2"
             strokeLinecap="round"
           />
@@ -252,13 +252,13 @@ export const ExerciseVectorDrawing = ({ type }) => {
             strokeDasharray="3 3"
           />
           {/* Standing torso */}
-          <circle cx="60" cy="22" r="7" fill="#0284c7" />
+          <circle cx="60" cy="22" r="7" fill="var(--color-sky-600)" />
           <line
             x1="60"
             y1="29"
             x2="60"
             y2="58"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="3"
           />
           <line
@@ -266,7 +266,7 @@ export const ExerciseVectorDrawing = ({ type }) => {
             y1="58"
             x2="54"
             y2="72"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="2.5"
           />
           <line
@@ -274,27 +274,27 @@ export const ExerciseVectorDrawing = ({ type }) => {
             y1="58"
             x2="66"
             y2="72"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="2.5"
           />
           {/* Arm with 90 deg elbow */}
           <path
             d="M60 34 L72 44 L94 44"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="3"
             strokeLinecap="round"
           />
           {/* Elastic resistance band */}
           <path
             d="M94 44 L118 44"
-            stroke="#ef4444"
+            stroke="var(--color-red-500)"
             strokeWidth="3"
             strokeDasharray="3 2"
           />
           {/* Rotation arc arrow */}
           <path
             d="M90 38 Q100 44 90 50"
-            stroke="#22c55e"
+            stroke="var(--color-green-500)"
             strokeWidth="2"
             fill="none"
           />
@@ -324,23 +324,23 @@ export const ExerciseVectorDrawing = ({ type }) => {
             y1="42"
             x2="30"
             y2="72"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="3"
           />
-          <circle cx="30" cy="34" r="7" fill="#0284c7" />
+          <circle cx="30" cy="34" r="7" fill="var(--color-sky-600)" />
           {/* Extended leg with foam roller under knee */}
           <path
             d="M30 72 L65 64 L108 52"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="4"
             strokeLinecap="round"
           />
           {/* Foam roller under knee */}
-          <ellipse cx="65" cy="68" rx="8" ry="5" fill="#f59e0b" />
+          <ellipse cx="65" cy="68" rx="8" ry="5" fill="var(--color-amber-500)" />
           {/* Downward force arrow */}
           <path
             d="M65 52 L65 62"
-            stroke="#ef4444"
+            stroke="var(--color-red-500)"
             strokeWidth="2.5"
             strokeLinecap="round"
           />
@@ -367,18 +367,18 @@ export const ExerciseVectorDrawing = ({ type }) => {
           {/* Unstable Bosu dome */}
           <path
             d="M50 72 Q70 60 90 72 Z"
-            fill="#0284c7"
-            stroke="#38bdf8"
+            fill="var(--color-sky-600)"
+            stroke="var(--color-sky-400)"
             strokeWidth="1.5"
           />
           {/* Single Leg standing on top */}
-          <circle cx="70" cy="18" r="6" fill="#38bdf8" />
+          <circle cx="70" cy="18" r="6" fill="var(--color-sky-400)" />
           <line
             x1="70"
             y1="24"
             x2="70"
             y2="44"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="3"
           />
           <line
@@ -386,7 +386,7 @@ export const ExerciseVectorDrawing = ({ type }) => {
             y1="44"
             x2="70"
             y2="62"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="3"
           />
           {/* Lifted knee */}
@@ -394,7 +394,7 @@ export const ExerciseVectorDrawing = ({ type }) => {
           {/* Balance ripples */}
           <path
             d="M44 65 Q70 54 96 65"
-            stroke="#f43f5e"
+            stroke="var(--color-rose-500)"
             strokeWidth="1.5"
             strokeDasharray="2 2"
           />
@@ -414,28 +414,28 @@ export const ExerciseVectorDrawing = ({ type }) => {
             cx="45"
             cy="40"
             r="14"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="2.5"
-            fill="#0284c7"
+            fill="var(--color-sky-600)"
             fillOpacity="0.3"
           />
-          <circle cx="52" cy="38" r="2.5" fill="#38bdf8" />
+          <circle cx="52" cy="38" r="2.5" fill="var(--color-sky-400)" />
           {/* Eye Gaze Target Ray */}
           <line
             x1="55"
             y1="38"
             x2="105"
             y2="38"
-            stroke="#22c55e"
+            stroke="var(--color-green-500)"
             strokeWidth="2"
             strokeDasharray="3 2"
           />
           {/* Target Thumb / Point */}
-          <circle cx="108" cy="38" r="5" fill="#ef4444" />
+          <circle cx="108" cy="38" r="5" fill="var(--color-red-500)" />
           {/* Cervical rotation arc */}
           <path
             d="M35 24 Q45 18 55 24"
-            stroke="#f59e0b"
+            stroke="var(--color-amber-500)"
             strokeWidth="2"
             fill="none"
           />
@@ -461,21 +461,21 @@ export const ExerciseVectorDrawing = ({ type }) => {
             strokeDasharray="3 3"
           />
           {/* Person jumping or landing with lightning bolt */}
-          <circle cx="70" cy="22" r="6" fill="#38bdf8" />
+          <circle cx="70" cy="22" r="6" fill="var(--color-sky-400)" />
           <line
             x1="70"
             y1="28"
             x2="70"
             y2="48"
-            stroke="#38bdf8"
+            stroke="var(--color-sky-400)"
             strokeWidth="3"
           />
-          <path d="M70 48 L60 62 L64 70" stroke="#38bdf8" strokeWidth="3" />
-          <path d="M70 48 L80 62 L76 70" stroke="#38bdf8" strokeWidth="3" />
+          <path d="M70 48 L60 62 L64 70" stroke="var(--color-sky-400)" strokeWidth="3" />
+          <path d="M70 48 L80 62 L76 70" stroke="var(--color-sky-400)" strokeWidth="3" />
           {/* Lightning power icon */}
           <path
             d="M85 24 L94 18 L90 28 L98 28 L86 42 L88 32 Z"
-            fill="#eab308"
+            fill="var(--color-yellow-500)"
           />
         </svg>
       );
@@ -492,7 +492,7 @@ export const ExerciseVisuals = ({
     <div className="space-y-6">
       {/* 1. VISUAL PRESET EXERCISE GALLERY (CLICK TO ADD) */}
       {!readOnly && (
-        <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-3">
+        <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-3 rd-panel-oscuro">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <div>
               <div className="flex items-center gap-2">

@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, CalendarCheck, Clock, CalendarX, FileCheck2,
 import { useGym } from "../../context/GymContext";
 import { hoyISO } from "../../utils/fecha";
 import { userCan } from "../../config/roles";
+import { coincidePersonal } from "../../utils/buscarPersona";
 
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 const DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -37,70 +38,105 @@ export const registrosDe = (attendances, c) =>
       (a.contractId === c.id || (c.staffId && a.userId === c.staffId) || (c.dni && a.userDni === c.dni)),
   );
 
+/** Calendario y conteo de un mes para un trabajador */
+export const calcularMes = (attendances, c, mes, hoy) => {
+  const porDia = {};
+  registrosDe(attendances, c)
+    .slice()
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+    .forEach((a) => {
+      const d = (porDia[a.date] ||= { entradas: [], salidas: [] });
+      if (a.type === "out") d.salidas.push(a);
+      else d.entradas.push(a);
+    });
+  Object.values(porDia).forEach((d) => {
+    const u = d.entradas[d.entradas.length - 1];
+    d.estado = u ? normalizarEstado(u.status) : "puntual";
+    d.ultimo = u || d.salidas[0];
+  });
+  const [y, m] = mes.split("-").map(Number);
+  const vacias = (new Date(y, m - 1, 1).getDay() + 6) % 7;
+  const total = new Date(y, m, 0).getDate();
+  const celdas = [
+    ...Array.from({ length: vacias }, () => null),
+    ...Array.from({ length: total }, (_, i) => {
+      const fecha = `${mes}-${String(i + 1).padStart(2, "0")}`;
+      const dow = new Date(`${fecha}T12:00:00`).getDay();
+      const reg = porDia[fecha];
+      let estado;
+      if (reg) estado = reg.estado;
+      else if (fecha > hoy) estado = "futuro";
+      else if (c.external || dow === 0 || (c.startDate && fecha < c.startDate) || (c.endDate && fecha > c.endDate)) estado = "descanso";
+      else estado = "sin";
+      return { fecha, dia: i + 1, estado, reg };
+    }),
+  ];
+  const d = celdas.filter(Boolean);
+  const cuenta = (k) => d.filter((x) => x.estado === k).length;
+  const laborables = d.filter((x) => ["puntual", "tarde", "falta", "permiso", "sin"].includes(x.estado)).length;
+  const asistio = cuenta("puntual") + cuenta("tarde");
+  const stats = { puntual: cuenta("puntual"), tarde: cuenta("tarde"), falta: cuenta("falta"), permiso: cuenta("permiso"), sin: cuenta("sin"), pct: laborables ? Math.round((asistio / laborables) * 100) : null };
+  return { celdas, stats };
+};
+
+const GRUPOS = [
+  ["todos", "Todos", "👥"],
+  ["trainer", "Entrenadores", "🏋️"],
+  ["receptionist", "Recepción", "🛎️"],
+  ["nutritionist", "Nutrición", "🥗"],
+  ["physiotherapist", "Fisioterapia", "🩺"],
+  ["maintenance", "Mantenimiento", "🧰"],
+  ["manager", "Coordinación", "📋"],
+  ["external", "Externos", "🤝"],
+  ["otros", "Otros", "•"],
+];
+const grupoDe = (c) => (c.external ? "external" : GRUPOS.some(([k]) => k === c.role) ? c.role : "otros");
+const iniciales = (n) =>
+  String(n || "?")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+
 export const CalendarioPersonal = () => {
-  const { attendances, staffContracts, recordAttendance, deleteAttendance, currentUser } = useGym();
+  const { attendances, staffContracts: contratos, todoElPersonal, recordAttendance, deleteAttendance, currentUser } = useGym();
   const puedeEditar = userCan(currentUser, "attendances", "editar") || userCan(currentUser, "attendances", "crear");
   const [texto, setTexto] = useState("");
-  const [elegidoId, setElegidoId] = useState(staffContracts[0]?.id || "");
+  const [grupo, setGrupo] = useState("todos");
+  const [elegidoId, setElegidoId] = useState("");
   const [mes, setMes] = useState(hoyISO().slice(0, 7));
   const [diaSel, setDiaSel] = useState(null);
   const [motivo, setMotivo] = useState("");
   const hoy = hoyISO();
 
+  // Una tarjeta por persona (las renovaciones comparten código: se queda el contrato vigente)
+  const staffContracts = useMemo(() => {
+    const porCodigo = new Map();
+    (todoElPersonal || contratos).forEach((c) => {
+      const k = c.staffCode || c.dni || c.id;
+      const prev = porCodigo.get(k);
+      if (!prev || (c.status === "active" && prev.status !== "active")) porCodigo.set(k, c);
+    });
+    return [...porCodigo.values()];
+  }, [todoElPersonal, contratos]);
+
+  const conResumen = useMemo(
+    () => staffContracts.map((c) => ({ c, r: calcularMes(attendances, c, mes, hoy).stats })),
+    [staffContracts, attendances, mes, hoy],
+  );
   const lista = useMemo(() => {
     const q = texto.trim().toLowerCase();
-    return staffContracts.filter((c) => !q || c.fullName?.toLowerCase().includes(q) || String(c.dni || "").includes(q) || c.roleTitle?.toLowerCase().includes(q));
-  }, [staffContracts, texto]);
-  const c = staffContracts.find((x) => x.id === elegidoId) || lista[0];
+    return conResumen.filter(
+      ({ c }) =>
+        (grupo === "todos" || grupoDe(c) === grupo) &&
+        (!q || coincidePersonal(c, q)),
+    );
+  }, [conResumen, texto, grupo]);
+  const c = staffContracts.find((x) => x.id === elegidoId) || lista[0]?.c;
 
-  // Un registro por día (el último de entrada manda el estado)
-  const porDia = useMemo(() => {
-    if (!c) return {};
-    const out = {};
-    registrosDe(attendances, c)
-      .slice()
-      .sort((a, b) => String(a.id).localeCompare(String(b.id)))
-      .forEach((a) => {
-        const d = (out[a.date] ||= { entradas: [], salidas: [] });
-        if (a.type === "out") d.salidas.push(a);
-        else d.entradas.push(a);
-      });
-    Object.values(out).forEach((d) => {
-      const u = d.entradas[d.entradas.length - 1];
-      d.estado = u ? normalizarEstado(u.status) : "puntual";
-      d.ultimo = u || d.salidas[0];
-    });
-    return out;
-  }, [attendances, c]);
-
-  const celdas = useMemo(() => {
-    if (!c) return [];
-    const [y, m] = mes.split("-").map(Number);
-    const vacias = (new Date(y, m - 1, 1).getDay() + 6) % 7;
-    const total = new Date(y, m, 0).getDate();
-    return [
-      ...Array.from({ length: vacias }, () => null),
-      ...Array.from({ length: total }, (_, i) => {
-        const fecha = `${mes}-${String(i + 1).padStart(2, "0")}`;
-        const dow = new Date(`${fecha}T12:00:00`).getDay();
-        const reg = porDia[fecha];
-        let estado;
-        if (reg) estado = reg.estado;
-        else if (fecha > hoy) estado = "futuro";
-        else if (dow === 0 || (c.startDate && fecha < c.startDate) || (c.endDate && fecha > c.endDate)) estado = "descanso";
-        else estado = "sin";
-        return { fecha, dia: i + 1, estado, reg };
-      }),
-    ];
-  }, [c, mes, porDia, hoy]);
-
-  const stats = useMemo(() => {
-    const d = celdas.filter(Boolean);
-    const cuenta = (k) => d.filter((x) => x.estado === k).length;
-    const laborables = d.filter((x) => ["puntual", "tarde", "falta", "permiso", "sin"].includes(x.estado)).length;
-    const asistio = cuenta("puntual") + cuenta("tarde");
-    return { puntual: cuenta("puntual"), tarde: cuenta("tarde"), falta: cuenta("falta"), permiso: cuenta("permiso"), sin: cuenta("sin"), pct: laborables ? Math.round((asistio / laborables) * 100) : null };
-  }, [celdas]);
+  const { celdas, stats } = useMemo(() => (c ? calcularMes(attendances, c, mes, hoy) : { celdas: [], stats: {} }), [attendances, c, mes, hoy]);
 
   const marcar = (estado) => {
     if (!c || !diaSel) return;
@@ -136,17 +172,32 @@ export const CalendarioPersonal = () => {
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
-        <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            placeholder="Buscar trabajador por nombre, DNI o cargo…"
-            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:bg-white"
-          />
+        <div className="flex flex-wrap gap-1.5">
+          {GRUPOS.map(([k, nombre, icono]) => {
+            const n = k === "todos" ? staffContracts.length : staffContracts.filter((x) => grupoDe(x) === k).length;
+            if (!n) return null;
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => {
+                  setGrupo(k);
+                  setElegidoId("");
+                  setDiaSel(null);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border cursor-pointer ${grupo === k ? "bg-blue-600 border-blue-600 text-white" : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-blue-50"}`}
+              >
+                {icono} {nombre} <span className="opacity-70">· {n}</span>
+              </button>
+            );
+          })}
+          <div className="relative ml-auto w-full sm:w-64">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar nombre, código o DNI…" className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:bg-white" />
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {lista.map((x) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+          {lista.map(({ c: x, r }) => (
             <button
               key={x.id}
               type="button"
@@ -154,14 +205,27 @@ export const CalendarioPersonal = () => {
                 setElegidoId(x.id);
                 setDiaSel(null);
               }}
-              className={`px-3 py-1.5 rounded-xl border text-sm cursor-pointer ${
-                c?.id === x.id ? "bg-blue-600 border-blue-600 text-white font-bold" : "border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300"
-              }`}
+              className={`text-left rounded-2xl border-2 p-3 flex items-center gap-3 cursor-pointer transition-colors ${c?.id === x.id ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white hover:border-blue-300"}`}
             >
-              {x.fullName}
-              <span className={`ml-1.5 text-[11px] ${c?.id === x.id ? "text-blue-100" : "text-slate-500"}`}>{x.roleTitle}</span>
+              <span className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${x.external ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800"}`}>{iniciales(x.fullName)}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-black text-slate-900 truncate">{x.fullName}</span>
+                <span className="block text-[11px] text-slate-500 truncate">
+                  <b className="font-mono text-violet-700">{x.staffCode}</b> · {x.roleTitle}
+                </span>
+                <span className="flex gap-1.5 mt-1">
+                  <span className={`px-1.5 rounded text-[10px] font-black ${r.tarde ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-400"}`}>{r.tarde} tard.</span>
+                  <span className={`px-1.5 rounded text-[10px] font-black ${r.falta ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-400"}`}>{r.falta} faltas</span>
+                  <span className={`px-1.5 rounded text-[10px] font-black ${r.permiso ? "bg-sky-100 text-sky-700" : "bg-slate-100 text-slate-400"}`}>{r.permiso} perm.</span>
+                </span>
+              </span>
+              <span className="text-right shrink-0">
+                <span className={`block text-lg font-black ${r.pct == null ? "text-slate-300" : r.pct >= 90 ? "text-emerald-600" : r.pct >= 75 ? "text-amber-600" : "text-rose-600"}`}>{r.pct == null ? "—" : `${r.pct}%`}</span>
+                <span className="block text-[9px] font-bold uppercase text-slate-400">asistencia</span>
+              </span>
             </button>
           ))}
+          {!lista.length && <p className="text-sm text-slate-500 p-3">Nadie coincide con la búsqueda.</p>}
         </div>
       </div>
 
@@ -197,7 +261,7 @@ export const CalendarioPersonal = () => {
                   {c.fullName} · {titMes}
                 </p>
                 <p className="text-[11px] text-slate-500">
-                  {c.roleTitle} · contrato {c.startDate?.split("-").reverse().join("/")} al {c.endDate?.split("-").reverse().join("/")}
+                  {c.roleTitle} · {c.external ? "profesional externo (sin horario fijo)" : `contrato ${c.startDate?.split("-").reverse().join("/") || ""} al ${c.endDate?.split("-").reverse().join("/") || ""}`}
                 </p>
                 {!esMesActual && (
                   <button type="button" onClick={() => setMes(hoy.slice(0, 7))} className="text-[11px] font-bold text-blue-600 cursor-pointer">

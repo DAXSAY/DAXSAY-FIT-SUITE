@@ -16,20 +16,18 @@ export const NutritionMeasurementsModule = () => {
   return (
     <div className="space-y-5">
       {/* Unified Module Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-emerald-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
+      <div className="rd-portada rd-cabecera">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">
               <Sparkles className="w-4 h-4" />
-              <span>Área de Salud, Dietética & Cineantropometría</span>
+              <span>Salud</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              Nutrición, Dietas & Medidas
+              Nutrición y medidas
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm mt-1 max-w-2xl">
-              Planes de alimentación personalizados, cálculo de macronutrientes,
-              evaluaciones antropométricas con bioimpedancia y seguimiento
-              evolutivo del alumno en un solo lugar.
+              Planes de alimentación, macros y evaluaciones corporales del alumno.
             </p>
           </div>
 

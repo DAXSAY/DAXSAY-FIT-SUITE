@@ -1,10 +1,10 @@
-// Avisos del CRM (tarjetas abajo a la derecha, en cualquier pantalla):
+// Avisos del CRM (panel arriba a la derecha, debajo de la barra superior, en cualquier pantalla):
 //  1) 30 minutos antes de la hora pactada con un interesado (llamar, escribir
 //     o recibir su visita), con notificación del navegador si se permitió.
 //  2) Cuando un interesado NO vino con su pase libre: recordar llamarlo y
 //     reprogramarle la visita para que no se pierda.
 import React, { useEffect, useRef, useState } from "react";
-import { BellRing, Phone, MessageCircle, Footprints, X, Check, CalendarClock, AlertTriangle, Ticket } from "lucide-react";
+import { BellRing, Phone, MessageCircle, Footprints, X, Check, CalendarClock, AlertTriangle, Ticket, ChevronDown, ChevronUp } from "lucide-react";
 import { api } from "../../api/cliente";
 import { useGym } from "../../context/GymContext";
 import { mensajeWhatsApp, mensajeReprogramar } from "./CrmModule";
@@ -30,6 +30,23 @@ export const CrmRecordatorios = ({ onAbrir }) => {
   const [noVinieron, setNoVinieron] = useState([]);
   const notificados = useRef(new Set());
   const ocultos = useRef(new Set());
+  const [minimizado, setMinimizado] = useState(() => {
+    try {
+      return sessionStorage.getItem("radical_crm_min") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [verTodos, setVerTodos] = useState(false);
+  const vistos = useRef(new Set());
+  const minimizar = (v) => {
+    setMinimizado(v);
+    try {
+      sessionStorage.setItem("radical_crm_min", v ? "1" : "0");
+    } catch {
+      /* nada */
+    }
+  };
 
   useEffect(() => {
     let vivo = true;
@@ -81,6 +98,15 @@ export const CrmRecordatorios = ({ onAbrir }) => {
     };
   }, []);
 
+  // Si llega un aviso nuevo, el panel se vuelve a abrir
+  useEffect(() => {
+    const claves = [...avisos.map((p) => `${p.id}-${p.contactDate}-${p.contactTime}`), ...noVinieron.map((p) => `nv-${p.id}-${p.passDate}`)];
+    const primera = vistos.current.size === 0;
+    const hayNuevo = claves.some((k) => !vistos.current.has(k));
+    claves.forEach((k) => vistos.current.add(k));
+    if (hayNuevo && !primera) setMinimizado(false);
+  }, [avisos, noVinieron]);
+
   if (!avisos.length && !noVinieron.length) return null;
 
   const abrirFicha = (p) => {
@@ -114,10 +140,37 @@ export const CrmRecordatorios = ({ onAbrir }) => {
   const idsNoVino = new Set(noVinieron.map((p) => p.id));
   const avisosCita = avisos.filter((p) => !idsNoVino.has(p.id));
   const tarjetasNoVino = noVinieron;
+  const total = avisosCita.length + tarjetasNoVino.length;
+  const MAX = 2; // tarjetas visibles a la vez (el resto con "Ver más")
+  const citasVisibles = verTodos ? avisosCita : avisosCita.slice(0, MAX);
+  const noVinoVisibles = verTodos ? tarjetasNoVino : tarjetasNoVino.slice(0, Math.max(0, MAX - citasVisibles.length));
+  const ocultas = total - citasVisibles.length - noVinoVisibles.length;
+
+  if (minimizado)
+    return (
+      <button
+        type="button"
+        onClick={() => minimizar(false)}
+        className="fixed top-28 md:top-20 right-4 z-20 rd-aparece flex items-center gap-2 px-3.5 py-2 rounded-full bg-gradient-to-r from-orange-500 to-rose-500 text-white text-xs font-black shadow-xl cursor-pointer"
+        title="Ver los avisos del CRM"
+      >
+        <BellRing className="w-4 h-4 animate-bounce" /> {total} aviso{total > 1 ? "s" : ""} del CRM
+        <ChevronDown className="w-4 h-4" />
+      </button>
+    );
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 space-y-2 w-[22rem] max-w-[calc(100vw-2rem)]">
-      {avisosCita.slice(0, 3).map((p) => {
+    <div className="fixed top-28 md:top-20 right-4 z-20 w-[22rem] max-w-[calc(100vw-2rem)] rd-aparece">
+      <div className="flex items-center justify-between gap-2 px-3 py-1.5 mb-2 rounded-xl bg-slate-900/90 text-white shadow-lg backdrop-blur">
+        <span className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+          <BellRing className="w-3.5 h-3.5 text-orange-300" /> Avisos del CRM · {total}
+        </span>
+        <button type="button" onClick={() => minimizar(true)} className="flex items-center gap-1 text-[11px] font-bold text-slate-300 hover:text-white cursor-pointer">
+          Minimizar <ChevronUp className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <div className="space-y-2 max-h-[calc(100vh-9rem)] overflow-y-auto pr-0.5">
+      {citasVisibles.map((p) => {
         const I = ICONO[p.contactType] || Phone;
         const conPase = p.contactType === "visita" && p.passCode;
         return (
@@ -173,7 +226,7 @@ export const CrmRecordatorios = ({ onAbrir }) => {
         );
       })}
 
-      {tarjetasNoVino.slice(0, Math.max(1, 3 - Math.min(avisosCita.length, 3))).map((p) => (
+      {noVinoVisibles.map((p) => (
         <div key={`nv-${p.id}`} className="rd-aparece bg-white rounded-2xl border-2 border-rose-300 shadow-2xl overflow-hidden">
           <div className="px-3.5 py-2 bg-gradient-to-r from-rose-600 to-pink-500 text-white flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
@@ -203,6 +256,16 @@ export const CrmRecordatorios = ({ onAbrir }) => {
           </div>
         </div>
       ))}
+      </div>
+      {(ocultas > 0 || verTodos) && total > MAX && (
+        <button
+          type="button"
+          onClick={() => setVerTodos(!verTodos)}
+          className="mt-2 w-full py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow cursor-pointer"
+        >
+          {verTodos ? "Ver menos" : `Ver ${ocultas} aviso${ocultas > 1 ? "s" : ""} más`}
+        </button>
+      )}
     </div>
   );
 };

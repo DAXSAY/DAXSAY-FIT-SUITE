@@ -15,12 +15,15 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: true, // también accesible desde otros equipos de la red / VPN (Tailscale)
+    allowedHosts: [".ts.net", "localhost"],
     strictPort: true, // siempre en el 3000 (las copias viejas se cierran al iniciar)
     open: true,
     // Las llamadas a /api van a la API de Node (servidor/index.js)
     proxy: {
-      "/api": "http://127.0.0.1:4000",
-      "/uploads": "http://127.0.0.1:4000",
+      // xfwd: la API ve la IP real de cada equipo (para limitar intentos por equipo)
+      "/api": { target: "http://127.0.0.1:4000", xfwd: true },
+      "/uploads": { target: "http://127.0.0.1:4000", xfwd: true },
     },
   },
 });

@@ -4,8 +4,9 @@
 // con el alumno al que pertenece para poder filtrar (portal del alumno).
 // =====================================================================
 import { Router } from "express";
-import { consultar, transaccion } from "../db.js";
+import { consultar, transaccion, enFila } from "../db.js";
 import { ErrorHttp, tienePermiso } from "../seguridad.js";
+import { huella } from "../huella.js";
 import {
   sincronizar,
   eliminarSincronizado,
@@ -38,6 +39,7 @@ const MODULOS = {
   planilla:            { permiso: "staff",         lectura: ["finance"], escritura: ["finance"] },
   fisioterapia:        { permiso: "physiotherapy", lectura: ["dashboard"], alumno: "memberId", portal: true },
   plantillas_fisioterapia: { permiso: "physiotherapy", lectura: [] },
+  permisos:            { permiso: "attendances",   lectura: ["staff", "dashboard"], escritura: ["staff"] },
   citas:               { permiso: "appointments",  lectura: ["dashboard", "physiotherapy", "nutrition"], alumno: "memberId", portal: true },
 };
 
@@ -64,6 +66,36 @@ async function idAlumnoDelUsuario(idusuario) {
 }
 
 const parsear = (fila) => (typeof fila.datos === "string" ? JSON.parse(fila.datos) : fila.datos);
+
+// Registros borrados (para que las demás pantallas sepan qué quitar sin
+// volver a descargar todo). Se crea sola si no existe.
+let tablaBorrados = null;
+let motivoSinBorrados = null;
+async function asegurarBorrados() {
+  if (tablaBorrados !== null) return tablaBorrados;
+  try {
+    // Si ya existe (script 34) basta con leerla: el usuario de la app no necesita permiso CREATE
+    try {
+      await consultar("SELECT 1 FROM registros_borrados LIMIT 1");
+      tablaBorrados = true;
+      return true;
+    } catch {
+      /* no existe: se intenta crear */
+    }
+    await consultar(`CREATE TABLE IF NOT EXISTS registros_borrados (
+      modulo VARCHAR(40) NOT NULL, idregistro VARCHAR(64) NOT NULL,
+      fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (modulo, idregistro), INDEX idx_borrados_fecha (fecha)) ENGINE=InnoDB`);
+    tablaBorrados = true;
+  } catch (e) {
+    console.warn("[registros] sin tabla de borrados, se usará la carga completa:", e.message);
+    motivoSinBorrados = `${e.code || ""} ${e.message}`;
+    tablaBorrados = false;
+    setTimeout(() => (tablaBorrados = null), 5 * 60_000); // se vuelve a intentar en 5 min
+  }
+  return tablaBorrados;
+}
+asegurarBorrados();
 
 // GET /api/registros  -> todos los módulos que el usuario puede ver
 //   { modulo: { registros: [...], editar: bool } }
@@ -101,17 +133,49 @@ router.get("/", async (req, res, next) => {
       return res.json(salida);
     }
 
+    // ?desde=AAAA-MM-DD HH:MM:SS -> solo lo que cambió (y lo borrado) desde esa hora
+    const [{ ahora }] = await consultar("SELECT DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s') AS ahora");
+    salida._hora = ahora;
+    if (req.query.desde) salida._parcial = { activa: !!(await asegurarBorrados()), motivo: motivoSinBorrados };
+    const desde = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(String(req.query.desde || "")) && (await asegurarBorrados()) ? req.query.desde : null;
     for (const [m, cfg] of Object.entries(MODULOS)) {
       const puedeVer = await tienePermiso(idusuario, [cfg.permiso, ...(cfg.lectura || [])], "ver");
       if (!puedeVer) continue;
       const editar =
         (await tienePermiso(idusuario, [cfg.permiso, ...(cfg.escritura || [])], "crear")) ||
         (await tienePermiso(idusuario, [cfg.permiso, ...(cfg.escritura || [])], "editar"));
+      if (desde) {
+        // 5 s de margen por si dos guardados caen en el mismo segundo
+        const filas = await consultar(
+          "SELECT datos FROM registros_app WHERE modulo = ? AND fecha_actualizacion >= DATE_SUB(?, INTERVAL 5 SECOND) ORDER BY fecha_creacion",
+          [m, desde],
+        );
+        const borrados = await consultar(
+          "SELECT idregistro FROM registros_borrados WHERE modulo = ? AND fecha >= DATE_SUB(?, INTERVAL 5 SECOND)",
+          [m, desde],
+        );
+        salida[m] = { registros: filas.map(parsear), borrados: borrados.map((b) => b.idregistro), editar, parcial: true };
+        continue;
+      }
       const filas = await consultar(
         "SELECT datos FROM registros_app WHERE modulo = ? ORDER BY fecha_creacion",
         [m],
       );
       salida[m] = { registros: filas.map(parsear), editar };
+    }
+    // Quien no ve los contratos igual puede ver EL SUYO (por su DNI de empleado)
+    if (!salida.contratos) {
+      const [emp] = await consultar(
+        "SELECT e.dni FROM usuarios u JOIN empleados e ON e.idempleado = u.idempleado WHERE u.idusuario = ?",
+        [idusuario],
+      );
+      if (emp?.dni) {
+        const filas = await consultar(
+          "SELECT datos FROM registros_app WHERE modulo = 'contratos' AND JSON_UNQUOTE(JSON_EXTRACT(datos, '$.dni')) = ?",
+          [String(emp.dni)],
+        );
+        salida.mis_contratos = { registros: filas.map(parsear), editar: false };
+      }
     }
     res.json(salida);
   } catch (e) {
@@ -156,7 +220,7 @@ router.post("/sincronizacion", async (req, res, next) => {
 });
 
 // PUT /api/registros/:modulo/:id  { datos }  -> crea o actualiza
-router.put("/:modulo/:id", async (req, res, next) => {
+const guardarRegistro = async (req, res, next) => {
   try {
     if (req.usuario.rol === "student") throw new ErrorHttp(403, "El alumno solo puede consultar sus datos");
     const cfg = validarModulo(req.params.modulo);
@@ -166,9 +230,18 @@ router.put("/:modulo/:id", async (req, res, next) => {
     if (String(datos.id) !== id) throw new ErrorHttp(400, "El id del registro no coincide");
 
     const [existe] = await consultar(
-      "SELECT 1 FROM registros_app WHERE modulo = ? AND idregistro = ?",
+      "SELECT datos FROM registros_app WHERE modulo = ? AND idregistro = ?",
       [req.params.modulo, id],
     );
+    // Varias sesiones a la vez: si otra persona cambió el registro desde que
+    // esta pantalla lo cargó, no se pisa; se devuelve la versión actual.
+    const huellaPrevia = req.body?.huellaPrevia;
+    if (existe && huellaPrevia) {
+      const actual = parsear(existe);
+      if (huella(actual) !== huellaPrevia && huella(actual) !== huella(datos)) {
+        return res.status(409).json({ error: "Otra persona modificó este registro hace un momento.", actual });
+      }
+    }
     const modulosPermiso = [cfg.permiso, ...(cfg.escritura || [])];
     if (!(await tienePermiso(req.usuario.idusuario, modulosPermiso, existe ? "editar" : "crear"))) {
       throw new ErrorHttp(403, "No tienes permiso para guardar en este módulo");
@@ -213,10 +286,13 @@ router.put("/:modulo/:id", async (req, res, next) => {
   } catch (e) {
     next(e);
   }
-});
+};
+// Los guardados de un mismo registro se hacen uno tras otro: así la
+// comparación de huellas nunca se cruza entre dos pantallas.
+router.put("/:modulo/:id", (req, res, next) => enFila(`reg:${req.params.modulo}:${req.params.id}`, () => guardarRegistro(req, res, next)));
 
 // DELETE /api/registros/:modulo/:id
-router.delete("/:modulo/:id", async (req, res, next) => {
+const borrarRegistro = async (req, res, next) => {
   try {
     if (req.usuario.rol === "student") throw new ErrorHttp(403, "El alumno solo puede consultar sus datos");
     const cfg = validarModulo(req.params.modulo);
@@ -240,10 +316,14 @@ router.delete("/:modulo/:id", async (req, res, next) => {
       }
       await cx.execute("DELETE FROM registros_app WHERE modulo = ? AND idregistro = ?", [modulo, id]);
     });
+    if (await asegurarBorrados()) {
+      await consultar("REPLACE INTO registros_borrados (modulo, idregistro, fecha) VALUES (?, ?, NOW())", [modulo, id]).catch(() => {});
+    }
     res.json({ ok: true });
   } catch (e) {
     next(e);
   }
-});
+};
+router.delete("/:modulo/:id", (req, res, next) => enFila(`reg:${req.params.modulo}:${req.params.id}`, () => borrarRegistro(req, res, next)));
 
 export default router;

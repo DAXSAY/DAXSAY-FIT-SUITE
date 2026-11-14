@@ -27,31 +27,31 @@ import {
 
 // Catálogo de módulos (pestañas) del sistema
 export const MODULES = {
-  dashboard: { label: "Dashboard General", code: "DB", icon: LayoutDashboard },
-  members: { label: "Alumnos / Socios", code: "AL", icon: Users },
-  staff: { label: "Contratos de Personal", code: "CP", icon: Briefcase },
-  memberships: { label: "Planes & Tarifas", code: "MB", icon: CreditCard },
-  nutrition: { label: "Nutrición & Medidas", code: "NM", icon: Utensils },
+  dashboard: { label: "Inicio", code: "DB", icon: LayoutDashboard },
+  members: { label: "Alumnos", code: "AL", icon: Users },
+  staff: { label: "Contratos", code: "CP", icon: Briefcase },
+  memberships: { label: "Planes y tarifas", code: "MB", icon: CreditCard },
+  nutrition: { label: "Nutrición y medidas", code: "NM", icon: Utensils },
   physiotherapy: { label: "Fisioterapia", code: "FT", icon: HeartPulse },
-  routines: { label: "Rutinas & Ejercicios", code: "RT", icon: Dumbbell },
-  appointments: { label: "Horarios & Citas", code: "HC", icon: Calendar },
-  attendances: { label: "Control Asistencias", code: "AS", icon: UserCheck },
-  store: { label: "Ventas / POS", code: "SL", icon: Store },
-  cash: { label: "Caja por Turnos", code: "CJ", icon: Vault },
-  users: { label: "Usuarios & Accesos", code: "US", icon: ShieldCheck },
+  routines: { label: "Rutinas", code: "RT", icon: Dumbbell },
+  appointments: { label: "Horarios y citas", code: "HC", icon: Calendar },
+  attendances: { label: "Asistencias", code: "AS", icon: UserCheck },
+  store: { label: "Ventas", code: "SL", icon: Store },
+  cash: { label: "Caja por turnos", code: "CJ", icon: Vault },
+  users: { label: "Usuarios", code: "US", icon: ShieldCheck },
   reports: { label: "Reportes", code: "RP", icon: FileBarChart },
-  goals: { label: "Metas & Logros", code: "MT", icon: Trophy },
-  finance: { label: "Finanzas & Caja", code: "FN", icon: BadgeDollarSign },
-  alerts: { label: "Notificaciones & Alertas", code: "NT", icon: BellRing },
-  crm: { label: "Prospectos (CRM)", code: "CR", icon: Contact },
+  goals: { label: "Metas y logros", code: "MT", icon: Trophy },
+  finance: { label: "Finanzas", code: "FN", icon: BadgeDollarSign },
+  alerts: { label: "Notificaciones", code: "NT", icon: BellRing },
+  crm: { label: "Interesados (CRM)", code: "CR", icon: Contact },
   // Portal del alumno
-  mi_membresia: { label: "Mi Membresía", code: "MB", icon: CreditCard },
-  mis_citas: { label: "Notificaciones & Citas", code: "CT", icon: Calendar },
-  mis_asistencias: { label: "Mis Asistencias", code: "AS", icon: CalendarCheck },
-  mis_medidas: { label: "Mis Medidas & Progreso", code: "MD", icon: Activity },
-  mi_rutina: { label: "Mi Rutina", code: "RT", icon: Dumbbell },
-  mi_dieta: { label: "Mi Alimentación", code: "DT", icon: Utensils },
-  mi_fisioterapia: { label: "Mi Fisioterapia", code: "FS", icon: HeartPulse },
+  mi_membresia: { label: "Mi membresía", code: "MB", icon: CreditCard },
+  mis_citas: { label: "Avisos y citas", code: "CT", icon: Calendar },
+  mis_asistencias: { label: "Mis asistencias", code: "AS", icon: CalendarCheck },
+  mis_medidas: { label: "Mis medidas", code: "MD", icon: Activity },
+  mi_rutina: { label: "Mi rutina", code: "RT", icon: Dumbbell },
+  mi_dieta: { label: "Mi alimentación", code: "DT", icon: Utensils },
+  mi_fisioterapia: { label: "Mi fisioterapia", code: "FS", icon: HeartPulse },
 };
 
 // Definición de cada rol: etiqueta, color y grupos de menú
@@ -71,7 +71,7 @@ export const ROLES = {
   trainer: {
     label: "Entrenador",
     short: "Coach",
-    color: "blue",
+    color: "orange",
     defaultTab: "routines",
     groups: [
       { title: "Entrenamiento", tabs: ["routines", "appointments", "goals"] },
@@ -81,7 +81,7 @@ export const ROLES = {
   physio: {
     label: "Fisioterapia",
     short: "Fisio",
-    color: "cyan",
+    color: "azul",
     defaultTab: "physiotherapy",
     groups: [
       { title: "Gabinete de Fisioterapia", tabs: ["physiotherapy", "appointments"] },
@@ -91,7 +91,7 @@ export const ROLES = {
   nutritionist: {
     label: "Nutrición",
     short: "Nutri",
-    color: "emerald",
+    color: "rojo",
     defaultTab: "nutrition",
     groups: [
       { title: "Consultorio de Nutrición", tabs: ["nutrition", "appointments"] },
@@ -101,7 +101,7 @@ export const ROLES = {
   reception: {
     label: "Recepción",
     short: "Recepción",
-    color: "amber",
+    color: "green",
     defaultTab: "cash",
     groups: [
       { title: "Clientes", tabs: ["members", "crm", "memberships", "goals"] },
@@ -123,12 +123,20 @@ export const ROLES = {
 
 // Clases de Tailwind por color (escritas completas para que Tailwind las detecte)
 export const ROLE_COLORS = {
-  purple: { dot: "bg-purple-400", badge: "bg-purple-100 text-purple-700", title: "text-purple-400" },
-  blue: { dot: "bg-blue-400", badge: "bg-blue-100 text-blue-700", title: "text-blue-400" },
-  cyan: { dot: "bg-cyan-400", badge: "bg-cyan-100 text-cyan-700", title: "text-cyan-400" },
-  emerald: { dot: "bg-emerald-400", badge: "bg-emerald-100 text-emerald-700", title: "text-emerald-400" },
-  amber: { dot: "bg-amber-400", badge: "bg-amber-100 text-amber-700", title: "text-amber-400" },
-  teal: { dot: "bg-teal-400", badge: "bg-teal-100 text-teal-700", title: "text-teal-400" },
+  // hex = variable CSS: pastel en modo claro y neón medio en modo oscuro (ver index.css · colores de rol)
+  purple: { hex: "var(--rd-rol-morado)", dot: "bg-purple-400", badge: "bg-purple-100 text-purple-700", title: "text-purple-400" },
+  green: { hex: "var(--rd-rol-verde)", dot: "bg-green-400", badge: "bg-green-100 text-green-700", title: "text-green-400" },
+  orange: { hex: "var(--rd-rol-naranja)", dot: "bg-orange-400", badge: "bg-orange-100 text-orange-700", title: "text-orange-400" },
+  azul: { hex: "var(--rd-rol-azul)", dot: "bg-indigo-400", badge: "bg-indigo-100 text-indigo-700", title: "text-indigo-400" },
+  rojo: { hex: "var(--rd-rol-rojo)", dot: "bg-rose-400", badge: "bg-rose-100 text-rose-700", title: "text-rose-400" },
+  teal: { hex: "var(--rd-rol-turquesa)", dot: "bg-teal-400", badge: "bg-teal-100 text-teal-700", title: "text-teal-400" },
+  // Colores anteriores (por si algún dato antiguo los usa)
+  sky: { hex: "var(--rd-rol-azul)", dot: "bg-indigo-400", badge: "bg-indigo-100 text-indigo-700", title: "text-indigo-400" },
+  lime: { hex: "var(--rd-rol-rojo)", dot: "bg-rose-400", badge: "bg-rose-100 text-rose-700", title: "text-rose-400" },
+  blue: { hex: "var(--rd-rol-turquesa)", dot: "bg-blue-400", badge: "bg-blue-100 text-blue-700", title: "text-blue-400" },
+  cyan: { hex: "var(--rd-rol-turquesa)", dot: "bg-cyan-400", badge: "bg-cyan-100 text-cyan-700", title: "text-cyan-400" },
+  emerald: { hex: "var(--rd-rol-verde)", dot: "bg-emerald-400", badge: "bg-emerald-100 text-emerald-700", title: "text-emerald-400" },
+  amber: { hex: "var(--rd-rol-naranja)", dot: "bg-amber-400", badge: "bg-amber-100 text-amber-700", title: "text-amber-400" },
 };
 
 export const getRole = (role) => ROLES[role] || ROLES.student;

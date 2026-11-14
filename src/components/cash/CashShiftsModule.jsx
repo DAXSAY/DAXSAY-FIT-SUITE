@@ -30,6 +30,7 @@ import { useGym } from "../../context/GymContext";
 import { api } from "../../api/cliente";
 import { userCan } from "../../config/roles";
 import { hoyISO } from "../../utils/fecha";
+import { BotonesDescarga } from "../common/BotonesDescarga";
 
 const soles = (n) => `S/ ${Number(n || 0).toFixed(2)}`;
 const hora = (dt) => (dt ? String(dt).slice(11, 16) : "—");
@@ -56,7 +57,8 @@ const DENOMINACIONES = [
 
 const CATEGORIAS = {
   matricula: "Matrícula / renovación",
-  venta: "Venta POS",
+  pase_dia: "Pase del día",
+  venta: "Venta",
   entrenamiento_personal: "Entrenamiento personal",
   fisioterapia: "Fisioterapia",
   nutricion: "Nutrición",
@@ -76,8 +78,9 @@ const CATEGORIAS_TURNO = {
 const METODOS = {
   efectivo: { label: "Efectivo", icon: Banknote },
   yape_plin: { label: "Yape / Plin", icon: Smartphone },
-  tarjeta: { label: "Tarjeta", icon: CreditCard },
-  transferencia: { label: "Transferencia", icon: ArrowLeftRight },
+  // Tarjeta y transferencia ya no se usan para cobrar; quedan solo para leer registros antiguos
+  tarjeta: { label: "Tarjeta", icon: CreditCard, antiguo: true },
+  transferencia: { label: "Transferencia", icon: ArrowLeftRight, antiguo: true },
 };
 
 // Pantalla completa reutilizable
@@ -185,8 +188,8 @@ const TablaMovimientos = ({ movimientos }) =>
 
 // Resumen por método de pago
 const ResumenMetodos = ({ resumen }) => (
-  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-    {Object.entries(METODOS).map(([k, { label, icon: Icono }]) => (
+  <div className="grid grid-cols-2 gap-3">
+    {Object.entries(METODOS).filter(([k, m]) => !m.antiguo || (resumen.ingresos[k] || 0) + (resumen.egresos[k] || 0) > 0).map(([k, { label, icon: Icono }]) => (
       <div key={k} className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
           <Icono className="w-5 h-5" />
@@ -357,7 +360,7 @@ const MovimientoTurno = ({ turno, onVolver, onGuardado }) => {
   return (
     <PantallaCompleta
       titulo="Registrar ingreso o gasto del turno"
-      subtitulo="Para cobros sueltos o gastos de caja chica. Las ventas del POS y las matrículas se registran solas."
+      subtitulo="Para cobros sueltos o gastos de caja chica. Las ventas y las matrículas se registran solas."
       onVolver={onVolver}
     >
       <form onSubmit={guardar} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5 max-w-3xl mx-auto">
@@ -415,8 +418,8 @@ const MovimientoTurno = ({ turno, onVolver, onGuardado }) => {
         </div>
         <div>
           <span className="text-sm font-bold text-slate-700">Método</span>
-          <div className="mt-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {Object.entries(METODOS).map(([k, { label, icon: Icono }]) => (
+          <div className="mt-1 grid grid-cols-2 gap-2">
+            {Object.entries(METODOS).filter(([, m]) => !m.antiguo).map(([k, { label, icon: Icono }]) => (
               <button
                 type="button"
                 key={k}
@@ -464,39 +467,63 @@ const MovimientoTurno = ({ turno, onVolver, onGuardado }) => {
 // ------------------------------------------------------------
 // Formulario: arqueo y cierre
 // ------------------------------------------------------------
+const MOTIVOS_DIFERENCIA = [
+  "Vuelto mal dado",
+  "Cobro que no se registró en el sistema",
+  "Gasto pagado que no se registró",
+  "Error al contar",
+  "Pago por Yape/Plin registrado como efectivo",
+  "Otro",
+];
+
 const CerrarCaja = ({ turno, onVolver, onCerrada }) => {
-  const [modoConteo, setModoConteo] = useState(true);
-  const [conteo, setConteo] = useState({});
-  const [totalDirecto, setTotalDirecto] = useState("");
+  const [efectivo, setEfectivo] = useState("");
+  const [yapeApp, setYapeApp] = useState("");
   const [siguiente, setSiguiente] = useState(String(Number(turno.openingCash).toFixed(2)));
-  const [obs, setObs] = useState("");
+  const [confirmar, setConfirmar] = useState(""); // segunda vez que escribe el monto si no cuadra
+  const [motivo, setMotivo] = useState("");
+  const [detalle, setDetalle] = useState("");
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
-  const totalConteo = r2(DENOMINACIONES.reduce((s, d) => s + d.v * Number(conteo[d.v] || 0), 0));
-  const contado = modoConteo ? totalConteo : r2(totalDirecto);
+  const res = turno.summary;
+  const contado = r2(efectivo);
   const esperado = r2(turno.expectedCash);
   const dif = r2(contado - esperado);
+  const hayDif = efectivo !== "" && Math.abs(dif) >= 0.5;
+  const difGrande = Math.abs(dif) >= Math.max(50, esperado * 0.5);
+  const yapeSistema = r2(res.ingresos.yape_plin);
+  const difYape = yapeApp === "" ? 0 : r2(r2(yapeApp) - yapeSistema);
   const queda = Math.min(r2(siguiente), contado);
   const entrega = r2(contado - queda);
-  const res = turno.summary;
+
+  // Qué se cobró y gastó en el turno (para saber qué se está arqueando)
+  const conteo = res.conteo || {};
+  const filas = Object.entries(res.porCategoria || {})
+    .map(([k, monto]) => {
+      const [tipo, cat] = k.split(":");
+      return { tipo, cat, monto, n: conteo[k] || 0 };
+    })
+    .sort((a, b) => (a.tipo === b.tipo ? b.monto - a.monto : a.tipo === "ingreso" ? -1 : 1));
 
   const cerrar = async (e) => {
     e.preventDefault();
     setError("");
-    if (Math.abs(dif) >= 0.01 && obs.trim().length < 3)
-      return setError("Hay diferencia entre lo contado y lo esperado: explica el motivo en la observación.");
-    if (r2(siguiente) > contado) return setError("No puedes dejar más efectivo del que contaste.");
+    if (efectivo === "") return setError("Escribe cuánto efectivo hay en caja.");
+    if (hayDif) {
+      if (r2(confirmar) !== contado) return setError("Vuelve a escribir el efectivo contado para confirmarlo (así se evitan errores como un cero de más).");
+      if (!motivo) return setError("Elige el motivo de la diferencia.");
+      if (motivo === "Otro" && detalle.trim().length < 3) return setError("Explica brevemente el motivo.");
+    }
+    if (r2(siguiente) > contado) return setError("No puedes dejar más efectivo del que hay en caja.");
+    const partes = [];
+    if (hayDif) partes.push(`${dif > 0 ? "Sobrante" : "Faltante"} S/ ${Math.abs(dif).toFixed(2)}: ${motivo}${detalle.trim() ? ` – ${detalle.trim()}` : ""}`);
+    if (yapeApp !== "" && Math.abs(difYape) >= 0.5) partes.push(`Yape/Plin en la app S/ ${r2(yapeApp).toFixed(2)} vs sistema S/ ${yapeSistema.toFixed(2)}`);
     setEnviando(true);
     try {
       const cerrado = await api(`/turnos-caja/${turno.id}/cerrar`, {
         method: "POST",
-        body: {
-          efectivoContado: contado,
-          efectivoSiguiente: r2(siguiente),
-          detalleConteo: modoConteo ? conteo : null,
-          observacion: obs,
-        },
+        body: { efectivoContado: contado, efectivoSiguiente: r2(siguiente), detalleConteo: null, observacion: partes.join(" · ") },
       });
       onCerrada(cerrado);
     } catch (er) {
@@ -508,134 +535,173 @@ const CerrarCaja = ({ turno, onVolver, onCerrada }) => {
 
   return (
     <PantallaCompleta
-      titulo="Arqueo y cierre de caja"
+      titulo="Cierre de caja"
       subtitulo={`Turno de ${turno.openedBy} · desde las ${hora(turno.openedAt)} (${duracion(turno.openedAt)})`}
       onVolver={onVolver}
     >
-      <form onSubmit={cerrar} className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        {/* Conteo */}
-        <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Calculator className="w-4 h-4" /> Cuenta el efectivo
+      <form onSubmit={cerrar} className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        {/* Lo que pasó en el turno */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 mb-3">
+              <Calculator className="w-4 h-4" /> Lo que se movió en tu turno
             </h3>
-            <div className="flex p-1 rounded-xl bg-slate-100 text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setModoConteo(true)}
-                className={`px-3 py-1.5 rounded-lg cursor-pointer ${modoConteo ? "bg-white shadow-xs text-slate-900" : "text-slate-500"}`}
-              >
-                Por billetes y monedas
-              </button>
-              <button
-                type="button"
-                onClick={() => setModoConteo(false)}
-                className={`px-3 py-1.5 rounded-lg cursor-pointer ${!modoConteo ? "bg-white shadow-xs text-slate-900" : "text-slate-500"}`}
-              >
-                Total directo
-              </button>
+            {filas.length === 0 ? (
+              <p className="text-sm text-slate-500">No hubo cobros ni gastos en este turno.</p>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {filas.map((f) => (
+                  <div key={`${f.tipo}${f.cat}`} className="flex items-center gap-3 py-2">
+                    <span className={`w-2 h-8 rounded-full ${f.tipo === "ingreso" ? "bg-emerald-500" : "bg-rose-500"}`} />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-bold text-slate-800">{CATEGORIAS[f.cat] || f.cat}</span>
+                      <span className="block text-xs text-slate-500">
+                        {f.n} {f.n === 1 ? "operación" : "operaciones"} · {f.tipo === "ingreso" ? "cobro" : "gasto"}
+                      </span>
+                    </span>
+                    <strong className={`text-sm ${f.tipo === "ingreso" ? "text-emerald-700" : "text-rose-600"}`}>
+                      {f.tipo === "ingreso" ? "+" : "−"} {soles(f.monto)}
+                    </strong>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                <p className="text-[11px] font-black uppercase text-emerald-700">Cobrado en efectivo</p>
+                <p className="text-lg font-black text-emerald-800">{soles(res.ingresos.efectivo)}</p>
+              </div>
+              <div className="p-3 rounded-xl bg-violet-50 border border-violet-200">
+                <p className="text-[11px] font-black uppercase text-violet-700">Cobrado por Yape / Plin</p>
+                <p className="text-lg font-black text-violet-800">{soles(yapeSistema)}</p>
+              </div>
             </div>
           </div>
 
-          {modoConteo ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {DENOMINACIONES.map((d) => (
-                <div key={d.v} className="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50">
-                  <span
-                    className={`w-20 text-center py-1.5 rounded-lg text-xs font-black ${
-                      d.t === "billete" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-                    }`}
-                  >
-                    {d.v >= 1 ? `S/ ${d.v}` : `${Math.round(d.v * 100)} cént.`}
-                  </span>
-                  <span className="text-slate-400 text-sm">×</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={conteo[d.v] ?? ""}
-                    onChange={(e) => setConteo({ ...conteo, [d.v]: e.target.value.replace(/\D/g, "") })}
-                    placeholder="0"
-                    className="w-20 px-2 py-1.5 rounded-lg border border-slate-300 text-sm font-bold text-center bg-white"
-                  />
-                  <span className="ml-auto text-sm font-bold text-slate-700">{soles(d.v * Number(conteo[d.v] || 0))}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <input
-              type="number"
-              min="0"
-              step="0.10"
-              value={totalDirecto}
-              onChange={(e) => setTotalDirecto(e.target.value)}
-              placeholder="0.00"
-              className="w-full px-4 py-3 rounded-xl border border-slate-300 text-2xl font-black"
-              autoFocus
-            />
-          )}
-
-          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-900 text-white">
-            <span className="font-bold">Efectivo contado</span>
-            <span className="text-2xl font-black">{soles(contado)}</span>
-          </div>
-
-          <div className="pt-2 border-t border-slate-100">
-            <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Cobros que no son efectivo (no se cuentan en caja)</h4>
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <div className="p-2 rounded-lg bg-slate-50 border border-slate-200">
-                Yape/Plin <strong className="block">{soles(res.ingresos.yape_plin)}</strong>
-              </div>
-              <div className="p-2 rounded-lg bg-slate-50 border border-slate-200">
-                Tarjeta <strong className="block">{soles(res.ingresos.tarjeta)}</strong>
-              </div>
-              <div className="p-2 rounded-lg bg-slate-50 border border-slate-200">
-                Transferencia <strong className="block">{soles(res.ingresos.transferencia)}</strong>
-              </div>
-            </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+            <label className="block">
+              <span className="text-sm font-black text-slate-800">1. ¿Cuánto efectivo hay en caja ahora? *</span>
+              <span className="block text-xs text-slate-500">Cuenta todo el dinero de la caja y escribe el total.</span>
+              <input
+                type="number"
+                min="0"
+                step="0.10"
+                value={efectivo}
+                onChange={(e) => {
+                  setEfectivo(e.target.value);
+                  setConfirmar("");
+                }}
+                placeholder="0.00"
+                autoFocus
+                className="mt-1.5 w-full px-4 py-3 rounded-xl border-2 border-slate-300 focus:border-blue-500 text-2xl font-black"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-black text-slate-800">2. ¿Cuánto dice tu app de Yape / Plin hoy? <span className="font-normal text-slate-500">(opcional)</span></span>
+              <span className="block text-xs text-slate-500">Para comprobar que todos los pagos por Yape/Plin se registraron.</span>
+              <input
+                type="number"
+                min="0"
+                step="0.10"
+                value={yapeApp}
+                onChange={(e) => setYapeApp(e.target.value)}
+                placeholder={yapeSistema.toFixed(2)}
+                className="mt-1.5 w-full px-4 py-2.5 rounded-xl border border-slate-300 text-lg font-bold"
+              />
+              {yapeApp !== "" && (
+                <span className={`block mt-1 text-xs font-bold ${Math.abs(difYape) < 0.5 ? "text-emerald-700" : "text-amber-700"}`}>
+                  {Math.abs(difYape) < 0.5
+                    ? "✓ Coincide con lo registrado."
+                    : `${difYape > 0 ? "Hay" : "Faltan"} S/ ${Math.abs(difYape).toFixed(2)} ${difYape > 0 ? "más en la app: algún pago no se registró en el sistema" : "en la app respecto al sistema"}.`}
+                </span>
+              )}
+            </label>
           </div>
         </div>
 
-        {/* Resultado */}
+        {/* Resultado y cierre */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-2 text-sm">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-2">Resultado del arqueo</h3>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-2 text-sm">
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-1">Resultado</h3>
             <div className="flex justify-between"><span className="text-slate-500">Efectivo al abrir</span><strong>{soles(turno.openingCash)}</strong></div>
             <div className="flex justify-between"><span className="text-slate-500">+ Cobros en efectivo</span><strong className="text-emerald-600">{soles(res.ingresos.efectivo)}</strong></div>
             <div className="flex justify-between"><span className="text-slate-500">− Gastos en efectivo</span><strong className="text-rose-600">{soles(res.egresos.efectivo)}</strong></div>
             <div className="flex justify-between border-t border-slate-200 pt-2"><span className="font-bold">Debe haber en caja</span><strong className="text-lg">{soles(esperado)}</strong></div>
-            <div className="flex justify-between"><span className="font-bold">Contaste</span><strong className="text-lg">{soles(contado)}</strong></div>
-            <div className="pt-1"><Diferencia valor={dif} /></div>
+            <div className="flex justify-between"><span className="font-bold">Hay en caja</span><strong className="text-lg">{efectivo === "" ? "—" : soles(contado)}</strong></div>
+            {efectivo !== "" && (
+              <div
+                className={`mt-1 p-3 rounded-xl text-sm font-black text-center ${
+                  !hayDif ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : dif > 0 ? "bg-amber-50 text-amber-800 border border-amber-300" : "bg-rose-50 text-rose-700 border border-rose-300"
+                }`}
+              >
+                {!hayDif ? "✓ La caja cuadra" : `${dif > 0 ? "Sobran" : "Faltan"} ${soles(Math.abs(dif))}`}
+              </div>
+            )}
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-3">
+          {hayDif && (
+            <div className="bg-amber-50 rounded-2xl border-2 border-amber-300 p-4 space-y-3">
+              <p className="text-sm font-black text-amber-900">
+                {difGrande ? "⚠️ La diferencia es grande. " : ""}Confirma antes de cerrar
+              </p>
+              <p className="text-xs text-amber-900">
+                El sistema esperaba {soles(esperado)} y escribiste {soles(contado)}. Si fue un error de tipeo (ej. un cero de más), corrígelo arriba.
+              </p>
+              <label className="block">
+                <span className="text-xs font-bold text-amber-900">Vuelve a escribir el efectivo contado</span>
+                <input
+                  type="number"
+                  step="0.10"
+                  value={confirmar}
+                  onChange={(e) => setConfirmar(e.target.value)}
+                  className={`mt-1 w-full px-3 py-2 rounded-xl border-2 text-lg font-black ${
+                    confirmar === "" ? "border-amber-300" : r2(confirmar) === contado ? "border-emerald-500" : "border-rose-500"
+                  }`}
+                />
+              </label>
+              <div>
+                <span className="text-xs font-bold text-amber-900">Motivo de la diferencia</span>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {MOTIVOS_DIFERENCIA.map((m) => (
+                    <button
+                      type="button"
+                      key={m}
+                      onClick={() => setMotivo(m)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-bold border cursor-pointer ${motivo === m ? "bg-amber-600 border-amber-600 text-white" : "bg-white border-amber-300 text-amber-900"}`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+                {motivo && (
+                  <input
+                    value={detalle}
+                    onChange={(e) => setDetalle(e.target.value)}
+                    placeholder={motivo === "Otro" ? "Explica qué pasó *" : "Detalle (opcional)"}
+                    className="mt-2 w-full px-3 py-2 rounded-xl border border-amber-300 text-sm bg-white"
+                  />
+                )}
+              </div>
+              <p className="text-[11px] text-amber-800">La diferencia queda registrada en el historial de caja para administración.</p>
+            </div>
+          )}
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
             <label className="block">
-              <span className="text-sm font-bold text-slate-700">Efectivo que dejas en caja para el siguiente turno</span>
+              <span className="text-sm font-bold text-slate-700">Efectivo que dejas para el siguiente turno</span>
               <input
                 type="number"
                 min="0"
                 step="0.10"
                 value={siguiente}
                 onChange={(e) => setSiguiente(e.target.value)}
-                className="mt-1 w-full px-4 py-2.5 rounded-xl border border-slate-300 text-lg font-black"
+                className="mt-1 w-full px-4 py-2 rounded-xl border border-slate-300 text-lg font-black"
               />
             </label>
             <div className="flex justify-between text-sm">
               <span className="text-slate-500">Entregas a administración</span>
               <strong className="text-blue-700">{soles(entrega)}</strong>
             </div>
-            <label className="block">
-              <span className="text-sm font-bold text-slate-700">
-                Observación {Math.abs(dif) >= 0.01 && <span className="text-rose-600">(obligatoria)</span>}
-              </span>
-              <textarea
-                value={obs}
-                onChange={(e) => setObs(e.target.value)}
-                rows={3}
-                className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 text-sm"
-                placeholder="Ej. Vuelto mal dado a un cliente…"
-              />
-            </label>
             {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
             <button
               disabled={enviando}
@@ -666,12 +732,15 @@ const DetalleTurno = ({ id, onVolver }) => {
       subtitulo={t ? `${fechaCorta(t.openedAt)} · ${hora(t.openedAt)} a ${t.closedAt ? hora(t.closedAt) : "en curso"}` : ""}
       onVolver={onVolver}
       acciones={
-        <button
-          onClick={() => window.print()}
-          className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-bold flex items-center gap-1.5 cursor-pointer"
-        >
-          <Printer className="w-4 h-4" /> Imprimir
-        </button>
+        <span className="flex items-center gap-1.5">
+          <button
+            onClick={() => window.print()}
+            className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-bold flex items-center gap-1.5 cursor-pointer"
+          >
+            <Printer className="w-4 h-4" /> Imprimir
+          </button>
+          <BotonesDescarga nombre={t ? `Turno_${t.id}_${t.openedBy}` : "Turno_caja"} />
+        </span>
       }
     >
       {error && <p className="text-rose-600 font-bold">{error}</p>}
@@ -825,16 +894,15 @@ export const CashShiftsModule = () => {
   return (
     <div className="space-y-5">
       {/* Cabecera */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 rounded-3xl p-6 text-white shadow-lg">
+      <div className="rd-portada rd-cabecera">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <span className="text-xs font-black uppercase tracking-widest text-blue-300 flex items-center gap-1.5">
-              <Vault className="w-4 h-4" /> Caja por turnos · Arqueo
+              <Vault className="w-4 h-4" /> Caja
             </span>
-            <h1 className="text-2xl font-black mt-1">Apertura & Cierre de Caja</h1>
+            <h1 className="text-2xl font-black mt-1">Caja por turnos</h1>
             <p className="text-sm text-slate-300 max-w-2xl">
-              Cada recepcionista abre su caja con el efectivo que recibe y la cierra contando el dinero. Las ventas, matrículas y
-              renovaciones se suman solas al turno abierto.
+              Cada recepcionista abre y cierra su caja. Las ventas y matrículas se suman solas al turno abierto.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -935,7 +1003,7 @@ export const CashShiftsModule = () => {
           <ResumenMetodos resumen={abierto.summary} />
           <div className="grid grid-cols-3 gap-3">
             <Kpi label="Total cobrado en el turno" value={soles(abierto.summary.totalIngresos)} tone="green" />
-            <Kpi label="Ventas POS" value={abierto.summary.ventas} />
+            <Kpi label="Ventas" value={abierto.summary.ventas} />
             <Kpi label="Matrículas / renovaciones" value={abierto.summary.matriculas} />
           </div>
 

@@ -1,6 +1,7 @@
+import { williamsElegidos, textoRespuestaWilliams, textoToleranciaWilliams } from "./WilliamsVisuals";
 import React, { useState } from "react";
 import { BodyMapVisual, ZONE_DETAILS, zoneLabel } from "./BodyMapVisual";
-import { PostureSilhouetteSVG, POSTURE_PRESETS } from "./PostureVisuals";
+import { POSTURE_PRESETS } from "./PostureVisuals";
 import { estadoEvolucion, ADHERENCIA, PRONOSTICO, etiqueta } from "./evolucion";
 import { etiquetaPostura, SiluetaLateral, PiernasFrente, TIPOS_POSTURALES, OPCIONES_LATERAL, OPCIONES_RODILLAS, OPCIONES_PIES } from "./PosturaEvaluacion";
 import { CATEGORIAS as CAT_IND, LUGARES as LUG_IND, textoDosis } from "../indicaciones/Indicaciones";
@@ -26,7 +27,8 @@ import {
   Loader2,
   Pill,
 } from "lucide-react";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import {
   RED_FLAGS,
   ROM_NORMS,
@@ -35,6 +37,8 @@ import {
 } from "./ClinicalScalesPanel";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { lineasContexto } from "./ContextoClinico";
+import { BotonesDescarga } from "../common/BotonesDescarga";
 
 const textoIndicacionesWsp = (session) => {
   const items = session.studentIndications || [];
@@ -338,6 +342,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
               <Printer className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Imprimir</span>
             </button>
+            <BotonesDescarga compacto selector="#printable-physio-report" nombre={`Ficha_fisio_${session?.memberName || ""}_${session?.date || ""}`} />
 
             <button
               onClick={onClose}
@@ -408,6 +413,17 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
               </div>
             </div>
           </div>
+
+          {session.physicalEvaluation?.pathologies?.length > 0 && (
+            <div className="bg-rose-50 p-3 rounded-2xl border border-rose-200 text-xs page-break-avoid">
+              <span className="font-black uppercase text-rose-700 mr-2">Diagnóstico presuntivo:</span>
+              {session.physicalEvaluation.pathologies.map((p) => (
+                <span key={p} className="inline-block mr-1.5 mb-1 px-2 py-0.5 rounded-full bg-white border border-rose-200 font-bold text-rose-800">
+                  {p}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Patient Details & Medical Background */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs page-break-avoid">
@@ -712,21 +728,22 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
             </div>
 
             {/* Pathological Tests Badges */}
-            {session.functionalEvaluation?.functionalJointTests &&
-              session.functionalEvaluation.functionalJointTests.length > 0 && (
+            {(session.functionalEvaluation?.functionalJointTests || []).some((t) => t.result && t.result !== "no_evaluado") && (
                 <div className="pt-2 border-t border-slate-100">
                   <span className="text-xs font-bold text-slate-700 block mb-1.5">
                     Pruebas Ortopédicas Específicas por Articulación:
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {session.functionalEvaluation.functionalJointTests.map(
+                    {session.functionalEvaluation.functionalJointTests.filter((t) => t.result && t.result !== "no_evaluado").map(
                       (t, idx) => (
                         <div
                           key={`report-test-${t.testName || idx}-${idx}`}
                           className={`p-2 rounded-lg border text-xs flex items-center justify-between gap-1.5 ${
                             t.result === "positivo"
                               ? "bg-rose-100/80 border-rose-300 text-rose-900 font-bold"
-                              : "bg-slate-50 border-slate-200 text-slate-700"
+                              : t.result === "dudoso"
+                                ? "bg-amber-50 border-amber-300 text-amber-900"
+                                : "bg-emerald-50 border-emerald-200 text-emerald-900"
                           }`}
                         >
                           <span className="truncate">{t.testName}</span>
@@ -734,7 +751,9 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
                             className={`text-xs font-extrabold uppercase px-1.5 py-0.2 rounded shrink-0 ${
                               t.result === "positivo"
                                 ? "bg-rose-600 text-white"
-                                : "bg-slate-200 text-slate-700"
+                                : t.result === "dudoso"
+                                  ? "bg-amber-500 text-white"
+                                  : "bg-emerald-600 text-white"
                             }`}
                           >
                             {t.result}
@@ -752,23 +771,16 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
                     <Activity className="w-3.5 h-3.5 text-blue-600" />
-                    Protocolo de Evaluación Funcional Williams (6 Ejercicios de
-                    Flexión):
+                    Protocolo de flexión de Williams:
                   </span>
                   <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 capitalize">
                     Tolerancia:{" "}
-                    {
-                      session.functionalEvaluation.williamsEvaluation
-                        .overallTolerance
-                    }
+{textoToleranciaWilliams(session.functionalEvaluation.williamsEvaluation.overallTolerance)}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {(
-                    session.functionalEvaluation.williamsEvaluation.exercises ||
-                    []
-                  ).map((w, idx) => (
+                  {williamsElegidos(session.functionalEvaluation.williamsEvaluation).map((w, idx) => (
                     <div
                       key={`williams-rep-${w.id || idx}`}
                       className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-1"
@@ -779,11 +791,11 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
                         </span>
                         <span
                           className={`px-1 py-0.2 rounded font-black text-xs ${
-                            w.status === "completado_sin_dolor"
+                            w.painEVA <= 2
                               ? "bg-emerald-100 text-emerald-800"
-                              : w.status === "dolor_leve"
+                              : w.painEVA <= 3
                                 ? "bg-blue-100 text-blue-800"
-                                : w.status === "dolor_moderado"
+                                : w.painEVA <= 6
                                   ? "bg-amber-100 text-amber-800"
                                   : "bg-rose-100 text-rose-800"
                           }`}
@@ -792,7 +804,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
                         </span>
                       </div>
                       <p className="text-slate-500 truncate capitalize">
-                        {String(w.status || "").replace(/_/g, " ")}
+                        {textoRespuestaWilliams(w.executionStatus || w.status)}
                       </p>
                     </div>
                   ))}
@@ -811,6 +823,21 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
               </div>
             )}
           </div>
+
+          {/* CONTEXTO CLÍNICO (anamnesis ampliada) */}
+          {lineasContexto(session.clinicalScales?.contexto).length > 0 && (
+            <div className="border border-slate-200 rounded-xl p-4 space-y-2">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Contexto clínico</h4>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
+                {lineasContexto(session.clinicalScales.contexto).map(([k, v]) => (
+                  <div key={k} className="flex gap-2">
+                    <dt className="font-bold text-slate-600 shrink-0">{k}:</dt>
+                    <dd className="text-slate-800">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
 
           {/* OBSERVACIONES ADICIONALES DEL FISIOTERAPEUTA (EDITADAS / AGREGADAS) */}
           {session.clinicalScales && (() => {

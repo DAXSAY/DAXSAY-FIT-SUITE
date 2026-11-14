@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { X, UserPlus, CreditCard, IdCard, Dumbbell } from "lucide-react";
 import { useGym } from "../../context/GymContext";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 import { DebtDueDatePicker } from "./DebtDueDate";
+import { api } from "../../api/cliente";
+import { Luces } from "../crm/Responsable";
 
+import { SelectorObjetivos } from "../common/SelectorObjetivos";
 export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) => {
-  const { plans, trainers, routines, addMember } = useGym();
+  const { plans, trainers, routines, addMember, cashShift, currentUser } = useGym();
+  // Sin caja abierta: recepción no puede cobrar; administración puede, pero queda avisado
+  const cajaCerrada = !!cashShift && !cashShift.open;
+  const bloqueaCaja = cajaCerrada && currentUser?.role === "reception";
   const [cuenta, setCuenta] = useState(null);
 
   const todayStr = hoyISO();
@@ -50,6 +57,22 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
     if (inicial.notes) setNotes(inicial.notes);
   }, [isOpen, inicial]);
 
+  // CRM: ¿esta persona es un interesado? ¿de quién es el seguimiento y a quién se acredita?
+  const [crm, setCrm] = useState(null);
+  useEffect(() => {
+    if (!isOpen) return setCrm(null);
+    const id = inicial?.prospectId || "";
+    const d = dni.trim();
+    const cel = phone.replace(/\D/g, "").slice(-9);
+    if (!id && !/^\d{8}$/.test(d) && cel.length < 9) return setCrm(null);
+    const t = setTimeout(() => {
+      api(`/prospectos/coincidencia?id=${id}&dni=${/^\d{8}$/.test(d) ? d : ""}&celular=${cel.length === 9 ? cel : ""}`)
+        .then(setCrm)
+        .catch(() => setCrm(null));
+    }, 450);
+    return () => clearTimeout(t);
+  }, [isOpen, inicial?.prospectId, dni, phone]);
+
   // Los planes llegan desde la base de datos: elegir uno por defecto al cargar
   useEffect(() => {
     if (!plans.find((p) => p.id === selectedPlanId) && plans.length > 0) {
@@ -82,6 +105,11 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
       return;
     }
 
+    const pagaAlgo = amountPaid === "" ? currentPlan.price > 0 : Number(amountPaid) > 0;
+    if (bloqueaCaja && pagaAlgo) {
+      setErrorForm("Abre tu caja (Caja por turnos) antes de cobrar la matrícula.");
+      return;
+    }
     const debeSaldo = amountPaid !== "" && Number(amountPaid) < currentPlan.price - 0.004;
     if (debeSaldo && !debtDueDate) {
       setErrorForm("Indica hasta qué fecha cancelará el saldo pendiente.");
@@ -115,9 +143,15 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
       lastPaymentAmount: amountPaid === "" ? currentPlan.price : Number(amountPaid),
       lastPaymentDate: startDate,
       paymentMethod,
+      prospectId: crm?.prospectId || inicial?.prospectId || undefined,
     });
     if (!nuevo) return; // el error ya se mostró
     onCreado?.(nuevo);
+    // Formulario limpio para la siguiente matrícula (no arrastra datos del alumno anterior)
+    setDni(""); setFullName(""); setPhone("+51"); setEmail(""); setGender("M"); setBirthDate(""); setAddress("");
+    setAmountPaid(""); setDebtDueDate(""); setErrorForm(""); setEmergencyName(""); setEmergencyPhone(""); setEmergencyRel("Familiar");
+    setMedicalNotes(""); setNotes(""); setObjective("hipertrofia"); setSelectedPlanId(plans[1]?.id || plans[0]?.id || "");
+    setStartDate(todayStr); setAssignedTrainerId(""); setAssignedRoutineId(""); setPaymentMethod("efectivo");
 
     confetti({
       particleCount: 70,
@@ -134,7 +168,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
     const tel = String(cuenta.telefono || "").replace(/\D/g, "");
     return (
       <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
-        <div className="w-full max-w-2xl mx-auto min-h-full bg-white p-6 sm:p-10 text-slate-800 flex flex-col justify-center gap-6">
+        <div className="rd-compacta w-full max-w-2xl mx-auto min-h-full bg-white p-6 sm:p-10 text-slate-800 flex flex-col justify-center gap-6">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl">
               ✓
@@ -217,6 +251,25 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
           onSubmit={handleSubmit}
           className="overflow-y-auto p-5 space-y-4 text-xs"
         >
+          {crm && (
+            <div className={`rounded-xl border p-3 ${crm.mine || crm.free ? "border-emerald-200 bg-emerald-50" : "border-blue-200 bg-blue-50"}`}>
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Interesado del CRM</p>
+              <p className="text-sm font-black text-slate-900 mt-0.5">
+                Seguimiento de {crm.owner || "recepción"}{crm.ownerShift ? ` · ${crm.ownerShift}` : ""}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                <Luces p={crm} />
+                {crm.secured && <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black">Asegurado · 3/3</span>}
+              </div>
+              <p className="text-xs text-slate-700 mt-1.5 font-semibold">
+                {crm.mine
+                  ? "Es tu interesado: la matrícula queda a tu nombre."
+                  : crm.free
+                    ? `Estaba libre (${crm.daysWithoutFollowUp} días sin seguimiento): la matrícula queda a tu nombre.`
+                    : `Tú la cobras en tu caja, pero la venta se acredita a ${crm.creditTo} en sus metas y proyecciones.`}
+              </p>
+            </div>
+          )}
           {/* Section 1: Personal Data */}
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-blue-600 flex items-center gap-1.5 mb-2.5">
@@ -329,30 +382,11 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
               2. Objetivo & Salud
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-slate-700 font-semibold mb-1">
-                  Objetivo de Entrenamiento
+                  Objetivos de entrenamiento
                 </label>
-                <select
-                  value={objective}
-                  onChange={(e) => setObjective(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
-                >
-                  <option value="hipertrofia">
-                    💪 Ganancia Muscular / Hipertrofia
-                  </option>
-                  <option value="perdida_peso">
-                    🔥 Pérdida de Grasa / Peso
-                  </option>
-                  <option value="fuerza">⚡ Aumento de Fuerza</option>
-                  <option value="tonificacion">✨ Tonificación General</option>
-                  <option value="resistencia">
-                    🏃 Resistencia Cardiovascular & Funcional
-                  </option>
-                  <option value="rehabilitacion">
-                    🩺 Salud & Postura / Rehabilitación
-                  </option>
-                </select>
+<SelectorObjetivos value={objective} onChange={setObjective} />
               </div>
 
               <div>
@@ -469,7 +503,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
                 <input
                   type="text"
                   disabled
-                  value={calculatedEndDate}
+                  value={calculatedEndDate ? String(calculatedEndDate).slice(0, 10).split("-").reverse().join("/") : ""}
                   className="w-full px-2.5 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-blue-700 font-mono font-bold"
                 />
               </div>
@@ -521,10 +555,6 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
                 >
                   <option value="efectivo">💵 Efectivo</option>
                   <option value="yape_plin">📱 Yape / Plin</option>
-                  <option value="tarjeta">💳 Tarjeta Débito / Crédito</option>
-                  <option value="transferencia">
-                    🏦 Transferencia Bancaria
-                  </option>
                 </select>
               </div>
             </div>
@@ -538,7 +568,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
                   Total a Pagar e Ingreso de Caja:
                 </p>
                 <p className="text-xs font-semibold text-slate-900">
-                  {currentPlan.name} • Vence: {calculatedEndDate}
+                  {currentPlan.name} • Vence: {String(calculatedEndDate || "").slice(0, 10).split("-").reverse().join("/")}
                 </p>
               </div>
               <div className="text-right space-y-1">
@@ -568,6 +598,13 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
           )}
           {currentPlan && amountPaid !== "" && Number(amountPaid) < (currentPlan?.price || 0) && (
             <DebtDueDatePicker value={debtDueDate} onChange={setDebtDueDate} membershipEnd={calculatedEndDate} />
+          )}
+          {cajaCerrada && (
+            <p className={`text-xs font-bold rounded-lg px-3 py-2 border ${bloqueaCaja ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
+              {bloqueaCaja
+                ? "🔒 La caja está cerrada: ábrela en Caja por turnos para cobrar esta matrícula."
+                : "⚠️ Nadie tiene la caja abierta: este cobro quedará fuera de un turno de caja."}
+            </p>
           )}
           {errorForm && <p className="text-xs font-bold text-rose-600">{errorForm}</p>}
 

@@ -12,6 +12,7 @@ import {
 import { useGym } from "../../context/GymContext";
 import { TelWhatsApp } from "../common/TelWhatsApp";
 
+import { SelectorAlumno } from "../common/BuscarAlumno";
 export const TrainersManagement = () => {
   const {
     trainers,
@@ -347,22 +348,7 @@ export const TrainersManagement = () => {
                 <label className="block text-slate-700 font-semibold mb-1">
                   Seleccionar Alumno
                 </label>
-                <select
-                  required
-                  value={memberToAssignId}
-                  onChange={(e) => setMemberToAssignId(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-800 focus:outline-none focus:border-blue-600"
-                >
-                  <option value="">Selecciona un alumno...</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.fullName} ({m.planName}) -{" "}
-                      {m.assignedTrainerId === selectedTrainer.id
-                        ? "Ya asignado"
-                        : "Disponible"}
-                    </option>
-                  ))}
-                </select>
+                <SelectorAlumno alumnos={members} value={memberToAssignId} onChange={(id) => setMemberToAssignId(id)} required />
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">

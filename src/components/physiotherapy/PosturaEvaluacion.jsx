@@ -256,7 +256,7 @@ export const derivePostureFindings = (lateral, knees, ankles) => {
 // ---------------------------------------------------------------------
 // Dibujos
 // ---------------------------------------------------------------------
-const COLOR = ["#10b981", "#f59e0b", "#f43f5e"];
+const COLOR = ["var(--color-emerald-500)", "var(--color-amber-500)", "var(--color-rose-500)"];
 const PIEL = "#e2e8f0";
 const BORDE = "#94a3b8";
 
@@ -304,8 +304,8 @@ export function SiluetaLateral({ lat, viewBox = "0 0 220 400", mini = false, foc
   return (
     <svg viewBox={viewBox} className="w-full h-full" role="img" aria-label="Silueta lateral">
       {/* plomada */}
-      <line x1={PL} y1="6" x2={PL} y2="384" stroke="#ef4444" strokeWidth={mini ? 1.4 : 1.6} strokeDasharray="5 4" opacity="0.8" />
-      {!mini && <circle cx={PL} cy="8" r="4" fill="#ef4444" />}
+      <line x1={PL} y1="6" x2={PL} y2="384" stroke="var(--color-red-500)" strokeWidth={mini ? 1.4 : 1.6} strokeDasharray="5 4" opacity="0.8" />
+      {!mini && <circle cx={PL} cy="8" r="4" fill="var(--color-red-500)" />}
       {/* piernas */}
       <path d={`M ${hipX} 200 L ${knee[0]} ${knee[1]} L ${ankle[0]} ${ankle[1]}`} fill="none" stroke={PIEL} strokeWidth="23" strokeLinecap="round" strokeLinejoin="round" />
       <path d={`M ${hipX} 200 L ${knee[0]} ${knee[1]} L ${ankle[0]} ${ankle[1]}`} fill="none" stroke={BORDE} strokeWidth="1.2" strokeLinejoin="round" opacity="0.7" />
@@ -368,9 +368,9 @@ export function PiernasFrente({ kn, an, mini = false, viewBox = "0 0 220 290" })
         <path d={`M ${h[0]} ${h[1]} L ${k[0]} ${k[1]} L ${t[0]} ${t[1]}`} fill="none" stroke={PIEL} strokeWidth="21" strokeLinecap="round" strokeLinejoin="round" />
         <path d={`M ${h[0]} ${h[1]} L ${k[0]} ${k[1]} L ${t[0]} ${t[1]}`} fill="none" stroke={BORDE} strokeWidth="1" strokeLinejoin="round" opacity="0.6" />
         <line x1={h[0]} y1={h[1]} x2={t[0]} y2={t[1]} stroke="#64748b" strokeWidth="1" strokeDasharray="3 3" opacity="0.7" />
-        {inflam > 0 && <circle cx={k[0]} cy={k[1]} r="21" fill="#38bdf8" opacity={inflam} />}
+        {inflam > 0 && <circle cx={k[0]} cy={k[1]} r="21" fill="var(--color-sky-400)" opacity={inflam} />}
         <circle cx={k[0]} cy={k[1]} r="10" fill="white" stroke={COLOR[nK]} strokeWidth="2.5" />
-        <ellipse cx={pat[0]} cy={pat[1]} rx="5.5" ry="7" fill={nR ? "#fde68a" : "#d1fae5"} stroke={COLOR[nR]} strokeWidth="1.8" />
+        <ellipse cx={pat[0]} cy={pat[1]} rx="5.5" ry="7" fill={nR ? "var(--color-amber-200)" : "var(--color-emerald-100)"} stroke={COLOR[nR]} strokeWidth="1.8" />
         <g transform={`rotate(${pron * 10 * s} ${t[0]} ${t[1]})`}>
           <ellipse cx={t[0] - 4 * s} cy={t[1] + 14} rx="15" ry="9" fill={PIEL} stroke={BORDE} strokeWidth="1" />
         </g>
@@ -398,11 +398,11 @@ function Huella({ tipo }) {
   const corte = { normal: { rx: 9, ry: 19, cx: 16 }, pie_plano_flexible: { rx: 4, ry: 12, cx: 12 }, pie_plano_rigido: null, pie_cavo: { rx: 13, ry: 24, cx: 18 } }[tipo];
   return (
     <svg viewBox="0 0 40 72" className="h-14 w-8">
-      <path d="M20 4 C 31 4 34 16 32 28 C 30 40 33 52 30 62 C 28 69 14 70 11 63 C 8 55 12 44 9 32 C 6 18 9 4 20 4 Z" fill={tipo === "pie_cavo" ? "#fda4af" : "#63dce3"} />
+      <path d="M20 4 C 31 4 34 16 32 28 C 30 40 33 52 30 62 C 28 69 14 70 11 63 C 8 55 12 44 9 32 C 6 18 9 4 20 4 Z" fill={tipo === "pie_cavo" ? "var(--color-rose-300)" : "var(--color-cyan-300)"} />
       {corte && <ellipse cx={corte.cx} cy="38" rx={corte.rx} ry={corte.ry} fill="white" />}
       {tipo === "pie_cavo" && <rect x="6" y="34" width="28" height="8" fill="white" />}
       {[["13", "6"], ["19", "5"], ["24", "6"], ["28", "8"], ["31", "11"]].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r={i === 0 ? 2.6 : 1.8} fill={tipo === "pie_cavo" ? "#fda4af" : "#63dce3"} transform="translate(0 -3)" />
+        <circle key={i} cx={x} cy={y} r={i === 0 ? 2.6 : 1.8} fill={tipo === "pie_cavo" ? "var(--color-rose-300)" : "var(--color-cyan-300)"} transform="translate(0 -3)" />
       ))}
     </svg>
   );
@@ -416,10 +416,10 @@ function Talon({ tipo }) {
     <svg viewBox="0 0 40 72" className="h-14 w-8">
       <rect x="13" y="2" width="14" height="38" rx="6" fill={PIEL} stroke={BORDE} />
       <g transform={`rotate(${a} 20 44)`}>
-        <line x1="20" y1="10" x2="20" y2="52" stroke="#f59e0b" strokeWidth={grueso ? 5 : 2.5} strokeLinecap="round" />
+        <line x1="20" y1="10" x2="20" y2="52" stroke="var(--color-amber-500)" strokeWidth={grueso ? 5 : 2.5} strokeLinecap="round" />
         <ellipse cx="20" cy="56" rx="11" ry="12" fill={PIEL} stroke={BORDE} />
       </g>
-      <line x1="20" y1="2" x2="20" y2="70" stroke="#ef4444" strokeWidth="0.8" strokeDasharray="2 2" />
+      <line x1="20" y1="2" x2="20" y2="70" stroke="var(--color-red-500)" strokeWidth="0.8" strokeDasharray="2 2" />
     </svg>
   );
 }
@@ -431,15 +431,15 @@ function Antepie({ tipo }) {
       <path d="M12 68 C 6 50 6 30 9 18 C 12 8 30 6 33 18 C 36 30 34 50 30 68 Z" fill={PIEL} stroke={BORDE} />
       {tipo === "hallux_valgus" ? (
         <>
-          <ellipse cx="15" cy="10" rx="4" ry="6" fill="#fde68a" stroke={BORDE} transform="rotate(25 15 10)" />
-          <circle cx="9" cy="24" r="4" fill="#fda4af" />
+          <ellipse cx="15" cy="10" rx="4" ry="6" fill="var(--color-amber-200)" stroke={BORDE} transform="rotate(25 15 10)" />
+          <circle cx="9" cy="24" r="4" fill="var(--color-rose-300)" />
         </>
       ) : (
         <ellipse cx="13" cy="8" rx="4" ry="6" fill={PIEL} stroke={BORDE} />
       )}
       {[19, 24, 28, 31].map((x, i) =>
         tipo === "dedos_garra" ? (
-          <path key={i} d={`M ${x} 14 q 2 -6 0 -9`} stroke="#f59e0b" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path key={i} d={`M ${x} 14 q 2 -6 0 -9`} stroke="var(--color-amber-500)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
         ) : (
           <circle key={i} cx={x} cy={10 + i} r="2.4" fill={PIEL} stroke={BORDE} />
         ),
@@ -452,7 +452,7 @@ function Antepie({ tipo }) {
 function IconoFrontal({ icon, activo }) {
   // La deformidad siempre en rojo (más intensa y gruesa al marcarla); el cuerpo
   // con contorno oscuro para que se vea en modo claro y oscuro.
-  const c = activo ? "#dc2626" : "#ef4444";
+  const c = activo ? "var(--color-red-600)" : "var(--color-red-500)";
   const g = activo ? 1.35 : 1;
   const piel = "#d7dfe8";
   const borde = "#64748b";

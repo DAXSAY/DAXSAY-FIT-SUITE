@@ -5,8 +5,9 @@
 // =====================================================================
 import { Router } from "express";
 import crypto from "crypto";
-import { consultar, transaccion } from "../db.js";
+import { consultar, transaccion, pool } from "../db.js";
 import { ErrorHttp, requierePermiso } from "../seguridad.js";
+import { columnasCrm, camposResponsable, estadoResponsable, tomarSiLibre, buscarInteresado } from "../crmCredito.js";
 
 const router = Router();
 const ESTADOS = ["nuevo", "seguimiento", "pase_entregado", "matriculado", "de_baja"];
@@ -50,19 +51,31 @@ const aProspecto = (f) => ({
   createdAt: f.fecha_registro,
   updatedAt: f.fecha_actualizacion,
   followUps: Number(f.seguimientos || 0),
+  ...estadoResponsable(f),
 });
 
-const SELECT = `
+/** SELECT de prospectos con su responsable, su turno y las 3 luces */
+async function sel() {
+  const { campos, joins } = camposResponsable(await columnasCrm());
+  return `
   SELECT p.*, pl.nombre AS plan_nombre, pl.precio AS plan_precio,
          COALESCE(NULLIF(TRIM(CONCAT(COALESCE(e.nombres, ''), ' ', COALESCE(e.apellidos, ''))), ''), u.usuario) AS registrado_por,
-         (SELECT COUNT(*) FROM prospecto_seguimientos s WHERE s.idprospecto = p.idprospecto) AS seguimientos
+         (SELECT COUNT(*) FROM prospecto_seguimientos s WHERE s.idprospecto = p.idprospecto) AS seguimientos ${campos}
     FROM prospectos p
     LEFT JOIN planes pl   ON pl.idplan = p.idplan_interes
     LEFT JOIN usuarios u  ON u.idusuario = p.idusuario_registro
-    LEFT JOIN empleados e ON e.idempleado = u.idempleado`;
+    LEFT JOIN empleados e ON e.idempleado = u.idempleado ${joins}`;
+}
+/** Fila cruda (para tomarSiLibre) dentro de una transacción */
+async function filaProspecto(cx, id) {
+  const [[f]] = await cx.query(`${await sel()} WHERE p.idprospecto = ?`, [id]);
+  return f;
+}
+/** Antes de una acción: si el interesado estaba libre, pasa a quien lo atiende */
+const tomar = async (cx, req) => tomarSiLibre(cx, await filaProspecto(cx, req.params.id), req.usuario.idusuario);
 
 async function uno(id) {
-  const [f] = await consultar(`${SELECT} WHERE p.idprospecto = ?`, [id]);
+  const [f] = await consultar(`${await sel()} WHERE p.idprospecto = ?`, [id]);
   if (!f) throw new ErrorHttp(404, "Prospecto no encontrado");
   return aProspecto(f);
 }
@@ -129,10 +142,54 @@ router.get("/", requierePermiso("crm", "ver"), async (req, res, next) => {
   try {
     const estado = ESTADOS.includes(req.query.estado) ? req.query.estado : null;
     const filas = await consultar(
-      `${SELECT} ${estado ? "WHERE p.estado = ?" : ""} ORDER BY (p.estado IN ('matriculado','de_baja')), p.contacto_fecha IS NULL, p.contacto_fecha, p.contacto_hora, p.idprospecto DESC LIMIT 2000`,
+      `${await sel()} ${estado ? "WHERE p.estado = ?" : ""} ORDER BY (p.estado IN ('matriculado','de_baja')), p.contacto_fecha IS NULL, p.contacto_fecha, p.contacto_hora, p.idprospecto DESC LIMIT 2000`,
       estado ? [estado] : [],
     );
     res.json(filas.map(aProspecto));
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET /api/prospectos/avisos  -> todo lo del panel de avisos del CRM en una sola llamada
+//  ahora:      contactos de los próximos 30 minutos (o atrasados, sin marcar "listo")
+//  noVinieron: pases libres vencidos que nadie cerró
+//  hoy:        la agenda completa de hoy (hechos y pendientes)
+//  seLiberan:  mis interesados que se liberan en 3 días o menos si no les hago seguimiento
+router.get("/avisos", requierePermiso("crm", "ver"), async (req, res, next) => {
+  try {
+    const base = await sel();
+    const [ahora, noVinieron, hoyLista, abiertos] = await Promise.all([
+      consultar(
+        `${base}
+          WHERE p.estado IN ('nuevo','seguimiento','pase_entregado') AND p.recordatorio_visto = 0
+            AND p.contacto_fecha IS NOT NULL AND p.contacto_hora IS NOT NULL
+            AND TIMESTAMP(p.contacto_fecha, p.contacto_hora) <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
+            AND TIMESTAMP(p.contacto_fecha, p.contacto_hora) >= DATE_SUB(NOW(), INTERVAL 12 HOUR)
+          ORDER BY p.contacto_fecha, p.contacto_hora`,
+      ),
+      consultar(
+        `${base}
+          WHERE p.estado = 'pase_entregado' AND p.pase_codigo IS NOT NULL AND p.pase_usado_en IS NULL
+            AND p.pase_fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            AND (p.pase_fecha < CURDATE()
+                 OR (p.pase_fecha = CURDATE() AND p.contacto_fecha = p.pase_fecha AND p.contacto_hora IS NOT NULL
+                     AND TIMESTAMP(p.pase_fecha, p.contacto_hora) < DATE_SUB(NOW(), INTERVAL 1 HOUR)))
+          ORDER BY p.pase_fecha DESC`,
+      ),
+      consultar(`${base} WHERE p.contacto_fecha = CURDATE() AND p.estado <> 'de_baja' ORDER BY p.contacto_hora IS NULL, p.contacto_hora`),
+      consultar(`${base} WHERE p.estado IN ('nuevo','seguimiento','pase_entregado') ORDER BY p.idprospecto DESC LIMIT 2000`),
+    ]);
+    const yo = String(req.usuario.idusuario);
+    const ids = new Set(noVinieron.map((f) => f.idprospecto));
+    res.json({
+      ahora: ahora.filter((f) => !ids.has(f.idprospecto)).map(aProspecto),
+      noVinieron: noVinieron.map(aProspecto),
+      hoy: hoyLista.map(aProspecto),
+      seLiberan: abiertos
+        .map(aProspecto)
+        .filter((p) => p.ownerId === yo && !p.free && p.freeInDays !== null && p.freeInDays <= 3),
+    });
   } catch (e) {
     next(e);
   }
@@ -142,7 +199,7 @@ router.get("/", requierePermiso("crm", "ver"), async (req, res, next) => {
 router.get("/recordatorios", requierePermiso("crm", "ver"), async (req, res, next) => {
   try {
     const filas = await consultar(
-      `${SELECT}
+      `${await sel()}
         WHERE p.estado IN ('nuevo','seguimiento','pase_entregado') AND p.recordatorio_visto = 0
           AND p.contacto_fecha IS NOT NULL AND p.contacto_hora IS NOT NULL
           AND TIMESTAMP(p.contacto_fecha, p.contacto_hora) <= DATE_ADD(NOW(), INTERVAL 30 MINUTE)
@@ -161,7 +218,7 @@ router.get("/recordatorios", requierePermiso("crm", "ver"), async (req, res, nex
 router.get("/pases-sin-usar", requierePermiso("crm", "ver"), async (req, res, next) => {
   try {
     const filas = await consultar(
-      `${SELECT}
+      `${await sel()}
         WHERE p.estado = 'pase_entregado' AND p.pase_codigo IS NOT NULL AND p.pase_usado_en IS NULL
           AND p.pase_fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
           AND (p.pase_fecha < CURDATE()
@@ -230,6 +287,7 @@ router.put("/:id(\\d+)", requierePermiso("crm", "editar"), async (req, res, next
     const campos = Object.keys(d);
     if (!campos.length) return res.json(antes);
     await transaccion(async (cx) => {
+      await tomar(cx, req);
       await cx.query(`UPDATE prospectos SET ${campos.map((c) => `${c} = ?`).join(", ")} WHERE idprospecto = ?`, [...campos.map((c) => d[c]), req.params.id]);
       if (cambioAgenda) {
         const ag = describirAgenda(d.contacto_tipo ?? antes.contactType, d.contacto_fecha ?? antes.contactDate, d.contacto_hora ?? antes.contactTime);
@@ -251,6 +309,7 @@ router.post("/:id(\\d+)/seguimiento", requierePermiso("crm", "editar"), async (r
     const detalle = txt(req.body?.detalle, 300);
     if (!detalle) throw new ErrorHttp(400, "Escribe qué pasó en el contacto");
     await transaccion(async (cx) => {
+      await tomar(cx, req);
       await anotar(cx, req.params.id, tipo, detalle, req.usuario.idusuario);
       if (p.status === "nuevo") await cx.query("UPDATE prospectos SET estado = 'seguimiento' WHERE idprospecto = ?", [req.params.id]);
       if (req.body?.cerrarRecordatorio) await cx.query("UPDATE prospectos SET recordatorio_visto = 1 WHERE idprospecto = ?", [req.params.id]);
@@ -269,6 +328,7 @@ router.post("/:id(\\d+)/estado", requierePermiso("crm", "editar"), async (req, r
     if (!ESTADOS.includes(estado)) throw new ErrorHttp(400, "Estado no válido");
     const motivo = txt(req.body?.motivo, 200);
     if (estado === "de_baja" && !motivo) throw new ErrorHttp(400, "Indica el motivo de la baja (por ejemplo: no contesta)");
+    if (estado === "matriculado" && p.status === "matriculado") return res.json(p);
     let idalumno = null;
     if (estado === "matriculado" && req.body?.memberId) {
       const [a] = await consultar("SELECT idalumno FROM alumnos WHERE idalumno = ?", [req.body.memberId]);
@@ -276,6 +336,7 @@ router.post("/:id(\\d+)/estado", requierePermiso("crm", "editar"), async (req, r
       idalumno = a.idalumno;
     }
     await transaccion(async (cx) => {
+      await tomar(cx, req);
       await cx.query(
         `UPDATE prospectos SET estado = ?, motivo_baja = ?, idalumno = COALESCE(?, idalumno),
                 recordatorio_visto = IF(? IN ('matriculado','de_baja'), 1, recordatorio_visto) WHERE idprospecto = ?`,
@@ -362,6 +423,7 @@ router.post("/:id(\\d+)/pase", requierePermiso("crm", "editar"), async (req, res
     }
     const historial = await hayTablaPases();
     await transaccion(async (cx) => {
+      await tomar(cx, req);
       await cx.query("UPDATE prospectos SET pase_codigo = ?, pase_fecha = ?, pase_usado_en = NULL, estado = 'pase_entregado' WHERE idprospecto = ?", [codigo, fecha, req.params.id]);
       if (hora) {
         await cx.query(
@@ -416,6 +478,7 @@ router.post("/:id(\\d+)/pase/no-concretado", requierePermiso("crm", "editar"), a
     const texto = `${MOTIVOS_PASE[tipo]}${motivo ? `: ${motivo}` : ""}`;
     if (!(await hayTablaPases())) throw new ErrorHttp(503, SIN_TABLA_PASES);
     await transaccion(async (cx) => {
+      await tomar(cx, req);
       const [r] = await cx.query(
         `UPDATE pases_libres SET estado = 'no_concretado', motivo_tipo = ?, motivo = ?, volver_a_llamar = ?, cerrado_en = NOW(), idusuario_cierre = ?
           WHERE idprospecto = ? AND estado = 'pendiente'`,
@@ -498,6 +561,134 @@ router.get("/pases", requierePermiso("crm", "ver"), async (req, res, next) => {
         createdAt: f.fecha_registro,
       })),
     );
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET /api/prospectos/coincidencia?dni=&celular=&id=
+// Al matricular: ¿esta persona es un interesado del CRM? ¿de quién es y a quién se acredita?
+router.get("/coincidencia", requierePermiso(["crm", "members"], "ver"), async (req, res, next) => {
+  try {
+    const f = await buscarInteresado(pool, { prospectId: req.query.id, dni: req.query.dni, phone: req.query.celular });
+    if (!f || ["matriculado", "de_baja"].includes(f.estado)) return res.json(null);
+    const p = aProspecto(f);
+    const mio = p.ownerId === String(req.usuario.idusuario);
+    res.json({
+      prospectId: p.id,
+      fullName: p.fullName,
+      owner: p.owner,
+      ownerShift: p.ownerShift,
+      lights: p.lights,
+      secured: p.secured,
+      free: p.free,
+      daysWithoutFollowUp: p.daysWithoutFollowUp,
+      mine: mio,
+      creditTo: p.free || !p.ownerId || mio ? "ti" : p.owner,
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET /api/prospectos/responsables -> recepcionistas y administración (para reasignar)
+router.get("/responsables", requierePermiso("crm", "ver"), async (req, res, next) => {
+  try {
+    const filas = await consultar(
+      `SELECT u.idusuario, COALESCE(NULLIF(TRIM(CONCAT(COALESCE(e.nombres, ''), ' ', COALESCE(e.apellidos, ''))), ''), u.usuario) AS nombre,
+              r.codigo AS rol, tr.nombre AS turno
+         FROM usuarios u JOIN roles r ON r.idrol = u.idrol
+         LEFT JOIN empleados e ON e.idempleado = u.idempleado
+         LEFT JOIN turnos_recepcion tr ON tr.idturno_recepcion = u.idturno_recepcion
+        WHERE u.activo = 1 AND r.codigo IN ('reception', 'admin')
+        ORDER BY r.codigo = 'admin', tr.hora_inicio, nombre`,
+    );
+    res.json(filas.map((f) => ({ id: String(f.idusuario), name: f.nombre, role: f.rol, shift: f.turno || "" })));
+  } catch (e) {
+    next(e);
+  }
+});
+
+// POST /api/prospectos/:id/responsable {userId, motivo}  -> solo administración
+router.post("/:id(\\d+)/responsable", requierePermiso("crm", "editar"), async (req, res, next) => {
+  try {
+    if (req.usuario.rol !== "admin") throw new ErrorHttp(403, "Solo administración puede cambiar el responsable");
+    if (!(await columnasCrm()).responsable) throw new ErrorHttp(503, "Falta ejecutar base_datos/26_crm_responsable.sql en MySQL Workbench (como root).");
+    const p = await uno(req.params.id);
+    const [u] = await consultar(
+      `SELECT u.idusuario, COALESCE(NULLIF(TRIM(CONCAT(COALESCE(e.nombres, ''), ' ', COALESCE(e.apellidos, ''))), ''), u.usuario) AS nombre
+         FROM usuarios u LEFT JOIN empleados e ON e.idempleado = u.idempleado WHERE u.idusuario = ? AND u.activo = 1`,
+      [req.body?.userId],
+    );
+    if (!u) throw new ErrorHttp(400, "Elige a quién pasa el interesado");
+    const motivo = txt(req.body?.motivo, 150);
+    if (!motivo) throw new ErrorHttp(400, "Escribe el motivo del cambio");
+    await transaccion(async (cx) => {
+      await cx.query("UPDATE prospectos SET idusuario_responsable = ? WHERE idprospecto = ?", [u.idusuario, req.params.id]);
+      await anotar(cx, req.params.id, "responsable", `Administración lo pasó de ${p.owner || "sin responsable"} a ${u.nombre}: ${motivo}`, req.usuario.idusuario);
+    });
+    res.json(await uno(req.params.id));
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET /api/prospectos/registro?desde=&hasta=&estado=
+// Registro (base de datos) de interesados: una fila por persona con sus datos,
+// el plan que le interesa, qué quedó en hacer y cómo terminó (vino, no vino y
+// por qué, se matriculó o se dio de baja). Se filtra por la fecha en que se
+// registró y se descarga en Excel o PDF desde el CRM.
+router.get("/registro", requierePermiso("crm", "ver"), async (req, res, next) => {
+  try {
+    const hoy = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
+    const desde = fechaOk(req.query.desde) || `${hoy.slice(0, 7)}-01`;
+    const hasta = fechaOk(req.query.hasta) || hoy;
+    const estado = ESTADOS.includes(req.query.estado) ? req.query.estado : null;
+    const conPases = await hayTablaPases();
+    const rc = camposResponsable(await columnasCrm());
+    const filas = await consultar(
+      `SELECT p.*, pl.nombre AS plan_nombre, pl.precio AS plan_precio,
+              COALESCE(NULLIF(TRIM(CONCAT(COALESCE(e.nombres, ''), ' ', COALESCE(e.apellidos, ''))), ''), u.usuario) AS registrado_por,
+              (SELECT COUNT(*) FROM prospecto_seguimientos s WHERE s.idprospecto = p.idprospecto) AS seguimientos,
+              ls.fecha AS ult_seg_fecha, ls.detalle AS ult_seg_detalle ${rc.campos}
+              ${conPases
+                ? `, lp.codigo AS lp_codigo, lp.fecha_visita AS lp_fecha, lp.hora_visita AS lp_hora, lp.estado AS lp_estado,
+                   lp.motivo_tipo AS lp_motivo_tipo, lp.motivo AS lp_motivo, lp.volver_a_llamar AS lp_volver, lp.reprogramaciones AS lp_reprog,
+                   (SELECT COUNT(*) FROM pases_libres x WHERE x.idprospecto = p.idprospecto) AS pases_total`
+                : ""}
+         FROM prospectos p
+         LEFT JOIN planes pl   ON pl.idplan = p.idplan_interes
+         LEFT JOIN usuarios u  ON u.idusuario = p.idusuario_registro
+         LEFT JOIN empleados e ON e.idempleado = u.idempleado ${rc.joins}
+         LEFT JOIN prospecto_seguimientos ls
+                ON ls.idseguimiento = (SELECT MAX(s2.idseguimiento) FROM prospecto_seguimientos s2 WHERE s2.idprospecto = p.idprospecto)
+         ${conPases ? "LEFT JOIN pases_libres lp ON lp.idpase = (SELECT MAX(x2.idpase) FROM pases_libres x2 WHERE x2.idprospecto = p.idprospecto)" : ""}
+        WHERE DATE(p.fecha_registro) BETWEEN ? AND ? ${estado ? "AND p.estado = ?" : ""}
+        ORDER BY p.fecha_registro DESC, p.idprospecto DESC
+        LIMIT 5000`,
+      estado ? [desde, hasta, estado] : [desde, hasta],
+    );
+    res.json({
+      desde, hasta,
+      filas: filas.map((f) => ({
+        ...aProspecto(f),
+        lastNoteAt: f.ult_seg_fecha || "",
+        lastNote: f.ult_seg_detalle || "",
+        passes: Number(f.pases_total || (f.pase_codigo ? 1 : 0)),
+        lastPass: f.lp_codigo
+          ? {
+              code: f.lp_codigo,
+              date: String(f.lp_fecha).slice(0, 10),
+              time: f.lp_hora ? String(f.lp_hora).slice(0, 5) : "",
+              status: f.lp_estado,
+              reasonLabel: f.lp_motivo_tipo ? MOTIVOS_PASE[f.lp_motivo_tipo] || f.lp_motivo_tipo : "",
+              reason: f.lp_motivo || "",
+              callBackDate: f.lp_volver ? String(f.lp_volver).slice(0, 10) : "",
+              reschedules: Number(f.lp_reprog || 0),
+            }
+          : null,
+      })),
+    });
   } catch (e) {
     next(e);
   }
@@ -604,7 +795,7 @@ router.get("/reporte", requierePermiso("crm", "ver"), async (req, res, next) => 
 router.post("/pase/validar", requierePermiso("crm", "ver"), async (req, res, next) => {
   try {
     const codigo = String(req.body?.codigo || "").trim().toUpperCase();
-    const [f] = await consultar(`${SELECT} WHERE p.pase_codigo = ?`, [codigo]);
+    const [f] = await consultar(`${await sel()} WHERE p.pase_codigo = ?`, [codigo]);
     if (!f) throw new ErrorHttp(404, "No existe una invitación con ese código");
     const p = aProspecto(f);
     const [{ hoy }] = await consultar("SELECT CURDATE() AS hoy");

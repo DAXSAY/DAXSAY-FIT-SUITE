@@ -18,53 +18,145 @@ import {
   X,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import {
   EditorPlatos, VistaPlatos, PlatoSVG, porcionesBase, LeyendaPlato, GuiaPorciones, TablaCarbosEjercicio, MODELOS_PLATO, MANOS, MANOS_EXTRA, normalizarPlato, platosDePlan,
 } from "./PlatoNutricional";
 import { EditorComidas, totalesComida } from "./EditorComidas";
 import { CatalogoAlimentos } from "./CatalogoAlimentos";
 
-const OBJECTIVE_LABELS = {
-  hipertrofia: "Hipertrofia Muscular",
-  perdida_peso: "Pérdida de Grasa / Déficit",
-  fuerza: "Fuerza & Rendimiento",
-  resistencia: "Resistencia / Cardio",
-  tonificacion: "Tonificación / Definición",
-  salud_rehabilitacion: "Salud & Mantenimiento",
+import { SelectorAlumno, CodigoAlumno, coincideAlumno } from "../common/BuscarAlumno";
+import { objetivoPrincipal } from "../../utils/objetivos";
+import { OBJETIVOS_NUTRI, COLOR_OBJETIVO, objetivoNutri, calcularTdee, ACTIVIDADES, SUPLEMENTOS_BASE } from "../../data/nutricionOpciones";
+import { BotonesDescarga } from "../common/BotonesDescarga";
+const OBJECTIVE_LABELS = Object.fromEntries(OBJETIVOS_NUTRI.map((o) => [o.id, `${o.emoji} ${o.label}`]));
+const OBJECTIVE_COLORS = Object.fromEntries(OBJETIVOS_NUTRI.map((o) => [o.id, COLOR_OBJETIVO[o.color]]));
+
+/** Suplementos: selección múltiple + propios (se recuerdan en este equipo y salen de los planes ya hechos) */
+const SelectorSuplementos = ({ value, onChange, usados = [] }) => {
+  const lista = String(value || "").split(",").map((x) => x.trim()).filter(Boolean);
+  const [propios, setPropios] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("radical_suplementos_propios") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [nuevo, setNuevo] = useState("");
+  const opciones = [...new Set([...SUPLEMENTOS_BASE, ...propios, ...usados, ...lista])];
+  const alternar = (x) => onChange((lista.includes(x) ? lista.filter((y) => y !== x) : [...lista, x]).join(", "));
+  const agregar = () => {
+    const t = nuevo.trim().replace(/,/g, " ");
+    if (t.length < 2) return;
+    const p = [...new Set([...propios, t])];
+    setPropios(p);
+    try {
+      localStorage.setItem("radical_suplementos_propios", JSON.stringify(p));
+    } catch {
+      /* sin almacenamiento */
+    }
+    if (!lista.includes(t)) onChange([...lista, t].join(", "));
+    setNuevo("");
+  };
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+        {opciones.map((x) => {
+          const on = lista.includes(x);
+          return (
+            <button key={x} type="button" onClick={() => alternar(x)} className={`px-2.5 py-1 rounded-full text-xs font-bold border cursor-pointer ${on ? "bg-violet-600 border-violet-600 text-white" : "bg-white border-slate-200 text-slate-700 hover:border-violet-300"}`}>
+              {on ? "✓ " : ""}
+              {x}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={nuevo}
+          onChange={(e) => setNuevo(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              agregar();
+            }
+          }}
+          placeholder="Agregar otro suplemento (se guarda para la próxima)"
+          className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm"
+        />
+        <button type="button" onClick={agregar} className="px-3 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-bold cursor-pointer">
+          Agregar
+        </button>
+      </div>
+    </div>
+  );
 };
 
-const OBJECTIVE_COLORS = {
-  hipertrofia: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-  },
-  perdida_peso: {
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
-  },
-  fuerza: {
-    bg: "bg-purple-50",
-    text: "text-purple-700",
-    border: "border-purple-200",
-  },
-  resistencia: {
-    bg: "bg-cyan-50",
-    text: "text-cyan-700",
-    border: "border-cyan-200",
-  },
-  tonificacion: {
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    border: "border-blue-200",
-  },
-  salud_rehabilitacion: {
-    bg: "bg-slate-50",
-    text: "text-slate-700",
-    border: "border-slate-200",
-  },
+/** Calculadora TDEE dentro del plan: llena las metas con un clic */
+const TdeeEnPlan = ({ alumno, objetivo, onUsar }) => {
+  const [abierto, setAbierto] = useState(false);
+  const [d, setD] = useState({ sexo: "M", peso: 70, talla: 170, edad: 30, actividad: 1.55 });
+  useEffect(() => {
+    if (!alumno) return;
+    setD((x) => ({
+      ...x,
+      sexo: alumno.gender === "F" || alumno.sex === "F" ? "F" : x.sexo,
+      peso: Number(alumno.weight) || x.peso,
+      talla: Number(alumno.height) || x.talla,
+      edad: alumno.birthDate ? Math.max(14, new Date().getFullYear() - Number(String(alumno.birthDate).slice(0, 4))) : x.edad,
+    }));
+  }, [alumno?.id]);
+  const r = calcularTdee({ ...d, objetivo });
+  const n = (k, paso = 1) => (
+    <input type="number" step={paso} value={d[k]} onChange={(e) => setD({ ...d, [k]: Number(e.target.value) })} className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-sm font-bold" />
+  );
+  return (
+    <div className="rounded-xl border border-blue-200 bg-blue-50/50">
+      <button type="button" onClick={() => setAbierto(!abierto)} className="w-full flex items-center justify-between px-3 py-2 text-xs font-black text-blue-800 cursor-pointer">
+        <span>🧮 Calcular metas con TDEE (Mifflin-St Jeor) · {objetivoNutri(objetivo).label}</span>
+        <span>{abierto ? "Ocultar ▲" : `${r.kcal} kcal sugeridas ▼`}</span>
+      </button>
+      {abierto && (
+        <div className="px-3 pb-3 space-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-[11px] font-bold text-slate-600">
+            <label>
+              Sexo
+              <select value={d.sexo} onChange={(e) => setD({ ...d, sexo: e.target.value })} className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-sm font-bold">
+                <option value="M">Hombre</option>
+                <option value="F">Mujer</option>
+              </select>
+            </label>
+            <label>Peso (kg){n("peso", 0.1)}</label>
+            <label>Talla (cm){n("talla")}</label>
+            <label>Edad{n("edad")}</label>
+            <label className="col-span-2">
+              Actividad
+              <select value={d.actividad} onChange={(e) => setD({ ...d, actividad: Number(e.target.value) })} className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-sm font-bold">
+                {ACTIVIDADES.map(([v, l]) => (
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="px-2 py-1 rounded-lg bg-white border border-slate-200">Basal {r.bmr} kcal</span>
+            <span className="px-2 py-1 rounded-lg bg-white border border-slate-200">Gasto diario {r.tdee} kcal</span>
+            <span className="px-2 py-1 rounded-lg bg-blue-600 text-white font-black">Meta {r.kcal} kcal</span>
+            <span className="px-2 py-1 rounded-lg bg-white border border-rose-200 text-rose-700 font-bold">P {r.proteinas} g</span>
+            <span className="px-2 py-1 rounded-lg bg-white border border-amber-200 text-amber-700 font-bold">C {r.carbohidratos} g</span>
+            <span className="px-2 py-1 rounded-lg bg-white border border-lime-200 text-lime-700 font-bold">G {r.grasas} g</span>
+            <span className="px-2 py-1 rounded-lg bg-white border border-sky-200 text-sky-700 font-bold">Agua {r.agua} L</span>
+            <button type="button" onClick={() => onUsar(r)} className="ml-auto px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-black cursor-pointer">
+              Usar estas metas
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const COMMON_FOODS = [
@@ -184,6 +276,7 @@ export const NutritionModule = () => {
     addNutritionPlan,
     updateNutritionPlan,
     deleteNutritionPlan,
+    bodyAssessments = [],
   } = useGym();
   const [selectedPlanId, setSelectedPlanId] = useState(
     nutritionPlans[0]?.id || "",
@@ -259,7 +352,9 @@ export const NutritionModule = () => {
   // Filtered Plans
   const filteredPlans = useMemo(() => {
     return nutritionPlans.filter((plan) => {
+      const alumno = members.find((m) => m.id === plan.targetStudentId);
       const matchesSearch =
+        (alumno && searchQuery.trim() && coincideAlumno(alumno, searchQuery)) ||
         plan.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (plan.targetStudentName &&
           plan.targetStudentName
@@ -271,7 +366,7 @@ export const NutritionModule = () => {
         filterObjective === "all" || plan.objective === filterObjective;
       return matchesSearch && matchesObjective;
     });
-  }, [nutritionPlans, searchQuery, filterObjective]);
+  }, [nutritionPlans, searchQuery, filterObjective, members]);
 
   // Calculator Calculations (Mifflin - St Jeor)
   const calculatedMetrics = useMemo(() => {
@@ -282,23 +377,14 @@ export const NutritionModule = () => {
     // TDEE
     const tdee = Math.round(bmr * calcActivity);
 
-    // Goal adjustment
-    let targetCalories = tdee;
-    if (calcGoal === "perdida_peso") targetCalories = Math.round(tdee - 450);
-    else if (calcGoal === "tonificacion")
-      targetCalories = Math.round(tdee - 250);
-    else if (calcGoal === "hipertrofia")
-      targetCalories = Math.round(tdee + 350);
-    else if (calcGoal === "fuerza") targetCalories = Math.round(tdee + 450);
-
-    // Protein: 2.0g/kg for strength/hypertrophy, 1.8g/kg for weight loss
-    const proteinFactor =
-      calcGoal === "hipertrofia" || calcGoal === "fuerza" ? 2.2 : 2.0;
-    const proteinsGrams = Math.round(calcWeight * proteinFactor);
+    // Ajuste y proteína según el objetivo elegido
+    const obj = objetivoNutri(calcGoal);
+    const targetCalories = Math.max(1200, tdee + obj.ajuste);
+    const proteinsGrams = Math.round(calcWeight * obj.prot);
     const proteinKcal = proteinsGrams * 4;
 
     // Fats: 25% of target calories
-    const fatsKcal = targetCalories * 0.25;
+    const fatsKcal = targetCalories * obj.grasa;
     const fatsGrams = Math.round(fatsKcal / 9);
 
     // Carbs: Remaining calories
@@ -322,7 +408,7 @@ export const NutritionModule = () => {
     const member = members.find((m) => m.id === memberId);
     if (!member) return;
 
-    if (member.objective) setCalcGoal(member.objective);
+    if (member.objective) setCalcGoal(objetivoPrincipal(member.objective));
     if (member.gender === "F") setCalcGender("F");
     else setCalcGender("M");
 
@@ -359,8 +445,13 @@ export const NutritionModule = () => {
       setFormFats(0);
       setFormWater(0);
     }
-    setFormMeals(comidasVacias());
-    setFormPlates([normalizarPlato({ name: "Almuerzo", time: "13:30" }, sexoAlumno(fromCalculator ? calcSelectedStudentId : ""))]);
+    {
+      // Cada comida nace con su plato enlazado (una sola lista: comidas = platos)
+      const sx = sexoAlumno(fromCalculator ? calcSelectedStudentId : "");
+      const platos = comidasVacias().map((c) => normalizarPlato({ name: c.name, time: c.time }, sx));
+      setFormPlates(platos);
+      setFormMeals(comidasVacias().map((c, k) => ({ ...c, plateId: platos[k].id })));
+    }
     setFormSupplements("");
     setFormHydration("");
     setFormRecommendations("");
@@ -383,8 +474,21 @@ export const NutritionModule = () => {
     setFormSupplements((plan.supplements || []).join(", "));
     setFormHydration(plan.hydrationGuidelines || "");
     setFormRecommendations(plan.recommendations || "");
-    setFormMeals((plan.meals || []).map(totalesComida));
-    setFormPlates(platosDePlan(plan, sexoAlumno(plan.targetStudentId)));
+    {
+      // Planes anteriores: las comidas sin plato reciben uno (con la distribución del primer plato)
+      const sx = sexoAlumno(plan.targetStudentId);
+      const platos = platosDePlan(plan, sx);
+      const comidas = (plan.meals || []).map(totalesComida).map((m) => {
+        const pl = platos.find((p) => p.id === m.plateId || p.name === m.name);
+        if (pl) return { ...m, plateId: pl.id };
+        const base = platos[0];
+        const nuevo = normalizarPlato({ ...(base ? { ...base, id: undefined, notes: "" } : {}), name: m.name, time: /^\d{2}:\d{2}$/.test(m.time || "") ? m.time : "" }, sx);
+        platos.push(nuevo);
+        return { ...m, plateId: nuevo.id };
+      });
+      setFormPlates(platos);
+      setFormMeals(comidas);
+    }
     setIsModalOpen(true);
   };
 
@@ -668,7 +772,7 @@ export const NutritionModule = () => {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Buscar por alumno o nombre de plan..."
+                  placeholder="Código del alumno (12 o DR-12), nombre o plan..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
@@ -681,10 +785,11 @@ export const NutritionModule = () => {
                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-hidden"
               >
                 <option value="all">🎯 Todos los objetivos</option>
-                <option value="hipertrofia">Hipertrofia Muscular</option>
-                <option value="perdida_peso">Pérdida de Peso / Grasa</option>
-                <option value="fuerza">Fuerza & Rendimiento</option>
-                <option value="tonificacion">Tonificación & Definición</option>
+                {OBJETIVOS_NUTRI.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.emoji} {o.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -731,6 +836,7 @@ export const NutritionModule = () => {
                       <div className="mt-2.5 flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
                         <div className="flex items-center space-x-1 truncate">
                           <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <CodigoAlumno m={members.find((m) => m.id === plan.targetStudentId)} className="shrink-0" />
                           <span className="font-semibold text-slate-700 truncate">
                             {plan.targetStudentName || "Plantilla General"}
                           </span>
@@ -749,7 +855,7 @@ export const NutritionModule = () => {
           {/* Right Column: Selected Plan Detailed Blueprint */}
           <div className="lg:col-span-8">
             {selectedPlan ? (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+              <div data-descargar className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
                 {/* Plan Header */}
                 <div className="p-5 sm:p-6 bg-linear-to-r from-slate-900 to-slate-800 text-white">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -798,6 +904,7 @@ export const NutritionModule = () => {
                       >
                         <Printer className="w-4 h-4" />
                       </button>
+                      <BotonesDescarga compacto nombre={`Plan_${selectedPlan.title}`} />
 
                       <button
                         onClick={() => handleOpenEditModal(selectedPlan)}
@@ -1119,18 +1226,12 @@ export const NutritionModule = () => {
                 <label className="block text-xs font-bold text-blue-900 mb-1.5">
                   Cargar datos de un alumno registrado (opcional):
                 </label>
-                <select
+                <SelectorAlumno
+                  alumnos={members}
                   value={calcSelectedStudentId}
-                  onChange={(e) => handleSelectMemberForCalc(e.target.value)}
-                  className="w-full bg-white border border-blue-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800"
-                >
-                  <option value="">-- Seleccionar Alumno --</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.fullName} (DNI: {m.dni}) - {m.planName}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(id) => handleSelectMemberForCalc(id)}
+                  vacio="-- Ninguno --"
+                />
               </div>
 
               {/* Sexo & Edad */}
@@ -1245,21 +1346,11 @@ export const NutritionModule = () => {
                   onChange={(e) => setCalcGoal(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800"
                 >
-                  <option value="perdida_peso">
-                    Pérdida de Grasa (Déficit -450 kcal)
-                  </option>
-                  <option value="tonificacion">
-                    Definición / Recomposición (Déficit suave -250 kcal)
-                  </option>
-                  <option value="salud_rehabilitacion">
-                    Mantenimiento Energético
-                  </option>
-                  <option value="hipertrofia">
-                    Ganancia Muscular Limpia (Superávit +350 kcal)
-                  </option>
-                  <option value="fuerza">
-                    Fuerza Máxima (Superávit +450 kcal)
-                  </option>
+                  {OBJETIVOS_NUTRI.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.emoji} {o.label} ({o.ajuste > 0 ? "+" : ""}{o.ajuste} kcal)
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -1365,8 +1456,8 @@ export const NutritionModule = () => {
 
       {/* MODAL: CREATE OR EDIT NUTRITION PLAN */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-50">
-          <div className="bg-white w-full h-full flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 rd-velo">
+          <div className="rd-hoja bg-white flex flex-col overflow-hidden">
             {/* Modal Header */}
             <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center space-x-2.5">
@@ -1396,7 +1487,7 @@ export const NutritionModule = () => {
             {/* Modal Form */}
             <form
               onSubmit={handleSavePlan}
-              className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6 w-full max-w-[1400px] mx-auto"
+              className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 w-full max-w-[1200px] mx-auto"
             >
               {/* General info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1418,20 +1509,12 @@ export const NutritionModule = () => {
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Asignar a Alumno del Gimnasio
                   </label>
-                  <select
+                  <SelectorAlumno
+                    alumnos={members}
                     value={formStudentId}
-                    onChange={(e) => setFormStudentId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-hidden"
-                  >
-                    <option value="">
-                      -- Sin asignar (Plantilla Base / General) --
-                    </option>
-                    {members.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.fullName} - {m.planName} (DNI: {m.dni})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(id) => setFormStudentId(id)}
+                    vacio="-- Sin asignar (Plantilla Base / General) --"
+                  />
                 </div>
               </div>
 
@@ -1446,17 +1529,11 @@ export const NutritionModule = () => {
                     onChange={(e) => setFormObjective(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-hidden"
                   >
-                    <option value="hipertrofia">Hipertrofia Muscular</option>
-                    <option value="perdida_peso">
-                      Pérdida de Grasa / Déficit
-                    </option>
-                    <option value="fuerza">Fuerza & Rendimiento</option>
-                    <option value="tonificacion">
-                      Tonificación & Definición
-                    </option>
-                    <option value="salud_rehabilitacion">
-                      Salud & Mantenimiento
-                    </option>
+                    {OBJETIVOS_NUTRI.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.emoji} {o.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -1482,6 +1559,24 @@ export const NutritionModule = () => {
                   </datalist>
                 </div>
               </div>
+
+              <TdeeEnPlan
+                alumno={(() => {
+                  const m = members.find((x) => x.id === formStudentId);
+                  if (!m) return null;
+                  const ev = (bodyAssessments || [])
+                    .filter((b) => String(b.memberId) === String(m.id))
+                    .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+                  return { ...m, weight: ev?.weightKg, height: ev?.heightCm };
+                })()}
+                objetivo={formObjective}
+                onUsar={(r) => {
+                  setFormProteins(r.proteinas);
+                  setFormCarbs(r.carbohidratos);
+                  setFormFats(r.grasas);
+                  setFormWater(r.agua);
+                }}
+              />
 
               {/* Macros Target Banner */}
               <div className="p-4 bg-slate-900 rounded-xl text-white space-y-3">
@@ -1551,35 +1646,32 @@ export const NutritionModule = () => {
                 </div>
               </div>
 
-              {/* Platos del alumno (gráficos) y porciones con la mano */}
+              {/* Comidas del día: cada una es un plato con su distribución y sus alimentos */}
               <EditorPlatos
                 value={formPlates}
                 onChange={setFormPlates}
                 sexo={sexoAlumno(formStudentId)}
                 comidas={formMeals}
+                setComidas={setFormMeals}
                 metas={{ proteinas: Number(formProteins), carbohidratos: Number(formCarbs), grasas: Number(formFats) }}
               />
 
-              {/* Comidas y alimentos (catálogo) */}
+              {/* Totales de los alimentos del día y comidas antiguas sin plato */}
               <EditorComidas
                 meals={formMeals}
                 setMeals={setFormMeals}
+                soloTotales
+                indices={formMeals.map((m, k) => (formPlates.some((p) => p.id === m.plateId || p.name === m.name) ? -1 : k)).filter((k) => k >= 0)}
                 metas={{ kcal: Number(formProteins) * 4 + Number(formCarbs) * 4 + Number(formFats) * 9, p: Number(formProteins), c: Number(formCarbs), g: Number(formFats) }}
               />
 
               {/* Extra guidelines */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Suplementos Recomendados
+                    Suplementos recomendados
                   </label>
-                  <input
-                    type="text"
-                    value={formSupplements}
-                    onChange={(e) => setFormSupplements(e.target.value)}
-                    placeholder="Creatina 5g, Proteína Whey, Multivitamínico..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium"
-                  />
+                  <SelectorSuplementos value={formSupplements} onChange={setFormSupplements} usados={nutritionPlans.flatMap((p) => p.supplements || [])} />
                 </div>
 
                 <div>

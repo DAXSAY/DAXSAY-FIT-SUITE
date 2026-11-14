@@ -12,6 +12,7 @@ coverage/
 # Imágenes subidas desde el sistema
 uploads/
 
-# Copias locales y paquetes temporales
-.respaldo_crm/
-.paquete_*
+# Copias de seguridad de la base
+respaldos/
+CLAVES_NUEVAS.txt
+*.antes_de_cambiar_claves

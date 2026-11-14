@@ -283,7 +283,7 @@ export const PanelPases = ({ onAbrirProspecto, gym = "RADICAL" }) => {
 // ---------------------------------------------------------------------
 // Reporte del CRM
 // ---------------------------------------------------------------------
-const COLORES = ["#0ea7b3", "#f59e0b", "#8b5cf6", "#10b981", "#ef4444", "#3b82f6", "#ec4899", "#64748b"];
+const COLORES = ["var(--color-blue-500)", "var(--color-amber-500)", "var(--color-violet-500)", "var(--color-emerald-500)", "var(--color-red-500)", "var(--color-blue-500)", "var(--color-pink-500)", "#64748b"];
 
 const Tarjeta = ({ titulo, valor, sub, tono }) => (
   <div className={`rounded-2xl border p-4 ${tono}`}>
@@ -386,9 +386,9 @@ export const ReporteCrm = () => {
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="interesados" name="Interesados" fill="#0ea7b3" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="pases" name="Pases" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="matriculados" name="Matriculados" fill="#10b981" radius={[6, 6, 0, 0]} />
+                    <Bar isAnimationActive={false} maxBarSize={56} dataKey="interesados" name="Interesados" fill="var(--color-blue-500)" radius={[6, 6, 0, 0]} />
+                    <Bar isAnimationActive={false} maxBarSize={56} dataKey="pases" name="Pases" fill="var(--color-violet-500)" radius={[6, 6, 0, 0]} />
+                    <Bar isAnimationActive={false} maxBarSize={56} dataKey="matriculados" name="Matriculados" fill="var(--color-emerald-500)" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -402,10 +402,10 @@ export const ReporteCrm = () => {
                     <XAxis dataKey="hora" tick={{ fontSize: 10 }} interval={1} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                     <Tooltip />
-                    <Bar dataKey="total" name="Interesados" radius={[5, 5, 0, 0]}>
+                    <Bar isAnimationActive={false} maxBarSize={56} dataKey="total" name="Interesados" radius={[5, 5, 0, 0]}>
                       {datos.porHora.map((h, i) => {
                         const hh = Number(h.hora.slice(0, 2));
-                        return <Cell key={i} fill={hh < 12 ? "#f59e0b" : hh < 18 ? "#0ea7b3" : "#6366f1"} />;
+                        return <Cell key={i} fill={hh < 12 ? "var(--color-amber-500)" : hh < 18 ? "var(--color-blue-500)" : "var(--color-indigo-500)"} />;
                       })}
                     </Bar>
                   </BarChart>

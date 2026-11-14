@@ -3,9 +3,13 @@ import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
 import { aplicarTema, temaGuardado } from "./utils/tema";
+import { instalarResaltadoGraficos } from "./utils/graficos";
+import { instalarControlesVentanas } from "./utils/controlesVentana";
 
 // Aplica el modo claro/oscuro guardado antes de pintar (evita parpadeo)
 aplicarTema(temaGuardado());
+instalarResaltadoGraficos();
+instalarControlesVentanas();
 
 // Campos numéricos: al entrar se selecciona el valor (escribir lo reemplaza)
 // y se quitan los ceros a la izquierda (evita "012").

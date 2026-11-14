@@ -1,4 +1,4 @@
-# RADICAL GYM – Sistema de Gestión de Gimnasio
+# RADICAL · DAXSAY Fit Suite – Sistema de Gestión de Gimnasio
 
 - **Web:** React + JavaScript (JSX), Tailwind CSS y Vite.
 - **API:** Node.js + Express.
@@ -8,6 +8,12 @@
 - Node.js 20 o superior
 - MySQL 8 o superior con la base `gestion_radicalgym` instalada (ver `base_datos/README.md`)
 - Archivo `gestion_radicalgym.env` en la raíz con la conexión a MySQL (DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET, SESION_HORAS, API_PORT). No se sube a GitHub.
+
+## Antes de usarlo con datos reales
+1. **Base de datos:** en MySQL Workbench (como root) ejecuta las actualizaciones pendientes de `base_datos/`, entre ellas `33_limpieza_sin_uso.sql` (saca un respaldo antes) y `34_sincronizacion_y_respaldos.sql` (actualización parcial entre pantallas y copias completas).
+2. **Contraseñas:** `npm run cambiar-claves` cambia el secreto de las sesiones y las contraseñas de prueba del personal. Las nuevas quedan solo en `CLAVES_NUEVAS.txt` (entrégalas y bórralo).
+3. **Copias de seguridad:** se hacen solas cada día en la carpeta `respaldos/` (últimas 30). También: `npm run respaldo` o el botón «Hacer copia ahora» en Inicio.
+4. **Entrar desde casa:** sigue `ACCESO_REMOTO.md` (Tailscale + `PERMITIR_ACCESO_RED.bat`).
 
 ## Cómo ejecutarlo (terminal de VS Code)
 ```bash

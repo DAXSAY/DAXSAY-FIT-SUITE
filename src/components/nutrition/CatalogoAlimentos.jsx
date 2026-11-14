@@ -65,18 +65,21 @@ const MiniMacros = ({ p, c, g }) => {
 /** Tarjeta de alimento (selector y catálogo) */
 export const TarjetaAlimento = ({ f, onClick, accion }) => {
   const porc = calcularPorcion(f, f.portionGrams);
+  const cat = CATEGORIAS[f.category] || CATEGORIAS.otros;
   return (
     <div
       onClick={onClick}
-      className={`group relative bg-white rounded-2xl border border-slate-200 p-3 flex flex-col gap-2 transition-all ${
+      style={{ borderTopColor: cat.barra, backgroundImage: `linear-gradient(180deg, ${cat.barra}14, transparent 55%)` }}
+      className={`group relative bg-white rounded-2xl border border-slate-200 border-t-4 p-3 flex flex-col gap-2 transition-all ${
         onClick ? "cursor-pointer hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5" : ""
       } ${f.active === false ? "opacity-50" : ""}`}
     >
       <div className="flex items-start gap-2.5">
-        <span className="text-3xl leading-none shrink-0 w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center">{f.emoji || CATEGORIAS[f.category]?.emoji}</span>
+        <span className="text-3xl leading-none shrink-0 w-11 h-11 rounded-xl flex items-center justify-center shadow-sm" style={{ background: `${cat.barra}22` }}>{f.emoji || cat.emoji}</span>
         <div className="min-w-0">
           <p className="text-sm font-bold text-slate-900 leading-tight">{f.name}</p>
           <p className="text-[11px] text-slate-500 truncate">{f.portionText || `${f.portionGrams} g`}</p>
+          <span className={`inline-block mt-0.5 text-[9px] font-black uppercase rounded border px-1 ${cat.chip}`}>{cat.nombre}</span>
         </div>
       </div>
       <MiniMacros p={porc.proteins} c={porc.carbs} g={porc.fats} />

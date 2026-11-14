@@ -95,7 +95,6 @@ export const ExercisePrescriptionCard = ({
   readOnly = false,
 }) => {
   const banco = useExerciseBank();
-  const [verBanco, setVerBanco] = useState(false);
   const [cambiarImagenDe, setCambiarImagenDe] = useState(null);
 
   const actualizar = (i, campo, valor) => {
@@ -128,7 +127,6 @@ export const ExercisePrescriptionCard = ({
     if (cambiarImagenDe != null) {
       actualizar(cambiarImagenDe, "imageUrl", ex.gifUrl || ex.thumbnailUrl || "");
       setCambiarImagenDe(null);
-      setVerBanco(false);
       return;
     }
     onChange([
@@ -166,53 +164,43 @@ export const ExercisePrescriptionCard = ({
         </div>
       </div>
 
+      {/* Pantalla partida: a la izquierda lo elegido, a la derecha el banco */}
+      <div className={readOnly ? "" : "grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"}>
+      <div className="space-y-3 min-w-0">
       {!readOnly && (
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => { setCambiarImagenDe(null); setVerBanco((v) => !v); }} className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex items-center gap-1.5 cursor-pointer">
-            <Dumbbell className="w-4 h-4" /> {verBanco && cambiarImagenDe == null ? "Cerrar banco" : `Agregar del banco (${banco.length})`}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+            Ejercicios elegidos <span className="ml-1 px-1.5 rounded-md bg-blue-100 text-blue-800">{exercises.length}</span>
+          </p>
+          <button type="button" onClick={() => onChange([...exercises, nuevo()])} className="px-3 py-1.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer hover:bg-slate-50">
+            <Plus className="w-3.5 h-3.5" /> Ejercicio propio
           </button>
-          <button type="button" onClick={() => onChange([...exercises, nuevo()])} className="px-3 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold flex items-center gap-1.5 cursor-pointer hover:bg-slate-50">
-            <Plus className="w-4 h-4" /> Ejercicio propio
-          </button>
-        </div>
-      )}
-
-      {verBanco && (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-3">
-          {cambiarImagenDe != null && (
-            <p className="text-xs font-semibold text-blue-800 mb-2">
-              Elige la imagen para «{exercises[cambiarImagenDe]?.name || "ejercicio"}»
-              <button type="button" onClick={() => { setCambiarImagenDe(null); setVerBanco(false); }} className="ml-2 underline cursor-pointer">cancelar</button>
-            </p>
-          )}
-          <ExercisePicker exercises={banco} onPick={agregarDelBanco} picked={exercises.map((e) => e.bankId).filter(Boolean)} />
         </div>
       )}
 
       {exercises.length === 0 ? (
         <p className="text-sm text-slate-500 text-center py-6 border border-dashed border-slate-200 rounded-xl">
-          Sin ejercicios. Agrégalos del banco (con animación) o crea uno propio con tu foto.
+          {readOnly ? "Sin ejercicios." : "Aún no eliges ejercicios. Tócalos en el banco de la derecha y aparecerán aquí."}
         </p>
       ) : (
         <div className="space-y-3">
           {exercises.map((ex, i) => (
-            <div key={ex.id} className="rounded-2xl border border-slate-200 p-3 grid grid-cols-1 md:grid-cols-[150px_1fr] gap-3">
-              {/* Imagen */}
-              <div className="space-y-1.5">
-                <div className="relative aspect-square rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center">
-                  <span className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">{i + 1}</span>
+            <div key={ex.id} className="rounded-xl border border-slate-200 p-2.5 grid grid-cols-[64px_1fr] gap-2.5">
+              {/* Imagen (pequeña, la tarjeta queda plana) */}
+              <div className="space-y-1">
+                <div className="relative w-16 h-16 rounded-lg border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center">
+                  <span className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
                   {ex.imageUrl ? (
                     <img src={ex.imageUrl} alt={ex.name} className="w-full h-full object-contain" loading="lazy" />
                   ) : (
-                    <ImagePlus className="w-8 h-8 text-slate-300" />
+                    <ImagePlus className="w-6 h-6 text-slate-300" />
                   )}
                 </div>
                 {!readOnly && (
-                  <button type="button" onClick={() => { setCambiarImagenDe(i); setVerBanco(true); }} className="w-full text-[11px] font-semibold text-blue-700 hover:underline cursor-pointer">
-                    Elegir del banco
+                  <button type="button" onClick={() => setCambiarImagenDe(i)} className="w-16 text-[10px] font-semibold text-blue-700 hover:underline cursor-pointer leading-tight">
+                    Cambiar imagen
                   </button>
                 )}
-                <HerramientasImagen url={ex.imageUrl} nombre={ex.name} onChange={(u) => actualizar(i, "imageUrl", u)} readOnly={readOnly} />
               </div>
 
               {/* Datos */}
@@ -229,7 +217,7 @@ export const ExercisePrescriptionCard = ({
                     </div>
                   )}
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-[90px_1fr_1fr_1fr] gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-[70px_1fr_1.3fr] gap-2">
                   <label>
                     <span className="block text-[11px] font-bold text-slate-500">Series</span>
                     <input disabled={readOnly} type="number" min="1" max="10" value={ex.series ?? ""} onChange={(e) => actualizar(i, "series", Number(e.target.value))} className={INP} />
@@ -249,11 +237,17 @@ export const ExercisePrescriptionCard = ({
                       ))}
                     </div>
                   </div>
-                  <label>
-                    <span className="block text-[11px] font-bold text-slate-500">Zona</span>
-                    <input disabled={readOnly} value={ex.targetZone || ""} onChange={(e) => actualizar(i, "targetZone", e.target.value)} placeholder="Ej. Lumbar" className={INP} />
-                  </label>
                 </div>
+                <details className="rounded-lg border border-slate-200 bg-slate-50/60 group">
+                  <summary className="px-2.5 py-1.5 text-[11px] font-bold text-slate-600 cursor-pointer select-none">
+                    Indicaciones, zona, imagen y pautas {(ex.techniqueTips || pautas(i).length) ? "· ✓" : "(opcional)"}
+                  </summary>
+                  <div className="p-2 space-y-2">
+                <label className="block">
+                  <span className="block text-[11px] font-bold text-slate-500">Zona</span>
+                  <input disabled={readOnly} value={ex.targetZone || ""} onChange={(e) => actualizar(i, "targetZone", e.target.value)} placeholder="Ej. Lumbar" className={INP} />
+                </label>
+                <HerramientasImagen compacto url={ex.imageUrl} nombre={ex.name} onChange={(u) => actualizar(i, "imageUrl", u)} readOnly={readOnly} />
                 <label className="block">
                   <span className="block text-[11px] font-bold text-slate-500">Cómo hacerlo (lo verá el alumno)</span>
                   <textarea disabled={readOnly} rows={2} value={ex.techniqueTips || ""} onChange={(e) => actualizar(i, "techniqueTips", e.target.value)} placeholder="Ej. Respira lento, sin dolor; mantén la espalda neutra." className={INP} />
@@ -288,11 +282,31 @@ export const ExercisePrescriptionCard = ({
                     </div>
                   ))}
                 </div>
+                  </div>
+                </details>
               </div>
             </div>
           ))}
         </div>
       )}
+      </div>
+
+      {!readOnly && (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
+          <p className="text-[11px] font-black uppercase tracking-wider text-blue-700 mb-1.5 flex items-center gap-1.5">
+            <Dumbbell className="w-3.5 h-3.5" /> Banco de ejercicios ({banco.length}) · toca uno para agregarlo a la izquierda
+          </p>
+          {cambiarImagenDe != null && (
+            <p className="text-xs font-semibold text-blue-800 mb-2 rounded-lg bg-white border border-blue-200 px-2 py-1.5">
+              Elige la imagen para «{exercises[cambiarImagenDe]?.name || "ejercicio"}»
+              <button type="button" onClick={() => setCambiarImagenDe(null)} className="ml-2 underline cursor-pointer">cancelar</button>
+            </p>
+          )}
+          <ExercisePicker exercises={banco} onPick={agregarDelBanco} picked={exercises.map((e) => e.bankId).filter(Boolean)} />
+        </div>
+      )}
+      </div>
+
       {exercises.length > 0 && (
         <p className="text-xs text-slate-500 flex items-center gap-1">
           <Check className="w-3.5 h-3.5 text-emerald-600" /> El alumno verá estos ejercicios con sus imágenes en su portal (Mi Fisioterapia).

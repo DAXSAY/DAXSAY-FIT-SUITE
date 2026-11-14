@@ -40,6 +40,9 @@ export async function api(ruta, { method = "GET", body } = {}) {
     throw new Error("No se pudo conectar con el servidor. Verifica que la API esté encendida (npm run dev).");
   }
 
+  const renovado = respuesta.headers.get("X-Nuevo-Token");
+  if (renovado && obtenerToken()) guardarToken(renovado);
+
   let datos = null;
   try {
     datos = await respuesta.json();
@@ -49,10 +52,14 @@ export async function api(ruta, { method = "GET", body } = {}) {
 
   if (!respuesta.ok) {
     if (respuesta.status === 401 && ruta !== "/auth/ingresar") alExpirarSesion();
-    if (respuesta.status === 502 || respuesta.status === 504) {
+    // 500 sin mensaje de la API = el proxy de Vite no la alcanzó (está arrancando o apagada)
+    if (respuesta.status === 502 || respuesta.status === 504 || (respuesta.status === 500 && !datos?.error)) {
       throw new Error("La API no responde. Verifica que esté encendida (npm run dev).");
     }
-    throw new Error(datos?.error || `Error ${respuesta.status}`);
+    const err = new Error(datos?.error || `Error ${respuesta.status}`);
+    err.status = respuesta.status;
+    err.datos = datos;
+    throw err;
   }
   return datos;
 }

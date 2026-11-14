@@ -155,7 +155,7 @@ export const EditableTreatments = ({
   };
 
   return (
-    <div className="space-y-4 bg-slate-900/60 p-4 sm:p-5 rounded-2xl border border-slate-800 text-white shadow-xl">
+    <div className="space-y-4 bg-slate-900/60 p-4 sm:p-5 rounded-2xl border border-slate-800 text-white shadow-xl rd-panel-oscuro">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
         <div>

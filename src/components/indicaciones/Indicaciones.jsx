@@ -5,7 +5,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, ClipboardList, Home, Plus, Save, Search, Sunrise, Sunset, Trash2, X } from "lucide-react";
 import { api } from "../../api/cliente";
 import { useGym } from "../../context/GymContext";
-import { buscarAlumno } from "../../utils/codigo";
+
+import { filtrarAlumnos } from "../../utils/buscarPersona";
 
 export const CATEGORIAS = {
   calentamiento: { label: "Calentamiento articular", corto: "Calentamiento", emoji: "🔥", chip: "bg-orange-50 text-orange-800 border-orange-200", activo: "bg-orange-500 text-white border-orange-500" },
@@ -134,9 +135,9 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
     catalogo.items.filter((i) => i.category === cat && (!q || i.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").includes(q)));
 
   return (
-    <div className="grid lg:grid-cols-[1.1fr_1fr] gap-4 items-start">
-      {/* Izquierda: elegir */}
-      <div className="space-y-4">
+    <div className="grid lg:grid-cols-2 gap-4 items-start">
+      {/* Derecha: catálogo para elegir (se desplaza solo, sin mover la página) */}
+      <div className="space-y-4 lg:order-2 lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1">
         <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-2.5">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Plantillas · un clic</p>
           <div className="flex flex-wrap gap-2">
@@ -244,8 +245,8 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
         </section>
       </div>
 
-      {/* Derecha: lo indicado */}
-      <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 lg:sticky lg:top-4">
+      {/* Izquierda: lo indicado al alumno */}
+      <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 lg:order-1">
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-bold text-slate-900 flex items-center gap-2">
             <ClipboardList className="w-4 h-4 text-blue-600" /> {titulo || "Indicaciones elegidas"}
@@ -338,7 +339,7 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
         />}
         {(mensaje?.error || msg.error) && <p className="text-sm font-semibold text-rose-600">{mensaje?.error || msg.error}</p>}
         {(mensaje?.ok || msg.ok) && <p className="text-sm font-semibold text-emerald-700">{mensaje?.ok || msg.ok}</p>}
-        {!puede && <p className="text-xs text-slate-500">Solo el entrenador o el fisioterapeuta pueden cambiar las indicaciones.</p>}
+        {!puede && <p className="text-xs text-slate-500">Solo lectura: estas indicaciones las da fisioterapia y se deben respetar tal cual.</p>}
         {puede && sel.length > 1 && (
           <button type="button" onClick={guardarPlantilla} className="text-xs font-semibold text-slate-600 hover:text-slate-900 underline cursor-pointer">
             Guardar esta combinación como plantilla
@@ -353,6 +354,66 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
 // ---------------------------------------------------------------------
 // Editor con guardado e historial (Rutinas / ficha del alumno)
 // ---------------------------------------------------------------------
+// Lo que dijeron fisioterapia y nutrición (solo lectura, para que el entrenador lo respete)
+function RecomendacionesEspecialistas({ member }) {
+  const [f, setF] = useState(null);
+  useEffect(() => {
+    if (!member?.id) return;
+    api(`/alumnos/${member.id}/ficha`).then(setF).catch(() => setF({}));
+  }, [member?.id]);
+  if (!f) return <p className="text-xs text-slate-400">Cargando recomendaciones de los especialistas…</p>;
+  const fis = f.fisioterapia;
+  const die = f.dieta;
+  const Caja = ({ titulo, tono, quien, vacio, children }) => (
+    <div className={`rounded-2xl border p-4 space-y-2 ${tono}`}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-black uppercase tracking-wider">{titulo}</p>
+        <span className="text-[10px] font-black uppercase bg-white/70 rounded-full px-2 py-0.5">Solo lectura</span>
+      </div>
+      {quien && <p className="text-[11px] opacity-80">{quien}</p>}
+      {children || <p className="text-sm opacity-70">{vacio}</p>}
+    </div>
+  );
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <Caja titulo="🩺 Fisioterapia indica" tono="bg-rose-50 border-rose-200 text-rose-900" vacio="Sin evaluación de fisioterapia.">
+        {fis && (
+          <div className="space-y-1.5 text-sm">
+            {fis.restriccionesSala && <p><b>En sala:</b> {fis.restriccionesSala}</p>}
+            {fis.indicaciones?.length > 0 && (
+              <ul className="list-disc pl-5 text-xs space-y-0.5">
+                {fis.indicaciones.map((i, k) => (
+                  <li key={k}>{i.nombre}{i.series ? ` · ${i.series}×${i.reps || i.segundos ? `${i.reps || `${i.segundos} s`}` : ""}` : ""}{i.detalle ? ` — ${i.detalle}` : ""}</li>
+                ))}
+              </ul>
+            )}
+            {fis.enCasa && <p className="text-xs"><b>En casa:</b> {fis.enCasa}</p>}
+            {fis.evolucion && <p className="text-xs italic">“{fis.evolucion}”</p>}
+            {!fis.restriccionesSala && !fis.indicaciones?.length && !fis.enCasa && !fis.evolucion && <p className="text-sm opacity-70">Evaluado, sin indicaciones especiales.</p>}
+          </div>
+        )}
+      </Caja>
+      <Caja titulo="🥗 Nutrición indica" tono="bg-emerald-50 border-emerald-200 text-emerald-900" quien={die ? `${die.titulo || "Plan de alimentación"}${die.nutricionista ? ` · ${die.nutricionista}` : ""}` : ""} vacio="Sin plan de alimentación activo.">
+        {die && (
+          <div className="space-y-1.5 text-sm">
+            {die.objetivo && <p><b>Objetivo:</b> {die.objetivo}</p>}
+            {(die.kcal || die.proteinas) && (
+              <p className="text-xs">
+                {die.kcal ? `${die.kcal} kcal/día` : ""}{die.proteinas ? ` · Proteína ${die.proteinas} g` : ""}{die.carbohidratos ? ` · Carbohidratos ${die.carbohidratos} g` : ""}{die.grasas ? ` · Grasas ${die.grasas} g` : ""}{die.agua ? ` · Agua ${die.agua} L` : ""}
+              </p>
+            )}
+            {die.recomendaciones && <p><b>Recomendaciones:</b> {die.recomendaciones}</p>}
+            {die.suplementos?.length > 0 && <p className="text-xs"><b>Suplementos:</b> {die.suplementos.map((x) => (typeof x === "string" ? x : x.name || x.nombre)).filter(Boolean).join(", ")}</p>}
+          </div>
+        )}
+      </Caja>
+      {f.restriccionesFicha && !/^sin/i.test(f.restriccionesFicha) && (
+        <p className="lg:col-span-2 text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl p-3">⚠️ Restricciones de su ficha: {f.restriccionesFicha}</p>
+      )}
+    </div>
+  );
+}
+
 export function EditorIndicaciones({ member }) {
   const [datos, setDatos] = useState({ vigente: null, historial: [] });
   const [sel, setSel] = useState([]);
@@ -391,7 +452,30 @@ export function EditorIndicaciones({ member }) {
       setGuardando(false);
     }
   };
+  const [verEval, setVerEval] = useState(true);
   return (
+    <div className="space-y-4">
+    {/* Paso 1: lo que dicen los especialistas */}
+    <section className="rounded-2xl border border-slate-200 bg-white">
+      <button type="button" onClick={() => setVerEval((v) => !v)} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer">
+        <span className="flex items-center gap-2 text-sm font-black text-slate-800">
+          <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center">1</span>
+          Evaluación y seguimiento de los especialistas
+        </span>
+        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${verEval ? "rotate-180" : ""}`} />
+      </button>
+      {verEval && (
+        <div className="px-4 pb-4">
+          <RecomendacionesEspecialistas member={member} />
+        </div>
+      )}
+    </section>
+    {/* Paso 2: ejercicios indicados */}
+    <p className="flex items-center gap-2 text-sm font-black text-slate-800 px-1">
+      <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center">2</span>
+      Ejercicios indicados a {member.firstName || member.fullName}
+      <span className="text-xs font-semibold text-slate-500">· a la izquierda lo indicado, a la derecha el catálogo</span>
+    </p>
     <SelectorIndicaciones
       items={sel}
       onChange={(v) => { setSel(v); setMsg({ ok: "", error: "" }); }}
@@ -444,6 +528,7 @@ export function EditorIndicaciones({ member }) {
         </>
       }
     />
+    </div>
   );
 }
 
@@ -457,17 +542,26 @@ export function PanelIndicaciones() {
   const sugerencias = useMemo(() => {
     const t = texto.trim().toLowerCase();
     if (!t) return [];
-    const exacto = buscarAlumno(members, texto)?.member;
-    const lista = members.filter(
-      (m) => m.fullName.toLowerCase().includes(t) || m.dni.includes(t) || (m.codeLabel || "").toLowerCase().replace("-", "").includes(t.replace(/[\s-]/g, "")),
-    );
-    return [...(exacto ? [exacto] : []), ...lista.filter((m) => m.id !== exacto?.id)].slice(0, 8);
+    return filtrarAlumnos(members, texto).slice(0, 8);
   }, [texto, members]);
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 p-4">
-        <p className="text-sm font-bold text-slate-800 mb-2">¿A qué alumno le das indicaciones?</p>
-        <input value={texto} onChange={(e) => { setTexto(e.target.value); setElegido(null); }} placeholder="Código (ej. DF-1), DNI o nombre" className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm" />
+        <p className="text-sm font-bold text-slate-800 mb-2">Indicaciones de fisioterapia y nutrición · busca al alumno</p>
+        {elegido ? (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2">
+            <span className="font-mono font-black text-blue-800 bg-white border border-blue-200 rounded-lg px-2 py-0.5">{elegido.codeLabel}</span>
+            <span className="min-w-0 flex-1">
+              <b className="block text-sm text-slate-900 truncate">{elegido.fullName}</b>
+              <span className="text-xs text-slate-500">{elegido.planName || "Sin plan"} · DNI {elegido.dni}</span>
+            </span>
+            <button type="button" onClick={() => { setElegido(null); setTexto(""); }} className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50">
+              Cambiar alumno
+            </button>
+          </div>
+        ) : (
+          <input value={texto} onChange={(e) => { setTexto(e.target.value); setElegido(null); }} placeholder="Código (ej. 1 o DF-1), DNI o nombre" className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm" />
+        )}
         {!elegido && sugerencias.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
             {sugerencias.map((m) => (

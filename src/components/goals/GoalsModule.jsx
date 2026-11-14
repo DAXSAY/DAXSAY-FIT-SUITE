@@ -7,7 +7,7 @@
 //  Nutrición / Fisioterapia: crean y evalúan objetivos de alumnos;
 //  al aprobarlos, el entrenador del alumno gana un logro.
 // ============================================================
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Trophy,
   Target,
@@ -23,13 +23,20 @@ import {
   Wallet,
   Search,
   RefreshCw,
+  Salad,
+  Activity,
+  History,
 } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend } from "recharts";
 import { useGym } from "../../context/GymContext";
 import { api } from "../../api/cliente";
 import { userCan } from "../../config/roles";
 import { hoyISO } from "../../utils/fecha";
+import { ProyeccionesRecepcion } from "./ProyeccionesRecepcion";
+import PanelProgresoAlumnos from "../progreso/PanelProgresoAlumnos";
+import { TarjetaKpi } from "../common/TarjetaKpi";
 
+import { coincideAlumno } from "../common/BuscarAlumno";
 const soles = (n) => `S/ ${Number(n || 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fCorta = (f) => (f ? `${String(f).slice(8, 10)}/${String(f).slice(5, 7)}` : "");
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -103,7 +110,13 @@ const TarjetaMeta = ({ meta, admin, onEditar, onEliminar, onBono }) => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <span className="text-xs font-black uppercase text-slate-500">
-            {dinero ? "Meta de recepción" : `Meta de entrenador · ${CATEGORIA[meta.category]}`}
+            {dinero
+              ? "Meta de recepción"
+              : meta.type === "nutricion"
+                ? "Meta de nutrición · objetivos logrados"
+                : meta.type === "fisioterapia"
+                  ? "Meta de fisioterapia · objetivos logrados"
+                  : `Meta de entrenador · ${CATEGORIA[meta.category]}`}
           </span>
           <h3 className="text-xl font-black text-slate-900">{meta.name}</h3>
           <p className="text-xs text-slate-500">
@@ -206,8 +219,8 @@ const TarjetaMeta = ({ meta, admin, onEditar, onEliminar, onBono }) => {
               <XAxis dataKey="dia" tickFormatter={fCorta} tick={{ fontSize: 10 }} interval="preserveStartEnd" />
               <YAxis tick={{ fontSize: 10 }} allowDecimals={dinero} />
               <Tooltip labelFormatter={fCorta} formatter={(v, n) => [dinero ? soles(v) : v, n === "acumulado" ? "Logrado" : n === "ideal" ? "Ritmo ideal" : "Del día"]} />
-              <Area type="monotone" dataKey="acumulado" stroke="#0c8794" fill="#0c879422" strokeWidth={2} connectNulls={false} />
-              <Line type="monotone" dataKey="ideal" stroke="#94a3b8" strokeDasharray="5 4" dot={false} />
+              <Area isAnimationActive={false} type="monotone" dataKey="acumulado" stroke="var(--color-blue-600)" fill="#0c879422" strokeWidth={2} connectNulls={false} />
+              <Line isAnimationActive={false} type="monotone" dataKey="ideal" stroke="#94a3b8" strokeDasharray="5 4" dot={false} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -220,8 +233,8 @@ const TarjetaMeta = ({ meta, admin, onEditar, onEliminar, onBono }) => {
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip formatter={(v) => soles(v)} />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Bar dataKey="meta" name="Meta semana" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="total" name="Logrado" fill="#16a34a" radius={[4, 4, 0, 0]} />
+                <Bar isAnimationActive={false} maxBarSize={56} dataKey="meta" name="Meta semana" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
+                <Bar isAnimationActive={false} maxBarSize={56} dataKey="total" name="Logrado" fill="var(--color-green-600)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -258,7 +271,7 @@ const FormMeta = ({ tipo, meta, mes, onVolver, onGuardada }) => {
     start: meta?.start || "",
     end: meta?.end || "",
     amount: meta?.type === "recepcion" ? meta.progress.objetivo : "",
-    achievements: meta?.type === "entrenador" ? meta.progress.objetivo : "",
+    achievements: meta && meta.type !== "recepcion" ? meta.progress.objetivo : "",
     bonus: meta?.bonus || "",
     notes: meta?.notes || "",
   });
@@ -268,7 +281,10 @@ const FormMeta = ({ tipo, meta, mes, onVolver, onGuardada }) => {
     api("/metas/turnos-recepcion").then(setTurnos).catch(() => {});
   }, []);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
-  const entrenadores = staffDirectory.filter((s) => s.cargo === "entrenador");
+  const CARGO = { entrenador: "entrenador", nutricion: "nutricionista", fisioterapia: "fisioterapeuta" };
+  const NOMBRE = { entrenador: "Entrenador", nutricion: "Nutricionista", fisioterapia: "Fisioterapeuta" };
+  const entrenadores = staffDirectory.filter((s) => s.cargo === (CARGO[tipo] || "entrenador"));
+  const especialista = tipo === "nutricion" || tipo === "fisioterapia";
   const guardar = async (e) => {
     e.preventDefault();
     setError("");
@@ -282,7 +298,11 @@ const FormMeta = ({ tipo, meta, mes, onVolver, onGuardada }) => {
     }
   };
   return (
-    <Pantalla titulo={meta ? "Editar meta" : tipo === "recepcion" ? "Nueva meta de recepción" : "Nueva meta de entrenador"} onVolver={onVolver}>
+    <Pantalla
+      titulo={meta ? "Editar meta" : tipo === "recepcion" ? "Nueva meta de recepción" : tipo === "nutricion" ? "Nueva meta de nutrición" : tipo === "fisioterapia" ? "Nueva meta de fisioterapia" : "Nueva meta de entrenador"}
+      subtitulo={especialista ? "Cuenta los objetivos de alumnos que este especialista puso y que se cumplieron en el periodo (ej. bajar 3 kg, dolor de 7 a 3)." : undefined}
+      onVolver={onVolver}
+    >
       <form onSubmit={guardar} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
         {tipo === "recepcion" ? (
           <label className="block text-sm">
@@ -297,12 +317,13 @@ const FormMeta = ({ tipo, meta, mes, onVolver, onGuardada }) => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block text-sm">
-              <span className="font-bold text-slate-700">Entrenador *</span>
+              <span className="font-bold text-slate-700">{NOMBRE[tipo] || "Entrenador"} *</span>
               <select required value={f.staffId} onChange={set("staffId")} className={campo}>
                 <option value="">Elegir…</option>
                 {entrenadores.map((t) => <option key={t.id} value={t.id}>{t.fullName}</option>)}
               </select>
             </label>
+            {!especialista && (
             <label className="block text-sm">
               <span className="font-bold text-slate-700">Cuentan los logros de</span>
               <select value={f.category} onChange={set("category")} className={campo}>
@@ -311,6 +332,7 @@ const FormMeta = ({ tipo, meta, mes, onVolver, onGuardada }) => {
                 <option value="lesion">Lesiones / dolor (fisioterapia)</option>
               </select>
             </label>
+            )}
           </div>
         )}
         <div className="flex gap-2 text-xs font-bold">
@@ -329,7 +351,7 @@ const FormMeta = ({ tipo, meta, mes, onVolver, onGuardada }) => {
           {tipo === "recepcion" ? (
             <label className="block text-sm"><span className="font-bold text-slate-700">Meta en soles *</span><input type="number" min="1" step="0.01" required value={f.amount} onChange={set("amount")} placeholder="5000" className={`${campo} text-lg font-black`} /></label>
           ) : (
-            <label className="block text-sm"><span className="font-bold text-slate-700">Logros (mancuernas) a conseguir *</span><input type="number" min="1" required value={f.achievements} onChange={set("achievements")} placeholder="10" className={`${campo} text-lg font-black`} /></label>
+            <label className="block text-sm"><span className="font-bold text-slate-700">{especialista ? "Objetivos de alumnos a lograr *" : "Logros (mancuernas) a conseguir *"}</span><input type="number" min="1" required value={f.achievements} onChange={set("achievements")} placeholder="10" className={`${campo} text-lg font-black`} /></label>
           )}
           <label className="block text-sm"><span className="font-bold text-slate-700">Bono al cumplir (S/)</span><input type="number" min="0" step="0.01" value={f.bonus} onChange={set("bonus")} placeholder="0" className={`${campo} text-lg font-black`} /></label>
         </div>
@@ -394,7 +416,7 @@ const FormObjetivo = ({ areaFija, onVolver, onGuardado }) => {
   const [error, setError] = useState("");
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const alumno = members.find((m) => m.id === f.memberId);
-  const lista = members.filter((m) => `${m.fullName} ${m.dni}`.toLowerCase().includes(buscar.toLowerCase())).slice(0, 8);
+  const lista = members.filter((m) => coincideAlumno(m, buscar)).slice(0, 8);
   const tipos = Object.entries(TIPO_OBJ).filter(([, [, area]]) => !area || area === (areaFija || f.area));
   const guardar = async (e) => {
     e.preventDefault();
@@ -422,7 +444,7 @@ const FormObjetivo = ({ areaFija, onVolver, onGuardado }) => {
             <>
               <div className="relative mt-1">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar por nombre o DNI" className={`${campo} pl-9 mt-0`} />
+                <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Código, nombre o DNI" className={`${campo} pl-9 mt-0`} />
               </div>
               <div className="mt-1 border border-slate-200 rounded-xl divide-y divide-slate-100">
                 {lista.map((m) => (
@@ -500,7 +522,7 @@ const EvaluarObjetivo = ({ objetivo, onVolver, onListo }) => {
     }
   };
   return (
-    <Pantalla titulo={`Control · ${objetivo.memberName}`} subtitulo={objetivo.description} onVolver={onVolver}>
+    <Pantalla titulo={`Evaluación final · ${objetivo.memberName}`} subtitulo={objetivo.description} onVolver={onVolver}>
       <form onSubmit={evaluar} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200"><span className="text-xs font-bold text-slate-400 block">INICIAL</span><strong>{objetivo.initialValue ?? "—"} {objetivo.unit}</strong></div>
@@ -530,10 +552,110 @@ const EvaluarObjetivo = ({ objetivo, onVolver, onListo }) => {
             )}
           </div>
         )}
+        {estado === "conseguida" && (
+          <p className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+            Este objetivo cumplido cuenta como logro para {objetivo.specialistName || (objetivo.area === "nutricion" ? "nutrición" : "fisioterapia")} y, si lo marcas, como mancuerna para el entrenador.
+          </p>
+        )}
         {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
-        <button className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black cursor-pointer">Guardar control</button>
+        <button className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black cursor-pointer">Guardar evaluación final</button>
       </form>
     </Pantalla>
+  );
+};
+
+// Control intermedio: el objetivo sigue en proceso y el entrenador ve el avance
+const RegistrarControl = ({ objetivo, onVolver, onListo }) => {
+  const [f, setF] = useState({ value: "", date: hoyISO(), observation: "", nextControl: "" });
+  const [error, setError] = useState("");
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const guardar = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await api(`/metas/objetivos/${objetivo.id}/control`, { method: "POST", body: f });
+      onListo();
+    } catch (er) {
+      setError(er.message);
+    }
+  };
+  const previo = objetivo.lastControl?.value ?? objetivo.initialValue;
+  return (
+    <Pantalla titulo={`Anotar avance · ${objetivo.memberName}`} subtitulo={objetivo.description} onVolver={onVolver}>
+      <form onSubmit={guardar} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+        <div className="grid grid-cols-3 gap-3 text-sm">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200"><span className="text-xs font-bold text-slate-400 block">{objetivo.lastControl ? "ÚLTIMO CONTROL" : "INICIAL"}</span><strong>{previo ?? "—"} {objetivo.unit}</strong></div>
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200"><span className="text-xs font-bold text-slate-400 block">META</span><strong>{objetivo.targetValue ?? "—"} {objetivo.unit}</strong></div>
+          <label className="block"><span className="text-xs font-bold text-slate-500">VALOR HOY *</span><input type="number" step="0.01" required value={f.value} onChange={set("value")} className={`${campo} mt-0.5 font-black`} /></label>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <label className="block text-sm"><span className="font-bold text-slate-700">Fecha del control</span><input type="date" max={hoyISO()} value={f.date} onChange={set("date")} className={campo} /></label>
+          <label className="block text-sm"><span className="font-bold text-slate-700">Próximo control</span><input type="date" min={hoyISO()} value={f.nextControl} onChange={set("nextControl")} className={campo} /></label>
+        </div>
+        <label className="block text-sm"><span className="font-bold text-slate-700">Observación</span><textarea rows={2} value={f.observation} onChange={set("observation")} placeholder="Ej. cumple la dieta, bajó 1.5 kg / dolor al levantar el brazo bajó de 7 a 5" className={campo} /></label>
+        <p className="text-xs text-slate-500">El objetivo sigue en proceso. El entrenador del alumno verá el avance y, si mejoró, le llega un aviso.</p>
+        {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
+        <button className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black cursor-pointer">Guardar avance</button>
+      </form>
+    </Pantalla>
+  );
+};
+
+const HistorialControles = ({ objetivo }) => {
+  const [lista, setLista] = useState(null);
+  useEffect(() => {
+    api(`/metas/objetivos/${objetivo.id}/controles`).then(setLista).catch(() => setLista([]));
+  }, [objetivo.id]);
+  if (!lista) return <p className="text-xs text-slate-400">Cargando controles…</p>;
+  const filas = [
+    objetivo.initialValue != null ? { id: "ini", date: objetivo.start, value: objetivo.initialValue, note: "Inicio", by: objetivo.specialistName } : null,
+    ...lista,
+    objetivo.finalValue != null ? { id: "fin", date: String(objetivo.evaluatedAt || "").slice(0, 10), value: objetivo.finalValue, note: "Evaluación final", by: objetivo.evaluatedBy } : null,
+  ].filter(Boolean);
+  if (!filas.length) return <p className="text-xs text-slate-400">Aún no hay controles.</p>;
+  return (
+    <ol className="text-xs space-y-1 bg-slate-50 rounded-lg p-2">
+      {filas.map((k) => (
+        <li key={k.id} className="flex items-center gap-2">
+          <span className="w-16 text-slate-500">{fCorta(k.date)}</span>
+          <strong className="w-20">{k.value} {objetivo.unit}</strong>
+          <span className="text-slate-600 truncate">{k.note}{k.by ? ` · ${k.by}` : ""}</span>
+        </li>
+      ))}
+    </ol>
+  );
+};
+
+/** Una sola pestaña: objetivos que ponen nutrición/fisio y el progreso de pesos del entrenamiento */
+const AlumnosObjetivosProgreso = ({ puedeCrear, areaPropia, admin, conProgreso }) => {
+  const [vista, setVista] = useState(() => {
+    try {
+      return sessionStorage.getItem("radical_abrir_progreso") && conProgreso ? "progreso" : "objetivos";
+    } catch {
+      return "objetivos";
+    }
+  });
+  useEffect(() => {
+    const ir = () => conProgreso && setVista("progreso");
+    window.addEventListener("radical:abrir-progreso", ir);
+    return () => window.removeEventListener("radical:abrir-progreso", ir);
+  }, [conProgreso]);
+  return (
+    <div className="space-y-4">
+      {conProgreso && (
+        <div className="inline-flex p-1 rounded-xl bg-white border border-slate-200 gap-1">
+          {[
+            ["objetivos", "🎯 Objetivos (nutrición y fisio)"],
+            ["progreso", "🏋️ Progreso de pesos en el gym"],
+          ].map(([k, l]) => (
+            <button key={k} onClick={() => setVista(k)} className={`px-3 py-1.5 rounded-lg text-sm font-bold cursor-pointer ${vista === k ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+      )}
+      {vista === "progreso" && conProgreso ? <PanelProgresoAlumnos /> : <ListaObjetivos puedeCrear={puedeCrear} areaPropia={areaPropia} admin={admin} />}
+    </div>
   );
 };
 
@@ -541,26 +663,54 @@ const ListaObjetivos = ({ puedeCrear, areaPropia, admin }) => {
   const [objetivos, setObjetivos] = useState(null);
   const [vista, setVista] = useState(null);
   const [filtro, setFiltro] = useState("en_proceso");
+  const [area, setArea] = useState(areaPropia || "todas");
+  const [abiertoHist, setAbiertoHist] = useState(null);
   const [buscar, setBuscar] = useState("");
   const cargar = () => api("/metas/objetivos").then(setObjetivos).catch(() => setObjetivos([]));
   useEffect(() => {
     cargar();
   }, []);
   const h = hoyISO();
-  const lista = (objetivos || []).filter((o) => (filtro === "todos" || o.status === filtro || (filtro === "vencidos" && o.status === "en_proceso" && o.controlDate <= h)) && `${o.memberName} ${o.memberDni} ${o.trainerName}`.toLowerCase().includes(buscar.toLowerCase()));
+  const lista = (objetivos || []).filter((o) => (area === "todas" || o.area === area) && (filtro === "todos" || o.status === filtro || (filtro === "vencidos" && o.status === "en_proceso" && o.controlDate <= h)) && `${o.memberName} ${o.memberDni} ${o.trainerName}`.toLowerCase().includes(buscar.toLowerCase()));
   const puedeEvaluar = (o) => o.status === "en_proceso" && (admin || o.area === areaPropia);
 
   if (vista === "nuevo") return <FormObjetivo areaFija={areaPropia} onVolver={() => setVista(null)} onGuardado={() => { setVista(null); cargar(); }} />;
   if (vista?.evaluar) return <EvaluarObjetivo objetivo={vista.evaluar} onVolver={() => setVista(null)} onListo={() => { setVista(null); cargar(); }} />;
+  if (vista?.control) return <RegistrarControl objetivo={vista.control} onVolver={() => setVista(null)} onListo={() => { setVista(null); cargar(); }} />;
 
   const pendientesHoy = (objetivos || []).filter((o) => o.status === "en_proceso" && o.controlDate <= h).length;
   return (
     <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        {[
+          ["1", "Crear el objetivo", "Nutrición o fisio anota el valor de inicio (ej. 82 kg, dolor 7/10), la meta y la fecha de control.", "bg-blue-50 border-blue-200 text-blue-900"],
+          ["2", "Anotar avances", "En cada cita se anota cómo va (ej. 80.5 kg). El objetivo sigue abierto y el entrenador ve el avance.", "bg-amber-50 border-amber-200 text-amber-900"],
+          ["3", "Cerrar: ¿lo logró?", "En la fecha final se indica si lo consiguió: es un logro del especialista y una mancuerna para el entrenador.", "bg-emerald-50 border-emerald-200 text-emerald-900"],
+        ].map(([n, t, d, c]) => (
+          <div key={n} className={`rounded-xl border p-3 flex gap-2.5 ${c}`}>
+            <span className="w-7 h-7 rounded-full bg-white font-black flex items-center justify-center shrink-0 shadow-sm">{n}</span>
+            <span>
+              <b className="block text-sm">{t}</b>
+              <span className="text-xs opacity-80">{d}</span>
+            </span>
+          </div>
+        ))}
+      </div>
       {pendientesHoy > 0 && (
         <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm font-bold flex items-center gap-2">
           <CalendarClock className="w-4 h-4" /> {pendientesHoy} objetivo(s) ya tienen fecha de control: evalúalos para dar los logros.
         </div>
       )}
+      <div className="flex flex-wrap gap-2">
+        {[["todas", "Todas las especialidades", Target, "from-slate-700 to-slate-600"], ["nutricion", "Nutrición", Salad, "from-emerald-600 to-lime-500"], ["fisioterapia", "Fisioterapia", Activity, "from-cyan-600 to-sky-500"]].map(([k, l, I, g]) => {
+          const n = (objetivos || []).filter((o) => (k === "todas" || o.area === k) && o.status === "en_proceso").length;
+          return (
+            <button key={k} onClick={() => setArea(k)} className={`px-4 py-2 rounded-xl text-sm font-black flex items-center gap-2 cursor-pointer ${area === k ? `bg-gradient-to-r ${g} text-white shadow` : "bg-white border border-slate-200 text-slate-600"}`}>
+              <I className="w-4 h-4" /> {l} <span className={`px-1.5 rounded-full text-[11px] ${area === k ? "bg-white/25" : "bg-slate-100"}`}>{n}</span>
+            </button>
+          );
+        })}
+      </div>
       <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-wrap items-center gap-2">
         {[["en_proceso", "En proceso"], ["vencidos", "Control pendiente"], ["conseguida", "Conseguidos"], ["no_conseguida", "No conseguidos"], ["todos", "Todos"]].map(([k, l]) => (
           <button key={k} onClick={() => setFiltro(k)} className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${filtro === k ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}>{l}</button>
@@ -581,7 +731,7 @@ const ListaObjetivos = ({ puedeCrear, areaPropia, admin }) => {
               <div>
                 <strong className="text-slate-900">{o.memberName}</strong>
                 <span className="text-xs text-slate-500 block">
-                  {TIPO_OBJ[o.type]?.[0]} · {o.area === "nutricion" ? "Nutrición" : "Fisioterapia"} · Entrenador: {o.trainerName || "—"}
+                  {TIPO_OBJ[o.type]?.[0]} · {o.area === "nutricion" ? "Nutrición" : "Fisioterapia"}{o.specialistName ? ` (${o.specialistName})` : ""} · Entrenador: {o.trainerName || "—"}
                 </span>
               </div>
               <span className={`px-2 py-0.5 rounded-full text-xs font-black ${ESTADO_OBJ[o.status][1]}`}>{ESTADO_OBJ[o.status][0]}</span>
@@ -591,16 +741,85 @@ const ListaObjetivos = ({ puedeCrear, areaPropia, admin }) => {
               {o.initialValue != null && `Inicio ${o.initialValue} ${o.unit} → meta ${o.targetValue ?? "—"} ${o.unit}`}
               {o.finalValue != null && ` · Final ${o.finalValue} ${o.unit}`} · Control: <strong className={o.status === "en_proceso" && o.controlDate <= h ? "text-amber-700" : ""}>{fCorta(o.controlDate)}</strong>
             </p>
+            {o.lastControl && o.status === "en_proceso" && (
+              <p className="text-xs text-blue-800 bg-blue-50 border border-blue-100 rounded-lg p-2">
+                Último control {fCorta(o.lastControl.date)}: <strong>{o.lastControl.value} {o.unit}</strong>
+                {o.lastControl.note ? ` · ${o.lastControl.note}` : ""}{o.lastControl.by ? ` · ${o.lastControl.by}` : ""}
+              </p>
+            )}
+            {o.progressPct != null && (
+              <div>
+                <div className="flex justify-between text-[11px] font-bold text-slate-500"><span>Avance hacia la meta</span><span>{o.progressPct}%</span></div>
+                <div className="h-2 rounded-full bg-slate-100 overflow-hidden mt-0.5">
+                  <div className={`h-full ${o.progressPct >= 100 ? "bg-emerald-500" : o.progressPct >= 50 ? "bg-blue-500" : "bg-amber-500"}`} style={{ width: `${o.progressPct}%` }} />
+                </div>
+              </div>
+            )}
             {o.observation && <p className="text-xs text-slate-600 bg-slate-50 rounded-lg p-2">{o.observation} {o.evaluatedBy && `· ${o.evaluatedBy}`}</p>}
             {o.achievementGranted && <p className="text-xs font-black text-amber-700 flex items-center gap-1"><Dumbbell className="w-3.5 h-3.5" /> Logro otorgado a {o.trainerName}</p>}
-            {puedeEvaluar(o) && (
-              <button onClick={() => setVista({ evaluar: o })} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black cursor-pointer">
-                Hacer control / evaluar
+            <div className="flex flex-wrap gap-1.5">
+              {puedeEvaluar(o) && (
+                <>
+                  <button onClick={() => setVista({ control: o })} className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-black cursor-pointer">
+                    + Anotar avance
+                  </button>
+                  <button onClick={() => setVista({ evaluar: o })} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black cursor-pointer">
+                    ✓ Cerrar: ¿lo logró?
+                  </button>
+                </>
+              )}
+              <button onClick={() => setAbiertoHist(abiertoHist === o.id ? null : o.id)} className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1 cursor-pointer">
+                <History className="w-3.5 h-3.5" /> {abiertoHist === o.id ? "Ocultar avances" : `Avances${o.controls ? ` (${o.controls})` : ""}`}
               </button>
-            )}
+            </div>
+            {abiertoHist === o.id && <HistorialControles objetivo={o} />}
           </div>
         ))}
       </div>
+    </div>
+  );
+};
+
+const RankingEspecialistas = ({ datos }) => {
+  if (!datos) return <p className="text-slate-500 text-sm">Cargando…</p>;
+  if (datos.falta27) return <p className="text-sm font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">Falta ejecutar base_datos/27_metas_especialistas.sql en MySQL Workbench (como root).</p>;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {[["nutricion", "Nutrición", Salad, "from-emerald-600 to-lime-500"], ["fisioterapia", "Fisioterapia", Activity, "from-cyan-600 to-sky-500"]].map(([k, l, I, g]) => {
+        const filas = datos.filas.filter((f) => f.area === k);
+        return (
+          <div key={k} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div className={`px-4 py-2.5 bg-gradient-to-r ${g} text-white font-black flex items-center gap-2`}>
+              <I className="w-4 h-4" /> {l}
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase text-slate-400 border-b border-slate-200">
+                  <th className="py-2 px-3">Especialista</th>
+                  <th className="py-2 px-3">Logrados</th>
+                  <th className="py-2 px-3">No logrados</th>
+                  <th className="py-2 px-3">En proceso</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filas.map((f) => (
+                  <tr key={f.staffId} className="border-b border-slate-100">
+                    <td className="py-2 px-3 font-semibold">{f.name}</td>
+                    <td className="py-2 px-3 font-black text-emerald-600">🏆 {f.achieved}</td>
+                    <td className="py-2 px-3">{f.notAchieved}</td>
+                    <td className="py-2 px-3">{f.inProgress}</td>
+                  </tr>
+                ))}
+                {!filas.length && (
+                  <tr>
+                    <td colSpan={4} className="py-4 px-3 text-center text-slate-400 text-xs">No hay {k === "nutricion" ? "nutricionistas" : "fisioterapeutas"} activos.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -610,9 +829,14 @@ const ListaObjetivos = ({ puedeCrear, areaPropia, admin }) => {
 // ------------------------------------------------------------
 const ListaBonos = ({ admin }) => {
   const [bonos, setBonos] = useState(null);
+  const [metas, setMetas] = useState([]);
   const [error, setError] = useState("");
-  const [metodo, setMetodo] = useState("transferencia");
-  const cargar = () => api("/metas/bonos").then(setBonos).catch((e) => setError(e.message));
+  const [metodo, setMetodo] = useState("efectivo");
+  const [filtro, setFiltro] = useState("pendientes");
+  const cargar = () => {
+    api("/metas/bonos").then(setBonos).catch((e) => setError(e.message));
+    api(`/metas/metas?mes=${hoyISO().slice(0, 7)}`).then(setMetas).catch(() => setMetas([]));
+  };
   useEffect(() => {
     cargar();
   }, []);
@@ -625,17 +849,48 @@ const ListaBonos = ({ admin }) => {
       setError(e.message);
     }
   };
+  // Una tarjeta por persona: sus metas del mes y sus bonos
+  const personas = useMemo(() => {
+    const mapa = new Map();
+    const de = (nombre) => {
+      const k = String(nombre || "—").trim();
+      if (!mapa.has(k)) mapa.set(k, { nombre: k, bonos: [], metas: [] });
+      return mapa.get(k);
+    };
+    (bonos || []).forEach((b) => de(b.beneficiary).bonos.push(b));
+    (metas || []).filter((m) => m.type !== "recepcion" || m.name).forEach((m) => de(m.name).metas.push(m));
+    return [...mapa.values()]
+      .map((x) => ({
+        ...x,
+        porPagar: x.bonos.filter((b) => b.status === "aprobado").reduce((a, b) => a + Number(b.amount || 0), 0),
+        pagado: x.bonos.filter((b) => b.status === "pagado").reduce((a, b) => a + Number(b.amount || 0), 0),
+      }))
+      .filter((x) => filtro === "todos" || (filtro === "pendientes" ? x.porPagar > 0 || x.metas.length : x.pagado > 0))
+      .sort((a, b) => b.porPagar - a.porPagar || a.nombre.localeCompare(b.nombre));
+  }, [bonos, metas, filtro]);
+  const totalPorPagar = personas.reduce((a, x) => a + x.porPagar, 0);
+  const iniciales = (n) => n.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-black uppercase text-slate-600">Bonos</h3>
+    <div className="space-y-3">
+      <div className="bg-white rounded-2xl border border-slate-200 p-3 flex flex-wrap items-center gap-2">
+        {[
+          ["pendientes", "Con metas o bonos por pagar"],
+          ["pagados", "Con bonos pagados"],
+          ["todos", "Todos"],
+        ].map(([k, l]) => (
+          <button key={k} onClick={() => setFiltro(k)} className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${filtro === k ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>
+            {l}
+          </button>
+        ))}
+        <span className="ml-auto text-sm font-black text-amber-700">Por pagar: {soles(totalPorPagar)}</span>
         {admin && (
           <label className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
             Pagar con
             <select value={metodo} onChange={(e) => setMetodo(e.target.value)} className="px-2 py-1 rounded-lg border border-slate-300">
-              <option value="transferencia">Transferencia</option>
               <option value="efectivo">Efectivo</option>
               <option value="yape_plin">Yape / Plin</option>
+              <option value="transferencia">Transferencia</option>
             </select>
           </label>
         )}
@@ -643,44 +898,71 @@ const ListaBonos = ({ admin }) => {
       {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
       {!bonos ? (
         <p className="text-slate-500 text-sm">Cargando…</p>
-      ) : bonos.length === 0 ? (
-        <p className="text-slate-500 text-sm">Aún no hay bonos.</p>
+      ) : personas.length === 0 ? (
+        <p className="text-slate-500 text-sm bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center">No hay nadie en esta lista.</p>
       ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-xs uppercase text-slate-400 border-b border-slate-200">
-              <th className="py-2 pr-3">Beneficiario</th>
-              <th className="py-2 pr-3">Motivo</th>
-              <th className="py-2 pr-3">Monto</th>
-              <th className="py-2 pr-3">Estado</th>
-              <th className="py-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {bonos.map((b) => (
-              <tr key={b.id} className="border-b border-slate-100">
-                <td className="py-2 pr-3 font-semibold">{b.beneficiary}</td>
-                <td className="py-2 pr-3 text-slate-600">{b.reason}</td>
-                <td className="py-2 pr-3 font-black">{soles(b.amount)}</td>
-                <td className="py-2 pr-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-black ${b.status === "pagado" ? "bg-emerald-100 text-emerald-700" : b.status === "anulado" ? "bg-slate-100 text-slate-500" : "bg-amber-100 text-amber-800"}`}>
-                    {b.status === "pagado" ? `Pagado ${fCorta(b.paidAt)}` : b.status === "anulado" ? "Anulado" : "Aprobado, por pagar"}
-                  </span>
-                </td>
-                <td className="py-2 text-right whitespace-nowrap">
-                  {admin && b.status === "aprobado" && (
-                    <>
-                      <button onClick={() => accion(b.id, "pagar")} className="px-3 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold mr-1 cursor-pointer">
-                        <Wallet className="w-3.5 h-3.5 inline" /> Pagar
-                      </button>
-                      <button onClick={() => accion(b.id, "anular")} className="px-3 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold cursor-pointer">Anular</button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {personas.map((x) => (
+            <div key={x.nombre} className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
+              <div className="p-4 flex items-center gap-3 bg-gradient-to-r from-amber-50 to-white border-b border-slate-100">
+                <span className="w-11 h-11 rounded-2xl bg-amber-500 text-white font-black flex items-center justify-center">{iniciales(x.nombre)}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-black text-slate-900 truncate">{x.nombre}</p>
+                  <p className="text-xs text-slate-500">
+                    {x.metas.length} meta(s) este mes · {x.bonos.length} bono(s)
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-black uppercase text-amber-700">Por pagar</p>
+                  <p className="text-lg font-black text-amber-700">{soles(x.porPagar)}</p>
+                </div>
+              </div>
+              <div className="p-4 space-y-3 flex-1">
+                {x.metas.map((m) => {
+                  const p = m.progress || {};
+                  const pc = p.objetivo ? Math.min(100, Math.round((p.logrado / p.objetivo) * 100)) : 0;
+                  return (
+                    <div key={m.id}>
+                      <div className="flex justify-between text-xs font-bold text-slate-600">
+                        <span className="truncate">🎯 {m.type === "recepcion" ? "Meta de recepción" : CATEGORIA[m.category] || "Meta del mes"}</span>
+                        <span>
+                          {m.type === "recepcion" ? soles(p.logrado) : p.logrado} / {m.type === "recepcion" ? soles(p.objetivo) : p.objetivo}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-slate-100 overflow-hidden mt-1">
+                        <div className={`h-full ${p.cumplida ? "bg-emerald-500" : pc >= 60 ? "bg-blue-500" : "bg-amber-500"}`} style={{ width: `${pc}%` }} />
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        {p.cumplida ? "✓ Cumplida" : `${pc}% de avance`}
+                        {m.bonus > 0 && ` · bono al cumplir: ${soles(m.bonus)}`}
+                      </p>
+                    </div>
+                  );
+                })}
+                {x.bonos.map((b) => (
+                  <div key={b.id} className="rounded-xl border border-slate-200 p-2.5 flex items-center gap-2">
+                    <Wallet className={`w-4 h-4 shrink-0 ${b.status === "pagado" ? "text-emerald-600" : b.status === "anulado" ? "text-slate-300" : "text-amber-600"}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-slate-700 truncate" title={b.reason}>{b.reason}</p>
+                      <p className={`text-[11px] font-bold ${b.status === "pagado" ? "text-emerald-700" : b.status === "anulado" ? "text-slate-400" : "text-amber-700"}`}>
+                        {b.status === "pagado" ? `Pagado el ${fCorta(b.paidAt)}` : b.status === "anulado" ? "Anulado" : "Aprobado, por pagar"}
+                      </p>
+                    </div>
+                    <span className="font-black text-sm">{soles(b.amount)}</span>
+                    {admin && b.status === "aprobado" && (
+                      <span className="flex gap-1">
+                        <button onClick={() => accion(b.id, "pagar")} className="px-2 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold cursor-pointer">Pagar</button>
+                        <button onClick={() => accion(b.id, "anular")} className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-bold cursor-pointer">Anular</button>
+                      </span>
+                    )}
+                  </div>
+                ))}
+                {!x.metas.length && !x.bonos.length && <p className="text-xs text-slate-400">Sin metas ni bonos.</p>}
+              </div>
+              {x.pagado > 0 && <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 text-xs text-slate-500">Pagado en total: <b className="text-emerald-700">{soles(x.pagado)}</b></div>}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -697,23 +979,53 @@ export const GoalsModule = () => {
   const puedeObjetivos = admin || !!areaPropia;
 
   const pestanas = admin
-    ? [["recepcion", "Metas de recepción"], ["entrenadores", "Entrenadores y logros"], ["objetivos", "Objetivos de alumnos"], ["bonos", "Bonos"]]
+    ? [["recepcion", "Metas de recepción"], ["proyecciones", "Proyecciones de recepción"], ["entrenadores", "Entrenadores y logros"], ["especialistas", "Nutrición y fisioterapia"], ["objetivos", "Alumnos: objetivos y progreso"], ["bonos", "Bonos"]]
     : rol === "trainer"
-      ? [["mias", "Mis mancuernas"], ["objetivos", "Objetivos de mis alumnos"], ["bonos", "Mis bonos"]]
+      ? [["mias", "Mis mancuernas"], ["objetivos", "Mis alumnos: objetivos y progreso"], ["bonos", "Mis bonos"]]
       : rol === "reception"
-        ? [["mias", "Mi meta"], ["bonos", "Mis bonos"]]
-        : [["objetivos", "Objetivos de alumnos"], ["ranking", "Logros de entrenadores"]];
+        ? [["mias", "Mi meta"], ["proyecciones", "Mis proyecciones"], ["bonos", "Mis bonos"]]
+        : areaPropia
+          ? [["mias", "Mi meta"], ["objetivos", "Objetivos de alumnos"], ["ranking", "Logros del equipo"], ["bonos", "Mis bonos"]]
+          : [["objetivos", "Objetivos de alumnos"], ["ranking", "Logros de entrenadores"]];
 
-  const [tab, setTab] = useState(pestanas[0][0]);
+  const [tab, setTab] = useState(() => {
+    // Desde la campanita: abrir directo en Proyecciones o en el progreso de un alumno
+    try {
+      if (sessionStorage.getItem("radical_abrir_progreso") && pestanas.some(([k]) => k === "objetivos")) return "objetivos";
+      if (sessionStorage.getItem("radical_abrir_proyecciones") && pestanas.some(([k]) => k === "proyecciones")) {
+        sessionStorage.removeItem("radical_abrir_proyecciones");
+        return "proyecciones";
+      }
+    } catch {
+      /* nada */
+    }
+    return pestanas[0][0];
+  });
+  useEffect(() => {
+    const ir = () => {
+      try {
+        sessionStorage.removeItem("radical_abrir_proyecciones");
+      } catch {
+        /* nada */
+      }
+      if (pestanas.some(([k]) => k === "proyecciones")) setTab("proyecciones");
+    };
+    const irProgreso = () => pestanas.some(([k]) => k === "objetivos") && setTab("objetivos");
+    window.addEventListener("radical:abrir-proyecciones", ir);
+    window.addEventListener("radical:abrir-progreso", irProgreso);
+    return () => (window.removeEventListener("radical:abrir-proyecciones", ir), window.removeEventListener("radical:abrir-progreso", irProgreso));
+  }, [pestanas]);
   const [mes, setMes] = useState(hoyISO().slice(0, 7));
   const [metas, setMetas] = useState(null);
   const [logros, setLogros] = useState([]);
+  const [logrosEsp, setLogrosEsp] = useState(null);
   const [vista, setVista] = useState(null);
   const [aviso, setAviso] = useState("");
 
   const cargar = () => {
-    if (["recepcion", "entrenadores", "mias"].includes(tab)) api(`/metas/metas?mes=${mes}`).then(setMetas).catch(() => setMetas([]));
+    if (["recepcion", "entrenadores", "especialistas", "mias"].includes(tab)) api(`/metas/metas?mes=${mes}`).then(setMetas).catch(() => setMetas([]));
     if (["entrenadores", "ranking"].includes(tab)) api(`/metas/logros?mes=${mes}`).then(setLogros).catch(() => setLogros([]));
+    if (["especialistas", "ranking"].includes(tab)) api(`/metas/logros/especialistas?mes=${mes}`).then(setLogrosEsp).catch(() => setLogrosEsp({ filas: [] }));
   };
   useEffect(() => {
     setMetas(null);
@@ -766,20 +1078,20 @@ export const GoalsModule = () => {
 
   return (
     <div className="space-y-4">
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-800 rounded-3xl p-6 text-white shadow-lg flex flex-wrap items-start justify-between gap-4">
+      <div className="rd-portada rd-cabecera flex flex-wrap items-start justify-between gap-4">
         <div>
           <span className="text-xs font-black uppercase tracking-widest text-amber-300 flex items-center gap-1.5">
             <Target className="w-4 h-4" /> Metas & logros
           </span>
-          <h1 className="text-2xl font-black mt-1">{admin ? "Metas del equipo" : rol === "reception" ? "Mi meta del mes" : rol === "trainer" ? "Mis logros" : "Objetivos de los alumnos"}</h1>
+          <h1 className="text-2xl font-black mt-1">{admin ? "Metas del equipo" : rol === "reception" ? "Mi meta del mes" : rol === "trainer" ? "Mis logros" : areaPropia ? "Mis metas y objetivos de alumnos" : "Objetivos de los alumnos"}</h1>
           <p className="text-sm text-slate-300 max-w-2xl">
             {admin
-              ? "Asigna metas en soles a cada turno de recepción y metas de logros a los entrenadores. Nutrición y fisioterapia aprueban los objetivos de los alumnos y cada aprobación es una mancuerna para el entrenador."
+              ? "Asigna metas en soles a cada turno de recepción y metas de logros a entrenadores, nutricionistas y fisioterapeutas. Cada objetivo de alumno cumplido es un logro para el especialista que lo puso y una mancuerna para el entrenador."
               : rol === "reception"
                 ? "Lo que se cobra en tu turno suma a la meta. Mira cuánto falta en el mes, la semana y hoy."
                 : rol === "trainer"
-                  ? "Cada alumno que consigue su objetivo (aprobado por nutrición o fisioterapia) es una mancuerna para ti."
-                  : "Registra el objetivo del alumno y, en el siguiente control, indica si lo consiguió para dar el logro a su entrenador."}
+                  ? "Mira lo que nutrición y fisioterapia les pusieron a tus alumnos y cómo van en cada control. Cada objetivo cumplido es una mancuerna para ti."
+                  : "Registra el objetivo del alumno, anota cada control (peso, % de grasa, dolor...) y en la evaluación final indica si lo consiguió: es un logro para ti y una mancuerna para su entrenador."}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -798,19 +1110,39 @@ export const GoalsModule = () => {
         ))}
       </div>
       {aviso && <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold">{aviso}</div>}
+      {!admin && ["mias", "bonos", "progreso", "ranking"].includes(tab) && (
+        <p className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2">
+          👁️ Solo lectura: las metas, los logros y los bonos los define y paga administración.
+          {rol === "reception" ? " Lo único que escribes tú son tus proyecciones." : ""}
+        </p>
+      )}
 
       {tab === "recepcion" && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex gap-3">
-              <div className="bg-white rounded-xl border border-slate-200 px-4 py-2">
-                <span className="text-xs font-bold text-slate-400 block">META TOTAL {nombreMes(mes).toUpperCase()}</span>
-                <strong className="text-lg">{soles(resumenRecepcion.meta)}</strong>
-              </div>
-              <div className="bg-white rounded-xl border border-slate-200 px-4 py-2">
-                <span className="text-xs font-bold text-slate-400 block">LOGRADO</span>
-                <strong className="text-lg text-emerald-600">{soles(resumenRecepcion.logrado)}</strong>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 flex-1 min-w-[280px]">
+              <TarjetaKpi titulo={`Meta total · ${nombreMes(mes)}`} valor={resumenRecepcion.meta} decimales={2} prefijo="S/ " sub={`${recep.length} turno(s) con meta`} tono="ambar" icono={Target} />
+              <TarjetaKpi
+                titulo="Logrado"
+                valor={resumenRecepcion.logrado}
+                decimales={2}
+                prefijo="S/ "
+                sub={resumenRecepcion.meta ? `${Math.round((resumenRecepcion.logrado / resumenRecepcion.meta) * 100)}% de la meta` : "—"}
+                tono="verde"
+                serie={(() => {
+                  const dias = recep[0]?.progress?.diario?.map((x) => x.dia) || [];
+                  return dias.map((dia) => recep.reduce((a, m) => a + (m.progress.diario.find((x) => x.dia === dia)?.acumulado || 0), 0));
+                })()}
+              />
+              <TarjetaKpi
+                titulo="Falta"
+                valor={Math.max(0, resumenRecepcion.meta - resumenRecepcion.logrado)}
+                decimales={2}
+                prefijo="S/ "
+                sub="para cumplir el mes"
+                alerta={resumenRecepcion.meta > 0 && resumenRecepcion.logrado < resumenRecepcion.meta}
+                tono="rojo"
+              />
             </div>
             <button onClick={() => setVista({ form: "recepcion" })} className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer">
               <Plus className="w-4 h-4" /> Nueva meta de recepción
@@ -834,8 +1166,8 @@ export const GoalsModule = () => {
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="composition" stackId="a" name="Peso / masa" fill="#16a34a" />
-                  <Bar dataKey="injury" stackId="a" name="Lesión / dolor" fill="#0891b2" radius={[6, 6, 0, 0]} />
+                  <Bar isAnimationActive={false} maxBarSize={56} dataKey="composition" stackId="a" name="Peso / masa" fill="var(--color-green-600)" />
+                  <Bar isAnimationActive={false} maxBarSize={56} dataKey="injury" stackId="a" name="Lesión / dolor" fill="var(--color-cyan-600)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -877,9 +1209,27 @@ export const GoalsModule = () => {
         </div>
       )}
 
+      {tab === "especialistas" && (
+        <div className="space-y-4">
+          <RankingEspecialistas datos={logrosEsp} />
+          <div className="flex flex-wrap justify-end gap-2">
+            <button onClick={() => setVista({ form: "nutricion" })} className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer">
+              <Plus className="w-4 h-4" /> Nueva meta de nutrición
+            </button>
+            <button onClick={() => setVista({ form: "fisioterapia" })} className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer">
+              <Plus className="w-4 h-4" /> Nueva meta de fisioterapia
+            </button>
+          </div>
+          {metas ? tarjetas([...de("nutricion"), ...de("fisioterapia")]) : <p className="text-slate-500 text-sm">Cargando…</p>}
+        </div>
+      )}
+      {tab === "ranking" && areaPropia && <RankingEspecialistas datos={logrosEsp} />}
+
       {tab === "mias" && <div className="space-y-4">{metas ? tarjetas(metas) : <p className="text-slate-500 text-sm">Cargando…</p>}</div>}
-      {tab === "objetivos" && <ListaObjetivos puedeCrear={puedeObjetivos} areaPropia={areaPropia} admin={admin} />}
+      {tab === "objetivos" && <AlumnosObjetivosProgreso puedeCrear={puedeObjetivos} areaPropia={areaPropia} admin={admin} conProgreso={admin || rol === "trainer"} />}
       {tab === "bonos" && <ListaBonos admin={admin} />}
+      {tab === "proyecciones" && <ProyeccionesRecepcion />}
+
     </div>
   );
 };

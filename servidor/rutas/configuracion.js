@@ -4,7 +4,13 @@ import { consultar } from "../db.js";
 import { ErrorHttp, requierePermiso } from "../seguridad.js";
 
 const router = Router();
-const CLAVES = ["gym_nombre", "gym_whatsapp", "admin_whatsapp", "gym_direccion", "gym_ruc"];
+const CLAVES = [
+  "gym_nombre", "gym_whatsapp", "admin_whatsapp", "gym_direccion", "gym_ruc",
+  // % que queda para el gimnasio ("derecho de piso") en servicios de profesionales
+  "pct_gym_entrenamiento", "pct_gym_fisioterapia", "pct_gym_nutricion",
+  // Reglas de descuento por tardanza del personal (JSON)
+  "reglas_tardanza",
+];
 
 // GET /api/configuracion  -> todos los usuarios conectados (el portal usa el WhatsApp)
 router.get("/", async (req, res, next) => {
@@ -26,6 +32,19 @@ router.put("/", requierePermiso("users", "editar"), async (req, res, next) => {
     for (const clave of CLAVES) {
       if (d[clave] === undefined) continue;
       let valor = String(d[clave] ?? "").trim().slice(0, 500);
+      if (clave.startsWith("pct_gym_")) {
+        const n = Number(valor);
+        if (!Number.isFinite(n) || n < 0 || n > 100) throw new ErrorHttp(400, "El porcentaje debe estar entre 0 y 100");
+        valor = String(Math.round(n * 10) / 10);
+      }
+      if (clave === "reglas_tardanza" && valor) {
+        try {
+          const r = JSON.parse(valor);
+          if (!r || typeof r !== "object") throw new Error();
+        } catch {
+          throw new ErrorHttp(400, "Las reglas de tardanza no son válidas");
+        }
+      }
       if (clave.endsWith("whatsapp") && valor) {
         valor = valor.replace(/[^\d]/g, "");
         if (valor.length === 9) valor = `51${valor}`; // celular peruano sin código

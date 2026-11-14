@@ -21,6 +21,7 @@ import {
   HandCoins,
   MessageCircle,
   Snowflake,
+  ShoppingBag,
 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, PieChart, Pie, Legend } from "recharts";
 import { enlaceRecordatorioDeuda } from "../members/DebtDueDate";
@@ -29,6 +30,8 @@ import { api } from "../../api/cliente";
 import { hoyISO } from "../../utils/fecha";
 import { crearExcel, crearPDF, descargar, enviarPorWhatsApp } from "../../utils/exportar";
 import { TelWhatsApp } from "../common/TelWhatsApp";
+import { coincideFila } from "../../utils/buscarPersona";
+import { BotonesDescarga } from "../common/BotonesDescarga";
 
 const soles = (n) => `S/ ${Number(n || 0).toFixed(2)}`;
 const fCorta = (f) => (f ? `${String(f).slice(8, 10)}/${String(f).slice(5, 7)}/${String(f).slice(0, 4)}` : "");
@@ -49,7 +52,7 @@ const CATEGORIA = {
   nutricion: "Nutrición", insumos: "Insumos", sueldo: "Sueldos/bonos", mantenimiento: "Mantenimiento", servicios: "Servicios",
   alquiler: "Alquiler", marketing: "Marketing", averia_equipo: "Avería de equipo", otros: "Otros",
 };
-const COLORES = ["#0c8794", "#16a34a", "#f59e0b", "#db2777", "#7c3aed", "#0891b2", "#dc2626", "#65a30d"];
+const COLORES = ["var(--color-blue-600)", "var(--color-green-600)", "var(--color-amber-500)", "var(--color-pink-600)", "var(--color-violet-600)", "var(--color-cyan-600)", "var(--color-red-600)", "var(--color-lime-600)"];
 const EDADES = {
   menores: ["Menores de edad (<18)", 0, 17],
   jovenes: ["Jóvenes (18-29)", 18, 29],
@@ -126,6 +129,24 @@ const Chip = ({ activo, onClick, children, tono }) => {
   );
 };
 
+// Fila de atajos: igual en todos los reportes
+const ORDEN_TONOS = ["blue", "emerald", "amber", "rose", "violet", "sky", "orange", "pink", "indigo", "fuchsia"];
+const Atajos = ({ children }) => {
+  let n = 0;
+  const chips = React.Children.toArray(children).map((c) => {
+    if (!React.isValidElement(c) || c.props.tono) return c;
+    return React.cloneElement(c, { tono: ORDEN_TONOS[n++ % ORDEN_TONOS.length] });
+  });
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 pb-3 border-b border-dashed border-slate-200">
+      <span className="text-[11px] font-black text-blue-700 uppercase tracking-wider mr-1 flex items-center gap-1">
+        <Filter className="w-3.5 h-3.5" /> Atajos
+      </span>
+      {chips}
+    </div>
+  );
+};
+
 // Grupo de filtros con cabecera de color
 const COLOR_GRUPO = {
   blue: "border-blue-200 bg-blue-50/50 text-blue-700",
@@ -159,8 +180,8 @@ const Barras = ({ datos, valor = "valor", nombre = "nombre", formato, alto = 220
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey={nombre} tick={{ fontSize: 11 }} interval={0} angle={datos.length > 6 ? -25 : 0} textAnchor={datos.length > 6 ? "end" : "middle"} height={datos.length > 6 ? 60 : 30} />
         <YAxis tick={{ fontSize: 11 }} />
-        <Tooltip formatter={(v) => (formato ? formato(v) : v)} />
-        <Bar dataKey={valor} radius={[6, 6, 0, 0]}>
+        <Tooltip formatter={(v) => [formato ? formato(v) : v, "Total"]} cursor={{ radius: 8 }} />
+        <Bar isAnimationActive={false} dataKey={valor} radius={[6, 6, 0, 0]} maxBarSize={56}>
           {datos.map((_, i) => (
             <Cell key={i} fill={COLORES[i % COLORES.length]} />
           ))}
@@ -297,7 +318,7 @@ const Tabla = ({ columnas, filas, franja: franjaFila }) => (
 );
 
 // Barra de exportación: solo lo filtrado
-const Exportar = ({ titulo, filtros, columnas, filas, totales }) => {
+export const Exportar = ({ titulo, filtros, columnas, filas, totales }) => {
   const { gymConfig } = useGym();
   const [trabajando, setTrabajando] = useState("");
   const [mensaje, setMensaje] = useState("");
@@ -341,6 +362,7 @@ const Exportar = ({ titulo, filtros, columnas, filas, totales }) => {
       <button onClick={() => hacer("pdf")} disabled={!!trabajando} className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-60">
         <FileText className="w-3.5 h-3.5" /> {trabajando === "pdf" ? "Generando…" : "PDF"}
       </button>
+      <BotonesDescarga soloFoto nombre={titulo} />
       <div className="flex items-center rounded-lg border border-green-600 overflow-hidden">
         <select value={formato} onChange={(e) => setFormato(e.target.value)} className="px-1.5 py-1.5 text-xs bg-white border-r border-green-600">
           <option value="excel">Excel</option>
@@ -400,7 +422,7 @@ const ReporteAlumnos = () => {
       if (f.restricciones && !a.restricciones) return false;
       if (f.venceDesde && (!a.vence || a.vence < f.venceDesde)) return false;
       if (f.venceHasta && (!a.vence || a.vence > f.venceHasta)) return false;
-      if (f.texto && !`${a.codigo} ${String(a.codigo).replace("-", "")} ${a.nombre} ${a.dni} ${a.telefono}`.toLowerCase().includes(f.texto.toLowerCase())) return false;
+      if (f.texto && !coincideFila({ codeLabel: a.codigo, nombre: a.nombre, dni: a.dni, telefono: a.telefono }, f.texto)) return false;
       return true;
     });
   }, [datos, f, h]);
@@ -491,8 +513,7 @@ const ReporteAlumnos = () => {
         </div>
 
         {/* Atajos */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-black text-blue-700 uppercase tracking-wider mr-1 flex items-center gap-1"><Filter className="w-3.5 h-3.5" /> Atajos</span>
+        <Atajos>
           <Chip activo={f.estado === "Vencido"} onClick={() => rapido({ estado: "Vencido" })}>Vencidos</Chip>
           <Chip activo={f.estado === "Por vencer"} onClick={() => rapido({ estado: "Por vencer" })}>Por vencer (7 días)</Chip>
           <Chip activo={f.deuda === "si"} onClick={() => rapido({ deuda: "si" })}>Con deuda</Chip>
@@ -506,7 +527,7 @@ const ReporteAlumnos = () => {
           <Chip activo={f.edad === "menores"} onClick={() => rapido({ edad: "menores" })}>Menores de edad</Chip>
           <Chip activo={f.edad === "jovenes"} onClick={() => rapido({ edad: "jovenes" })}>Jóvenes</Chip>
           <Chip activo={f.edad === "mayores_edad"} onClick={() => rapido({ edad: "mayores_edad" })}>Mayores de edad</Chip>
-        </div>
+        </Atajos>
 
         {/* Filtros detallados por grupo */}
         <div className="grid gap-4 lg:grid-cols-3">
@@ -715,6 +736,27 @@ const ReporteMatriculas = () => {
   return (
     <div className="space-y-4">
       <div className="rd-filtros bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+        <Atajos>
+          {[
+            ["Todas", {}],
+            ["Solo nuevas", { tipo: "Nueva" }],
+            ["Renovaciones", { tipo: "Renovación" }],
+            ["Con saldo pendiente", { saldo: "si" }],
+            ["Pagadas completas", { saldo: "no" }],
+            ["Pagadas en efectivo", { metodo: "efectivo" }],
+            ["Pagadas con Yape/Plin", { metodo: "yape_plin" }],
+            ["Mujeres", { sexo: "Mujer" }],
+            ["Varones", { sexo: "Varón" }],
+          ].map(([l, c]) => {
+            const vacio = { plan: "", tipo: "", metodo: "", saldo: "", sexo: "", usuario: "" };
+            const activo = Object.entries({ ...vacio, ...c }).every(([k, v]) => k === "plan" || k === "usuario" || f[k] === v);
+            return (
+              <Chip key={l} activo={activo} tono={l === "Todas" ? "slate" : undefined} onClick={() => setF((p) => ({ ...vacio, plan: p.plan, usuario: p.usuario, ...c }))}>
+                {l}
+              </Chip>
+            );
+          })}
+        </Atajos>
         <Periodo desde={desde} hasta={hasta} setRango={(a, b) => { setDesde(a); setHasta(b); }} />
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
           <Sel label="Plan / paquete" value={f.plan} onChange={(v) => set("plan", v)}>
@@ -780,12 +822,12 @@ const ReporteMatriculas = () => {
 // ============================================================
 // 3. INGRESOS Y EGRESOS (CAJA)
 // ============================================================
-const ReporteIngresos = () => {
+const ReporteIngresos = ({ ventas = false }) => {
   const h = hoyISO();
   const [desde, setDesde] = useState(`${h.slice(0, 7)}-01`);
   const [hasta, setHasta] = useState(h);
   const [datos, setDatos] = useState(null);
-  const [f, setF] = useState({ tipo: "", categoria: "", metodo: "", turno: "", cajero: "" });
+  const [f, setF] = useState(ventas ? { tipo: "Ingreso", categoria: "venta", metodo: "", turno: "", cajero: "" } : { tipo: "", categoria: "", metodo: "", turno: "", cajero: "" });
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   useEffect(() => {
     setDatos(null);
@@ -833,6 +875,35 @@ const ReporteIngresos = () => {
   return (
     <div className="space-y-4">
       <div className="rd-filtros bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+        <Atajos>
+          {(ventas
+            ? [
+                ["Todas las ventas", { tipo: "Ingreso", categoria: "venta" }],
+                ["En efectivo", { tipo: "Ingreso", categoria: "venta", metodo: "efectivo" }],
+                ["Con Yape/Plin", { tipo: "Ingreso", categoria: "venta", metodo: "yape_plin" }],
+                ["Con tarjeta", { tipo: "Ingreso", categoria: "venta", metodo: "tarjeta" }],
+              ]
+            : [
+                ["Todo", {}],
+                ["Solo ingresos", { tipo: "Ingreso" }],
+                ["Solo egresos", { tipo: "Egreso" }],
+                ["Matrículas", { tipo: "Ingreso", categoria: "matricula" }],
+                ["Ventas de tienda", { tipo: "Ingreso", categoria: "venta" }],
+                ["Sueldos y bonos", { tipo: "Egreso", categoria: "sueldo" }],
+                ["Mantenimiento", { tipo: "Egreso", categoria: "mantenimiento" }],
+                ["En efectivo", { metodo: "efectivo" }],
+                ["Con Yape/Plin", { metodo: "yape_plin" }],
+              ]
+          ).map(([l, c]) => {
+            const vacio = { tipo: "", categoria: "", metodo: "" };
+            const activo = Object.entries({ ...vacio, ...c }).every(([k, v]) => f[k] === v);
+            return (
+              <Chip key={l} activo={activo} tono={/^Todo/.test(l) ? "slate" : /egreso|Sueldo|Manten/i.test(l) ? "rose" : undefined} onClick={() => setF((p) => ({ ...p, ...vacio, ...c }))}>
+                {l}
+              </Chip>
+            );
+          })}
+        </Atajos>
         <Periodo desde={desde} hasta={hasta} setRango={(a, b) => { setDesde(a); setHasta(b); }} />
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
           <Sel label="Tipo" value={f.tipo} onChange={(v) => set("tipo", v)}>
@@ -875,8 +946,8 @@ const ReporteIngresos = () => {
       </div>
       <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-sm font-black text-slate-900">Movimientos · {descripcion.join(" · ")}</h4>
-          <Exportar titulo="Reporte de ingresos y egresos" filtros={descripcion} columnas={columnas} filas={filas} totales={totales} />
+          <h4 className="text-sm font-black text-slate-900">{ventas ? "Ventas" : "Movimientos"} · {descripcion.join(" · ")}</h4>
+          <Exportar titulo={ventas ? "Reporte de ventas" : "Reporte de ingresos y egresos"} filtros={descripcion} columnas={columnas} filas={filas} totales={totales} />
         </div>
         {!datos ? <p className="text-slate-500 text-sm">Cargando…</p> : <Tabla columnas={columnas} filas={filas} franja={(m) => (m.tipo === "Ingreso" ? "border-l-emerald-400" : "border-l-rose-400")} />}
       </div>
@@ -887,7 +958,7 @@ const ReporteIngresos = () => {
 // ============================================================
 // 3b. DEUDAS Y PENDIENTES DE PAGO
 // ============================================================
-const COLOR_ESTADO = { Vencida: "#dc2626", "Por vencer": "#f59e0b", "En plazo": "#0c8794", "Sin fecha": "#94a3b8" };
+const COLOR_ESTADO = { Vencida: "var(--color-red-600)", "Por vencer": "var(--color-amber-500)", "En plazo": "var(--color-blue-600)", "Sin fecha": "#94a3b8" };
 const TRAMOS = [
   ["Vencida +30 días", (d) => d < -30],
   ["Vencida 8-30 días", (d) => d < -7 && d >= -30],
@@ -920,7 +991,7 @@ const ReporteDeudas = () => {
           (f.vence === "semana" && d.dias >= 0 && d.dias <= 7) ||
           (f.vence === "mes" && d.limite?.slice(0, 7) === h.slice(0, 7)) ||
           (f.vence === "vencidas30" && d.dias < -30)) &&
-        (!t || d.alumno.toLowerCase().includes(t) || d.dni.includes(t)),
+        (!t || coincideFila({ codeLabel: d.codigo, nombre: d.alumno, dni: d.dni }, t)),
     );
   }, [todas, f]);
   const total = filas.reduce((a, d) => a + d.saldo, 0);
@@ -1005,7 +1076,7 @@ const ReporteDeudas = () => {
   return (
     <div className="space-y-4">
       <div className="rd-filtros bg-white rounded-xl border border-slate-200 p-4 space-y-3">
-        <div className="flex flex-wrap gap-1.5">
+        <Atajos>
           <Chip activo={!f.estado && !f.vence} onClick={() => setF((p) => ({ ...p, estado: "", vence: "" }))}>Todas ({todas.length})</Chip>
           {["Vencida", "Por vencer", "En plazo"].map((e) => (
             <Chip key={e} activo={f.estado === e} onClick={() => set("estado", f.estado === e ? "" : e)}>
@@ -1015,7 +1086,7 @@ const ReporteDeudas = () => {
           <Chip activo={f.vence === "semana"} onClick={() => set("vence", f.vence === "semana" ? "" : "semana")}>Vencen esta semana</Chip>
           <Chip activo={f.vence === "mes"} onClick={() => set("vence", f.vence === "mes" ? "" : "mes")}>Vencen este mes</Chip>
           <Chip activo={f.vence === "vencidas30"} onClick={() => set("vence", f.vence === "vencidas30" ? "" : "vencidas30")}>Morosos +30 días</Chip>
-        </div>
+        </Atajos>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <label className="block text-xs col-span-2 md:col-span-1">
             <span className="font-bold text-slate-500">Buscar alumno o DNI</span>
@@ -1051,7 +1122,7 @@ const ReporteDeudas = () => {
             <div style={{ height: 240 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart margin={{ top: 20, bottom: 4, left: 10, right: 10 }}>
-                  <Pie data={porEstado} dataKey="valor" nameKey="nombre" innerRadius={45} outerRadius={72} paddingAngle={2} isAnimationActive={false} label={(e) => soles(e.valor)}>
+                  <Pie data={porEstado} dataKey="valor" nameKey="nombre" innerRadius="58%" outerRadius="86%" paddingAngle={2} isAnimationActive={false} label={(e) => soles(e.valor)}>
                     {porEstado.map((e) => (
                       <Cell key={e.nombre} fill={COLOR_ESTADO[e.nombre]} />
                     ))}
@@ -1114,11 +1185,18 @@ const ReporteAsistencias = () => {
   const [hasta, setHasta] = useState(h);
   const [datos, setDatos] = useState(null);
   const [sexo, setSexo] = useState("");
+  const [franja, setFranja] = useState("");
   useEffect(() => {
     setDatos(null);
     api(`/reportes/asistencias?desde=${desde}&hasta=${hasta}`).then((r) => setDatos(r.filas)).catch(() => setDatos([]));
   }, [desde, hasta]);
-  const filas = (datos || []).filter((a) => !sexo || a.sexo === sexo);
+  const FRANJAS = { manana: [5, 11], tarde: [12, 17], noche: [18, 23] };
+  const filas = (datos || []).filter((a) => {
+    if (sexo && a.sexo !== sexo) return false;
+    if (!franja) return true;
+    const hh = Number(String(a.hora).slice(0, 2));
+    return hh >= FRANJAS[franja][0] && hh <= FRANJAS[franja][1];
+  });
   const porHora = Array.from({ length: 18 }, (_, i) => i + 5).map((hh) => ({
     nombre: `${String(hh).padStart(2, "0")}h`,
     valor: filas.filter((a) => Number(a.hora.slice(0, 2)) === hh).length,
@@ -1126,7 +1204,11 @@ const ReporteAsistencias = () => {
   const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   const porDia = DIAS.map((d, i) => ({ nombre: d, valor: filas.filter((a) => new Date(`${a.dia}T12:00:00`).getDay() === i).length })).slice(1).concat({ nombre: "Dom", valor: filas.filter((a) => new Date(`${a.dia}T12:00:00`).getDay() === 0).length });
   const top = Object.values(filas.reduce((m, a) => ((m[a.dni] = m[a.dni] || { nombre: a.alumno, valor: 0 }), m[a.dni].valor++, m), {})).sort((a, b) => b.valor - a.valor).slice(0, 10);
-  const descripcion = [`Del ${fCorta(desde)} al ${fCorta(hasta)}`, ...(sexo ? [sexo === "Mujer" ? "Mujeres" : "Varones"] : [])];
+  const descripcion = [
+    `Del ${fCorta(desde)} al ${fCorta(hasta)}`,
+    ...(sexo ? [sexo === "Mujer" ? "Mujeres" : "Varones"] : []),
+    ...(franja ? [{ manana: "Mañana (5-12 h)", tarde: "Tarde (12-18 h)", noche: "Noche (18 h en adelante)" }[franja]] : []),
+  ];
   const columnas = [
     { key: "dia", label: "Fecha", excel: (a) => fCorta(a.dia) },
     { key: "hora", label: "Hora" },
@@ -1137,7 +1219,25 @@ const ReporteAsistencias = () => {
   ];
   return (
     <div className="space-y-4">
-      <div className="rd-filtros bg-white rounded-xl border border-slate-200 p-4 flex flex-wrap items-end justify-between gap-3">
+      <div className="rd-filtros bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+        <Atajos>
+          {[
+            ["Todos", "", ""],
+            ["Mujeres", "Mujer", franja],
+            ["Varones", "Varón", franja],
+            ["Turno mañana", sexo, "manana"],
+            ["Turno tarde", sexo, "tarde"],
+            ["Turno noche", sexo, "noche"],
+          ].map(([l, sx, fr]) => {
+            const activo = l === "Todos" ? !sexo && !franja : l.startsWith("Turno") ? franja === fr : sexo === sx;
+            return (
+              <Chip key={l} activo={activo} tono={l === "Todos" ? "slate" : undefined} onClick={() => (setSexo(sx), setFranja(fr))}>
+                {l}
+              </Chip>
+            );
+          })}
+        </Atajos>
+        <div className="flex flex-wrap items-end justify-between gap-3">
         <Periodo desde={desde} hasta={hasta} setRango={(a, b) => { setDesde(a); setHasta(b); }} />
         <div className="w-40">
           <Sel label="Sexo" value={sexo} onChange={setSexo}>
@@ -1145,6 +1245,7 @@ const ReporteAsistencias = () => {
             <option value="Mujer">Mujeres</option>
             <option value="Varón">Varones</option>
           </Sel>
+        </div>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3">
@@ -1185,6 +1286,7 @@ const ReporteAsistencias = () => {
 // ============================================================
 const ReporteMetas = () => {
   const [mes, setMes] = useState(hoyISO().slice(0, 7));
+  const [filtroMeta, setFiltroMeta] = useState("");
   const [metas, setMetas] = useState(null);
   const [logros, setLogros] = useState([]);
   useEffect(() => {
@@ -1209,13 +1311,37 @@ const ReporteMetas = () => {
     key: k,
     label: { meta: "Meta", nombre: "Turno / entrenador", categoria: "Tipo", periodo: "Periodo", objetivo: "Objetivo", logrado: "Logrado", avance: "Avance", faltante: "Falta", estado: "Estado", bono: "Bono" }[k],
   }));
+  const filasVistas = filas.filter((x) => !filtroMeta || (filtroMeta === "recepcion" ? x.meta === "Recepción" : filtroMeta === "entrenador" ? x.meta === "Entrenador" : filtroMeta === "cumplida" ? x.estado === "Cumplida" : filtroMeta === "curso" ? x.estado === "En curso" : x.bono !== "—"));
+  const mesAnterior = (() => {
+    const d = new Date(`${hoyISO().slice(0, 7)}-15T12:00:00`);
+    d.setMonth(d.getMonth() - 1);
+    return d.toISOString().slice(0, 7);
+  })();
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-end gap-3">
+      <div className="rd-filtros bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+        <Atajos>
+          {[
+            ["Todas", ""],
+            ["Recepción", "recepcion"],
+            ["Entrenadores", "entrenador"],
+            ["Cumplidas", "cumplida"],
+            ["En curso", "curso"],
+            ["Con bono", "bono"],
+          ].map(([l, k]) => (
+            <Chip key={l} activo={filtroMeta === k} tono={k ? undefined : "slate"} onClick={() => setFiltroMeta(k)}>
+              {l}
+            </Chip>
+          ))}
+        </Atajos>
+        <div className="flex flex-wrap items-end gap-1.5">
+          <Chip activo={mes === hoyISO().slice(0, 7)} onClick={() => setMes(hoyISO().slice(0, 7))}>Este mes</Chip>
+          <Chip activo={mes === mesAnterior} onClick={() => setMes(mesAnterior)}>Mes anterior</Chip>
         <label className="text-xs">
           <span className="font-bold text-slate-500 block">Mes</span>
           <input type="month" value={mes} onChange={(e) => e.target.value && setMes(e.target.value)} className="px-2 py-1.5 rounded-lg border border-slate-300 text-sm" />
         </label>
+        </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 p-4">
@@ -1230,9 +1356,9 @@ const ReporteMetas = () => {
       <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-sm font-black text-slate-900">Metas de {nombreMes(mes)}</h4>
-          <Exportar titulo={`Metas ${nombreMes(mes)}`} filtros={[nombreMes(mes)]} columnas={columnas} filas={filas} totales={[["Metas", filas.length], ["Cumplidas", filas.filter((f) => f.estado === "Cumplida").length]]} />
+          <Exportar titulo={`Metas ${nombreMes(mes)}`} filtros={[nombreMes(mes)]} columnas={columnas} filas={filasVistas} totales={[["Metas", filasVistas.length], ["Cumplidas", filasVistas.filter((f) => f.estado === "Cumplida").length]]} />
         </div>
-        {!metas ? <p className="text-slate-500 text-sm">Cargando…</p> : <Tabla columnas={columnas} filas={filas} />}
+        {!metas ? <p className="text-slate-500 text-sm">Cargando…</p> : <Tabla columnas={columnas} filas={filasVistas} />}
       </div>
     </div>
   );
@@ -1243,7 +1369,7 @@ const ReporteMetas = () => {
 // CONGELAMIENTOS
 // ============================================================
 const ESTADO_CONG = ["Congelado", "Programado", "Cumplido", "Terminado antes", "Anulado"];
-const COLOR_CONG = { Congelado: "#0284c7", Programado: "#6366f1", Cumplido: "#94a3b8", "Terminado antes": "#f59e0b", Anulado: "#e11d48" };
+const COLOR_CONG = { Congelado: "var(--color-sky-600)", Programado: "var(--color-indigo-500)", Cumplido: "#94a3b8", "Terminado antes": "var(--color-amber-500)", Anulado: "var(--color-rose-600)" };
 
 const ReporteCongelamientos = () => {
   const h = hoyISO();
@@ -1356,8 +1482,7 @@ const ReporteCongelamientos = () => {
       {vista === "historial" ? (
         <>
           <div className="rd-filtros bg-white rounded-xl border border-slate-200 p-4 space-y-3">
-            <Periodo desde={desde} hasta={hasta} setRango={(a, b) => (setDesde(a), setHasta(b))} />
-            <div className="flex flex-wrap gap-1.5">
+            <Atajos>
               <Chip activo={!f.estado && !f.rapido} onClick={() => setF((p) => ({ ...p, estado: "", rapido: "" }))}>Todos</Chip>
               <Chip activo={f.estado === "Congelado"} onClick={() => setF((p) => ({ ...p, estado: "Congelado", rapido: "" }))}>Congelados hoy ({todos.filter((c) => c.status === "activo").length})</Chip>
               <Chip activo={f.estado === "Programado"} onClick={() => setF((p) => ({ ...p, estado: "Programado", rapido: "" }))}>Programados ({todos.filter((c) => c.status === "programado").length})</Chip>
@@ -1365,7 +1490,8 @@ const ReporteCongelamientos = () => {
               <Chip activo={f.rapido === "empiezan"} onClick={() => setF((p) => ({ ...p, estado: "", rapido: "empiezan" }))}>Empiezan esta semana</Chip>
               <Chip activo={f.estado === "Terminado antes"} onClick={() => setF((p) => ({ ...p, estado: "Terminado antes", rapido: "" }))}>Terminados antes</Chip>
               <Chip activo={f.estado === "Anulado"} onClick={() => setF((p) => ({ ...p, estado: "Anulado", rapido: "" }))}>Anulados</Chip>
-            </div>
+            </Atajos>
+            <Periodo desde={desde} hasta={hasta} setRango={(a, b) => (setDesde(a), setHasta(b))} />
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <label className="text-xs">
                 <span className="font-bold text-slate-500 block mb-1">Buscar alumno o DNI</span>
@@ -1398,7 +1524,7 @@ const ReporteCongelamientos = () => {
                 <div style={{ height: 220 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart margin={{ top: 20, bottom: 4 }}>
-                      <Pie data={porEstado} dataKey="valor" nameKey="nombre" innerRadius={40} outerRadius={68} isAnimationActive={false} label={(e) => e.valor}>
+                      <Pie data={porEstado} dataKey="valor" nameKey="nombre" innerRadius="58%" outerRadius="86%" isAnimationActive={false} label={(e) => e.valor}>
                         {porEstado.map((e) => <Cell key={e.nombre} fill={COLOR_CONG[e.nombre]} />)}
                       </Pie>
                       <Tooltip />
@@ -1441,13 +1567,13 @@ const ReporteCongelamientos = () => {
         </>
       ) : (
         <>
-          <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
-            <div className="flex flex-wrap gap-1.5">
+          <div className="rd-filtros bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+            <Atajos>
               <Chip activo={!fd.caduca} onClick={() => setFd((p) => ({ ...p, caduca: "" }))}>Todas las membresías vigentes</Chip>
               <Chip activo={fd.caduca === "conDias"} onClick={() => setFd((p) => ({ ...p, caduca: "conDias" }))}>Con días por usar</Chip>
               <Chip activo={fd.caduca === "30"} onClick={() => setFd((p) => ({ ...p, caduca: "30" }))}>Caducan en 30 días</Chip>
               <Chip activo={fd.caduca === "agotado"} onClick={() => setFd((p) => ({ ...p, caduca: "agotado" }))}>Ya usaron todo</Chip>
-            </div>
+            </Atajos>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <label className="text-xs">
                 <span className="font-bold text-slate-500 block mb-1">Buscar alumno o DNI</span>
@@ -1491,6 +1617,7 @@ export const ReportsModule = () => {
     ["alumnos", "Alumnos", Users, "from-blue-600 to-blue-500", "text-blue-600"],
     ["matriculas", "Matrículas y paquetes", CreditCard, "from-indigo-600 to-violet-500", "text-indigo-600"],
     ["ingresos", "Ingresos y egresos", Wallet, "from-emerald-600 to-emerald-500", "text-emerald-600"],
+    ["ventas", "Ventas", ShoppingBag, "from-orange-500 to-amber-500", "text-orange-600"],
     ["deudas", "Deudas y pendientes", HandCoins, "from-rose-600 to-orange-500", "text-rose-600"],
     ["congelamientos", "Congelamientos", Snowflake, "from-sky-600 to-cyan-500", "text-sky-600"],
     ["asistencias", "Asistencias", UserCheck, "from-amber-500 to-orange-500", "text-amber-600"],
@@ -1498,7 +1625,7 @@ export const ReportsModule = () => {
   ];
   return (
     <div className="space-y-4">
-      <div className="relative overflow-hidden bg-gradient-to-br from-marino-900 via-marino-800 to-blue-800 rounded-3xl p-6 text-white shadow-lg flex flex-wrap items-start justify-between gap-4">
+      <div className="rd-portada rd-cabecera flex flex-wrap items-start justify-between gap-4">
         <div className="pointer-events-none absolute -right-10 -top-16 w-64 h-64 rounded-full bg-blue-400/20 blur-3xl" />
         <div className="pointer-events-none absolute right-40 -bottom-20 w-56 h-56 rounded-full bg-orange-500/15 blur-3xl" />
         <div>
@@ -1532,6 +1659,7 @@ export const ReportsModule = () => {
         {tab === "alumnos" && <ReporteAlumnos />}
         {tab === "matriculas" && <ReporteMatriculas />}
         {tab === "ingresos" && <ReporteIngresos />}
+        {tab === "ventas" && <ReporteIngresos ventas />}
         {tab === "asistencias" && <ReporteAsistencias />}
         {tab === "deudas" && <ReporteDeudas />}
         {tab === "congelamientos" && <ReporteCongelamientos />}

@@ -4,17 +4,43 @@
 // =====================================================================
 import React, { useMemo, useState } from "react";
 import {
-  ResponsiveContainer, ComposedChart, BarChart, Bar, Line, Area, XAxis, YAxis, Tooltip, CartesianGrid, Cell, PieChart, Pie, Legend,
+  ResponsiveContainer,
+  ComposedChart,
+  BarChart,
+  Bar,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Cell,
+  PieChart,
+  Pie,
+  Legend,
 } from "recharts";
 import {
-  TrendingUp, TrendingDown, Wallet, Percent, Receipt, CalendarDays, CreditCard, Tags, Users, Trophy, FileSpreadsheet, FileText, ArrowUpRight, ArrowDownRight,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Percent,
+  Receipt,
+  CalendarDays,
+  CreditCard,
+  Tags,
+  Users,
+  Trophy,
+  FileSpreadsheet,
+  FileText,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 import { hoyISO } from "../../utils/fecha";
 import { crearExcel, crearPDF, descargar } from "../../utils/exportar";
 
 export const NOMBRE_CATEGORIA = {
   membership: "Membresías y matrículas",
-  pos_sale: "Ventas de tienda (POS)",
+  day_pass: "Pase del día",
+  pos_sale: "Ventas de tienda",
   personal_training: "Entrenamiento personal",
   physiotherapy: "Fisioterapia",
   nutrition: "Nutrición",
@@ -30,8 +56,8 @@ export const NOMBRE_CATEGORIA = {
   other: "Otros",
 };
 const NOMBRE_METODO = { efectivo: "Efectivo", tarjeta: "Tarjeta", transferencia: "Transferencia", yape_plin: "Yape / Plin" };
-const COLOR_METODO = { efectivo: "#10b981", tarjeta: "#6366f1", transferencia: "#0ea7b3", yape_plin: "#a855f7" };
-const PALETA = ["#0ea7b3", "#10b981", "#f59e0b", "#6366f1", "#f43f5e", "#a855f7", "#38bdf8", "#f97316", "#84cc16", "#64748b"];
+const COLOR_METODO = { efectivo: "var(--color-emerald-500)", tarjeta: "var(--color-indigo-500)", transferencia: "var(--color-blue-500)", yape_plin: "var(--color-purple-500)" };
+const PALETA = ["var(--color-blue-500)", "var(--color-emerald-500)", "var(--color-amber-500)", "var(--color-indigo-500)", "var(--color-rose-500)", "var(--color-purple-500)", "var(--color-sky-400)", "var(--color-orange-500)", "var(--color-lime-500)", "#64748b"];
 const DIAS_SEMANA = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 const soles = (n) => `S/ ${Number(n || 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -348,8 +374,8 @@ export const ReporteFinanciero = ({ transactions }) => {
             <ComposedChart data={flujo} margin={{ top: 10, right: 10, left: -5, bottom: 0 }}>
               <defs>
                 <linearGradient id="rfAcum" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0ea7b3" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#0ea7b3" stopOpacity={0} />
+                  <stop offset="5%" stopColor="var(--color-blue-500)" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="var(--color-blue-500)" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -357,9 +383,9 @@ export const ReporteFinanciero = ({ transactions }) => {
               <YAxis tick={{ fontSize: 10 }} tickFormatter={solesCorto} />
               <Tooltip content={<TooltipSoles />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Area type="monotone" dataKey="acumulado" name="Saldo acumulado" stroke="#0ea7b3" fill="url(#rfAcum)" strokeWidth={2} animationDuration={1200} />
-              <Bar dataKey="ingresos" name="Ingresos" fill="#10b981" radius={[5, 5, 0, 0]} animationDuration={900} />
-              <Bar dataKey="egresos" name="Egresos" fill="#f43f5e" radius={[5, 5, 0, 0]} animationDuration={900} />
+              <Area isAnimationActive={false} type="monotone" dataKey="acumulado" name="Saldo acumulado" stroke="var(--color-blue-500)" fill="url(#rfAcum)" strokeWidth={2} />
+              <Bar isAnimationActive={false} maxBarSize={56} dataKey="ingresos" name="Ingresos" fill="var(--color-emerald-500)" radius={[5, 5, 0, 0]} />
+              <Bar isAnimationActive={false} maxBarSize={56} dataKey="egresos" name="Egresos" fill="var(--color-rose-500)" radius={[5, 5, 0, 0]} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -371,7 +397,7 @@ export const ReporteFinanciero = ({ transactions }) => {
           <ListaBarras filas={ingCat} total={totIng} activo={filtroCat} onClick={(k) => setFiltroCat((f) => (f === k ? "" : k))} />
         </Tarjeta>
         <Tarjeta titulo="Egresos por categoría" icono={Tags} color="bg-rose-100 text-rose-700" accion={<span className="text-[11px] text-slate-400">clic para filtrar</span>}>
-          <ListaBarras filas={egrCat} total={totEgr} activo={filtroCat} colorDe={(_, i) => ["#f43f5e", "#f97316", "#f59e0b", "#a855f7", "#64748b", "#38bdf8", "#84cc16"][i % 7]} onClick={(k) => setFiltroCat((f) => (f === k ? "" : k))} />
+          <ListaBarras filas={egrCat} total={totEgr} activo={filtroCat} colorDe={(_, i) => ["var(--color-rose-500)", "var(--color-orange-500)", "var(--color-amber-500)", "var(--color-purple-500)", "#64748b", "var(--color-sky-400)", "var(--color-lime-500)"][i % 7]} onClick={(k) => setFiltroCat((f) => (f === k ? "" : k))} />
         </Tarjeta>
       </div>
 
@@ -386,7 +412,7 @@ export const ReporteFinanciero = ({ transactions }) => {
               <div className="col-span-2 h-40">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={filas} dataKey="valor" nameKey="nombre" innerRadius="55%" outerRadius="90%" paddingAngle={3} animationDuration={1000} onClick={(d) => setFiltroMetodo((f) => (f === d.clave ? "" : d.clave))} className="cursor-pointer">
+                    <Pie isAnimationActive={false} data={filas} dataKey="valor" nameKey="nombre" innerRadius="55%" outerRadius="90%" paddingAngle={3} onClick={(d) => setFiltroMetodo((f) => (f === d.clave ? "" : d.clave))} className="cursor-pointer">
                       {filas.map((f) => (
                         <Cell key={f.clave} fill={COLOR_METODO[f.clave] || "#94a3b8"} stroke="none" opacity={!filtroMetodo || filtroMetodo === f.clave ? 1 : 0.35} />
                       ))}
@@ -413,8 +439,8 @@ export const ReporteFinanciero = ({ transactions }) => {
                 <XAxis dataKey="dia" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 10 }} tickFormatter={solesCorto} />
                 <Tooltip content={<TooltipSoles />} cursor={{ fill: "rgba(14,167,179,0.08)" }} />
-                <Bar dataKey="ingresos" name="Ingresos" fill="#10b981" radius={[6, 6, 0, 0]} animationDuration={900} />
-                <Bar dataKey="egresos" name="Egresos" fill="#f43f5e" radius={[6, 6, 0, 0]} animationDuration={900} />
+                <Bar isAnimationActive={false} maxBarSize={56} dataKey="ingresos" name="Ingresos" fill="var(--color-emerald-500)" radius={[6, 6, 0, 0]} />
+                <Bar isAnimationActive={false} maxBarSize={56} dataKey="egresos" name="Egresos" fill="var(--color-rose-500)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

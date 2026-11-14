@@ -104,6 +104,17 @@ export function PanelAlertasAdmin() {
   const { pendientes, alertas, marcarVista } = useAlertasAdmin(true, 100);
   const [verTodas, setVerTodas] = useState(false);
   const lista = verTodas ? alertas : alertas.filter((a) => !a.seen);
+  if (!verTodas && lista.length === 0)
+    return (
+      <div className="flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-2xl px-4 py-2 text-xs text-slate-500">
+        <span className="flex items-center gap-2">
+          <CalendarClock className="w-4 h-4 text-slate-400" /> Sin cambios nuevos de fecha de pago.
+        </span>
+        <button type="button" onClick={() => setVerTodas(true)} className="font-semibold text-slate-600 hover:text-slate-900 cursor-pointer">
+          Ver historial
+        </button>
+      </div>
+    );
   return (
     <section className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">

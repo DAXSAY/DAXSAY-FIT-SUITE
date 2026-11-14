@@ -1,7 +1,7 @@
 // Estado de la copia de los registros del sistema a sus tablas de MySQL
 // (citas, rutinas, dietas, medidas, fisioterapia, asistencias...). Solo admin.
 import React, { useEffect, useState } from "react";
-import { Database, RefreshCw, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { Database, RefreshCw, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, HardDriveDownload } from "lucide-react";
 import { api } from "../../api/cliente";
 
 const NOMBRES = {
@@ -94,6 +94,7 @@ export const SyncStatusPanel = () => {
         )}
       </div>
       {mensaje && <p className="text-xs font-bold text-slate-700 mt-2">{mensaje}</p>}
+      <CopiasSeguridad />
 
       {abierto && (
         <div className="mt-4 space-y-3">
@@ -121,6 +122,54 @@ export const SyncStatusPanel = () => {
           )}
         </div>
       )}
+    </div>
+  );
+};
+
+// Copias de seguridad automáticas (una por día, se guardan en la carpeta "respaldos")
+const tam = (b) => (b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
+const CopiasSeguridad = () => {
+  const [estado, setEstado] = useState(null);
+  const [haciendo, setHaciendo] = useState(false);
+  const [error, setError] = useState("");
+  const cargar = () => api("/respaldos").then(setEstado).catch(() => setEstado(null));
+  useEffect(() => {
+    cargar();
+  }, []);
+  if (!estado) return null;
+  const ultima = estado.copias[0];
+  const horas = ultima ? (Date.now() - new Date(ultima.fecha).getTime()) / 3600000 : Infinity;
+  const ahora = async () => {
+    setHaciendo(true);
+    setError("");
+    try {
+      setEstado(await api("/respaldos", { method: "POST" }));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setHaciendo(false);
+    }
+  };
+  return (
+    <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div className="flex items-center gap-2 min-w-0">
+        <HardDriveDownload className={`w-4 h-4 shrink-0 ${horas > 30 ? "text-amber-600" : "text-emerald-600"}`} />
+        <div className="min-w-0">
+          <strong className="text-slate-800">Copia de seguridad diaria</strong>
+          <span className="block text-slate-500 truncate">
+            {ultima
+              ? `Última: ${new Date(ultima.fecha).toLocaleString("es-PE", { timeZone: "America/Lima", dateStyle: "short", timeStyle: "short" })} · ${tam(ultima.bytes)} · ${estado.copias.length} guardadas`
+              : "Aún no hay copias"}
+            {" · "}
+            <span className="font-mono">{estado.carpeta}</span>
+          </span>
+          {(error || estado.ultimoError) && <span className="block text-rose-600 font-bold">{error || estado.ultimoError}</span>}
+          {!error && !estado.ultimoError && estado.ultimoAviso && <span className="block text-amber-700 font-bold">{estado.ultimoAviso}</span>}
+        </div>
+      </div>
+      <button onClick={ahora} disabled={haciendo || estado.enCurso} className="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-60">
+        <RefreshCw className={`w-3.5 h-3.5 ${haciendo ? "animate-spin" : ""}`} /> {haciendo ? "Copiando…" : "Hacer copia ahora"}
+      </button>
     </div>
   );
 };

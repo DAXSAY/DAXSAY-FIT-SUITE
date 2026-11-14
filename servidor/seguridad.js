@@ -39,6 +39,16 @@ export async function requiereSesion(req, res, next) {
     if (!filas || filas.length === 0) throw new ErrorHttp(401, "La sesión fue cerrada. Vuelve a iniciar sesión");
 
     req.usuario = { idusuario: filas[0].idusuario, rol: filas[0].rol, tokenId: carga.jti };
+    // Sesión deslizante: mientras la persona sigue trabajando, la sesión se renueva sola
+    // (pasada la mitad del tiempo se entrega un token nuevo con el mismo id de sesión).
+    const restante = carga.exp - Math.floor(Date.now() / 1000);
+    if (restante < (HORAS_SESION * 3600) / 2) {
+      res.setHeader("X-Nuevo-Token", firmarToken(filas[0].idusuario, carga.jti));
+      consultar("UPDATE sesiones SET fecha_expira = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE token_id = ? AND fecha_cierre IS NULL", [
+        HORAS_SESION,
+        carga.jti,
+      ]).catch(() => {});
+    }
     next();
   } catch (e) {
     next(e);

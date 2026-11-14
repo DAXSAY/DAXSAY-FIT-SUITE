@@ -7,8 +7,30 @@
 // =====================================================================
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Contact, Plus, Phone, MessageCircle, CalendarClock, Ticket, UserCheck, UserX, Search, X, Clock, History, Sparkles,
-  CheckCircle2, AlertTriangle, Footprints, Trash2, Pencil,
+  Contact,
+  Plus,
+  Phone,
+  MessageCircle,
+  CalendarClock,
+  Ticket,
+  UserCheck,
+  UserX,
+  Search,
+  X,
+  Clock,
+  History,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+  Footprints,
+  Trash2,
+  Pencil,
+  Users,
+  ClipboardList,
+  BarChart3,
+  LayoutGrid,
+  Columns3,
+  TrendingUp,
 } from "lucide-react";
 import { QrCodigo, descargarTarjetaQR, descargarPdfQR, compartirTarjetaQR, EscanerQR, camaraQRDisponible } from "../common/QrCodigo";
 import { api } from "../../api/cliente";
@@ -16,7 +38,11 @@ import { useGym } from "../../context/GymContext";
 import { userCan } from "../../config/roles";
 import { hoyISO } from "../../utils/fecha";
 import { TelWhatsApp } from "../common/TelWhatsApp";
-import { PaseNoConcretado, PanelPases, ReporteCrm } from "./CrmPases";
+import { PaseNoConcretado, PanelPases } from "./CrmPases";
+import { ReporteCrm } from "./CrmReporte";
+import { RegistroCrm } from "./CrmRegistro";
+import { TarjetaKpi, seriePorDia } from "../common/TarjetaKpi";
+import { ChipResponsable, Luces, PanelResponsable } from "./Responsable";
 import { NewMemberModal } from "../members/NewMemberModal";
 
 export const ESTADOS_CRM = {
@@ -465,6 +491,7 @@ const DetalleProspecto = ({ p, puedeEditar, puedeEliminar, gym, onCambio, onEdit
             )}
           </div>
         </div>
+        <PanelResponsable p={p} admin={currentUser?.role === "admin"} onCambio={onCambio} />
         {p.notes && <p className="text-sm text-slate-600 bg-slate-50 rounded-xl px-3 py-2 border border-slate-200">📝 {p.notes}</p>}
 
         {/* Pase libre */}
@@ -622,6 +649,64 @@ const DetalleProspecto = ({ p, puedeEditar, puedeEliminar, gym, onCambio, onEdit
 // ---------------------------------------------------------------------
 // Módulo principal
 // ---------------------------------------------------------------------
+// Colores por etapa (borde izquierdo y avatar)
+const COLOR_ETAPA = {
+  nuevo: { borde: "border-l-sky-500", avatar: "from-sky-500 to-cyan-400", cabeza: "from-sky-500 to-cyan-400" },
+  seguimiento: { borde: "border-l-amber-500", avatar: "from-amber-500 to-orange-400", cabeza: "from-amber-500 to-orange-400" },
+  pase_entregado: { borde: "border-l-violet-500", avatar: "from-violet-600 to-fuchsia-500", cabeza: "from-violet-600 to-fuchsia-500" },
+  matriculado: { borde: "border-l-emerald-500", avatar: "from-emerald-600 to-teal-400", cabeza: "from-emerald-600 to-teal-400" },
+  de_baja: { borde: "border-l-slate-400", avatar: "from-slate-500 to-slate-400", cabeza: "from-slate-500 to-slate-400" },
+};
+
+/** Tarjeta de un interesado: se usa en la lista y en el tablero */
+const TarjetaInteresado = ({ p, onAbrir, compacta = false }) => {
+  const E = ESTADOS_CRM[p.status] || ESTADOS_CRM.nuevo;
+  const col = COLOR_ETAPA[p.status] || COLOR_ETAPA.nuevo;
+  const c = estadoCita(p);
+  const I = CONTACTO[p.contactType]?.icono;
+  return (
+    <button type="button" onClick={() => onAbrir(p)} className={`rd-levanta w-full text-left rounded-2xl border border-slate-200 border-l-4 ${col.borde} bg-white p-3 cursor-pointer space-y-2`}>
+      <div className="flex items-start gap-2.5">
+        <span className={`w-9 h-9 rounded-xl bg-gradient-to-br ${col.avatar} text-white font-black flex items-center justify-center shrink-0 shadow-sm`}>{p.fullName.charAt(0)}</span>
+        <span className="min-w-0 flex-1">
+          <b className="block truncate text-slate-900">{p.fullName}</b>
+          <span className="text-xs text-slate-500">
+            {compacta ? p.phone : <TelWhatsApp tel={p.phone} />} · {p.planName || "plan por definir"}
+          </span>
+        </span>
+        {!compacta && <span className={`px-2 py-0.5 rounded-full border text-[10px] font-black whitespace-nowrap ${E.chip}`}>{E.label}</span>}
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5 text-xs">
+        {paseNoUsado(p) && <span className="px-2 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-rose-800 font-black">⚠️ No vino · reprogramar</span>}
+        {p.contactDate && I && !["matriculado", "de_baja"].includes(p.status) && (
+          <span className="inline-flex items-center gap-1 text-slate-600">
+            <I className="w-3.5 h-3.5" /> {fCorta(p.contactDate)} {p.contactTime}
+          </span>
+        )}
+        {c && <span className={`px-2 py-0.5 rounded-full border text-[10px] font-black ${c.tono}`}>{c.texto}</span>}
+        {p.passCode && !compacta && (
+          <span className="px-2 py-0.5 rounded-full bg-violet-50 border border-violet-200 text-violet-700 font-mono text-[10px] font-black">
+            {p.passCode} {p.passUsedAt ? "✓" : ""}
+          </span>
+        )}
+        {p.status === "matriculado" && (
+          <span className="inline-flex items-center gap-1 text-emerald-700 font-bold">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Seguimiento conseguido
+          </span>
+        )}
+        {p.status === "de_baja" && p.dropReason && <span className="text-slate-500">{p.dropReason}</span>}
+        <span className="ml-auto inline-flex items-center gap-2">
+          <Luces p={p} compacto />
+          {!compacta && <span className="text-[10px] text-slate-400">{p.followUps} mov.</span>}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <ChipResponsable p={p} />
+      </div>
+    </button>
+  );
+};
+
 export const CrmModule = () => {
   const { plans, currentUser, gymConfig } = useGym();
   const [lista, setLista] = useState([]);
@@ -633,6 +718,21 @@ export const CrmModule = () => {
   const [abierto, setAbierto] = useState(null);
   const [paseNuevo, setPaseNuevo] = useState(null);
   const [vista, setVista] = useState("interesados");
+  const [modo, setModo] = useState(() => {
+    try {
+      return localStorage.getItem("radical_crm_modo") || "tablero";
+    } catch {
+      return "tablero";
+    }
+  });
+  const cambiarModo = (m) => {
+    setModo(m);
+    try {
+      localStorage.setItem("radical_crm_modo", m);
+    } catch {
+      /* nada */
+    }
+  };
   const [matricular, setMatricular] = useState(null);
   const [codigo, setCodigo] = useState("");
   const [paseMsg, setPaseMsg] = useState(null);
@@ -755,12 +855,12 @@ export const CrmModule = () => {
   return (
     <div className="space-y-4">
       {/* Portada */}
-      <div className="rd-portada rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+      <div className="rd-portada rd-cabecera flex flex-wrap items-center justify-between gap-4">
         <div>
           <span className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-300 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" /> CRM · Prospectos
+            <Sparkles className="w-3.5 h-3.5" /> CRM
           </span>
-          <h1 className="text-2xl font-black mt-1">Interesados que vinieron a preguntar</h1>
+          <h1 className="text-2xl font-black mt-1">Interesados</h1>
           <p className="text-sm text-slate-300 mt-0.5">Anota su celular, el plan que le interesa y cuándo contactarlo. Te avisamos 30 minutos antes.</p>
         </div>
         {puedeCrear && (
@@ -770,20 +870,72 @@ export const CrmModule = () => {
         )}
       </div>
 
+      {/* Validar pase libre: siempre arriba y a la vista */}
+      <form onSubmit={validarPase} className="rd-validar-pase relative overflow-hidden rounded-2xl p-4 text-white shadow-lg">
+        <div className="pointer-events-none absolute -right-10 -top-14 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="flex items-center gap-3 lg:w-72 shrink-0">
+            <span className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+              <Ticket className="w-6 h-6" />
+            </span>
+            <div>
+              <p className="text-base font-black leading-tight">Validar pase libre</p>
+              <p className="text-[11px] text-white/80">Escribe o escanea el código del pase</p>
+            </div>
+          </div>
+          <div className="flex-1 flex flex-wrap gap-2">
+            <input
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+              placeholder="Ej. DAVID-K7Q2M"
+              className="flex-1 min-w-[200px] px-4 py-2.5 rounded-xl bg-white text-slate-900 border-0 text-base font-mono font-black tracking-widest placeholder:text-slate-400 placeholder:font-semibold focus:outline-none focus:ring-4 focus:ring-white/40"
+            />
+            <button disabled={!codigo.trim()} className="px-5 py-2.5 rounded-xl bg-white text-violet-700 disabled:opacity-60 text-sm font-black cursor-pointer hover:bg-violet-50">
+              Validar
+            </button>
+            {camaraQRDisponible() && (
+              <button type="button" onClick={() => setCamara(true)} className="px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-sm font-bold cursor-pointer">
+                📷 Escanear QR
+              </button>
+            )}
+          </div>
+        </div>
+        {paseMsg && (
+          <p className={`relative mt-3 px-3 py-2 rounded-xl text-sm font-bold ${paseMsg.ok ? "bg-emerald-500/90 text-white" : "bg-white text-rose-600"}`}>{paseMsg.texto}</p>
+        )}
+        {camara && (
+          <EscanerQR
+            onCerrar={() => setCamara(false)}
+            onLeido={(t) => {
+              setCamara(false);
+              setCodigo(String(t).toUpperCase());
+              validarPase(null, String(t).toUpperCase());
+            }}
+          />
+        )}
+      </form>
+
       {/* Pestañas */}
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
         {[
-          ["interesados", "👥 Interesados"],
-          ["pases", "🎟️ Pases libres"],
-          ["reporte", "📊 Reporte"],
-        ].map(([k, l]) => (
+          ["interesados", "Interesados", "Tablero y agenda", Users],
+          ["pases", "Pases libres", "Quién vino y quién no", Ticket],
+          ["registro", "Registro", "Base de datos y descargas", ClipboardList],
+          ["reporte", "Reporte", "Cómo nos va", BarChart3],
+        ].map(([k, l, sub, I]) => (
           <button
             key={k}
             type="button"
             onClick={() => setVista(k)}
-            className={`px-4 py-2 rounded-xl text-sm font-black border cursor-pointer ${vista === k ? "bg-blue-600 border-blue-600 text-white shadow" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}
+            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left cursor-pointer transition ${vista === k ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow" : "text-slate-700 hover:bg-slate-50"}`}
           >
-            {l}
+            <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${vista === k ? "bg-white/20" : "bg-slate-100 text-slate-600"}`}>
+              <I className="w-4 h-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-black leading-tight">{l}</span>
+              <span className={`block text-[11px] truncate ${vista === k ? "text-white/80" : "text-slate-500"}`}>{sub}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -797,24 +949,81 @@ export const CrmModule = () => {
           }}
         />
       )}
-      {vista === "reporte" && <ReporteCrm />}
+      {vista === "reporte" && (
+        <ReporteCrm
+          onAbrirProspecto={(id, fila) => {
+            const p = lista.find((x) => x.id === id) || fila;
+            if (p) setAbierto(p);
+          }}
+        />
+      )}
+      {vista === "registro" && (
+        <RegistroCrm
+          onAbrirProspecto={(id, fila) => {
+            const p = lista.find((x) => x.id === id) || fila;
+            if (p) setAbierto(p);
+          }}
+        />
+      )}
 
       {vista === "interesados" && (
       <>
-      {/* Indicadores */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {[
-          ["Por atender", kpis.abiertos, "bg-sky-50 border-sky-200 text-sky-900"],
-          ["Contactar hoy", kpis.hoy, "bg-orange-50 border-orange-200 text-orange-900"],
-          ["Con pase libre", kpis.pases, "bg-violet-50 border-violet-200 text-violet-900"],
-          ["Matriculados este mes", kpis.matricMes, "bg-emerald-50 border-emerald-200 text-emerald-900"],
-          ["Conversión", `${kpis.conversion}%`, "bg-blue-50 border-blue-200 text-blue-900"],
-        ].map(([l, v, c]) => (
-          <div key={l} className={`rd-aparece rounded-2xl border p-4 ${c}`}>
-            <p className="text-[11px] font-black uppercase tracking-wider opacity-80">{l}</p>
-            <p className="text-2xl font-black mt-0.5">{v}</p>
-          </div>
-        ))}
+      {/* Indicadores (mismo estilo que el Dashboard general): se tocan para filtrar */}
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {[
+            ["nuevo", "Nuevos", Sparkles, "teal", "sin contactar aún"],
+            ["seguimiento", "En seguimiento", Phone, "ambar", "con llamada o cita"],
+            ["pase_entregado", "Con pase libre", Ticket, "violeta", "esperando su visita"],
+            ["matriculado", "Matriculados", UserCheck, "verde", `${kpis.matricMes} este mes`],
+          ].map(([k, l, I, tono, sub]) => {
+            const deEtapa = lista.filter((p) => p.status === k);
+            return (
+              <TarjetaKpi
+                key={k}
+                titulo={l}
+                valor={deEtapa.length}
+                sub={sub}
+                icono={I}
+                tono={tono}
+                serie={seriePorDia(deEtapa.map((p) => (k === "matriculado" ? p.updatedAt : p.createdAt)))}
+                activo={filtro === k && modo === "lista"}
+                onClick={() => (setFiltro(k), cambiarModo("lista"))}
+                title="Toca para ver la lista"
+              />
+            );
+          })}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <TarjetaKpi
+            titulo="Contactar hoy"
+            valor={kpis.hoy}
+            sub="llamadas, mensajes y visitas"
+            icono={Clock}
+            tono="azul"
+            serie={seriePorDia(lista.map((p) => p.contactDate))}
+            activo={filtro === "hoy" && modo === "lista"}
+            onClick={() => (setFiltro("hoy"), cambiarModo("lista"))}
+          />
+          <TarjetaKpi
+            titulo="No vinieron con su pase"
+            valor={lista.filter(paseNoUsado).length}
+            sub="Llamar y reprogramar"
+            icono={AlertTriangle}
+            alerta
+            serie={seriePorDia(lista.filter(paseNoUsado).map((p) => p.passDate))}
+            onClick={() => (setFiltro("no_vino"), cambiarModo("lista"))}
+          />
+          <TarjetaKpi
+            titulo="Conversión"
+            valor={kpis.conversion}
+            sufijo="%"
+            sub="de los casos cerrados se matricularon"
+            icono={TrendingUp}
+            tono="verde"
+            serie={seriePorDia(lista.filter((p) => p.status === "matriculado").map((p) => p.updatedAt))}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -845,34 +1054,6 @@ export const CrmModule = () => {
               })}
             </ol>
           </div>
-          <form onSubmit={validarPase} className="bg-white rounded-2xl border border-violet-200 p-4 space-y-2">
-            <p className="text-xs font-black uppercase tracking-wider text-violet-800 flex items-center gap-1.5">
-              <Ticket className="w-4 h-4" /> Validar pase libre
-            </p>
-            <div className="flex gap-2">
-              <input value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())} placeholder="Ej. DAVID-K7Q2M" className="flex-1 px-3 py-2 rounded-xl border border-violet-200 text-sm font-mono font-bold tracking-wider" />
-              <button disabled={!codigo.trim()} className="px-4 py-2 rounded-xl bg-violet-600 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">
-                Validar
-              </button>
-            </div>
-            {camaraQRDisponible() && (
-              <button type="button" onClick={() => setCamara(true)} className="w-full py-1.5 rounded-xl border border-violet-300 text-violet-800 text-xs font-bold cursor-pointer hover:bg-violet-50">
-                📷 Escanear QR con la cámara
-              </button>
-            )}
-            <p className="text-[11px] text-slate-500">Con el lector USB: haz clic en el recuadro y escanea; el código se valida solo.</p>
-            {camara && (
-              <EscanerQR
-                onCerrar={() => setCamara(false)}
-                onLeido={(t) => {
-                  setCamara(false);
-                  setCodigo(String(t).toUpperCase());
-                  validarPase(null, String(t).toUpperCase());
-                }}
-              />
-            )}
-            {paseMsg && <p className={`text-sm font-bold ${paseMsg.ok ? "text-emerald-700" : "text-rose-600"}`}>{paseMsg.texto}</p>}
-          </form>
         </div>
 
         {/* Lista */}
@@ -882,7 +1063,41 @@ export const CrmModule = () => {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por nombre, celular o código de pase" className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm" />
             </div>
+            <div className="flex rounded-xl bg-slate-100 p-1">
+              {[["tablero", "Tablero", Columns3], ["lista", "Lista", LayoutGrid]].map(([k, l, I]) => (
+                <button key={k} type="button" onClick={() => cambiarModo(k)} className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 cursor-pointer ${modo === k ? "bg-white text-slate-900 shadow" : "text-slate-500"}`}>
+                  <I className="w-3.5 h-3.5" /> {l}
+                </button>
+              ))}
+            </div>
           </div>
+          {modo === "tablero" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-3">
+              {["nuevo", "seguimiento", "pase_entregado", "matriculado"].map((k) => {
+                const q = busca.trim().toLowerCase();
+                const deEtapa = lista
+                  .filter((p) => p.status === k)
+                  .filter((p) => !q || p.fullName.toLowerCase().includes(q) || String(p.phone).includes(q) || (p.passCode || "").toLowerCase().includes(q))
+                  .filter((p) => k !== "matriculado" || String(p.updatedAt).slice(0, 7) === hoyISO().slice(0, 7));
+                return (
+                  <div key={k} className="rounded-2xl bg-slate-50 border border-slate-200 flex flex-col max-h-[640px]">
+                    <div className={`px-3 py-2 rounded-t-2xl bg-gradient-to-r ${COLOR_ETAPA[k].cabeza} text-white flex items-center justify-between`}>
+                      <span className="text-xs font-black uppercase tracking-wider">{ESTADOS_CRM[k].label}{k === "matriculado" ? " · este mes" : ""}</span>
+                      <span className="px-2 rounded-full bg-white/25 text-xs font-black">{deEtapa.length}</span>
+                    </div>
+                    <div className="p-2 space-y-2 overflow-y-auto">
+                      {deEtapa.map((p) => (
+                        <TarjetaInteresado key={p.id} p={p} onAbrir={setAbierto} compacta />
+                      ))}
+                      {!deEtapa.length && <p className="text-xs text-slate-400 text-center py-6">Nadie en esta etapa</p>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {modo === "lista" && (
+          <>
           <div className="flex flex-wrap gap-1.5">
             {FILTROS.map(([k, l, n]) => (
               <button
@@ -912,47 +1127,12 @@ export const CrmModule = () => {
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {visibles.map((p) => {
-              const E = ESTADOS_CRM[p.status];
-              const c = estadoCita(p);
-              const I = CONTACTO[p.contactType]?.icono;
-              return (
-                <button key={p.id} type="button" onClick={() => setAbierto(p)} className="rd-levanta text-left rounded-2xl border border-slate-200 bg-white p-3.5 cursor-pointer space-y-2">
-                  <div className="flex items-start gap-2.5">
-                    <span className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 font-black flex items-center justify-center shrink-0">{p.fullName.charAt(0)}</span>
-                    <span className="min-w-0 flex-1">
-                      <b className="block truncate text-slate-900">{p.fullName}</b>
-                      <span className="text-xs text-slate-500">
-                        <TelWhatsApp tel={p.phone} /> · {p.planName || "plan por definir"}
-                      </span>
-                    </span>
-                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-black whitespace-nowrap ${E.chip}`}>{E.label}</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                    {paseNoUsado(p) && <span className="px-2 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-rose-800 font-black">⚠️ No vino · reprogramar</span>}
-                    {p.contactDate && I && !["matriculado", "de_baja"].includes(p.status) && (
-                      <span className="inline-flex items-center gap-1 text-slate-600">
-                        <I className="w-3.5 h-3.5" /> {fCorta(p.contactDate)} {p.contactTime}
-                      </span>
-                    )}
-                    {c && <span className={`px-2 py-0.5 rounded-full border text-[10px] font-black ${c.tono}`}>{c.texto}</span>}
-                    {p.passCode && (
-                      <span className="px-2 py-0.5 rounded-full bg-violet-50 border border-violet-200 text-violet-700 font-mono text-[10px] font-black">
-                        {p.passCode} {p.passUsedAt ? "✓" : ""}
-                      </span>
-                    )}
-                    {p.status === "matriculado" && (
-                      <span className="inline-flex items-center gap-1 text-emerald-700 font-bold">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Seguimiento conseguido
-                      </span>
-                    )}
-                    {p.status === "de_baja" && p.dropReason && <span className="text-slate-500">{p.dropReason}</span>}
-                    <span className="ml-auto text-[10px] text-slate-400">{p.followUps} mov.</span>
-                  </div>
-                </button>
-              );
-            })}
+            {visibles.map((p) => (
+              <TarjetaInteresado key={p.id} p={p} onAbrir={setAbierto} />
+            ))}
           </div>
+          </>
+          )}
         </div>
       </div>
       </>
@@ -995,7 +1175,7 @@ export const CrmModule = () => {
       {matricular && (
         <NewMemberModal
           isOpen
-          inicial={{ fullName: matricular.fullName, phone: matricular.phone, dni: matricular.dni, email: matricular.email, planId: matricular.planId, notes: matricular.notes }}
+          inicial={{ prospectId: matricular.id, fullName: matricular.fullName, phone: matricular.phone, dni: matricular.dni, email: matricular.email, planId: matricular.planId, notes: matricular.notes }}
           onClose={() => setMatricular(null)}
           onCreado={async (nuevo) => {
             try {

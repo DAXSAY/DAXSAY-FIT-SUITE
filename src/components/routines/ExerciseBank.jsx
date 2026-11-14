@@ -212,7 +212,7 @@ export const ExerciseLibrary = ({ exercises, onOpen, onNew }) => {
           Cargando banco de ejercicios…
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {filtered.slice(0, limit).map((ex) => (
             <button
               key={ex.id}
@@ -257,7 +257,8 @@ export const ExerciseDetail = ({ ex, onClose, onAdd }) => {
   if (!ex) return null;
   const steps = ex.steps?.length ? ex.steps : (ex.instructions || "").split(/(?<=\.)\s+/).filter(Boolean);
   return (
-    <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col">
+    <div className="fixed inset-0 z-50 rd-velo">
+<div className="rd-hoja flex flex-col">
       <div className="bg-slate-900 text-white px-4 sm:px-8 py-4 flex items-center justify-between gap-4">
         <div className="min-w-0">
           <span className="text-xs font-bold uppercase tracking-widest text-cyan-300">
@@ -342,6 +343,7 @@ export const ExerciseDetail = ({ ex, onClose, onAdd }) => {
         </div>
       </div>
     </div>
+</div>
   );
 };
 
@@ -355,7 +357,7 @@ const matchQuery = (ex, nq) => {
   return names.some((n) => n.includes(nq)) || norm(ex.target || "").includes(nq);
 };
 
-export const ExercisePicker = ({ exercises, onPick, picked = [] }) => {
+export const ExercisePicker = ({ exercises, onPick, picked = [], compacto = false }) => {
   const [q, setQ] = useState("");
   const [group, setGroup] = useState("");
   const [limit, setLimit] = useState(30);
@@ -421,7 +423,8 @@ export const ExercisePicker = ({ exercises, onPick, picked = [] }) => {
             {group && group !== "all" ? ` de ${MUSCLE_LABELS[group]}` : ""}
             {q ? ` con «${q}»` : ""} · toca para agregar (puedes agregar varios)
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2 max-h-[480px] overflow-y-auto pr-1">
+          {/* Mismo formato en todo el sistema: 4 por fila (2 en celular), tarjetas del mismo tamaño */}
+          <div className={`grid grid-cols-2 min-[480px]:grid-cols-4 gap-2 overflow-y-auto pr-1 ${compacto ? "max-h-[420px]" : "max-h-[480px]"}`}>
             {results.slice(0, limit).map((ex) => {
               const n = cuenta(ex.id);
               return (
@@ -429,15 +432,15 @@ export const ExercisePicker = ({ exercises, onPick, picked = [] }) => {
                   type="button"
                   key={ex.id}
                   onClick={() => onPick(ex)}
-                  className={`relative text-left rounded-xl border p-2 cursor-pointer transition-colors ${n ? "border-emerald-400 bg-emerald-50" : "border-slate-200 hover:border-blue-400 hover:bg-blue-50/40"}`}
+                  className={`relative flex flex-col text-left rounded-xl border p-1.5 cursor-pointer transition-colors h-full ${n ? "border-emerald-400 bg-emerald-50" : "border-slate-200 hover:border-blue-400 hover:bg-blue-50/40"}`}
                 >
                   {n > 0 && (
                     <span className="absolute top-1.5 right-1.5 min-w-5 h-5 px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
                       ✓{n > 1 ? n : ""}
                     </span>
                   )}
-                  <ExerciseThumb ex={ex} className="w-full h-24 rounded-lg bg-white" />
-                  <span className="block text-xs font-bold text-slate-900 mt-1.5 line-clamp-2 leading-tight">{ex.name}</span>
+                  <ExerciseThumb ex={ex} className="w-full aspect-square rounded-lg bg-white" />
+                  <span className="block text-[11px] font-bold text-slate-900 mt-1 line-clamp-2 leading-tight min-h-[2.5em]">{ex.name}</span>
                   <span className="block text-[10px] text-slate-500 truncate">{MUSCLE_LABELS[ex.muscleGroup] || ex.muscleGroup} · {ex.equipment}</span>
                 </button>
               );

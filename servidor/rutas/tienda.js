@@ -6,13 +6,13 @@
 // registran el ingreso en caja dentro del turno abierto.
 // =====================================================================
 import { Router } from "express";
-import { consultar, pool } from "../db.js";
+import { consultar, pool, enFila } from "../db.js";
 import { ErrorHttp, exigirCajaAbierta, requierePermiso, soloPersonal, tienePermiso } from "../seguridad.js";
 
 const router = Router();
 router.use(soloPersonal);
 
-const CATEGORIAS = ["bebidas", "suplementos", "snacks", "accesorios", "ropa"];
+const CATEGORIAS = ["bebidas", "suplementos", "quemadores", "snacks", "accesorios", "ropa"];
 const METODOS = ["efectivo", "tarjeta", "transferencia", "yape_plin"];
 const r2 = (n) => Math.round(Number(n || 0) * 100) / 100;
 const vacio = (v) => v === undefined || v === null || String(v).trim() === "";
@@ -270,7 +270,7 @@ async function ventasCompletas(where, params) {
 }
 
 // POST /ventas { items: [{productId, quantity}], paymentMethod, memberId?, customerName? }
-router.post("/ventas", requierePermiso(["store", "finance"], "crear"), async (req, res, next) => {
+const registrarVenta = async (req, res, next) => {
   const cx = await pool.getConnection();
   try {
     const d = req.body || {};
@@ -328,7 +328,9 @@ router.post("/ventas", requierePermiso(["store", "finance"], "crear"), async (re
   } finally {
     cx.release();
   }
-});
+};
+// Ventas una tras otra (el número de ticket es correlativo)
+router.post("/ventas", requierePermiso(["store", "finance"], "crear"), (req, res, next) => enFila("tienda-ventas", () => registrarVenta(req, res, next)));
 
 // GET /ventas?desde=&hasta=
 router.get("/ventas", requierePermiso(["store", "finance"], "ver"), async (req, res, next) => {

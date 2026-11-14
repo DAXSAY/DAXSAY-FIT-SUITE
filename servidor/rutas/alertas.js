@@ -68,10 +68,11 @@ router.get("/", soloAdmin, async (req, res, next) => {
          FROM alertas_administracion al
          LEFT JOIN alumnos a ON a.idalumno = al.idalumno
          LEFT JOIN usuarios u ON u.idusuario = al.idusuario_origen
+        WHERE al.tipo <> 'olvido_clave'
         ORDER BY al.vista, al.fecha DESC, al.idalerta DESC
         LIMIT ${limite}`,
     );
-    const [{ n }] = await consultar("SELECT COUNT(*) AS n FROM alertas_administracion WHERE vista = 0");
+    const [{ n }] = await consultar("SELECT COUNT(*) AS n FROM alertas_administracion WHERE vista = 0 AND tipo <> 'olvido_clave'");
     res.json({ pendientes: Number(n), alertas: filas.map(aAlerta) });
   } catch (e) {
     next(e);
@@ -85,10 +86,10 @@ router.put("/:id/vista", soloAdmin, async (req, res, next) => {
     const todas = req.params.id === "todas";
     await consultar(
       `UPDATE alertas_administracion SET vista = 1, fecha_vista = NOW(), idusuario_vista = ?
-        WHERE vista = 0 ${todas ? "" : "AND idalerta = ?"}`,
+        WHERE vista = 0 AND tipo <> 'olvido_clave' ${todas ? "" : "AND idalerta = ?"}`,
       todas ? [req.usuario.idusuario] : [req.usuario.idusuario, req.params.id],
     );
-    const [{ n }] = await consultar("SELECT COUNT(*) AS n FROM alertas_administracion WHERE vista = 0");
+    const [{ n }] = await consultar("SELECT COUNT(*) AS n FROM alertas_administracion WHERE vista = 0 AND tipo <> 'olvido_clave'");
     res.json({ pendientes: Number(n) });
   } catch (e) {
     next(e);

@@ -12,14 +12,15 @@ import {
   ShieldAlert,
   Trash2,
   X,
-  UserCheck,
   CalendarDays,
   AlertCircle,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 
+import { SelectorAlumno, coincideAlumno } from "../common/BuscarAlumno";
 const HOURS = [
   "07:00 AM",
   "08:00 AM",
@@ -189,6 +190,7 @@ export const AppointmentsScheduleModule = () => {
       const matchesSearch =
         !searchTerm ||
         a.memberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (members.find((m) => m.id === a.memberId) && coincideAlumno(members.find((m) => m.id === a.memberId), searchTerm)) ||
         a.staffName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         a.memberDni.includes(searchTerm);
       return matchesDate && matchesHour && matchesService && matchesSearch;
@@ -415,50 +417,24 @@ export const AppointmentsScheduleModule = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner & Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
+      <div className="rd-portada rd-cabecera">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">
               <CalendarDays className="w-4 h-4" />
-              <span>Agenda de Citas Estilo Google Calendar</span>
+              <span>Agenda</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              Horarios & Reserva de Citas
+              Horarios y citas
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm mt-1 max-w-2xl">
-              Toque el + de una hora libre para agendar. Toque una hora con citas
-              para ver a los pacientes y cambiar su estado (atendiendo, atendido,
-              pospuesto o falta).
+              Toca el + de una hora libre para agendar, o una hora con citas para ver a los pacientes y cambiar su estado.
             </p>
           </div>
 
           {/* Action buttons & View Switcher */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="bg-slate-800/90 p-1 rounded-xl flex items-center border border-slate-700">
-              <button
-                onClick={() => setViewMode("admin_calendar")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  viewMode === "admin_calendar"
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <CalendarIcon className="w-3.5 h-3.5" />
-                <span>Vista Calendario Staff</span>
-              </button>
-              <button
-                onClick={() => setViewMode("user_portal")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  viewMode === "user_portal"
-                    ? "bg-cyan-600 text-white shadow-xs"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>Portal del Alumno / Usuario</span>
-              </button>
-            </div>
-
+            {/* La reserva del alumno se hace desde su propio portal (Mis citas) */}
             <button
               onClick={() => {
                 openBooking(selectedDate, selectedHour);
@@ -615,7 +591,7 @@ export const AppointmentsScheduleModule = () => {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
-                  placeholder="Buscar paciente o doctor..."
+                  placeholder="Código del paciente, nombre o especialista..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1312,7 +1288,8 @@ export const AppointmentsScheduleModule = () => {
 
       {/* ----------------- NUEVA CITA: PANTALLA COMPLETA ----------------- */}
       {isBookingModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col">
+        <div className="fixed inset-0 z-50 rd-velo">
+<div className="rd-hoja flex flex-col">
           <div
             className={`text-white px-4 sm:px-8 py-4 flex items-center justify-between gap-4 shrink-0 bg-gradient-to-r ${
               formService === "nutrition" ? "from-emerald-700 to-teal-800" : formService ? "from-cyan-700 to-blue-800" : "from-slate-700 to-slate-900"
@@ -1390,19 +1367,7 @@ export const AppointmentsScheduleModule = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-1.5">Alumno *</label>
-                      <select
-                        value={formMemberId}
-                        onChange={(e) => setFormMemberId(e.target.value)}
-                        required
-                        className="w-full text-sm p-3 rounded-xl border border-slate-300 bg-white"
-                      >
-                        <option value="">Seleccione…</option>
-                        {members.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.fullName} · DNI {m.dni}
-                          </option>
-                        ))}
-                      </select>
+                      <SelectorAlumno alumnos={members} value={formMemberId} onChange={(id) => setFormMemberId(id)} required />
                       {members.length === 0 && (
                         <p className="text-xs text-amber-700 mt-1">Aún no hay alumnos registrados.</p>
                       )}
@@ -1568,6 +1533,7 @@ export const AppointmentsScheduleModule = () => {
             </div>
           </form>
         </div>
+</div>
       )}
     </div>
   );

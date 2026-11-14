@@ -12,6 +12,24 @@ export const personal = Router();
 // ---------------------------------------------------------------------
 // PLANES
 // ---------------------------------------------------------------------
+// ¿Existe planes.color (script 28)? Se revisa cada minuto mientras falte
+const COLORES_PLAN = ["plomo", "celeste", "indigo", "verde", "naranja", "rojo", "rosa", "morado", "turquesa", "negro"];
+const cacheColor = { t: 0, v: null };
+async function hayColorPlan() {
+  if (cacheColor.v) return true;
+  if (cacheColor.v === false && Date.now() - cacheColor.t < 60000) return false;
+  const [f] = await consultar(
+    "SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'planes' AND COLUMN_NAME = 'color'",
+  );
+  cacheColor.v = Number(f?.n) > 0;
+  cacheColor.t = Date.now();
+  return cacheColor.v;
+}
+async function guardarColor(id, color) {
+  if (color === undefined || !(await hayColorPlan())) return;
+  await consultar("UPDATE planes SET color = ? WHERE idplan = ?", [COLORES_PLAN.includes(color) || /^#[0-9a-f]{6}$/i.test(String(color)) ? color : null, id]);
+}
+
 function aPlan(f) {
   return {
     id: String(f.idplan),
@@ -24,6 +42,7 @@ function aPlan(f) {
     includesNutrition: !!f.incluye_nutricion,
     includesPhysio: !!f.incluye_fisioterapia,
     popular: !!f.destacado,
+    color: f.color || "",
     features: f.caracteristicas ? f.caracteristicas.split("|").filter(Boolean) : [],
     freezeDays: Number(f.congelamiento_dias || 0),
     freezeParts: Number(f.congelamiento_partes || 1),
@@ -38,13 +57,13 @@ function reglasCongelamiento(d) {
   if (!Number.isInteger(total) || total < 0 || total > 365) throw new ErrorHttp(400, "Los días de congelamiento deben estar entre 0 y 365");
   if (!total) return [0, 1, 0];
   const partes = Number(d.freezeParts || 1);
-  if (!Number.isInteger(partes) || partes < 1 || partes > 12) throw new ErrorHttp(400, "Las partes de congelamiento deben ser de 1 a 12");
+  if (!Number.isInteger(partes) || partes < 1 || partes > 12) throw new ErrorHttp(400, "Los periodos de congelamiento deben ser de 1 a 12");
   if (partes === 1) return [total, 1, total];
   const minimo = Number(d.freezeMinDays || Math.floor(total / partes));
   if (!Number.isInteger(minimo) || minimo < 1) throw new ErrorHttp(400, "Indica el mínimo de días por congelamiento");
   if (minimo * 1 > total) throw new ErrorHttp(400, "El mínimo por congelamiento no puede ser mayor que el total de días");
   if (minimo * partes > total) {
-    throw new ErrorHttp(400, `Con ${partes} partes de mínimo ${minimo} días se necesitan ${minimo * partes} días: sube el total o baja el mínimo/partes`);
+    throw new ErrorHttp(400, `Con ${partes} periodos de mínimo ${minimo} días se necesitan ${minimo * partes} días: sube el total o baja el mínimo/partes`);
   }
   return [total, partes, minimo];
 }
@@ -69,6 +88,14 @@ function aFilaPlan(d) {
 
 planes.get("/", async (req, res, next) => {
   try {
+    // ?todos=1 (administración): también los dados de baja, con cuántos alumnos los siguen usando
+    if (req.query.todos && (await tienePermiso(req.usuario.idusuario, "memberships", "editar").catch(() => false))) {
+      const filas = await consultar(
+        `SELECT p.*, (SELECT COUNT(DISTINCT m.idalumno) FROM matriculas m WHERE m.idplan = p.idplan AND m.estado <> 'anulada' AND m.fecha_fin >= CURDATE()) AS vigentes
+           FROM planes p ORDER BY p.activo DESC, p.precio`,
+      );
+      return res.json(filas.map((f) => ({ ...aPlan(f), archived: !f.activo, activeMembers: Number(f.vigentes || 0) })));
+    }
     res.json((await consultar("SELECT * FROM planes WHERE activo = 1 ORDER BY precio")).map(aPlan));
   } catch (e) { next(e); }
 });
@@ -81,6 +108,7 @@ planes.post("/", requierePermiso("memberships", "crear"), async (req, res, next)
                            incluye_fisioterapia, descripcion, caracteristicas, destacado,
                            congelamiento_dias, congelamiento_partes, congelamiento_min_dias)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, aFilaPlan(req.body));
+    await guardarColor(r.insertId, req.body?.color);
     const [f] = await consultar("SELECT * FROM planes WHERE idplan = ?", [r.insertId]);
     res.status(201).json(aPlan(f));
   } catch (e) {
@@ -96,7 +124,18 @@ planes.put("/:id", requierePermiso("memberships", "editar"), async (req, res, ne
                          incluye_fisioterapia=?, descripcion=?, caracteristicas=?, destacado=?,
                          congelamiento_dias=?, congelamiento_partes=?, congelamiento_min_dias=?
         WHERE idplan = ?`, [...aFilaPlan(req.body), req.params.id]);
+    await guardarColor(req.params.id, req.body?.color);
     const [f] = await consultar("SELECT * FROM planes WHERE idplan = ?", [req.params.id]);
+    res.json(aPlan(f));
+  } catch (e) { next(e); }
+});
+
+// POST /api/planes/:id/reactivar -> vuelve a ofrecerse un plan dado de baja (ej. de temporada)
+planes.post("/:id/reactivar", requierePermiso("memberships", "editar"), async (req, res, next) => {
+  try {
+    await consultar("UPDATE planes SET activo = 1 WHERE idplan = ?", [req.params.id]);
+    const [f] = await consultar("SELECT * FROM planes WHERE idplan = ?", [req.params.id]);
+    if (!f) throw new ErrorHttp(404, "Plan no encontrado");
     res.json(aPlan(f));
   } catch (e) { next(e); }
 });
@@ -135,14 +174,14 @@ entrenadores.get("/", async (req, res, next) => {
 // ---------------------------------------------------------------------
 // Categorías de la app <-> categorías de la base
 const A_BASE = {
-  membership: "matricula", pos_sale: "venta", personal_training: "entrenamiento_personal",
+  membership: "matricula", day_pass: "pase_dia", pos_sale: "venta", personal_training: "entrenamiento_personal",
   salary: "sueldo", staff_payroll: "sueldo", equipment_breakdown: "averia_equipo",
   rent: "alquiler", utilities: "servicios", supplies: "insumos", marketing: "marketing",
   maintenance: "mantenimiento", physiotherapy: "fisioterapia", nutrition: "nutricion",
   free_expense: "otros", other: "otros",
 };
 const A_APP = {
-  matricula: "membership", venta: "pos_sale", entrenamiento_personal: "personal_training",
+  matricula: "membership", pase_dia: "day_pass", venta: "pos_sale", entrenamiento_personal: "personal_training",
   sueldo: "salary", averia_equipo: "equipment_breakdown", alquiler: "rent", servicios: "utilities",
   insumos: "supplies", marketing: "marketing", mantenimiento: "maintenance",
   fisioterapia: "physiotherapy", nutricion: "nutrition", otros: "other",

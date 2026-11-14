@@ -4,13 +4,12 @@ import React, {
   useState,
   useEffect,
   useMemo,
+  useRef,
 } from "react";
 import { INITIAL_PHYSIO_TEMPLATES } from "../data/physioTemplates";
 import { api, guardarToken, obtenerToken, alPerderSesion } from "../api/cliente";
 import {
-  INITIAL_EXERCISES,
   INITIAL_ROUTINES,
-  INITIAL_PRODUCTS,
   INITIAL_NOTIFICATION_RULES,
   INITIAL_NOTIFICATION_LOGS,
   INITIAL_CLASSES,
@@ -24,6 +23,9 @@ import {
 } from "../data/initialData";
 import { hoyISO } from "../utils/fecha";
 import { useColeccion, avisar } from "./coleccion";
+import { asignarCodigosPersonal } from "../utils/codigoPersonal";
+import { etiquetaDuracion, fechaFin } from "../utils/contratos";
+import { avisoBreve } from "../utils/avisoBreve";
 
 const GymContext = createContext(null);
 
@@ -75,6 +77,7 @@ export const GymProvider = ({ children }) => {
   const [trainers, setTrainers] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [staffDirectory, setStaffDirectory] = useState([]); // nombre y cargo del personal
+  const [misContratos, setMisContratos] = useState([]); // el contrato propio (personal sin acceso a Contratos)
   // Configuración del gimnasio (WhatsApp del gimnasio y del administrador...)
   const [gymConfig, setGymConfig] = useState({});
   const saveGymConfig = async (datos) => {
@@ -109,22 +112,29 @@ export const GymProvider = ({ children }) => {
   // Contratos con la etiqueta de duración siempre presente (registros antiguos no la tenían)
   const contratosNormalizados = useMemo(
     () =>
-      staffContracts.map((c) =>
+      asignarCodigosPersonal(staffContracts).map((c) =>
         c.contractDurationLabel
           ? c
           : {
               ...c,
-              contractDurationLabel:
-                c.contractType === "3_months" ? "Contrato 3 Meses" : c.contractType === "6_months" ? "Contrato 6 Meses" : "Contrato 1 Año",
+              contractDurationLabel: etiquetaDuracion(c.contractType),
             },
       ),
     [staffContracts],
   );
+  // Administración guarda el código del personal (1-COACH, 1-NUTRI…) la primera vez,
+  // así no cambia aunque se agregue o retire a alguien después.
+  useEffect(() => {
+    if (currentUser?.role !== "admin" || !staffContracts.some((c) => !c.staffCode)) return;
+    setStaffContracts(asignarCodigosPersonal(staffContracts));
+  }, [staffContracts, currentUser?.role]);
   const [physioRecords, setPhysioRecords, cargarFisio, reiniciarFisio] = useColeccion("fisioterapia");
   const [physioTemplates, setPhysioTemplates, cargarPlantillas, reiniciarPlantillas] =
     useColeccion("plantillas_fisioterapia");
   const [appointments, setAppointments, cargarCitas, reiniciarCitas] = useColeccion("citas");
   const [payrollEntries, setPayrollEntries, cargarPlanilla, reiniciarPlanilla] = useColeccion("planilla");
+  // Solicitudes de permiso del personal (quién pide, quién aprueba)
+  const [permisos, setPermisos, cargarPermisos, reiniciarPermisos] = useColeccion("permisos");
 
   // Rutina asignada a cada alumno: { idAlumno: idRutina }
   const routineAssignments = useMemo(
@@ -156,6 +166,7 @@ export const GymProvider = ({ children }) => {
     plantillas_fisioterapia: [cargarPlantillas, reiniciarPlantillas, STORAGE_KEYS.PHYSIO_TEMPLATES, INITIAL_PHYSIO_TEMPLATES],
     citas: [cargarCitas, reiniciarCitas, STORAGE_KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS],
     planilla: [cargarPlanilla, reiniciarPlanilla, STORAGE_KEYS.PAYROLL_ENTRIES, INITIAL_PAYROLL_ENTRIES],
+    permisos: [cargarPermisos, reiniciarPermisos, "radicalgym_permisos", []],
   };
   // Setters para la migración desde el navegador
   const SETTERS = {
@@ -173,12 +184,14 @@ export const GymProvider = ({ children }) => {
     plantillas_fisioterapia: setPhysioTemplates,
     citas: setAppointments,
     planilla: setPayrollEntries,
+    permisos: setPermisos,
   };
 
   // =================================================================
   // SESIÓN Y CARGA DE DATOS DESDE MYSQL
   // =================================================================
   const limpiarSesion = () => {
+    ultimaSync.current = { hora: null, completa: 0 };
     guardarToken(null);
     setCurrentUser(null);
     setMembers([]);
@@ -190,24 +203,37 @@ export const GymProvider = ({ children }) => {
   };
 
   // Carga los datos que viven en MySQL
+  const ultimaSync = useRef({ hora: null, completa: 0 });
   const loadServerData = async (silencioso = false) => {
     if (!silencioso) setDataLoading(true);
+    // Las actualizaciones automáticas piden solo lo que cambió desde la última vez;
+    // cada 10 minutos (o al abrir) se hace una carga completa por seguridad.
+    const parcial = silencioso && ultimaSync.current.hora && Date.now() - ultimaSync.current.completa < 10 * 60_000;
+    const rutaRegistros = parcial ? `/registros?desde=${encodeURIComponent(ultimaSync.current.hora)}` : "/registros";
     // El alumno no consulta caja ni directorio del personal
     const esAlumno = currentUser?.role === "student";
     try {
       // allSettled: si un rol no tiene permiso para algo, lo demás igual carga
-      const [alumnos, planes, entrenadores, movimientos, registros, personal, productosApi, config] = await Promise.allSettled([
+      const pedir = () => Promise.allSettled([
         api("/alumnos"),
         api("/planes"),
         api("/entrenadores"),
         esAlumno ? Promise.resolve([]) : api("/caja"),
-        api("/registros"),
+        api(rutaRegistros),
         esAlumno ? Promise.resolve([]) : api("/personal"),
         esAlumno || !currentUser?.modules?.some((m) => ["store", "finance", "dashboard"].includes(m))
           ? Promise.resolve([])
           : api("/tienda/productos"),
         api("/configuracion"),
       ]);
+      // Si la API aún está arrancando (al encender el sistema), se reintenta sola unos segundos
+      const sinApi = (r) => r.status === "rejected" && /no responde|No se pudo conectar/i.test(r.reason?.message || "");
+      let respuestas = await pedir();
+      for (let intento = 0; intento < 5 && sinApi(respuestas[0]) && sinApi(respuestas[4]); intento++) {
+        await new Promise((ok) => setTimeout(ok, 2500));
+        respuestas = await pedir();
+      }
+      const [alumnos, planes, entrenadores, movimientos, registros, personal, productosApi, config] = respuestas;
       // Catálogo de alimentos: solo para quien arma dietas
       if (!esAlumno && currentUser?.modules?.includes("nutrition")) {
         api("/alimentos").then(setFoods).catch(() => setFoods([]));
@@ -228,6 +254,20 @@ export const GymProvider = ({ children }) => {
         avisar("error", `No se pudieron cargar los registros: ${registros.reason?.message || ""}`);
       }
       const datos = valor(registros, {});
+      if (registros.status === "fulfilled" && datos._hora) {
+        ultimaSync.current.hora = datos._hora;
+        if (!parcial) ultimaSync.current.completa = Date.now();
+      }
+      if (datos.mis_contratos) setMisContratos(datos.mis_contratos.registros || []);
+      else if (!parcial) setMisContratos([]);
+      if (parcial && registros.status === "fulfilled") {
+        Object.entries(COLECCIONES).forEach(([modulo, [cargar]]) => {
+          const m = datos[modulo];
+          if (m) cargar(m.registros, m.editar, { parcial: !!m.parcial, borrados: m.borrados });
+        });
+        return;
+      }
+      if (registros.status === "rejected" && silencioso) return;
       Object.entries(COLECCIONES).forEach(([modulo, [cargar, , claveAntigua, base]]) => {
         const m = datos[modulo];
         if (!m) return cargar([], false);
@@ -476,8 +516,26 @@ export const GymProvider = ({ children }) => {
     updateMember(memberId, { assignedTrainerId: trainerId || "" });
 
   const assignRoutineToMember = (memberId, routineId) => {
-    setRoutineAssignments((prev) => ({ ...prev, [memberId]: routineId }));
     const member = members.find((m) => m.id === memberId);
+    const rutina = routines.find((r) => r.id === routineId);
+    // Si la rutina ya es personal de otro alumno, se le hace una copia al nuevo
+    // (antes se le quitaba al alumno anterior y desaparecía de su portal).
+    if (member && rutina && rutina.targetStudentId && String(rutina.targetStudentId) !== String(member.id)) {
+      const primer = String(member.fullName || "").trim().split(/\s+/)[0];
+      const base = String(rutina.name || "Rutina").replace(/\s*·\s*[^·]+$/, "");
+      const copia = {
+        ...rutina,
+        id: `routine-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        name: `${base} · ${primer}`,
+        createdDate: hoyISO(),
+        targetStudentId: member.id,
+        targetStudentName: member.fullName,
+      };
+      setRoutines((prev) => [copia, ...prev]);
+      setRoutineAssignments((prev) => ({ ...prev, [memberId]: copia.id }));
+      return;
+    }
+    setRoutineAssignments((prev) => ({ ...prev, [memberId]: routineId }));
     if (member && routineId) {
       setRoutines((prev) =>
         prev.map((r) =>
@@ -511,20 +569,28 @@ export const GymProvider = ({ children }) => {
     }
   };
 
+  // "Eliminar" un plan = darlo de baja: deja de ofrecerse, pero quien ya lo compró lo conserva
   const deletePlan = async (id) => {
     try {
       await api(`/planes/${id}`, { method: "DELETE" });
       setPlans((prev) => prev.filter((p) => p.id !== id));
+      return true;
     } catch (e) {
       alert(e.message);
+      return false;
     }
+  };
+  const reactivatePlan = async (id) => {
+    const plan = await api(`/planes/${id}/reactivar`, { method: "POST" });
+    setPlans((prev) => [...prev.filter((p) => p.id !== plan.id), plan]);
+    return plan;
   };
 
   // Trainer management
   const addTrainer = (trainerData) => {
     const newTrainer = {
       ...trainerData,
-      id: `trainer-${Date.now()}`,
+      id: `trainer-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     };
     setTrainers((prev) => [...prev, newTrainer]);
   };
@@ -543,7 +609,7 @@ export const GymProvider = ({ children }) => {
   const addExercise = (exerciseData) => {
     const newExercise = {
       ...exerciseData,
-      id: `ex-${Date.now()}`,
+      id: `ex-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     };
     setExercises((prev) => [newExercise, ...prev]);
   };
@@ -562,15 +628,52 @@ export const GymProvider = ({ children }) => {
   const addRoutine = (routineData) => {
     const newRoutine = {
       ...routineData,
-      id: `routine-${Date.now()}`,
+      id: `routine-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       createdDate: hoyISO(),
     };
     setRoutines((prev) => [newRoutine, ...prev]);
   };
 
   const updateRoutine = (id, routineData) => {
+    const anterior = routines.find((r) => r.id === id);
+    // Qué cambió (para el aviso al alumno y al equipo)
+    const resumirCambio = (antes = {}, despues = {}) => {
+      const ej = (r) => (r.days || []).reduce((n, d) => n + (d.exercises || []).length, 0);
+      const partes = [];
+      const d0 = (antes.days || []).length;
+      const d1 = (despues.days || antes.days || []).length;
+      if (d1 !== d0) partes.push(`${d1} día(s) de entrenamiento`);
+      const e0 = ej(antes);
+      const e1 = ej({ days: despues.days || antes.days });
+      if (e1 > e0) partes.push(`${e1 - e0} ejercicio(s) nuevo(s)`);
+      else if (e1 < e0) partes.push(`${e0 - e1} ejercicio(s) menos`);
+      else if (JSON.stringify(despues.days || antes.days) !== JSON.stringify(antes.days)) partes.push("series, repeticiones o descansos ajustados");
+      if (despues.title && despues.title !== antes.title) partes.push("nuevo nombre");
+      return partes.join(" · ");
+    };
+    const ahora = new Date().toLocaleString("sv-SE", { timeZone: "America/Lima" });
+    const cambio = resumirCambio(anterior, routineData);
+    const meta = {
+      actualizadaEn: ahora,
+      actualizadaPor: currentUser?.fullName || "",
+      actualizadaPorId: currentUser?.id,
+      ultimoCambio: cambio,
+      cambios: [{ fecha: ahora, por: currentUser?.fullName || "", cambio }, ...((anterior?.cambios || []).slice(0, 9))],
+    };
     setRoutines((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, ...routineData } : r)),
+      prev.map((r) => (r.id === id ? { ...r, ...routineData, ...meta } : r)),
+    );
+    // Aviso para quien la editó: a cuántos alumnos les llega
+    const asignados = new Set(
+      Object.entries(routineAssignments || {})
+        .filter(([, rid]) => String(rid) === String(id))
+        .map(([mid]) => String(mid)),
+    );
+    if (anterior?.targetStudentId) asignados.add(String(anterior.targetStudentId));
+    avisoBreve(
+      asignados.size
+        ? `✓ Rutina actualizada · se avisará a ${asignados.size} alumno(s) que la tienen asignada`
+        : "✓ Rutina actualizada",
     );
   };
 
@@ -682,7 +785,7 @@ export const GymProvider = ({ children }) => {
   // Muestra el movimiento al instante y lo guarda en la base.
   // Si la base lo rechaza, se retira de la pantalla y se avisa.
   const persistTransaction = (tx) => {
-    const temporal = { ...tx, id: tx.id || `tmp-${Date.now()}` };
+    const temporal = { ...tx, id: tx.id || `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` };
     setTransactions((prev) => [temporal, ...prev]);
     api("/caja", { method: "POST", body: tx })
       .then((guardado) =>
@@ -860,7 +963,7 @@ export const GymProvider = ({ children }) => {
   const addClassNotice = (classData) => {
     const newClass = {
       ...classData,
-      id: `class-${Date.now()}`,
+      id: `class-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     };
     setClasses((prev) => [newClass, ...prev]);
   };
@@ -975,7 +1078,7 @@ export const GymProvider = ({ children }) => {
   const addNutritionPlan = (planData) => {
     const newPlan = {
       ...planData,
-      id: `nutri-${Date.now()}`,
+      id: `nutri-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       createdDate: hoyISO(),
     };
     setNutritionPlans((prev) => [newPlan, ...prev]);
@@ -995,7 +1098,7 @@ export const GymProvider = ({ children }) => {
   const addBodyAssessment = (assessmentData) => {
     const newAssessment = {
       ...assessmentData,
-      id: `eval-${Date.now()}`,
+      id: `eval-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     };
     setBodyAssessments((prev) => [...prev, newAssessment]);
   };
@@ -1020,10 +1123,18 @@ export const GymProvider = ({ children }) => {
   // Inicia sesión contra MySQL (la API verifica la clave con bcrypt)
   const login = async (username, password) => {
     try {
-      const { token, usuario } = await api("/auth/ingresar", {
-        method: "POST",
-        body: { usuario: username, clave: password },
-      });
+      // Si la API todavía está arrancando, se reintenta solo unos segundos antes de avisar
+      let r;
+      for (let intento = 0; ; intento++) {
+        try {
+          r = await api("/auth/ingresar", { method: "POST", body: { usuario: username, clave: password } });
+          break;
+        } catch (err) {
+          if (intento >= 4 || !/API no responde|No se pudo conectar/i.test(err.message)) throw err;
+          await new Promise((ok) => setTimeout(ok, 1500));
+        }
+      }
+      const { token, usuario } = r;
       guardarToken(token);
       setCurrentUser(usuario);
       return { success: true, user: usuario };
@@ -1058,7 +1169,7 @@ export const GymProvider = ({ children }) => {
 
     const newRecord = {
       ...data,
-      id: `att-${Date.now()}`,
+      id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       date: data.date || dateStr,
       time: data.time || timeStr,
     };
@@ -1075,18 +1186,22 @@ export const GymProvider = ({ children }) => {
   const deleteAttendance = (id) => {
     setAttendances((prev) => prev.filter((a) => a.id !== id));
   };
+  // Corregir un ingreso mal marcado (otra persona, otra hora) sin perder cuándo fue
+  const updateAttendance = (id, cambios) => {
+    setAttendances((prev) => prev.map((a) => (a.id === id ? { ...a, ...cambios } : a)));
+  };
 
   // --- STAFF CONTRACT ACTIONS ---
   const addStaffContract = (contractData) => {
     const newContract = {
       ...contractData,
-      id: `cnt-${Date.now()}`,
+      id: `cnt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     };
     setStaffContracts((prev) => [newContract, ...prev]);
 
     // Also auto-create initial payroll entry
     const newPayroll = {
-      id: `pyr-${Date.now()}`,
+      id: `pyr-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       contractId: newContract.id,
       staffName: newContract.fullName,
       role: newContract.role,
@@ -1104,37 +1219,71 @@ export const GymProvider = ({ children }) => {
     setPayrollEntries((prev) => [newPayroll, ...prev]);
   };
 
+  // Profesional externo (entrenador, fisio o nutri que trae a su cliente y paga
+  // derecho de piso): no tiene contrato ni planilla; recibe un código N-EXT
+  // para marcar su entrada en recepción.
+  const addProfesionalExterno = (datos) => {
+    const id = `ext-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const nuevo = {
+      id,
+      staffId: id,
+      external: true,
+      status: "active",
+      contractType: "externo",
+      contractDurationLabel: "Profesional externo",
+      monthlySalary: 0,
+      startDate: new Date().toISOString().slice(0, 10),
+      ...datos,
+    };
+    const conCodigo = asignarCodigosPersonal([...staffContracts, nuevo]).find((c) => c.id === id);
+    setStaffContracts((prev) => [conCodigo, ...prev]);
+    return conCodigo;
+  };
+
   const updateStaffContract = (id, contractData) => {
     setStaffContracts((prev) =>
       prev.map((c) => (c.id === id ? { ...c, ...contractData } : c)),
     );
   };
 
-  const renewStaffContract = (id, duration, newSalary) => {
+  /**
+   * Renovar: el contrato anterior queda en el historial y se emite uno nuevo con
+   * la duración, fecha de inicio, cargo, sueldo y funciones que se elijan.
+   * opciones = { duracion, inicio, sueldo, titulo, funciones, notas }  (o la firma antigua: duración, sueldo)
+   */
+  const renewStaffContract = (id, opciones, sueldoAntiguo) => {
+    const o = typeof opciones === "string" ? { duracion: opciones, sueldo: sueldoAntiguo } : opciones || {};
     setStaffContracts((prev) =>
       prev.map((c) => {
         if (c.id !== id) return c;
-        const today = new Date(hoyISO());
-        const monthsToAdd =
-          duration === "3_months" ? 3 : duration === "6_months" ? 6 : 12;
-        const newEnd = new Date(today);
-        newEnd.setMonth(newEnd.getMonth() + monthsToAdd);
-        const label =
-          duration === "3_months"
-            ? "Contrato 3 Meses"
-            : duration === "6_months"
-              ? "Contrato 6 Meses"
-              : "Contrato 1 Año";
-        const salary = newSalary || c.monthlySalary;
+        const duracion = o.duracion || c.contractType || "6_months";
+        const inicio = o.inicio || hoyISO();
+        const sueldo = Number(o.sueldo) || Number(c.monthlySalary) || 0;
+        const anterior = {
+          contractType: c.contractType,
+          contractDurationLabel: c.contractDurationLabel,
+          startDate: c.startDate,
+          endDate: c.endDate,
+          roleTitle: c.roleTitle,
+          monthlySalary: c.monthlySalary,
+          functions: c.functions || [],
+        };
+        const horas = Number(c.assignedWeeklyHours) || 0;
         return {
           ...c,
-          contractType: duration,
-          contractDurationLabel: label,
-          startDate: today.toISOString().split("T")[0],
-          endDate: newEnd.toISOString().split("T")[0],
+          contractType: duracion,
+          contractDurationLabel: etiquetaDuracion(duracion),
+          startDate: inicio,
+          endDate: fechaFin(inicio, duracion),
           status: "active",
-          monthlySalary: salary,
+          roleTitle: (o.titulo || c.roleTitle || "").trim(),
+          monthlySalary: sueldo,
+          hourlyRate: horas ? Number((sueldo / (horas * 4.33)).toFixed(2)) : c.hourlyRate,
+          functions: Array.isArray(o.funciones) ? o.funciones : c.functions || [],
+          notes: o.notas !== undefined ? o.notas : c.notes,
           paymentStatus: "al_dia",
+          renewedAt: hoyISO(),
+          history: [...(c.history || []), anterior].slice(-10),
         };
       }),
     );
@@ -1151,7 +1300,7 @@ export const GymProvider = ({ children }) => {
     ).length;
     const newRecord = {
       ...recordData,
-      id: `phy-rec-${Date.now()}`,
+      id: `phy-rec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       sessionNumber: existingCount + 1,
     };
     setPhysioRecords((prev) => [newRecord, ...prev]);
@@ -1176,7 +1325,7 @@ export const GymProvider = ({ children }) => {
   const addPhysioTemplate = (templateData) => {
     const newTemplate = {
       ...templateData,
-      id: `tpl-${Date.now()}`,
+      id: `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       isCustom: true,
     };
     setPhysioTemplates((prev) => [newTemplate, ...prev]);
@@ -1191,7 +1340,7 @@ export const GymProvider = ({ children }) => {
   const addAppointment = (appointmentData) => {
     const newAppointment = {
       ...appointmentData,
-      id: `apt-${Date.now()}`,
+      id: `apt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     };
     setAppointments((prev) => [newAppointment, ...prev]);
   };
@@ -1210,7 +1359,7 @@ export const GymProvider = ({ children }) => {
   const addPayrollEntry = (entryData) => {
     const newEntry = {
       ...entryData,
-      id: `pyr-${Date.now()}`,
+      id: `pyr-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     };
     setPayrollEntries((prev) => [newEntry, ...prev]);
   };
@@ -1367,7 +1516,14 @@ export const GymProvider = ({ children }) => {
         loadServerData,
         changePassword,
         attendances,
-        staffContracts: contratosNormalizados,
+        // El personal con contrato (planilla, contratos, asistencia) y aparte los externos
+        staffContracts: contratosNormalizados.filter((c) => !c.external),
+        profesionalesExternos: contratosNormalizados.filter((c) => c.external),
+        todoElPersonal: contratosNormalizados,
+        addProfesionalExterno,
+        permisos,
+        misContratos,
+        guardarPermiso: (p) => setPermisos((prev) => (prev.some((x) => x.id === p.id) ? prev.map((x) => (x.id === p.id ? p : x)) : [p, ...prev])),
         physioRecords,
         physioTemplates,
         appointments,
@@ -1390,6 +1546,7 @@ export const GymProvider = ({ children }) => {
         login,
         logout,
         recordAttendance,
+        updateAttendance,
         deleteAttendance,
         addMember,
         updateMember,
@@ -1401,6 +1558,7 @@ export const GymProvider = ({ children }) => {
         addPlan,
         updatePlan,
         deletePlan,
+        reactivatePlan,
         addTrainer,
         updateTrainer,
         deleteTrainer,

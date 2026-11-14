@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { PanelComposicion, SiluetaMedidas, edadDe } from "./VisualMedidas";
+import { PanelComposicion, SiluetaMedidas, edadDe, GuiaPerimetros, BarraRango, rangos } from "./VisualMedidas";
 import {
   Activity,
   Ruler,
@@ -12,7 +12,6 @@ import {
   Share2,
   Printer,
   Trash2,
-  Sparkles,
   ArrowUpRight,
   ArrowDownRight,
   X,
@@ -29,9 +28,12 @@ import {
 } from "recharts";
 import { useGym } from "../../context/GymContext";
 import { TelWhatsApp } from "../common/TelWhatsApp";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 
+import { SelectorAlumno, coincideAlumno } from "../common/BuscarAlumno";
+import { BotonesDescarga } from "../common/BotonesDescarga";
 const SECCION = "bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs";
 const TITULO = "text-base font-extrabold text-slate-900 flex items-center gap-2 mb-4";
 const SUB = "block text-xs font-black uppercase tracking-widest text-slate-500 mb-2";
@@ -39,7 +41,7 @@ const ETQ = "block text-sm font-bold text-slate-700 mb-1.5";
 const CAMPO =
   "w-full text-sm p-2.5 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
 
-const Campo = ({ label, unit, value, onChange, step = "1", hint }) => (
+const Campo = ({ label, unit, value, onChange, step = "1", hint, onFocus }) => (
   <label className="block">
     <span className={ETQ}>{label}</span>
     <div className="relative">
@@ -49,6 +51,7 @@ const Campo = ({ label, unit, value, onChange, step = "1", hint }) => (
         step={step}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={onFocus}
         className={`${CAMPO} pr-14 font-semibold`}
       />
       {unit && (
@@ -97,6 +100,7 @@ export const MeasurementsModule = () => {
   // New Assessment Modal State
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [formMemberId, setFormMemberId] = useState("");
+  const [perimActivo, setPerimActivo] = useState(""); // medida que se está escribiendo (para la figura)
   const [activeBodyZone, setActiveBodyZone] = useState("cintura");
   const [activeFocusZone, setActiveFocusZone] = useState(null);
   const [modalMemberSearch, setModalMemberSearch] = useState("");
@@ -457,8 +461,7 @@ export const MeasurementsModule = () => {
   const filteredMembers = useMemo(() => {
     return members.filter(
       (m) =>
-        m.fullName.toLowerCase().includes(searchMemberQuery.toLowerCase()) ||
-        m.dni.includes(searchMemberQuery),
+        coincideAlumno(m, searchMemberQuery),
     );
   }, [members, searchMemberQuery]);
 
@@ -485,7 +488,7 @@ export const MeasurementsModule = () => {
 
         {/* Action Button */}
         <button
-          onClick={handleOpenNewAssessment}
+          onClick={() => handleOpenNewAssessment()}
           className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
@@ -507,7 +510,7 @@ export const MeasurementsModule = () => {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Buscar por DNI o nombre..."
+                placeholder="Código (12 o DR-12), DNI o nombre..."
                 value={searchMemberQuery}
                 onChange={(e) => setSearchMemberQuery(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
@@ -854,11 +857,11 @@ export const MeasurementsModule = () => {
 
                           {(chartMetricFilter === "all" ||
                             chartMetricFilter === "weight") && (
-                            <Line
+                            <Line isAnimationActive={false}
                               type="monotone"
                               dataKey="peso"
                               name="Peso (kg)"
-                              stroke="#0c8794"
+                              stroke="var(--color-blue-600)"
                               strokeWidth={2.5}
                               dot={{ r: 4 }}
                               activeDot={{
@@ -872,21 +875,21 @@ export const MeasurementsModule = () => {
                           {(chartMetricFilter === "all" ||
                             chartMetricFilter === "composition") && (
                             <>
-                              <Line
+                              <Line isAnimationActive={false}
                                 type="monotone"
                                 dataKey="musculoKg"
                                 name="Masa Muscular (kg)"
-                                stroke="#10b981"
+                                stroke="var(--color-emerald-500)"
                                 strokeWidth={2.2}
                                 dot={{ r: 4 }}
                                 activeDot={{ r: 6 }}
                               />
 
-                              <Line
+                              <Line isAnimationActive={false}
                                 type="monotone"
                                 dataKey="grasaPct"
                                 name="% Grasa Corporal"
-                                stroke="#f59e0b"
+                                stroke="var(--color-amber-500)"
                                 strokeWidth={2.2}
                                 dot={{ r: 4 }}
                                 activeDot={{ r: 6 }}
@@ -897,21 +900,21 @@ export const MeasurementsModule = () => {
                           {(chartMetricFilter === "all" ||
                             chartMetricFilter === "perimeters") && (
                             <>
-                              <Line
+                              <Line isAnimationActive={false}
                                 type="monotone"
                                 dataKey="cintura"
                                 name="Cintura (cm)"
-                                stroke="#8b5cf6"
+                                stroke="var(--color-violet-500)"
                                 strokeWidth={2}
                                 strokeDasharray="4 4"
                                 dot={{ r: 3 }}
                               />
 
-                              <Line
+                              <Line isAnimationActive={false}
                                 type="monotone"
                                 dataKey="brazo"
                                 name="Brazo (cm)"
-                                stroke="#ec4899"
+                                stroke="var(--color-pink-500)"
                                 strokeWidth={1.8}
                                 dot={{ r: 3 }}
                               />
@@ -951,7 +954,7 @@ export const MeasurementsModule = () => {
 
               {/* Detailed Sheet of Selected Assessment */}
               {currentDetailAssessment ? (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                <div data-descargar className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
                   {/* Sheet Header */}
                   <div className="p-5 sm:p-6 bg-slate-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
@@ -992,6 +995,7 @@ export const MeasurementsModule = () => {
                       >
                         <Printer className="w-4 h-4" />
                       </button>
+                      <BotonesDescarga compacto nombre={`Medidas_${currentDetailAssessment.memberName || ""}_${currentDetailAssessment.date}`} />
 
                       <button
                         onClick={() => {
@@ -1372,7 +1376,8 @@ export const MeasurementsModule = () => {
 
       {/* EVALUACIÓN ANTROPOMÉTRICA: PANTALLA COMPLETA */}
       {isNewModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col">
+        <div className="fixed inset-0 z-50 rd-velo">
+<div className="rd-hoja flex flex-col">
           <div className="bg-gradient-to-r from-slate-900 to-blue-950 text-white px-4 sm:px-8 py-4 flex items-center justify-between gap-4 shrink-0">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300">
@@ -1409,22 +1414,15 @@ export const MeasurementsModule = () => {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="md:col-span-2">
                       <label className={ETQ}>Alumno *</label>
-                      <select
+                      <SelectorAlumno
+                        alumnos={members}
                         value={formMemberId}
-                        onChange={(e) => {
-                          setFormMemberId(e.target.value);
-                          loadMemberValuesIntoForm(e.target.value);
+                        onChange={(id) => {
+                          setFormMemberId(id);
+                          loadMemberValuesIntoForm(id);
                         }}
                         required
-                        className={CAMPO}
-                      >
-                        <option value="">Seleccione…</option>
-                        {members.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.fullName} · DNI {m.dni}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     </div>
                     <div>
                       <label className={ETQ}>Fecha</label>
@@ -1519,18 +1517,19 @@ export const MeasurementsModule = () => {
                   <h4 className={TITULO}>
                     <Ruler className="w-5 h-5 text-cyan-600" /> 3. Perímetros corporales (cinta métrica, cm)
                   </h4>
+                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_220px] gap-4 items-start">
                   <div className="space-y-5">
                     <div>
                       <span className={SUB}>Tronco</span>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <Campo label="Cuello" unit="cm" value={perimNeck} onChange={setPerimNeck} step="0.1" />
-                        <Campo label="Hombros" unit="cm" value={perimShoulders} onChange={setPerimShoulders} step="0.1" />
-                        <Campo label="Pecho / tórax" unit="cm" value={perimChest} onChange={setPerimChest} step="0.1" />
+                        <Campo label="Cuello" unit="cm" value={perimNeck} onChange={setPerimNeck} onFocus={() => setPerimActivo("neck")} step="0.1" />
+                        <Campo label="Hombros" unit="cm" value={perimShoulders} onChange={setPerimShoulders} onFocus={() => setPerimActivo("shoulders")} step="0.1" />
+                        <Campo label="Pecho / tórax" unit="cm" value={perimChest} onChange={setPerimChest} onFocus={() => setPerimActivo("chest")} step="0.1" />
                         <Campo
                           label="Cintura mínima"
                           unit="cm"
                           value={perimWaist}
-                          onChange={setPerimWaist}
+                          onChange={setPerimWaist} onFocus={() => setPerimActivo("waist")}
                           step="0.1"
                           hint="Punto más estrecho"
                         />
@@ -1538,7 +1537,7 @@ export const MeasurementsModule = () => {
                           label="Abdomen"
                           unit="cm"
                           value={perimAbdomen}
-                          onChange={setPerimAbdomen}
+                          onChange={setPerimAbdomen} onFocus={() => setPerimActivo("abdomen")}
                           step="0.1"
                           hint="A nivel del ombligo"
                         />
@@ -1546,7 +1545,7 @@ export const MeasurementsModule = () => {
                           label="Cadera / glúteos"
                           unit="cm"
                           value={perimHip}
-                          onChange={setPerimHip}
+                          onChange={setPerimHip} onFocus={() => setPerimActivo("hip")}
                           step="0.1"
                           hint="Máxima protuberancia glútea"
                         />
@@ -1555,21 +1554,29 @@ export const MeasurementsModule = () => {
                     <div>
                       <span className={SUB}>Miembro superior</span>
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        <Campo label="Brazo relajado I" unit="cm" value={perimBicepsRelL} onChange={setPerimBicepsRelL} step="0.1" />
-                        <Campo label="Brazo relajado D" unit="cm" value={perimBicepsRelR} onChange={setPerimBicepsRelR} step="0.1" />
-                        <Campo label="Brazo contraído I" unit="cm" value={perimBicepsFlexL} onChange={setPerimBicepsFlexL} step="0.1" />
-                        <Campo label="Brazo contraído D" unit="cm" value={perimBicepsFlexR} onChange={setPerimBicepsFlexR} step="0.1" />
-                        <Campo label="Antebrazo" unit="cm" value={perimForearm} onChange={setPerimForearm} step="0.1" />
+                        <Campo label="Brazo relajado I" unit="cm" value={perimBicepsRelL} onChange={setPerimBicepsRelL} onFocus={() => setPerimActivo("bicepsRel")} step="0.1" />
+                        <Campo label="Brazo relajado D" unit="cm" value={perimBicepsRelR} onChange={setPerimBicepsRelR} onFocus={() => setPerimActivo("bicepsRel")} step="0.1" />
+                        <Campo label="Brazo contraído I" unit="cm" value={perimBicepsFlexL} onChange={setPerimBicepsFlexL} onFocus={() => setPerimActivo("bicepsFlex")} step="0.1" />
+                        <Campo label="Brazo contraído D" unit="cm" value={perimBicepsFlexR} onChange={setPerimBicepsFlexR} onFocus={() => setPerimActivo("bicepsFlex")} step="0.1" />
+                        <Campo label="Antebrazo" unit="cm" value={perimForearm} onChange={setPerimForearm} onFocus={() => setPerimActivo("forearm")} step="0.1" />
                       </div>
                     </div>
                     <div>
                       <span className={SUB}>Miembro inferior</span>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <Campo label="Muslo superior" unit="cm" value={perimThighSup} onChange={setPerimThighSup} step="0.1" />
-                        <Campo label="Muslo medio" unit="cm" value={perimThighMid} onChange={setPerimThighMid} step="0.1" />
-                        <Campo label="Pantorrilla" unit="cm" value={perimCalf} onChange={setPerimCalf} step="0.1" />
+                        <Campo label="Muslo superior" unit="cm" value={perimThighSup} onChange={setPerimThighSup} onFocus={() => setPerimActivo("thighSup")} step="0.1" />
+                        <Campo label="Muslo medio" unit="cm" value={perimThighMid} onChange={setPerimThighMid} onFocus={() => setPerimActivo("thighMid")} step="0.1" />
+                        <Campo label="Pantorrilla" unit="cm" value={perimCalf} onChange={setPerimCalf} onFocus={() => setPerimActivo("calf")} step="0.1" />
                       </div>
                     </div>
+                  </div>
+                  <div className="lg:sticky lg:top-4">
+                    <GuiaPerimetros
+                      activo={perimActivo}
+                      sexo={formMember?.gender}
+                      valores={{ neck: perimNeck, shoulders: perimShoulders, chest: perimChest, waist: perimWaist, abdomen: perimAbdomen, hip: perimHip, bicepsRel: perimBicepsRelR || perimBicepsRelL, bicepsFlex: perimBicepsFlexR || perimBicepsFlexL, forearm: perimForearm, thighSup: perimThighSup, thighMid: perimThighMid, calf: perimCalf }}
+                    />
+                  </div>
                   </div>
                 </section>
 
@@ -1616,10 +1623,10 @@ export const MeasurementsModule = () => {
                         !computedFormMetrics.bmi
                           ? "#64748b"
                           : computedFormMetrics.bmi < 18.5 || computedFormMetrics.bmi >= 30
-                            ? "#f43f5e"
+                            ? "var(--color-rose-500)"
                             : computedFormMetrics.bmi >= 25
-                              ? "#f59e0b"
-                              : "#10b981"
+                              ? "var(--color-amber-500)"
+                              : "var(--color-emerald-500)"
                       }
                     />
                     <Resultado
@@ -1628,10 +1635,10 @@ export const MeasurementsModule = () => {
                       detalle={computedFormMetrics.waistHipRatio ? `Riesgo ${computedFormMetrics.waistHipRisk.toLowerCase()}` : "Falta cintura y cadera"}
                       color={
                         computedFormMetrics.waistHipRisk === "Alto"
-                          ? "#f43f5e"
+                          ? "var(--color-rose-500)"
                           : computedFormMetrics.waistHipRisk === "Moderado"
-                            ? "#f59e0b"
-                            : "#10b981"
+                            ? "var(--color-amber-500)"
+                            : "var(--color-emerald-500)"
                       }
                     />
                     <Resultado
@@ -1644,7 +1651,7 @@ export const MeasurementsModule = () => {
                             : "Riesgo cardiometabólico (≥ 0,50)"
                           : "Falta cintura y estatura"
                       }
-                      color={computedFormMetrics.waistHeightRatio >= 0.5 ? "#f43f5e" : "#10b981"}
+                      color={computedFormMetrics.waistHeightRatio >= 0.5 ? "var(--color-rose-500)" : "var(--color-emerald-500)"}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-700">
@@ -1664,34 +1671,25 @@ export const MeasurementsModule = () => {
                   </div>
                 </div>
 
-                {formMemberPreviousAssessment && (
-                  <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 mb-3">
-                      Cambio vs. {formMemberPreviousAssessment.date}
-                    </h4>
-                    {[
-                      ["Peso", formWeight, formMemberPreviousAssessment.weightKg, "kg"],
-                      ["Grasa", biaFatPct, formMemberPreviousAssessment.bioimpedance?.bodyFatPercentage, "%"],
-                      ["Músculo", computedFormMetrics.muscleKg, formMemberPreviousAssessment.bioimpedance?.muscleMassKg, "kg", true],
-                      ["Cintura", perimWaist, formMemberPreviousAssessment.perimeters?.waist, "cm"],
-                    ].map(([t, now, prev, u, upIsGood]) => {
-                      const d = now !== "" && prev != null ? Number((Number(now) - Number(prev)).toFixed(1)) : null;
-                      const good = d == null || d === 0 ? null : upIsGood ? d > 0 : d < 0;
-                      return (
-                        <div key={t} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                          <span className="text-sm font-semibold text-slate-700">{t}</span>
-                          <span
-                            className={`text-sm font-black ${
-                              good == null ? "text-slate-500" : good ? "text-emerald-600" : "text-rose-600"
-                            }`}
-                          >
-                            {d == null ? "–" : `${d > 0 ? "+" : ""}${d} ${u}`}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                {(() => {
+                  const R0 = rangos(formMember?.gender, edadDe(formMember?.birthDate));
+                  const peso = Number(formWeight) || 0;
+                  return (
+                    <div className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">
+                        ¿Está en rango? · {formMember?.gender === "F" ? "mujer" : "hombre"}
+                        {edadDe(formMember?.birthDate) ? `, ${edadDe(formMember?.birthDate)} años` : ""}
+                      </h4>
+                      <BarraRango compacto titulo="IMC" icono="⚖️" valor={computedFormMetrics.bmi || null} cfg={R0.imc} invertido />
+                      <BarraRango compacto titulo="Grasa corporal" icono="🟠" valor={biaFatPct || null} unidad="%" cfg={R0.grasa} invertido />
+                      <BarraRango compacto titulo="Masa muscular" icono="💪" valor={biaMusclePct || (peso && computedFormMetrics.muscleKg ? (computedFormMetrics.muscleKg / peso) * 100 : null)} unidad="%" cfg={R0.musculo} />
+                      <BarraRango compacto titulo="Grasa visceral" icono="🫀" valor={biaVisceral || null} unidad="nivel" cfg={R0.visceral} invertido decimales={0} />
+                      <BarraRango compacto titulo="Agua corporal" icono="💧" valor={biaWaterPct || null} unidad="%" cfg={R0.agua} />
+                      <BarraRango compacto titulo="Cintura" icono="📐" valor={perimWaist || null} unidad="cm" cfg={R0.cintura} invertido />
+                      <BarraRango compacto titulo="Cintura / talla" icono="📏" valor={computedFormMetrics.waistHeightRatio || null} cfg={R0.cinturaTalla} invertido decimales={2} />
+                    </div>
+                  );
+                })()}
 
                 <div className="flex flex-col gap-2">
                   <button
@@ -1712,6 +1710,7 @@ export const MeasurementsModule = () => {
             </div>
           </form>
         </div>
+</div>
       )}
     </div>
   );

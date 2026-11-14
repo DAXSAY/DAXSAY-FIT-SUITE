@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   BadgeDollarSign,
   TrendingUp,
@@ -41,10 +41,12 @@ import {
   CartesianGrid,
   Line,
 } from "recharts";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 import { ReporteFinanciero } from "./ReporteFinanciero";
 import { RegistroIngreso } from "./RegistroIngreso";
+import { coincidePersonal } from "../../utils/buscarPersona";
 
 export const FinanceModule = ({ onOpenNewExpenseModal }) => {
   const {
@@ -107,10 +109,33 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
 
   // Custom Specific Expense Modal States
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  // Accesos rápidos de la barra superior: abren el ingreso o el gasto directamente
+  useEffect(() => {
+    const abrir = (que) => (que === "gasto" ? setIsExpenseModalOpen(true) : que === "ingreso" ? setIsIncomeModalOpen(true) : null);
+    try {
+      const q = sessionStorage.getItem("radical_abrir_caja");
+      if (q) {
+        sessionStorage.removeItem("radical_abrir_caja");
+        abrir(q);
+      }
+    } catch {
+      /* nada */
+    }
+    const oir = (e) => {
+      try {
+        sessionStorage.removeItem("radical_abrir_caja");
+      } catch {
+        /* nada */
+      }
+      abrir(e.detail);
+    };
+    window.addEventListener("radical:abrir-caja", oir);
+    return () => window.removeEventListener("radical:abrir-caja", oir);
+  }, []);
   const [expenseCategory, setExpenseCategory] = useState("staff_payroll");
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseDesc, setExpenseDesc] = useState("");
-  const [expenseMethod, setExpenseMethod] = useState("transferencia");
+  const [expenseMethod, setExpenseMethod] = useState("efectivo");
 
   // Staff Payroll payment modal
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
@@ -177,12 +202,7 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
   // Filtered staff for autocomplete
   const filteredStaffList = useMemo(() => {
     if (!staffSearchQuery) return staffContracts;
-    return staffContracts.filter(
-      (s) =>
-        s.fullName.toLowerCase().includes(staffSearchQuery.toLowerCase()) ||
-        s.dni.includes(staffSearchQuery) ||
-        s.roleTitle.toLowerCase().includes(staffSearchQuery.toLowerCase()),
-    );
+    return staffContracts.filter((s) => coincidePersonal(s, staffSearchQuery));
   }, [staffContracts, staffSearchQuery]);
 
   // Filter transactions
@@ -214,34 +234,34 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
       value:
         (expenseCategoriesAgg["salary"] || 0) +
         (expenseCategoriesAgg["staff_payroll"] || 0),
-      color: "#0ea7b3",
+      color: "var(--color-blue-500)",
     },
     {
       name: "Avería / Mantenimiento",
       value:
         (expenseCategoriesAgg["maintenance"] || 0) +
         (expenseCategoriesAgg["equipment_breakdown"] || 0),
-      color: "#f59e0b",
+      color: "var(--color-amber-500)",
     },
     {
       name: "Gasto Libre / Compras",
       value: expenseCategoriesAgg["free_expense"] || 0,
-      color: "#10b981",
+      color: "var(--color-emerald-500)",
     },
     {
       name: "Alquiler Local",
       value: expenseCategoriesAgg["rent"] || 0,
-      color: "#f43f5e",
+      color: "var(--color-rose-500)",
     },
     {
       name: "Stock / Suplementos",
       value: expenseCategoriesAgg["supplies"] || 0,
-      color: "#38bdf8",
+      color: "var(--color-sky-400)",
     },
     {
       name: "Servicios (Luz/Agua)",
       value: expenseCategoriesAgg["utilities"] || 0,
-      color: "#a855f7",
+      color: "var(--color-purple-500)",
     },
     {
       name: "Otros Gastos",
@@ -255,7 +275,9 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
       case "membership":
         return "Membresía Alumno";
       case "pos_sale":
-        return "Venta Tienda POS";
+        return "Venta de tienda";
+      case "day_pass":
+        return "Pase del día";
       case "personal_training":
         return "Personal Training";
       case "physiotherapy":
@@ -379,9 +401,8 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
   };
   const METODOS_GASTO = [
     ["efectivo", "💵", "Efectivo (caja chica)"],
-    ["transferencia", "🏦", "Transferencia"],
     ["yape_plin", "📱", "Yape / Plin"],
-    ["tarjeta", "💳", "Tarjeta"],
+    ["transferencia", "🏦", "Transferencia"],
   ];
   const elegirCategoriaGasto = (cat) => {
     setExpenseCategory(cat);
@@ -439,18 +460,17 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
   return (
     <div className="space-y-4 pb-8">
       {/* Top Header */}
-      <div className="rd-portada flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-2xl">
+      <div className="rd-portada rd-cabecera flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-blue-600 text-xs font-bold uppercase tracking-wider mb-0.5">
             <BadgeDollarSign className="w-3.5 h-3.5" />
-            <span>Finanzas, Caja & Nómina de Personal</span>
+            <span>Administración</span>
           </div>
           <h1 className="text-lg font-bold text-slate-900">
-            Control de Caja, Ingresos, Egresos & Planilla
+            Finanzas
           </h1>
           <p className="text-xs text-gray-500">
-            Libro de caja diario, cobros de membresías, ventas en tienda y
-            liquidación de sueldos por horas trabajadas del personal.
+            Ingresos, gastos, planilla y reporte financiero.
           </p>
         </div>
 
@@ -460,7 +480,7 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
             className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Registrar Ingreso</span>
+            <span>Registrar ingreso</span>
           </button>
 
           <button
@@ -740,21 +760,21 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                         )}
                       />
 
-                      <Bar
+                      <Bar isAnimationActive={false} maxBarSize={56}
                         dataKey="ingresos"
-                        fill="#10b981"
+                        fill="var(--color-emerald-500)"
                         radius={[4, 4, 0, 0]}
                         barSize={20}
                       />
-                      <Bar
+                      <Bar isAnimationActive={false} maxBarSize={56}
                         dataKey="egresos"
-                        fill="#f43f5e"
+                        fill="var(--color-rose-500)"
                         radius={[4, 4, 0, 0]}
                         barSize={20}
                       />
-                      <Bar
+                      <Bar isAnimationActive={false} maxBarSize={56}
                         dataKey="margen"
-                        fill="#0ea7b3"
+                        fill="var(--color-blue-500)"
                         radius={[4, 4, 0, 0]}
                         barSize={20}
                       />
@@ -774,12 +794,12 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                         >
                           <stop
                             offset="5%"
-                            stopColor="#10b981"
+                            stopColor="var(--color-emerald-500)"
                             stopOpacity={0.4}
                           />
                           <stop
                             offset="95%"
-                            stopColor="#10b981"
+                            stopColor="var(--color-emerald-500)"
                             stopOpacity={0.02}
                           />
                         </linearGradient>
@@ -792,12 +812,12 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                         >
                           <stop
                             offset="5%"
-                            stopColor="#f43f5e"
+                            stopColor="var(--color-rose-500)"
                             stopOpacity={0.4}
                           />
                           <stop
                             offset="95%"
-                            stopColor="#f43f5e"
+                            stopColor="var(--color-rose-500)"
                             stopOpacity={0.02}
                           />
                         </linearGradient>
@@ -853,28 +873,28 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                         )}
                       />
 
-                      <Area
+                      <Area isAnimationActive={false}
                         type="monotone"
                         dataKey="ingresos"
-                        stroke="#10b981"
+                        stroke="var(--color-emerald-500)"
                         strokeWidth={2.5}
                         fillOpacity={1}
                         fill="url(#finIngresosGrad)"
                         activeDot={{ r: 5 }}
                       />
-                      <Area
+                      <Area isAnimationActive={false}
                         type="monotone"
                         dataKey="egresos"
-                        stroke="#f43f5e"
+                        stroke="var(--color-rose-500)"
                         strokeWidth={2.5}
                         fillOpacity={1}
                         fill="url(#finEgresosGrad)"
                         activeDot={{ r: 5 }}
                       />
-                      <Line
+                      <Line isAnimationActive={false}
                         type="monotone"
                         dataKey="margen"
-                        stroke="#0ea7b3"
+                        stroke="var(--color-blue-500)"
                         strokeWidth={2}
                         strokeDasharray="3 3"
                         dot={{ r: 3 }}
@@ -904,15 +924,15 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                   )}
                 </div>
 
-                <div className="h-44 w-full relative flex items-center justify-center my-1">
+                <div className="h-60 w-full relative flex items-center justify-center my-1">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
+                      <Pie isAnimationActive={false}
                         data={expensePieData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={50}
-                        outerRadius={75}
+                        innerRadius="64%"
+                        outerRadius="86%"
                         paddingAngle={3}
                         dataKey="value"
                         onMouseEnter={(_, index) =>
@@ -923,18 +943,13 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                         {expensePieData.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
-                            fill={entry.color}
+                            fill={hoveredExpenseSlice != null && hoveredExpenseSlice !== index ? "#cbd5e1" : entry.color}
                             style={{
                               filter:
                                 hoveredExpenseSlice === index
                                   ? "drop-shadow(0px 0px 6px rgba(0,0,0,0.3))"
                                   : "none",
                               cursor: "pointer",
-                              transform:
-                                hoveredExpenseSlice === index
-                                  ? "scale(1.05)"
-                                  : "scale(1)",
-                              transformOrigin: "center center",
                               transition: "all 0.2s ease-out",
                             }}
                           />
@@ -956,10 +971,10 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-xs uppercase font-bold text-slate-400">
-                      Total Egresos
+                    <span className="text-[10px] uppercase font-bold text-slate-400 leading-tight">
+                      Egresos
                     </span>
-                    <span className="text-xs font-black text-slate-900">
+                    <span className="text-sm font-black text-slate-900">
                       S/ {metrics.totalExpense.toLocaleString()}
                     </span>
                   </div>
@@ -1404,7 +1419,6 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                   </option>
                   <option value="efectivo">💵 Efectivo de Caja Chica</option>
                   <option value="yape_plin">📱 Yape / Plin</option>
-                  <option value="tarjeta">💳 Tarjeta Débito Empresarial</option>
                 </select>
               </div>
 
@@ -1456,9 +1470,8 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
         <RegistroIngreso
           onCerrar={() => setIsIncomeModalOpen(false)}
           onGuardar={(tx) => {
+            // La pantalla de registro muestra la boleta (imprimir / PDF / WhatsApp) y se cierra con "Listo"
             addTransaction({ ...tx, date: hoyISO() });
-            confetti({ particleCount: 50, spread: 70, colors: ["#10b981", "#34d399", "#a7f3d0"] });
-            setIsIncomeModalOpen(false);
           }}
         />
       )}

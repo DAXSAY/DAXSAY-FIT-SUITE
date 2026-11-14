@@ -4,7 +4,6 @@ import {
   Clock,
   XCircle,
   CheckCircle2,
-  Phone,
   Send,
   RotateCw,
   Calendar,
@@ -12,7 +11,8 @@ import {
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { TelWhatsApp } from "../common/TelWhatsApp";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 
 export const RenewalAlertsCenter = ({ onOpenRenewModal }) => {
   const { renewalAlerts, members, renewMembership } = useGym();

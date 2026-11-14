@@ -490,7 +490,7 @@ export const CalendarioAsistencias = ({ memberId, titulo = true, seguimiento = t
                   <XAxis dataKey="nombre" tick={{ fontSize: 11 }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                   <Tooltip formatter={(v) => [`${v} día(s)`, "Asistencias"]} />
-                  <Bar dataKey="valor" radius={[6, 6, 0, 0]} fill="#10b981" isAnimationActive={false} />
+                  <Bar isAnimationActive={false} maxBarSize={56} dataKey="valor" radius={[6, 6, 0, 0]} fill="var(--color-emerald-500)" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -504,7 +504,7 @@ export const CalendarioAsistencias = ({ memberId, titulo = true, seguimiento = t
                   <XAxis dataKey="nombre" tick={{ fontSize: 10 }} interval={0} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                   <Tooltip formatter={(v) => [`${v} día(s)`, "Asistencias"]} />
-                  <Bar dataKey="valor" radius={[5, 5, 0, 0]} cursor="pointer" isAnimationActive={false}>
+                  <Bar isAnimationActive={false} maxBarSize={56} dataKey="valor" radius={[5, 5, 0, 0]} cursor="pointer">
                     {porMes.map((p) => (
                       <Cell key={p.mes} fill={p.mes === mes ? "#0f172a" : "#a7f3d0"} />
                     ))}

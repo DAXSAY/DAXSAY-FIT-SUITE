@@ -33,7 +33,7 @@ router.get("/deudas", async (req, res, next) => {
   try {
     const [desde, hasta] = rango(req, 179);
     const filas = await consultar(
-      `SELECT m.idmatricula, m.idalumno, a.dni, CONCAT(a.nombres, ' ', a.apellidos) AS alumno, a.telefono, a.activo,
+      `SELECT m.idmatricula, m.idalumno, a.dni, a.codigo, a.nombres, a.apellidos, CONCAT(a.nombres, ' ', a.apellidos) AS alumno, a.telefono, a.activo,
               p.nombre AS plan, m.fecha_inicio, m.fecha_fin, DATE(m.fecha_registro) AS fecha_matricula, m.es_renovacion,
               IFNULL(m.precio_total, m.monto) AS precio,
               m.monto + (SELECT IFNULL(SUM(pg.monto), 0) FROM pagos_matricula pg WHERE pg.idmatricula = m.idmatricula) AS pagado,
@@ -68,6 +68,7 @@ router.get("/deudas", async (req, res, next) => {
       deudas: filas.map((f) => ({
         id: String(f.idmatricula),
         alumnoId: String(f.idalumno),
+        codigo: codigoAlumno(f.codigo, f.nombres, f.apellidos),
         dni: f.dni,
         alumno: f.alumno,
         telefono: f.telefono || "",

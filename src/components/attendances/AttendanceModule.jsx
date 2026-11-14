@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import {
+  FileCheck2,
   UserCheck,
   Calendar,
   Clock,
@@ -18,13 +19,23 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import { buscarAlumno } from "../../utils/codigo";
 import { CalendarioAsistencias } from "./CalendarioAsistencias";
 import { CalendarioPersonal } from "./CalendarioPersonal";
+import { PermisosPersonal } from "./PermisosPersonal";
+import { CalendarioGeneral } from "./CalendarioGeneral";
 import { esCodigoPase, validarPaseLibre } from "../../utils/pase";
-import { buscarAlumno as buscarAlumnoCal } from "../../utils/codigo";
+
 import { hoyISO } from "../../utils/fecha";
+import { esCodigoPersonal, buscarPersonal, ingresoDeHoy } from "../../utils/codigoPersonal";
+import { mostrarIngreso, avisoAlumno } from "./AvisoIngreso";
+import { abrirCorreccion } from "./CorregirIngreso";
+import { SelectorAlumno } from "../common/BuscarAlumno";
+import { filtrarAlumnos } from "../../utils/buscarPersona";
+import { candidatosPorCodigo } from "../../utils/buscarPersona";
+import { ListaCandidatos } from "../common/ListaCandidatos";
 
 const fc = (f) => (f ? String(f).slice(0, 10).split("-").reverse().join("/") : "");
 
@@ -35,11 +46,14 @@ export const AttendanceModule = () => {
     deleteAttendance,
     members,
     staffContracts,
+    todoElPersonal,
+    permisos = [],
     currentUser,
   } = useGym();
 
   // Primary Tab Separation: Personal de Trabajo vs Alumnos
-  const [activeTab, setActiveTab] = useState("staff");
+  const [activeTab, setActiveTab] = useState("inicio");
+  const permisosPendientes = permisos.filter((p) => p.estado === "pendiente").length;
 
   // Search & Filters
   const [filterDate, setFilterDate] = useState(hoyISO());
@@ -132,53 +146,85 @@ export const AttendanceModule = () => {
   }, [attendances]);
 
   // Handle Quick Scanner / Punch
-  const handleQuickPunch = (e) => {
-    e.preventDefault();
+  const candidatosPunch = React.useMemo(
+    () => (esCodigoPase(quickInput.trim()) ? [] : candidatosPorCodigo(quickInput, members, todoElPersonal || staffContracts)),
+    [quickInput, members, todoElPersonal, staffContracts],
+  );
+  const [punchIdx, setPunchIdx] = React.useState(0);
+  const [verPunch, setVerPunch] = React.useState(false);
+
+  const handleQuickPunch = (e, elegidoForzado) => {
+    e?.preventDefault?.();
     if (!quickInput.trim()) return;
 
-    const query = quickInput.trim().toLowerCase();
+    const texto = quickInput.trim();
+    let elegido = elegidoForzado || null;
+    if (!elegido && !esCodigoPase(texto)) {
+      if (candidatosPunch.length > 1) {
+        elegido = verPunch ? candidatosPunch[punchIdx] : null;
+        if (!elegido) return setVerPunch(true);
+      } else if (candidatosPunch.length === 1) elegido = candidatosPunch[0];
+    }
+    const hoy = hoyISO();
+    const primer = (n) => String(n || "").trim().split(/\s+/)[0];
+    setQuickInput("");
+    setVerPunch(false);
+    setPunchIdx(0);
 
     // Pase libre del CRM (QR de invitación)
-    if (esCodigoPase(quickInput)) {
-      validarPaseLibre(quickInput).then((r) => {
-        if (r.ok) confetti({ particleCount: 40, spread: 60 });
+    if (esCodigoPase(texto)) {
+      validarPaseLibre(texto).then((r) => {
+        const usado = !r.ok && /ya se us/i.test(r.mensaje);
+        mostrarIngreso(
+          r.ok
+            ? { tipo: "pase", codigo: texto.toUpperCase(), titulo: `¡Bienvenido(a) a tu clase de prueba, ${primer(r.prospecto?.fullName)}!`, detalle: `Pase libre válido por hoy${r.prospecto?.planName ? ` · le interesa ${r.prospecto.planName}` : ""}.` }
+            : { tipo: usado ? "repetido" : "error", codigo: texto.toUpperCase(), titulo: usado ? "Este pase libre ya fue usado" : "Pase libre no válido", detalle: r.mensaje.replace(/^Pase libre no válido: /, "") },
+        );
         setLastPunchResult({
           success: r.ok,
-          name: r.prospecto?.fullName || quickInput.trim().toUpperCase(),
+          name: r.prospecto?.fullName || texto.toUpperCase(),
           role: "Invitado (pase libre)",
-          status: r.ok ? "Pase libre" : "No válido",
+          status: r.ok ? "Pase libre" : usado ? "Ya usado" : "No válido",
           planOrRole: r.prospecto?.planName || "Prueba gratis",
           message: r.mensaje,
         });
       });
-      setQuickInput("");
       return;
     }
 
-    // 1. Check if it's staff
-    const foundStaff = staffContracts.find(
-      (s) =>
-        s.dni.toLowerCase() === query ||
-        s.fullName.toLowerCase().includes(query),
-    );
+    // 1. Personal: código 1-COACH / 1-NUTRI…, o DNI si no es de un alumno
+    const hallado = elegido ? (elegido.tipo === "alumno" ? { member: elegido.member } : null) : buscarAlumno(members, texto);
+    const foundStaff = elegido
+      ? elegido.tipo === "personal"
+        ? elegido.contrato
+        : null
+      : esCodigoPersonal(texto) || (/^\d{8}$/.test(texto) && !hallado)
+        ? buscarPersonal(todoElPersonal || staffContracts, texto)
+        : null;
 
     if (foundStaff) {
-      recordAttendance({
+      const previo = ingresoDeHoy(attendances, foundStaff.staffId, hoy);
+      if (previo) {
+        mostrarIngreso({ tipo: "repetido", codigo: foundStaff.staffCode, titulo: `${primer(foundStaff.fullName)} ya marcó su entrada hoy`, detalle: `Registrada a las ${previo.time}. No se volvió a registrar.` });
+        setLastPunchResult({ success: false, name: foundStaff.fullName, role: "Personal de Trabajo", status: "Ya marcó", planOrRole: foundStaff.roleTitle, message: `Ya marcó su entrada hoy a las ${previo.time}.` });
+        return;
+      }
+      const r = recordAttendance({
         userId: foundStaff.staffId,
         userName: foundStaff.fullName,
         userRole: foundStaff.role === "trainer" ? "trainer" : "staff",
         userDni: foundStaff.dni,
+        staffCode: foundStaff.staffCode,
         type: "in",
         status: "puntual",
         category: "staff",
         contractId: foundStaff.id,
         scheduledTime: "08:00 AM - 04:00 PM",
         hoursWorked: 8,
-        checkInMethod: "quick_pass",
+        checkInMethod: "codigo_personal",
         notes: `Marcación de entrada para ${foundStaff.roleTitle}`,
       });
-
-      confetti({ particleCount: 40, spread: 60 });
+      mostrarIngreso({ tipo: "personal", codigo: foundStaff.staffCode, titulo: `¡Buen turno, ${primer(foundStaff.fullName)}!`, detalle: `${foundStaff.roleTitle} · entrada registrada a las ${r?.record?.time || ""}` });
       setLastPunchResult({
         success: true,
         name: foundStaff.fullName,
@@ -187,18 +233,29 @@ export const AttendanceModule = () => {
         planOrRole: foundStaff.roleTitle,
         message: `¡Asistencia registrada para ${foundStaff.fullName}! Estado: Puntual.`,
       });
-      setQuickInput("");
-      setActiveTab("staff");
+      setActiveTab("inicio");
+      return;
+    }
+    if (esCodigoPersonal(texto)) {
+      mostrarIngreso({ tipo: "error", codigo: texto.toUpperCase(), titulo: "No hay personal con ese código", detalle: "Revisa el código en Contratos de Personal (ej. 1-COACH, 1-NUTRI)." });
       return;
     }
 
-    // 2. Check if student
-    const foundMember = buscarAlumno(members, quickInput)?.member;
+    // 2. Alumno
+    const foundMember = hallado?.member;
 
     if (foundMember) {
+      const previo = ingresoDeHoy(attendances, foundMember.id, hoy);
+      if (previo) {
+        mostrarIngreso(avisoAlumno(foundMember, { repetido: previo }));
+        setLastPunchResult({ success: false, name: foundMember.fullName, role: "Alumno / Socio", status: "Ya marcó", planOrRole: foundMember.planName, message: `Ya registró su ingreso hoy a las ${previo.time}. No se volvió a registrar.` });
+        setActiveTab("inicio");
+        return;
+      }
+      const visitasPrevias = attendances.filter((a) => String(a.userId) === String(foundMember.id)).length;
       const isFrozen = foundMember.status === "frozen";
       const isExpired = foundMember.status === "expired" || isFrozen;
-      recordAttendance({
+      const reg = recordAttendance({
         userId: foundMember.id,
         userName: foundMember.fullName,
         userRole: "student",
@@ -214,8 +271,7 @@ export const AttendanceModule = () => {
           ? "⛔ Membresía Vencida"
           : "Ingreso regular a sala de entrenamiento",
       });
-
-      if (!isExpired) confetti({ particleCount: 30, spread: 50 });
+      mostrarIngreso({ ...avisoAlumno(foundMember, { visitasPrevias }), accion: reg?.record ? { texto: "¿Error? Corregir", fn: () => abrirCorreccion(reg.record) } : undefined });
       setLastPunchResult({
         success: !isExpired,
         name: foundMember.fullName,
@@ -228,12 +284,11 @@ export const AttendanceModule = () => {
           ? `¡Atención! Membresía de ${foundMember.fullName} se encuentra vencida.`
           : `¡Acceso concedido a ${foundMember.fullName}!`,
       });
-      setQuickInput("");
-      setActiveTab("students");
+      setActiveTab("inicio");
       return;
     }
 
-    alert("No se encontró alumno ni personal con ese DNI o nombre.");
+    mostrarIngreso({ tipo: "error", titulo: "No se encontró a nadie", detalle: `Ningún alumno ni personal con «${texto}» (código, DNI o nombre).` });
   };
 
   // Submit Manual Staff Attendance
@@ -272,6 +327,12 @@ export const AttendanceModule = () => {
     e.preventDefault();
     const mem = members.find((m) => m.id === modalStudentId) || members[0];
     if (!mem) return;
+    const previo = ingresoDeHoy(attendances, mem.id, hoyISO());
+    if (previo) {
+      mostrarIngreso(avisoAlumno(mem, { repetido: previo }));
+      setIsStudentModalOpen(false);
+      return;
+    }
 
     recordAttendance({
       userId: mem.id,
@@ -286,7 +347,7 @@ export const AttendanceModule = () => {
       notes: modalStudentNotes.trim() || "Ingreso manual por recepción",
     });
 
-    confetti({ particleCount: 30, spread: 50 });
+    mostrarIngreso(avisoAlumno(mem, { visitasPrevias: 1 }));
     setIsStudentModalOpen(false);
     setModalStudentNotes("");
   };
@@ -295,7 +356,7 @@ export const AttendanceModule = () => {
   const handleExportCSV = () => {
     let csv =
       "ID,Categoria,Fecha,Hora,Usuario,DNI,Estado,HorarioProgramado,HorasTrabajadas,Motivo,Notas\n";
-    const list = activeTab === "staff" ? staffRecords : studentRecords;
+    const list = activeTab === "staffCalendar" ? staffRecords : studentRecords;
     list.forEach((r) => {
       csv += `"${r.id}","${r.category || "general"}","${r.date}","${r.time}","${r.userName}","${r.userDni}","${r.status}","${r.scheduledTime || ""}","${r.hoursWorked || 0}","${r.reason || ""}","${r.notes || ""}"\n`;
     });
@@ -350,34 +411,32 @@ export const AttendanceModule = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-blue-950 rounded-2xl p-5 sm:p-6 text-white border border-slate-800 shadow-md">
+      <div className="rd-portada rd-cabecera">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">
               <UserCheck className="w-4 h-4" />
-              <span>Control de Asistencias Dividido & Nómina</span>
+              <span>Personal y alumnos</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              Control de Asistencias
+              Asistencias
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm mt-1 max-w-2xl">
-              Módulo dividido por separado: seguimiento de personal de trabajo
-              con horas de contrato, estados de puntualidad (Puntual, Tarde,
-              Falta, Permiso) y motivos; y control de acceso de alumnos.
+              Ingresos de alumnos, puntualidad del personal y permisos.
             </p>
           </div>
 
           <div className="flex items-center flex-wrap gap-2">
             <button
               onClick={() => {
-                if (activeTab === "staff") setIsStaffModalOpen(true);
+                if (activeTab === "staffCalendar") setIsStaffModalOpen(true);
                 else setIsStudentModalOpen(true);
               }}
               className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>
-                {activeTab === "staff"
+                {activeTab === "staffCalendar"
                   ? "Registrar Asistencia Personal"
                   : "Registrar Ingreso Alumno"}
               </span>
@@ -402,11 +461,28 @@ export const AttendanceModule = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Código del alumno (ej. DF-1 o solo 1), DNI o nombre para marcar entrada..."
+              placeholder="Alumno: DF-1 o 1 · Personal: 1-COACH, 1-NUTRI · DNI o pase libre"
               value={quickInput}
-              onChange={(e) => setQuickInput(e.target.value)}
-              className="w-full bg-slate-800/90 hover:bg-slate-800 border border-slate-700 focus:border-blue-400 text-white placeholder-slate-400 rounded-xl pl-10 pr-4 py-2.5 text-sm sm:text-sm focus:outline-none transition-all"
+              onChange={(e) => (setQuickInput(e.target.value), setPunchIdx(0), setVerPunch(true))}
+              onKeyDown={(e) => {
+                if (!candidatosPunch.length) return;
+                if (e.key === "ArrowDown") (e.preventDefault(), setVerPunch(true), setPunchIdx((i) => Math.min(i + 1, candidatosPunch.length - 1)));
+                if (e.key === "ArrowUp") (e.preventDefault(), setPunchIdx((i) => Math.max(i - 1, 0)));
+                if (e.key === "Escape") setVerPunch(false);
+              }}
+              onFocus={() => setVerPunch(true)}
+              onBlur={() => setTimeout(() => setVerPunch(false), 150)}
+              className="rd-campo-marcar w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-all"
             />
+            {quickInput.trim() && verPunch && (
+              <ListaCandidatos
+                candidatos={candidatosPunch}
+                indice={punchIdx}
+                onIndice={setPunchIdx}
+                onElegir={(c) => handleQuickPunch(null, c)}
+                pase={esCodigoPase(quickInput.trim())}
+              />
+            )}
           </div>
           <button
             type="submit"
@@ -445,28 +521,15 @@ export const AttendanceModule = () => {
       {/* PRIMARY TAB SWITCHER: PERSONAL DE TRABAJO vs ALUMNOS */}
       <div className="flex flex-wrap items-center gap-2 p-1 bg-slate-200/80 rounded-2xl w-full sm:w-max">
         <button
-          onClick={() => setActiveTab("staff")}
+          onClick={() => setActiveTab("inicio")}
           className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-            activeTab === "staff"
-              ? "bg-blue-600 text-white shadow-md"
-              : "text-slate-700 hover:text-slate-900 hover:bg-slate-200"
+            activeTab === "inicio" ? "bg-blue-600 text-white shadow-md" : "text-slate-700 hover:text-slate-900 hover:bg-slate-200"
           }`}
         >
-          <Briefcase className="w-4 h-4" />
-          <span>Personal de Trabajo ({staffRecords.length})</span>
+          <CalendarDays className="w-4 h-4" />
+          <span>Calendario</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab("students")}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-            activeTab === "students"
-              ? "bg-blue-600 text-white shadow-md"
-              : "text-slate-700 hover:text-slate-900 hover:bg-slate-200"
-          }`}
-        >
-          <GraduationCap className="w-4 h-4" />
-          <span>Alumnos / Socios ({studentRecords.length})</span>
-        </button>
         <button
           onClick={() => setActiveTab("calendar")}
           className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
@@ -474,7 +537,7 @@ export const AttendanceModule = () => {
           }`}
         >
           <CalendarDays className="w-4 h-4" />
-          <span>Calendario por alumno</span>
+          <span>Historial de un alumno</span>
         </button>
         <button
           onClick={() => setActiveTab("staffCalendar")}
@@ -483,15 +546,37 @@ export const AttendanceModule = () => {
           }`}
         >
           <CalendarDays className="w-4 h-4" />
-          <span>Calendario del personal</span>
+          <span>Puntualidad del personal</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("permisos")}
+          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+            activeTab === "permisos" ? "bg-blue-600 text-white shadow-md" : "text-slate-700 hover:text-slate-900 hover:bg-slate-200"
+          }`}
+        >
+          <FileCheck2 className="w-4 h-4" />
+          <span>Permisos</span>
+          {permisosPendientes > 0 && <span className="min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-[11px] font-black flex items-center justify-center">{permisosPendientes}</span>}
         </button>
       </div>
+
+      {/* ---------------- CALENDARIO GENERAL (primera pantalla) ---------------- */}
+      {activeTab === "inicio" && (
+        <CalendarioGeneral
+          onVerLista={(tab, dia) => {
+            setFilterDate(dia);
+          }}
+        />
+      )}
 
       {/* ---------------- CALENDARIO DE ASISTENCIAS POR ALUMNO ---------------- */}
       {activeTab === "calendar" && <PanelCalendario members={members} />}
 
       {/* ---------------- CALENDARIO DEL PERSONAL ---------------- */}
       {activeTab === "staffCalendar" && <CalendarioPersonal />}
+
+      {/* ---------------- PERMISOS DEL PERSONAL ---------------- */}
+      {activeTab === "permisos" && <PermisosPersonal />}
 
       {/* ---------------- SECTION 1: PERSONAL DE TRABAJO ---------------- */}
       {activeTab === "staff" && (
@@ -1050,17 +1135,7 @@ export const AttendanceModule = () => {
                 <label className="block font-bold text-slate-800 mb-1">
                   Seleccionar Alumno *
                 </label>
-                <select
-                  value={modalStudentId}
-                  onChange={(e) => setModalStudentId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 text-sm"
-                >
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.fullName} — DNI: {m.dni} ({m.planName})
-                    </option>
-                  ))}
-                </select>
+                <SelectorAlumno alumnos={members} value={modalStudentId} onChange={(id) => setModalStudentId(id)} required />
               </div>
 
               <div>
@@ -1107,40 +1182,14 @@ const PanelCalendario = ({ members }) => {
   const sugerencias = React.useMemo(() => {
     const t = texto.trim().toLowerCase();
     if (!t) return [];
-    const exacto = buscarAlumnoCal(members, texto)?.member;
-    const lista = members.filter(
-      (m) => m.fullName.toLowerCase().includes(t) || m.dni.includes(t) || (m.codeLabel || "").toLowerCase().replace("-", "").includes(t.replace(/[\s-]/g, "")),
-    );
-    return [...(exacto ? [exacto] : []), ...lista.filter((m) => m.id !== exacto?.id)].slice(0, 8);
+    return filtrarAlumnos(members, texto).slice(0, 8);
   }, [texto, members]);
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-2">
-        <p className="text-sm font-extrabold text-slate-900">¿De qué alumno quieres ver las asistencias?</p>
-        <input
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          placeholder="Código (ej. DF-1), DNI o nombre"
-          className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm"
-        />
-        {sugerencias.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {sugerencias.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => {
-                  setElegido(m);
-                  setTexto("");
-                }}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 text-sm cursor-pointer"
-              >
-                <span className="font-mono font-bold text-blue-700 mr-1.5">{m.codeLabel}</span>
-                {m.fullName}
-              </button>
-            ))}
-          </div>
-        )}
+        <p className="text-sm font-extrabold text-slate-900">¿De qué alumno quieres ver el historial?</p>
+        <p className="text-xs text-slate-500">Escribe su código (ej. 12 o DR-12), nombre o DNI. Verás mes por mes qué días vino y cuáles faltó.</p>
+        <SelectorAlumno alumnos={members} value={elegido?.id || ""} onChange={(id) => setElegido(members.find((m) => m.id === id) || null)} />
       </div>
       {elegido ? (
         <CalendarioAsistencias key={elegido.id} memberId={elegido.id} />

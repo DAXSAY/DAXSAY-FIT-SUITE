@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   CreditCard,
   Plus,
   Check,
   X,
   Edit3,
-  Trash2,
   Users,
   Sparkles,
   Dumbbell,
@@ -16,18 +16,17 @@ import {
   Table2,
   TrendingUp,
   Snowflake,
+  Archive,
+  RotateCcw,
 } from "lucide-react";
+import { api } from "../../api/cliente";
 import { useGym } from "../../context/GymContext";
 import { userCan } from "../../config/roles";
+import { PALETA, colorDePlan, esColorLibre } from "../../utils/colorPlan";
+import { BotonColor } from "../common/SelectorColor";
+import { Search } from "lucide-react";
 
-// Paleta por posición del plan (de menor a mayor precio)
-const TONOS = [
-  { borde: "border-slate-300", acento: "from-slate-600 to-slate-800", suave: "bg-slate-50", texto: "text-slate-700" },
-  { borde: "border-sky-300", acento: "from-sky-500 to-blue-700", suave: "bg-sky-50", texto: "text-sky-700" },
-  { borde: "border-indigo-300", acento: "from-indigo-500 to-violet-700", suave: "bg-indigo-50", texto: "text-indigo-700" },
-  { borde: "border-emerald-300", acento: "from-emerald-500 to-teal-700", suave: "bg-emerald-50", texto: "text-emerald-700" },
-  { borde: "border-amber-300", acento: "from-amber-500 to-orange-700", suave: "bg-amber-50", texto: "text-amber-700" },
-];
+// Cada plan tiene su color (lo elige administración); si no, el de su posición por precio
 
 const soles = (n) => `S/ ${Number(n || 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const meses = (dias) => Math.max(1, Math.round(Number(dias || 30) / 30));
@@ -47,10 +46,145 @@ const VACIO = {
   includesNutrition: false,
   includesPhysio: false,
   popular: false,
+  color: "",
   featuresStr: "",
   freezeDays: 0,
   freezeParts: 1,
   freezeMinDays: 0,
+};
+
+// Beneficios frecuentes de un plan (se marcan con un toque; se pueden agregar otros)
+const BENEFICIOS_BASE = [
+  "Acceso ilimitado a sala de pesas",
+  "Acceso a zona de cardio",
+  "Clases grupales incluidas",
+  "Evaluación física inicial",
+  "Rutina personalizada",
+  "Seguimiento de progreso mensual",
+  "Asesoría de entrenador en sala",
+  "Plan nutricional básico",
+  "Consulta de nutrición",
+  "Evaluación de fisioterapia",
+  "Evaluación de composición corporal (bioimpedancia)",
+  "Acceso a la app del alumno",
+  "Casillero",
+  "Toalla",
+  "Duchas y vestidores",
+  "Estacionamiento",
+  "Wi-Fi",
+  "Invitado gratis 1 vez al mes",
+  "Congelamiento de membresía",
+  "Descuento en suplementos de la tienda",
+  "Horario libre (todo el día)",
+  "Acceso a todas las sedes",
+];
+
+// Normaliza para buscar sin tildes ni mayúsculas
+const norm = (t) => String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+// ¿Coincide lo escrito? Primero por texto; si no, por letras en orden dentro de una palabra ("acs" → acceso)
+const coincide = (b, q) => {
+  const t = norm(b);
+  if (t.split(/[^a-z0-9ñ]+/).some((w) => w.startsWith(q))) return 3;
+  if (t.includes(q)) return 2;
+  return t.split(/[^a-z0-9ñ]+/).some((w) => {
+    let i = 0;
+    for (const c of w) if (c === q[i]) i++;
+    return i === q.length && w[0] === q[0];
+  })
+    ? 1
+    : 0;
+};
+
+const SelectorBeneficios = ({ value = [], onChange, uso = {} }) => {
+  const [busca, setBusca] = useState("");
+  const [verTodos, setVerTodos] = useState(false);
+  const q = norm(busca.trim());
+  // Los más usados en los planes van primero
+  const opciones = [...new Set([...Object.keys(uso), ...BENEFICIOS_BASE])]
+    .filter((b) => !value.includes(b))
+    .map((b) => ({ b, n: uso[b] || 0, m: q ? coincide(b, q) : 1 }))
+    .filter((o) => o.m > 0)
+    .sort((a, b) => b.m - a.m || b.n - a.n || a.b.localeCompare(b.b, "es"));
+  const LIMITE = 12;
+  const visibles = q || verTodos ? opciones : opciones.slice(0, LIMITE);
+  const quitar = (b) => onChange(value.filter((x) => x !== b));
+  const poner = (b) => {
+    if (!value.includes(b)) onChange([...value, b]);
+    setBusca("");
+  };
+  const alEnter = () => {
+    const t = busca.trim();
+    if (!t) return;
+    const exacto = opciones.find((o) => norm(o.b) === q);
+    poner(exacto ? exacto.b : opciones.length && q.length < 25 && opciones[0].m >= 2 ? opciones[0].b : t);
+  };
+  const nuevo = busca.trim() && (q.length >= 4 || !opciones.length) && !opciones.some((o) => norm(o.b) === q) && !value.some((v) => norm(v) === q);
+
+  return (
+    <div className="space-y-2">
+      <span className="block text-sm font-bold text-slate-700">
+        Beneficios <span className="font-normal text-slate-500">({value.length} elegidos)</span>
+      </span>
+
+      {/* Elegidos */}
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((b) => (
+            <button
+              key={b}
+              type="button"
+              onClick={() => quitar(b)}
+              title="Quitar"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-600 border border-blue-600 text-white text-xs font-semibold cursor-pointer hover:bg-blue-700"
+            >
+              <Check className="w-3 h-3" /> {b} <X className="w-3 h-3 opacity-70" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Buscador con autocompletado */}
+      <div className="relative">
+        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <input
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), alEnter())}
+          placeholder="Busca un beneficio: «acceso», «clases», «nutri»… (Enter para agregar)"
+          className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-sm"
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {nuevo && (
+          <button
+            type="button"
+            onClick={() => poner(busca.trim())}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-emerald-500 bg-emerald-50 text-emerald-700 text-xs font-bold cursor-pointer"
+          >
+            <Plus className="w-3 h-3" /> Crear «{busca.trim()}»
+          </button>
+        )}
+        {visibles.map(({ b, n }) => (
+          <button
+            key={b}
+            type="button"
+            onClick={() => poner(b)}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border bg-white border-slate-300 text-slate-600 text-xs font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-700"
+          >
+            <Plus className="w-3 h-3" /> {b}
+            {n > 0 && <span className="ml-0.5 px-1 rounded bg-slate-100 text-slate-500 text-[10px] font-black" title={`Lo usan ${n} plan(es)`}>{n}</span>}
+          </button>
+        ))}
+        {q && !visibles.length && !nuevo && <span className="text-xs text-slate-400">Ya está elegido.</span>}
+      </div>
+      {!q && opciones.length > LIMITE && (
+        <button type="button" onClick={() => setVerTodos((v) => !v)} className="text-xs font-bold text-blue-600 hover:underline cursor-pointer">
+          {verTodos ? "Ver solo los más usados" : `Ver todos (${opciones.length})`}
+        </button>
+      )}
+    </div>
+  );
 };
 
 /** Texto de las reglas de congelamiento (igual que el servidor) */
@@ -58,8 +192,8 @@ export const textoCongelamiento = (p) => {
   const total = Number(p?.freezeDays || 0);
   const partes = Number(p?.freezeParts || 1);
   if (!total) return "Sin congelamiento";
-  if (partes <= 1) return `${total} días de congelamiento (todo de una vez)`;
-  return `${total} días de congelamiento, hasta ${partes} partes de mínimo ${Number(p.freezeMinDays || 0) || Math.floor(total / partes)} días`;
+  if (partes <= 1) return `Congelamiento único de ${total} días`;
+  return `Congelamiento fraccionado: ${total} días en hasta ${partes} periodos (mínimo ${Number(p.freezeMinDays || 0) || Math.floor(total / partes)} días c/u)`;
 };
 
 /** Mismo control que el servidor, para avisar antes de guardar */
@@ -71,18 +205,17 @@ const errorCongelamiento = (f) => {
   if (partes === 1) return "";
   const min = Number(f.freezeMinDays || 0);
   if (min < 1) return "Indica el mínimo de días por congelamiento";
-  if (min * partes > total) return `Con ${partes} partes de mínimo ${min} días se necesitan ${min * partes} días`;
+  if (min * partes > total) return `Con ${partes} periodos de mínimo ${min} días se necesitan ${min * partes} días`;
   return "";
 };
 
 export const MembershipsPlans = () => {
-  const { plans, members, addPlan, updatePlan, deletePlan, currentUser } = useGym();
+  const { plans, members, addPlan, updatePlan, deletePlan, reactivatePlan, currentUser } = useGym();
   const puedeEditar = userCan(currentUser, "memberships", "editar");
   const puedeCrear = userCan(currentUser, "memberships", "crear");
   const puedeEliminar = userCan(currentUser, "memberships", "eliminar");
 
   const [vista, setVista] = useState("tarjetas");
-  const [mostrarMensual, setMostrarMensual] = useState(false);
   const [seleccion, setSeleccion] = useState(null);
   const [editando, setEditando] = useState(null); // null | "nuevo" | plan
   const [form, setForm] = useState(VACIO);
@@ -130,6 +263,7 @@ export const MembershipsPlans = () => {
       includesNutrition: form.includesNutrition,
       includesPhysio: form.includesPhysio,
       popular: form.popular,
+      color: form.color || "",
       features: form.featuresStr.split("\n").map((f) => f.trim()).filter(Boolean),
       freezeDays: Number(form.freezeDays || 0),
       freezeParts: Number(form.freezeDays || 0) ? Number(form.freezeParts || 1) : 1,
@@ -144,8 +278,49 @@ export const MembershipsPlans = () => {
   const simulado = ordenados.find((p) => p.id === simPlan) || ordenados[0];
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
+  // Esc cierra el editor de plan; mientras está abierto, la página de atrás no se desplaza
+  useEffect(() => {
+    if (!editando) return;
+    const tecla = (e) => e.key === "Escape" && setEditando(null);
+    const antes = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", tecla);
+    return () => {
+      window.removeEventListener("keydown", tecla);
+      document.body.style.overflow = antes;
+    };
+  }, [editando]);
+  // Planes dados de baja (ej. de temporada): se guardan y se pueden reactivar
+  const [baja, setBaja] = useState(null);
+  const [archivados, setArchivados] = useState([]);
+  const [verArchivados, setVerArchivados] = useState(false);
+  const cargarArchivados = () =>
+    puedeEditar &&
+    api("/planes?todos=1")
+      .then((l) => setArchivados(Array.isArray(l) ? l.filter((x) => x.archived) : []))
+      .catch(() => {});
+  useEffect(() => {
+    cargarArchivados();
+  }, [plans.length]);
+  const confirmarBaja = async () => {
+    const ok = await deletePlan(baja.id);
+    setBaja(null);
+    if (ok) cargarArchivados();
+  };
+  const reactivar = async (p) => {
+    try {
+      await reactivatePlan(p.id);
+      cargarArchivados();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  const posForm = ordenados.filter((p) => p.id !== editando?.id && p.price < Number(form.price || 0)).length;
+  const colorForm = colorDePlan(form, posForm);
+
   const Tarjeta = ({ p, i, preview = false }) => {
-    const t = TONOS[Math.min(i, TONOS.length - 1)];
+    const t = colorDePlan(p, i);
     const porMes = p.durationDays >= 28 ? p.price / meses(p.durationDays) : null;
     const ahorro =
       mensualRef && porMes && p.durationDays > 31 ? Math.round((1 - porMes / mensualRef) * 100) : null;
@@ -156,9 +331,9 @@ export const MembershipsPlans = () => {
         onClick={() => !preview && setSeleccion(sel ? null : p.id)}
         className={`relative bg-white rounded-xl border flex flex-col overflow-hidden transition-all duration-200 ${
           preview ? "" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg"
-        } ${p.popular ? "border-blue-500 shadow-md shadow-blue-100" : t.borde} ${sel ? "ring-4 ring-blue-200" : ""}`}
+        } ${t.borde} ${p.popular ? "border-2 shadow-lg" : ""} ${sel ? "ring-4 ring-blue-200" : ""}`}
       >
-        <div className={`relative bg-gradient-to-br ${p.popular ? "from-blue-600 to-indigo-800" : t.acento} text-white px-4 pt-3 pb-4 h-[196px] flex flex-col`}>
+        <div className={`relative bg-gradient-to-br ${t.acento} text-white px-4 pt-3 pb-4 h-[196px] flex flex-col`} style={t.estilo}>
           {/* fila fija para la etiqueta, así todas las cabeceras miden lo mismo */}
           <div className="h-6 flex items-center justify-between gap-2">
             {p.popular ? (
@@ -177,11 +352,11 @@ export const MembershipsPlans = () => {
                 )}
                 {puedeEliminar && (
                   <button
-                    onClick={() => confirm(`¿Eliminar el plan ${p.name}? Los alumnos inscritos conservan su historial.`) && deletePlan(p.id)}
+                    onClick={() => setBaja(p)}
                     className="p-1.5 rounded-md bg-white/15 hover:bg-rose-500 cursor-pointer"
-                    title="Eliminar"
+                    title="Dar de baja / eliminar"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Archive className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
@@ -190,19 +365,18 @@ export const MembershipsPlans = () => {
           <h3 className="text-lg font-extrabold leading-tight truncate mt-1" title={p.name}>{p.name || "Nombre del plan"}</h3>
           <p className="text-xs text-white/80">{duracionTexto(p.durationDays)} de acceso</p>
           <div className="mt-auto flex items-baseline gap-1.5 whitespace-nowrap">
-            <span className="text-3xl font-black tracking-tight">
-              {mostrarMensual && porMes ? soles(porMes) : soles(p.price)}
-            </span>
-            <span className="text-xs text-white/80">{mostrarMensual && porMes ? "/ mes" : "total"}</span>
+            <span className="text-3xl font-black tracking-tight">{soles(p.price)}</span>
+            <span className="text-xs text-white/80">total</span>
           </div>
-          <div className="mt-2 h-[42px] flex flex-wrap content-start gap-1 text-[11px] font-bold overflow-hidden">
-            {ahorro > 0 && <span className="bg-emerald-400 text-emerald-950 rounded-md px-1.5 py-0.5 whitespace-nowrap">Ahorra {ahorro}%</span>}
-            {porMes && !mostrarMensual && p.durationDays > 31 && (
-              <span className="bg-white/20 rounded-md px-1.5 py-0.5 whitespace-nowrap">{soles(porMes)}/mes</span>
+          {/* Debajo del precio del paquete: cuánto sale al mes y al día */}
+          <div className="mt-1 h-[38px] leading-tight whitespace-nowrap">
+            {porMes && p.durationDays > 31 && (
+              <p className="text-sm font-bold text-white/90 flex items-center gap-1.5">
+                {soles(porMes)} al mes
+                {ahorro > 0 && <span className="bg-emerald-400 text-emerald-950 rounded-md px-1.5 py-0.5 text-[10px] font-black leading-none">Ahorra {ahorro}%</span>}
+              </p>
             )}
-            {Number(p.durationDays) > 0 && (
-              <span className="bg-white/20 rounded-md px-1.5 py-0.5 whitespace-nowrap">{soles(p.price / Number(p.durationDays))}/día</span>
-            )}
+            {Number(p.durationDays) > 0 && <p className="text-xs font-semibold text-white/75">{soles(p.price / Number(p.durationDays))} al día</p>}
           </div>
         </div>
 
@@ -251,8 +425,8 @@ export const MembershipsPlans = () => {
               </div>
               <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                 <div
-                  className={`h-full bg-gradient-to-r ${p.popular ? "from-blue-500 to-indigo-600" : t.acento}`}
-                  style={{ width: `${totalActivos ? (activos / totalActivos) * 100 : 0}%` }}
+                  className={`h-full bg-gradient-to-r ${t.acento}`}
+                  style={{ ...t.estilo, width: `${totalActivos ? (activos / totalActivos) * 100 : 0}%` }}
                 />
               </div>
             </div>
@@ -265,14 +439,14 @@ export const MembershipsPlans = () => {
   return (
     <div className="space-y-5 pb-8">
       {/* Encabezado */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white rounded-3xl p-6">
+      <div className="rd-portada rd-cabecera">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-cyan-300 flex items-center gap-1.5">
-              <CreditCard className="w-4 h-4" /> Planes y tarifas
+              <CreditCard className="w-4 h-4" /> Membresías
             </span>
-            <h1 className="text-2xl font-extrabold mt-1">Membresías de RADICAL</h1>
-            <p className="text-sm text-slate-300">Toque un plan para resaltarlo. Compare precios por mes y el ahorro de cada plan.</p>
+            <h1 className="text-2xl font-extrabold mt-1">Planes y tarifas</h1>
+            <p className="text-sm text-slate-300">Precios, beneficios y ahorro de cada plan.</p>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -302,10 +476,6 @@ export const MembershipsPlans = () => {
               <Table2 className="w-4 h-4" /> Comparar
             </button>
           </div>
-          <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer bg-white/10 rounded-xl px-3 py-2">
-            <input type="checkbox" checked={mostrarMensual} onChange={(e) => setMostrarMensual(e.target.checked)} className="w-4 h-4 accent-cyan-400" />
-            Ver precio por mes
-          </label>
           {puedeCrear && (
             <button
               onClick={abrirNuevo}
@@ -416,9 +586,61 @@ export const MembershipsPlans = () => {
         </div>
       )}
 
+      {/* Planes dados de baja */}
+      {puedeEditar && archivados.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-4">
+          <button onClick={() => setVerArchivados((v) => !v)} className="w-full flex items-center justify-between gap-2 cursor-pointer">
+            <span className="flex items-center gap-2 text-sm font-extrabold text-slate-800">
+              <Archive className="w-4 h-4 text-slate-500" /> Planes dados de baja ({archivados.length})
+            </span>
+            <span className="text-xs font-bold text-blue-600">{verArchivados ? "Ocultar" : "Ver"}</span>
+          </button>
+          {verArchivados && (
+            <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {archivados.map((p) => (
+                <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50">
+                  <span className={`w-2.5 h-10 rounded-full bg-gradient-to-b ${colorDePlan(p, 0).acento}`} style={colorDePlan(p, 0).estilo} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-800 truncate">{p.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {soles(p.price)} · {duracionTexto(p.durationDays)}
+                      {p.activeMembers > 0 && <b className="text-emerald-700"> · {p.activeMembers} alumno(s) aún lo usan</b>}
+                    </p>
+                  </div>
+                  <button onClick={() => reactivar(p)} className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer">
+                    <RotateCcw className="w-3.5 h-3.5" /> Reactivar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {baja && (
+        <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" onMouseDown={() => setBaja(null)}>
+          <div onMouseDown={(e) => e.stopPropagation()} className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-5 space-y-3 rd-aparece">
+            <p className="text-xs font-bold uppercase text-rose-600 flex items-center gap-1"><Archive className="w-3.5 h-3.5" /> Dar de baja el plan</p>
+            <p className="text-lg font-black text-slate-900">{baja.name}</p>
+            <ul className="text-sm text-slate-600 space-y-1.5">
+              <li>• Deja de aparecer para nuevas matrículas y renovaciones.</li>
+              <li>
+                • <b>{activosPorPlan[baja.id] || 0} alumno(s)</b> que ya lo compraron lo conservan: siguen marcando asistencia hasta que venza.
+              </li>
+              <li>• Queda guardado en «Planes dados de baja» y puedes <b>reactivarlo</b> cuando quieras (ideal para planes de temporada).</li>
+            </ul>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setBaja(null)} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">Cancelar</button>
+              <button onClick={confirmarBaja} className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-black cursor-pointer">Dar de baja</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Crear / editar plan: pantalla completa con vista previa */}
-      {editando && (
-        <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
+      {editando && createPortal(
+        <div className="fixed inset-0 z-[70] rd-velo">
+<div className="rd-hoja overflow-y-auto overscroll-contain bg-slate-50">
           <div className="bg-slate-900 text-white px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-10">
             <h2 className="text-lg font-extrabold">{editando === "nuevo" ? "Nuevo plan" : `Editar: ${editando.name}`}</h2>
             <button onClick={() => setEditando(null)} className="p-2 rounded-lg hover:bg-white/10 cursor-pointer" title="Cerrar">
@@ -463,19 +685,20 @@ export const MembershipsPlans = () => {
                 <span className="block text-sm font-bold text-slate-700 mb-1.5">Descripción</span>
                 <input value={form.description} onChange={set("description")} placeholder="Para quién es este plan" className="w-full p-3 rounded-xl border border-slate-300 text-sm" />
               </label>
-              <label className="block">
-                <span className="block text-sm font-bold text-slate-700 mb-1.5">Beneficios (uno por línea)</span>
-                <textarea rows={5} value={form.featuresStr} onChange={set("featuresStr")} placeholder={"Acceso ilimitado a sala de pesas\nCasillero\nEvaluación física inicial"} className="w-full p-3 rounded-xl border border-slate-300 text-sm" />
-              </label>
+              <SelectorBeneficios
+                value={form.featuresStr.split("\n").map((f) => f.trim()).filter(Boolean)}
+                onChange={(l) => setForm({ ...form, featuresStr: l.join("\n") })}
+                uso={plans.flatMap((p) => p.features || []).reduce((m, b) => ((m[b] = (m[b] || 0) + 1), m), {})}
+              />
               <fieldset className="rounded-xl border-2 border-sky-200 bg-sky-50/50 p-4 space-y-3">
                 <legend className="px-1 text-sm font-extrabold text-sky-800 flex items-center gap-1.5">
                   <Snowflake className="w-4 h-4" /> Congelamiento
                 </legend>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    ["no", "No permite"],
-                    ["uno", "Sí, todo de una vez"],
-                    ["partes", "Sí, en partes"],
+                    ["no", "Sin congelamiento"],
+                    ["uno", "Congelamiento único"],
+                    ["partes", "Congelamiento fraccionado"],
                   ].map(([k, l]) => {
                     const modo = !Number(form.freezeDays || 0) ? "no" : Number(form.freezeParts || 1) > 1 ? "partes" : "uno";
                     return (
@@ -508,7 +731,7 @@ export const MembershipsPlans = () => {
                     {Number(form.freezeParts || 1) > 1 && (
                       <>
                         <label className="block">
-                          <span className="block text-xs font-bold text-slate-700 mb-1">Máx. de partes</span>
+                          <span className="block text-xs font-bold text-slate-700 mb-1">Máx. de periodos</span>
                           <input type="number" min="2" max="12" value={form.freezeParts} onChange={set("freezeParts")} className="w-full p-2.5 rounded-xl border border-slate-300 text-sm bg-white" />
                         </label>
                         <label className="block">
@@ -525,13 +748,48 @@ export const MembershipsPlans = () => {
                   <p className="text-xs text-sky-900">
                     <b>{textoCongelamiento(form)}.</b>{" "}
                     {Number(form.freezeDays || 0) > 0 &&
-                      "Es todo o nada: no se congela de a pocos; si el alumno vuelve antes, pierde los días que no usó. El derecho caduca al vencer la membresía."}
+                      "Se usa en un solo periodo continuo. Si el alumno retoma antes, los días no usados se pierden. El beneficio vence junto con la membresía."}
                   </p>
                 )}
                 <p className="text-[11px] text-slate-500">
                   Si cambias estas reglas, los alumnos que ya compraron el plan conservan las condiciones con las que lo compraron.
                 </p>
               </fieldset>
+              <div>
+                <span className="block text-sm font-bold text-slate-700 mb-1.5">Color del plan</span>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(PALETA).map(([k, c]) => (
+                    <button
+                      type="button"
+                      key={k}
+                      title={c.nombre}
+                      onClick={() => setForm({ ...form, color: k })}
+                      className={`w-9 h-9 rounded-full bg-gradient-to-br ${c.acento} cursor-pointer transition-transform hover:scale-110 ${
+                        colorForm === c ? "ring-4 ring-offset-2 ring-slate-400 scale-110" : ""
+                      }`}
+                    />
+                  ))}
+                  <BotonColor
+                    title="Elegir cualquier color"
+                    valor={form.color}
+                    activo={esColorLibre(form.color)}
+                    onCambiar={(c) => setForm((f) => ({ ...f, color: c }))}
+                    className={`relative w-9 h-9 rounded-full cursor-pointer flex items-center justify-center border-2 border-dashed border-slate-400 text-slate-500 hover:scale-110 transition-transform ${
+                      esColorLibre(form.color) ? "ring-4 ring-offset-2 ring-slate-400" : ""
+                    }`}
+                  >
+                    {!esColorLibre(form.color) && <Plus className="w-4 h-4" />}
+                  </BotonColor>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  {esColorLibre(form.color)
+                    ? `Color personalizado ${form.color.toUpperCase()}.`
+                    : form.color
+                      ? `Elegido: ${PALETA[form.color]?.nombre}.`
+                      : `Automático por precio (${colorForm.nombre}).`}{" "}
+                  Toca «+» para elegir cualquier color. También se usa en los reportes del CRM.
+                </p>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {[
                   ["includesTrainer", "Incluye entrenador"],
@@ -558,7 +816,7 @@ export const MembershipsPlans = () => {
               <span className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Vista previa</span>
               <Tarjeta
                 preview
-                i={2}
+                i={posForm}
                 p={{
                   ...form,
                   price: Number(form.price || 0),
@@ -569,6 +827,8 @@ export const MembershipsPlans = () => {
             </div>
           </div>
         </div>
+</div>,
+        document.body,
       )}
     </div>
   );

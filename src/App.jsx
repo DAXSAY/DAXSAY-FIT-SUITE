@@ -28,8 +28,11 @@ import { RoutinesAndExercises } from "./components/routines/RoutinesAndExercises
 import { ShieldAlert, ArrowRight } from "lucide-react";
 import { ErrorModulo } from "./components/common/ErrorModulo";
 import { CrmModule } from "./components/crm/CrmModule";
-import { CrmRecordatorios } from "./components/crm/CrmRecordatorios";
+
+import { AvisoIngreso } from "./components/attendances/AvisoIngreso";
+import { CorregirIngreso } from "./components/attendances/CorregirIngreso";
 import { AvisoStockBajo } from "./components/store/AvisoStockBajo";
+import { hayVentanaAbierta, cerrarVentanaSuperior } from "./utils/controlesVentana";
 
 function MainAppContent() {
   const { currentUser, authChecked } = useGym();
@@ -52,6 +55,11 @@ function MainAppContent() {
   useEffect(() => {
     const alVolver = (e) => {
       const st = e.state;
+      // Si hay una ventana abierta, «atrás» solo la cierra y te deja donde estabas
+      if (hayVentanaAbierta() && cerrarVentanaSuperior()) {
+        window.history.pushState({ radical: tabActual.current }, "");
+        return;
+      }
       if (!st || st.raiz) {
         // Llegó al inicio del historial: se queda en el apartado principal
         window.history.pushState({ radical: tabInicio.current }, "");
@@ -239,10 +247,8 @@ function MainAppContent() {
 
         <main className="flex-1 p-3 sm:p-5 lg:p-6 overflow-y-auto min-w-0">
           {currentUser.mustChangePassword && !avisoClaveOculto && (
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              <span>
-                Estás usando la contraseña inicial. Por seguridad, cámbiala por una propia.
-              </span>
+            <div className="rd-aviso-clave mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 text-amber-900">
+              <span>🔒 Usas la contraseña inicial: cámbiala por una propia.</span>
               <span className="flex gap-2">
                 <button
                   onClick={() => setCambiarClave(true)}
@@ -263,7 +269,9 @@ function MainAppContent() {
         </main>
       </div>
 
-      {userCanAccess(currentUser, "crm") && <CrmRecordatorios onAbrir={() => setActiveTab("crm")} />}
+      {/* Los avisos del CRM pasan por la cinta de la barra superior (sin tarjetas en la esquina) */}
+      <AvisoIngreso />
+      <CorregirIngreso />
       {userCanAccess(currentUser, "store") && currentUser.role !== "student" && <AvisoStockBajo onAbrir={() => setActiveTab("store")} />}
 
       <NewMemberModal

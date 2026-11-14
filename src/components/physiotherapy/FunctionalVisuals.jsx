@@ -122,14 +122,14 @@ export const FunctionalVisuals = ({
               {/* Normal green target range */}
               <path
                 d="M120 28 A80 80 0 0 1 180 100"
-                stroke="#22c55e"
+                stroke="var(--color-green-500)"
                 strokeWidth="12"
                 strokeOpacity="0.4"
               />
               {/* Current ROM Arc */}
               <path
                 d={`M20 100 A80 80 0 0 1 ${100 + 80 * Math.cos(Math.PI - (getRomAngle() * Math.PI) / 180)} ${100 - 80 * Math.sin((getRomAngle() * Math.PI) / 180)}`}
-                stroke={romStatus === "completo" ? "#38bdf8" : "#f43f5e"}
+                stroke={romStatus === "completo" ? "var(--color-sky-400)" : "var(--color-rose-500)"}
                 strokeWidth="12"
                 strokeLinecap="round"
               />
@@ -173,7 +173,7 @@ export const FunctionalVisuals = ({
               <text
                 x="86"
                 y="85"
-                fill="#38bdf8"
+                fill="var(--color-sky-400)"
                 fontSize="13"
                 fontWeight="bold"
               >
@@ -253,7 +253,7 @@ export const FunctionalVisuals = ({
               {painPhase === "inicio_movimiento" && (
                 <path
                   d="M15 80 Q55 45 75 35"
-                  stroke="#ef4444"
+                  stroke="var(--color-red-500)"
                   strokeWidth="12"
                   strokeLinecap="round"
                 />
@@ -261,7 +261,7 @@ export const FunctionalVisuals = ({
               {painPhase === "arco_medio" && (
                 <path
                   d="M65 40 Q100 20 135 40"
-                  stroke="#ef4444"
+                  stroke="var(--color-red-500)"
                   strokeWidth="12"
                   strokeLinecap="round"
                 />
@@ -269,7 +269,7 @@ export const FunctionalVisuals = ({
               {painPhase === "final_rango" && (
                 <path
                   d="M125 35 Q145 45 185 80"
-                  stroke="#ef4444"
+                  stroke="var(--color-red-500)"
                   strokeWidth="12"
                   strokeLinecap="round"
                 />
@@ -277,7 +277,7 @@ export const FunctionalVisuals = ({
               {painPhase === "todo_el_recorrido" && (
                 <path
                   d="M15 80 Q100 10 185 80"
-                  stroke="#ef4444"
+                  stroke="var(--color-red-500)"
                   strokeWidth="12"
                   strokeLinecap="round"
                 />

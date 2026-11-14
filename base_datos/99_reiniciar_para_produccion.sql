@@ -2,7 +2,7 @@
 -- RADICAL - 99: DEJAR LA BASE EN CERO PARA PRODUCCIÓN
 -- ¡ATENCIÓN! Borra TODOS los datos de prueba y de demostración:
 --   alumnos, matrículas, pagos, congelamientos, asistencias (alumnos y
---   personal), seguimientos, rutinas, dietas, fisioterapia, medidas,
+--   personal), seguimientos, pesos por serie, rutinas, dietas, fisioterapia, medidas,
 --   citas, clases, ventas, productos, kárdex, caja y turnos de caja,
 --   contratos, planilla, metas, CRM (prospectos), notificaciones,
 --   alertas, auditoría, historial de accesos y sesiones abiertas.
@@ -26,6 +26,17 @@ SET SQL_SAFE_UPDATES = 0;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ---------- Alumnos y todo lo que cuelga de ellos ----------
+-- Tablas de actualizaciones recientes (si existen): pases libres (23) y pesos por serie (24)
+SET @t := (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'registro_peso_serie');
+SET @sql := IF(@t > 0, 'DELETE FROM registro_peso_serie', 'SELECT 1');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @t := (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'proyecciones_recepcion');
+SET @sql := IF(@t > 0, 'DELETE FROM proyecciones_recepcion', 'SELECT 1');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @t := (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pases_libres');
+SET @sql := IF(@t > 0, 'DELETE FROM pases_libres', 'SELECT 1');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+
 DELETE FROM seguimiento_asistencia;
 DELETE FROM asistencias_alumno;
 DELETE FROM congelamientos;
@@ -45,10 +56,8 @@ DELETE FROM rutinas;
 DELETE FROM sesion_tecnicas;
 DELETE FROM sesion_zonas;
 DELETE FROM sesiones_fisioterapia;
-DELETE FROM clase_inscripciones;
 DELETE FROM clases;
 DELETE FROM citas;
-DELETE FROM recuperacion_clave;
 DELETE FROM usuario_permisos WHERE idusuario IN (SELECT idusuario FROM usuarios WHERE idalumno IS NOT NULL);
 DELETE FROM sesiones;
 DELETE FROM usuarios WHERE idalumno IS NOT NULL;
@@ -70,8 +79,6 @@ DELETE FROM bonos;
 
 -- ---------- Personal: asistencias, contratos y planilla ----------
 DELETE FROM asistencias_empleado;
-DELETE FROM permisos_laborales;
-DELETE FROM horarios_empleado;
 DELETE FROM planilla;
 DELETE FROM contratos;
 -- Fichas de empleado que no tienen usuario (las creó la demo o las pruebas)

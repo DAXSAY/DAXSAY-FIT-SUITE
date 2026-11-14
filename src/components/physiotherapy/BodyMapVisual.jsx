@@ -93,6 +93,75 @@ export const ZONE_DETAILS = [
     y: 414,
   },
   {
+    id: "atm",
+    label: "Mandíbula / ATM",
+    short: "ATM",
+    sublabel: "Articulación temporomandibular, bruxismo",
+    bilateral: false,
+    front: [120, 46],
+  },
+  {
+    id: "toracica",
+    label: "Tórax / costillas",
+    short: "Tórax",
+    sublabel: "Esternón, costillas, pectoral",
+    bilateral: false,
+    front: [120, 130],
+  },
+  {
+    id: "sacroiliaca",
+    label: "Sacroilíaca / coxis",
+    short: "Sacroilíaca",
+    sublabel: "Articulación sacroilíaca, sacro y coxis",
+    bilateral: false,
+    back: [120, 226],
+  },
+  {
+    id: "dedos_mano",
+    label: "Dedos de la mano",
+    short: "Dedos mano",
+    sublabel: "Falanges, dedo en gatillo, rizartrosis del pulgar",
+    bilateral: true,
+    frontX: [42, 198],
+    y: 262,
+  },
+  {
+    id: "muslo",
+    label: "Muslo",
+    short: "Muslo",
+    sublabel: "Cuádriceps, isquiotibiales, aductores",
+    bilateral: true,
+    frontX: [97, 143],
+    y: 282,
+  },
+  {
+    id: "pierna",
+    label: "Pierna / pantorrilla",
+    short: "Pierna",
+    sublabel: "Gemelos, sóleo, tibia (periostitis)",
+    bilateral: true,
+    frontX: [99, 141],
+    y: 372,
+  },
+  {
+    id: "talon",
+    label: "Talón / planta",
+    short: "Talón",
+    sublabel: "Fascia plantar, espolón calcáneo",
+    bilateral: true,
+    frontX: [86, 154],
+    y: 430,
+  },
+  {
+    id: "dedos_pie",
+    label: "Dedos del pie / hallux",
+    short: "Dedos pie",
+    sublabel: "Juanete (hallux valgus), dedos en garra, Morton",
+    bilateral: true,
+    frontX: [108, 132],
+    y: 443,
+  },
+  {
     id: "muscular_general",
     label: "Sobrecarga Muscular General",
     short: "General",
@@ -222,9 +291,9 @@ const BodyFigure = ({ view, selectedZones, zoneSides, onPoint, readOnly, size })
             <stop offset="100%" stopColor="#273449" />
           </linearGradient>
           <radialGradient id="dolor">
-            <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.85" />
-            <stop offset="60%" stopColor="#f43f5e" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#f43f5e" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--color-rose-500)" stopOpacity="0.85" />
+            <stop offset="60%" stopColor="var(--color-rose-500)" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="var(--color-rose-500)" stopOpacity="0" />
           </radialGradient>
         </defs>
         <Silhouette view={view} />
@@ -252,8 +321,8 @@ const BodyFigure = ({ view, selectedZones, zoneSides, onPoint, readOnly, size })
                 cx={p.x}
                 cy={p.y}
                 r="8"
-                fill={on ? "#f43f5e" : "#0f172a"}
-                stroke={on ? "#fff" : "#38bdf8"}
+                fill={on ? "var(--color-rose-500)" : "#0f172a"}
+                stroke={on ? "#fff" : "var(--color-sky-400)"}
                 strokeWidth="2"
               />
               {on ? (
@@ -268,7 +337,7 @@ const BodyFigure = ({ view, selectedZones, zoneSides, onPoint, readOnly, size })
                 !readOnly && (
                   <path
                     d={`M${p.x - 3.5},${p.y} h7 M${p.x},${p.y - 3.5} v7`}
-                    stroke="#38bdf8"
+                    stroke="var(--color-sky-400)"
                     strokeWidth="1.8"
                     strokeLinecap="round"
                   />
@@ -281,7 +350,7 @@ const BodyFigure = ({ view, selectedZones, zoneSides, onPoint, readOnly, size })
                   textAnchor={p.side && labelLeft ? "end" : "start"}
                   fontSize="10"
                   fontWeight="800"
-                  fill="#fecdd3"
+                  fill="var(--color-rose-200)"
                   stroke="#020617"
                   strokeWidth="3"
                   paintOrder="stroke"
@@ -360,7 +429,7 @@ export const BodyMapVisual = ({
   };
 
   return (
-    <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 sm:p-6 text-white">
+    <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 sm:p-6 text-white rd-panel-oscuro">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
           <h4 className="text-base font-extrabold flex items-center gap-2">

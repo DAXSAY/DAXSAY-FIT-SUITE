@@ -4,6 +4,7 @@
 // navegador y todos los equipos ven la misma información.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/cliente";
+import { huella } from "../utils/huella";
 
 export const avisar = (tipo, mensaje) => {
   try {
@@ -18,10 +19,49 @@ export function useColeccion(modulo) {
   const sincronizados = useRef(new Map()); // id -> JSON guardado en la base
   const editable = useRef(false);
   const activa = useRef(false);
+  const colas = useRef(new Map()); // id -> promesa del último guardado (uno tras otro)
+  const pendientes = useRef(new Set()); // ids con un guardado en camino
 
   /** Carga la lista que llegó de la base (sin reenviarla). */
-  const cargar = useCallback((lista, puedeEditar) => {
+  const cargar = useCallback((lista, puedeEditar, opciones) => {
     const limpia = (lista || []).filter((x) => x && x.id != null);
+    // Carga parcial: solo llegan los registros que cambiaron y los borrados
+    if (opciones?.parcial) {
+      editable.current = !!puedeEditar;
+      activa.current = true;
+      const quitar = new Set((opciones.borrados || []).map(String));
+      if (!quitar.size && !limpia.length) return;
+      setItems((prev) => {
+        const lista2 = prev.filter((x) => !(x && quitar.has(String(x.id)) && !pendientes.current.has(String(x.id))));
+        quitar.forEach((id) => !pendientes.current.has(id) && sincronizados.current.delete(id));
+        const pos = new Map(lista2.map((x, i) => [String(x?.id), i]));
+        limpia.forEach((x) => {
+          const id = String(x.id);
+          if (pendientes.current.has(id)) return; // lo que se está guardando aquí no se pisa
+          sincronizados.current.set(id, JSON.stringify(x));
+          if (pos.has(id)) lista2[pos.get(id)] = x;
+          else {
+            lista2.push(x);
+            pos.set(id, lista2.length - 1);
+          }
+        });
+        return lista2;
+      });
+      return;
+    }
+    // Lo que todavía se está guardando desde esta pantalla no se pisa con la recarga
+    if (pendientes.current.size) {
+      setItems((prev) => {
+        const locales = new Map(prev.filter((x) => x && pendientes.current.has(String(x.id))).map((x) => [String(x.id), x]));
+        const mezcla = limpia.map((x) => locales.get(String(x.id)) || x);
+        locales.forEach((x, id) => !mezcla.some((y) => String(y.id) === id) && mezcla.unshift(x));
+        sincronizados.current = new Map(mezcla.map((x) => [String(x.id), JSON.stringify(x)]));
+        return mezcla;
+      });
+      editable.current = !!puedeEditar;
+      activa.current = true;
+      return;
+    }
     sincronizados.current = new Map(limpia.map((x) => [String(x.id), JSON.stringify(x)]));
     editable.current = !!puedeEditar;
     activa.current = true;
@@ -67,12 +107,35 @@ export function useColeccion(modulo) {
       const previo = sincronizados.current.get(id);
       if (previo === json) return;
       sincronizados.current.set(id, json);
-      api(`/registros/${modulo}/${encodeURIComponent(id)}`, { method: "PUT", body: { datos: x } }).catch((e) => {
-        if (previo === undefined) sincronizados.current.delete(id);
-        else sincronizados.current.set(id, previo);
-        restaurar(id, previo);
-        avisar("error", `No se pudo guardar (${modulo}): ${e.message}`);
-      });
+      // Se envía la huella de lo que esta pantalla creía guardado: si otra
+      // persona lo cambió mientras tanto, la API avisa (409) en vez de pisarlo.
+      const huellaPrevia = previo === undefined ? null : huella(JSON.parse(previo));
+      pendientes.current.add(id);
+      const anterior = colas.current.get(id) || Promise.resolve();
+      const envio = anterior
+        .catch(() => {})
+        .then(() => api(`/registros/${modulo}/${encodeURIComponent(id)}`, { method: "PUT", body: { datos: x, huellaPrevia } }))
+        .catch((e) => {
+          if (e.status === 409 && e.datos?.actual) {
+            // Otra persona lo cambió: se muestra su versión y se avisa
+            const actual = e.datos.actual;
+            sincronizados.current.set(id, JSON.stringify(actual));
+            setItems((prev) => prev.map((y) => (String(y?.id) === id ? actual : y)));
+            avisar("error", `${e.datos.error || "Otra persona modificó este registro."} Se cargó su versión; vuelve a aplicar tu cambio si hace falta.`);
+            return;
+          }
+          if (previo === undefined) sincronizados.current.delete(id);
+          else sincronizados.current.set(id, previo);
+          restaurar(id, previo);
+          avisar("error", `No se pudo guardar (${modulo}): ${e.message}`);
+        })
+        .finally(() => {
+          if (colas.current.get(id) === envio) {
+            colas.current.delete(id);
+            pendientes.current.delete(id);
+          }
+        });
+      colas.current.set(id, envio);
     });
 
     [...sincronizados.current.keys()].forEach((id) => {

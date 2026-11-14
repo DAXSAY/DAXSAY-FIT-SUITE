@@ -15,8 +15,11 @@ import {
   HeartPulse,
   UserPlus,
   Snowflake,
+  Printer,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
+import { EstadoVacio } from "../common/EstadoVacio";
+import { UsersRound, SearchX } from "lucide-react";
 import { TelWhatsApp } from "../common/TelWhatsApp";
 import { userCan } from "../../config/roles";
 import { MemberAccountScreen } from "./MemberAccountScreen";
@@ -24,10 +27,15 @@ import { FichaDeportiva } from "./FichaDeportiva";
 import { EditMemberScreen } from "./EditMemberScreen";
 import { FreezeScreen, FreezeBadge } from "./FreezeScreen";
 import { CalendarioAsistencias } from "../attendances/CalendarioAsistencias";
+import ProgresoPesos from "../progreso/ProgresoPesos";
 import { EditorIndicaciones } from "../indicaciones/Indicaciones";
 import { DebtBadge, DebtDueDatePicker } from "./DebtDueDate";
 import { fechaCorta, sumarDias, hoyISO } from "../../utils/fecha";
-import confetti from "canvas-confetti";
+import { textoObjetivos } from "../../utils/objetivos";
+import { coincideAlumno } from "../../utils/buscarPersona";
+import { BotonesDescarga } from "../common/BotonesDescarga";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 
 export const MembersManagement = ({ onOpenNewMemberModal }) => {
   const {
@@ -44,10 +52,13 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
     resetStudentAccess,
     currentUser,
   } = useGym();
+  // Recepción y administración gestionan; entrenador, nutrición y fisioterapia solo consultan
+  const gestiona = userCan(currentUser, "members", "crear");
   const [accesoInfo, setAccesoInfo] = useState(null);
   const [cuentaDe, setCuentaDe] = useState(null); // estado de cuenta / deuda
   const [congelarDe, setCongelarDe] = useState(null); // congelamiento de membresía
   const [asistenciasDe, setAsistenciasDe] = useState(null); // calendario de asistencias
+  const [progresoDe, setProgresoDe] = useState(null); // progreso de pesos por serie
   const [indicacionesDe, setIndicacionesDe] = useState(null); // estiramientos, movilidad y cuidados
   const [renewPaid, setRenewPaid] = useState("");
   const [renewDueDate, setRenewDueDate] = useState("");
@@ -68,12 +79,8 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
   // Filtered members list
   const filteredMembers = members.filter((member) => {
     const matchesSearch =
-      member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (searchTerm.trim() && (member.codeLabel || "").toLowerCase().replace("-", "") === searchTerm.trim().toLowerCase().replace(/[\s-]/g, "")) ||
-      (/^\d{1,6}$/.test(searchTerm.trim()) && Number(member.code) === Number(searchTerm.trim())) ||
-      member.dni.includes(searchTerm) ||
-      member.phone.includes(searchTerm) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase());
+      coincideAlumno(member, searchTerm) ||
+      (searchTerm.trim().length >= 3 && /@/.test(searchTerm) && String(member.email || "").toLowerCase().includes(searchTerm.trim().toLowerCase()));
 
     const matchesStatus =
       statusFilter === "all" ||
@@ -145,28 +152,29 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
   return (
     <div className="space-y-4 pb-8">
       {/* Top Header */}
-      <div className="rd-portada flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-2xl">
+      <div className="rd-portada rd-cabecera flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-blue-600 text-xs font-bold uppercase tracking-wider mb-0.5">
             <Users className="w-3.5 h-3.5" />
-            <span>Módulo de Alumnos</span>
+            <span>Socios</span>
           </div>
           <h1 className="text-lg font-bold text-slate-900">
-            Directorio de Alumnos ({members.length})
+            Alumnos ({members.length})
           </h1>
           <p className="text-xs text-gray-500">
-            Control de altas, vigencia de cuotas, entrenador asignado y rutinas
-            de entrenamiento.
+            Matrículas, vencimientos, entrenador asignado y rutinas.
           </p>
         </div>
 
+        {gestiona && (
         <button
           onClick={onOpenNewMemberModal}
           className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all shrink-0 self-start sm:self-auto"
         >
           <UserPlus className="w-3.5 h-3.5" />
-          <span>Nuevo Alumno</span>
+          <span>Nuevo alumno</span>
         </button>
+        )}
       </div>
 
       {/* Filters & Search Bar */}
@@ -281,7 +289,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
       {/* Members List Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full min-w-[960px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold">
                 <th className="px-4 py-2.5">Alumno</th>
@@ -296,11 +304,12 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
             <tbody className="divide-y divide-gray-100">
               {filteredMembers.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="text-center py-10 text-gray-400 text-xs"
-                  >
-                    No se encontraron alumnos con los filtros seleccionados.
+                  <td colSpan={7}>
+                    {members.length === 0 ? (
+                      <EstadoVacio icono={UsersRound} titulo="Aún no hay alumnos" texto="Matricula al primer alumno para empezar." accion="Nuevo alumno" onAccion={onOpenNewMemberModal} />
+                    ) : (
+                      <EstadoVacio icono={SearchX} titulo="Nadie coincide con la búsqueda" texto="Prueba con otro nombre, código o DNI, o quita los filtros." accion="Quitar filtros" onAccion={() => (setSearchTerm(""), setStatusFilter("all"))} />
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -323,16 +332,17 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                           <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center font-bold text-blue-600 shrink-0 text-xs">
                             {member.fullName.charAt(0)}
                           </div>
-                          <div>
+                          <div className="min-w-0 max-w-[220px]">
                             <button
                               onClick={() => setSelectedMember(member)}
-                              className="font-bold text-slate-800 hover:text-blue-600 text-left transition-colors cursor-pointer"
+                              className="block font-bold text-slate-800 hover:text-blue-600 text-left transition-colors cursor-pointer truncate max-w-full"
+                              title={member.fullName}
                             >
                               {member.fullName}
                             </button>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              <span className="font-mono font-bold text-blue-700 bg-blue-50 border border-blue-100 rounded px-1 mr-1">{member.codeLabel}</span>
-                              {getObjectiveLabel(member.objective)}
+                            <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1 min-w-0" title={textoObjetivos(member.objective)}>
+                              <span className="shrink-0 font-mono font-bold text-blue-700 bg-blue-50 border border-blue-100 rounded px-1">{member.codeLabel}</span>
+                              <span className="truncate">{textoObjetivos(member.objective, true)}</span>
                             </p>
                           </div>
                         </div>
@@ -345,7 +355,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                             {member.dni}
                           </p>
                           <p className="text-xs">
-                            <TelWhatsApp tel={member.phone} />
+                            {gestiona ? <TelWhatsApp tel={member.phone} /> : <span>{member.phone}</span>}
                           </p>
                         </div>
                       </td>
@@ -387,10 +397,10 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                       <td className="px-4 py-3">
                         <div>
                           <p className="font-mono text-slate-800 font-semibold">
-                            {member.membershipEndDate}
+                            {String(member.membershipEndDate || "").slice(0, 10).split("-").reverse().join("/")}
                           </p>
                           <p className="text-xs text-gray-400">
-                            Inicio: {member.membershipStartDate}
+                            Inicio: {String(member.membershipStartDate || "").slice(0, 10).split("-").reverse().join("/")}
                           </p>
                         </div>
                       </td>
@@ -453,6 +463,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* WhatsApp Direct Link */}
+                          {gestiona && (
                           <a
                             href={generateWhatsAppLink(member)}
                             target="_blank"
@@ -462,9 +473,10 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                           >
                             <MessageCircle className="w-3.5 h-3.5" />
                           </a>
+                          )}
 
                           {/* Congelamiento (solo si el plan lo permite o ya tiene uno) */}
-                          {(member.freeze?.allowed || member.freeze?.current) && (
+                          {gestiona && (member.freeze?.allowed || member.freeze?.current) && (
                             <button
                               onClick={() => setCongelarDe(member)}
                               className={`p-1.5 rounded border transition-colors cursor-pointer ${
@@ -483,6 +495,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                           )}
 
                           {/* Quick Renew Button */}
+                          {gestiona && (
                           <button
                             onClick={() => {
                               setRenewingMember(member);
@@ -496,6 +509,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                             <RefreshCw className="w-3 h-3" />
                             <span>Renovar</span>
                           </button>
+                          )}
 
                           {/* Profile View */}
                           <button
@@ -538,17 +552,28 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                     </span>
                     <span className="text-xs text-gray-300">•</span>
                     <span className="text-xs text-blue-600 font-semibold">
-                      {getObjectiveLabel(selectedMember.objective)}
+                      {textoObjetivos(selectedMember.objective)}
                     </span>
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedMember(null)}
-                className="text-gray-400 hover:text-gray-700 p-1 text-sm cursor-pointer"
-              >
-                ✕
-              </button>
+              <span className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  title="Imprimir ficha del alumno"
+                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer print:hidden"
+                >
+                  <Printer className="w-4 h-4" />
+                </button>
+                <BotonesDescarga compacto nombre={`Ficha_${selectedMember.codeLabel}_${selectedMember.fullName}`} />
+                <button
+                  onClick={() => setSelectedMember(null)}
+                  className="text-gray-400 hover:text-gray-700 p-1 text-sm cursor-pointer print:hidden"
+                >
+                  ✕
+                </button>
+              </span>
             </div>
 
             {/* Ficha deportiva: rutina de hoy, lesiones, dieta y asistencia */}
@@ -637,7 +662,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 <div className="text-xs text-slate-600 space-y-1">
                   <p className="flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-gray-400" />
-                    <TelWhatsApp tel={selectedMember.phone} />
+                    {gestiona ? <TelWhatsApp tel={selectedMember.phone} /> : <span>{selectedMember.phone}</span>}
                   </p>
                   <p className="flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-gray-400" />
@@ -650,7 +675,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                     <p>
                       {selectedMember.emergencyContact.name} (
                       {selectedMember.emergencyContact.relationship}) -{" "}
-                      <TelWhatsApp tel={selectedMember.emergencyContact.phone} />
+                      {gestiona ? <TelWhatsApp tel={selectedMember.emergencyContact.phone} /> : <span>{selectedMember.emergencyContact.phone}</span>}
                     </p>
                   </div>
                 </div>
@@ -724,6 +749,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
 
             {/* Actions footer */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-200">
+              {gestiona ? (
               <button
                 onClick={() => {
                   if (
@@ -740,9 +766,12 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 <Trash2 className="w-3.5 h-3.5" />
                 Eliminar Alumno
               </button>
+              ) : (
+                <span className="text-xs text-slate-500">Solo consulta: renovaciones, congelamientos y mensajes los hace recepción.</span>
+              )}
 
               <div className="flex items-center gap-2 flex-wrap justify-end">
-                {userCan(currentUser, "members", "editar") && (
+                {gestiona && (
                   <button
                     onClick={() => {
                       setEditingMember(selectedMember);
@@ -753,6 +782,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                     Editar datos
                   </button>
                 )}
+                {gestiona && (
                 <button
                   onClick={async () => {
                     const msg = selectedMember.accessUser
@@ -767,6 +797,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 >
                   {selectedMember.accessUser ? `Acceso: ${selectedMember.accessUser} · Restablecer` : "Crear acceso al portal"}
                 </button>
+                )}
                 <button
                   onClick={() => {
                     setAsistenciasDe(selectedMember);
@@ -775,6 +806,15 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                   className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-md text-xs font-semibold cursor-pointer"
                 >
                   📅 Asistencias
+                </button>
+                <button
+                  onClick={() => {
+                    setProgresoDe(selectedMember);
+                    setSelectedMember(null);
+                  }}
+                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-800 rounded-md text-xs font-semibold cursor-pointer"
+                >
+                  💪 Progreso de pesos
                 </button>
                 {(userCan(currentUser, "routines", "editar") || userCan(currentUser, "physiotherapy", "editar")) && (
                   <button
@@ -787,6 +827,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                     📋 Indicaciones
                   </button>
                 )}
+                {gestiona && (
                 <button
                   onClick={() => {
                     setCongelarDe(selectedMember);
@@ -800,6 +841,9 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                     ? `Congelamiento · quedan ${selectedMember.freeze.daysLeft} días`
                     : "Congelamiento · sin derecho"}
                 </button>
+                )}
+                {gestiona && (
+                <>
                 <a
                   href={generateWhatsAppLink(selectedMember)}
                   target="_blank"
@@ -821,6 +865,8 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                   <RefreshCw className="w-3.5 h-3.5" />
                   Renovar Membresía
                 </button>
+                </>
+                )}
               </div>
             </div>
           </div>
@@ -840,6 +886,20 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
               ← Volver
             </button>
             <CalendarioAsistencias memberId={asistenciasDe.id} />
+          </div>
+        </div>
+      )}
+
+      {progresoDe && (
+        <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
+          <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4">
+            <button
+              onClick={() => setProgresoDe(null)}
+              className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-sm font-bold cursor-pointer"
+            >
+              ← Volver
+            </button>
+            <ProgresoPesos memberId={progresoDe.id} modo="personal" />
           </div>
         </div>
       )}
@@ -970,8 +1030,6 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                   >
                     <option value="efectivo">💵 Efectivo</option>
                     <option value="yape_plin">📱 Yape / Plin</option>
-                    <option value="tarjeta">💳 Tarjeta (POS)</option>
-                    <option value="transferencia">🏦 Transferencia</option>
                   </select>
                 </div>
 

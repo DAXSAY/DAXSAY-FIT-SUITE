@@ -16,8 +16,13 @@ import { useGym } from "../../context/GymContext";
 import { TelWhatsApp } from "../common/TelWhatsApp";
 import { userCan } from "../../config/roles";
 import { StockMovementScreen, KardexScreen, SalesReport } from "./StoreExtras";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import { buscarAlumno } from "../../utils/codigo";
+import { filtrarAlumnos } from "../../utils/buscarPersona";
+import { BotonesDescarga } from "../common/BotonesDescarga";
+import { BotonVolver, BotonCerrar } from "../common/BarraVolver";
+import { api } from "../../api/cliente";
 
 export const PRESET_PRODUCT_IMAGES = [
   {
@@ -91,6 +96,53 @@ export const StorePOS = ({ onAbrirCaja }) => {
   // Recepción solo cobra con su caja abierta
   const cajaCerrada = currentUser?.role === "reception" && cashShift && !cashShift.open;
 
+  // Ticket recién cobrado: corregir (anula y devuelve los productos al carrito) o anular
+  const [accionTicket, setAccionTicket] = useState(null); // null | "anular" | "corregir"
+  const [motivoTicket, setMotivoTicket] = useState("");
+  const [errorTicket, setErrorTicket] = useState("");
+  const [procesandoTicket, setProcesandoTicket] = useState(false);
+  const cerrarTicket = () => {
+    setLastReceipt(null);
+    setAccionTicket(null);
+    setMotivoTicket("");
+    setErrorTicket("");
+  };
+  const ejecutarAccionTicket = async (e) => {
+    e?.preventDefault?.();
+    if (!lastReceipt?.id) return;
+    const motivo = accionTicket === "corregir" ? `Corrección de venta${motivoTicket.trim() ? `: ${motivoTicket.trim()}` : ""}` : motivoTicket.trim();
+    if (motivo.length < 3) return setErrorTicket("Escribe el motivo de la anulación.");
+    setProcesandoTicket(true);
+    setErrorTicket("");
+    try {
+      const anulada = await api(`/tienda/ventas/${lastReceipt.id}/anular`, { method: "POST", body: { motivo } });
+      refreshAll();
+      if (accionTicket === "corregir") {
+        // Los productos vuelven al carrito para cambiar lo que haga falta y cobrar de nuevo
+        const nuevo = (lastReceipt.items || [])
+          .map((it) => {
+            const prod = products.find((p) => String(p.id) === String(it.productId));
+            return prod ? { product: { ...prod, stock: Number(prod.stock || 0) + Number(it.quantity || 0) }, quantity: Number(it.quantity || 1) } : null;
+          })
+          .filter(Boolean);
+        setCart(nuevo);
+        if (lastReceipt.memberId) setSelectedMemberId(lastReceipt.memberId);
+        else if (lastReceipt.customer && !/cliente (general|mostrador)/i.test(lastReceipt.customer)) setCustomCustomerName(lastReceipt.customer);
+        setPaymentMethod?.(lastReceipt.paymentMethod || paymentMethod);
+        setActiveTab("pos");
+        cerrarTicket();
+      } else {
+        setLastReceipt((r) => ({ ...r, ...anulada, amount: anulada?.total ?? r.amount, relatedMemberName: r.relatedMemberName, voided: true }));
+        setAccionTicket(null);
+        setMotivoTicket("");
+      }
+    } catch (er) {
+      setErrorTicket(er.message);
+    } finally {
+      setProcesandoTicket(false);
+    }
+  };
+
   const [activeTab, setActiveTab] = useState("pos");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -132,6 +184,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
     { id: "all", label: "Todos", icon: "⚡" },
     { id: "bebidas", label: "Bebidas & Aguas", icon: "💧" },
     { id: "suplementos", label: "Proteínas & Suplementos", icon: "💪" },
+    { id: "quemadores", label: "Quemadores & Termogénicos", icon: "🔥" },
     { id: "snacks", label: "Snacks & Barras", icon: "🍫" },
     { id: "accesorios", label: "Accesorios Gym", icon: "🎒" },
     { id: "ropa", label: "Indumentaria", icon: "👕" },
@@ -224,17 +277,8 @@ export const StorePOS = ({ onAbrirCaja }) => {
   const alumnoVenta = members.find((m) => m.id === selectedMemberId) || null;
   const sugerenciasAlumno = useMemo(() => {
     const t = buscaAlumno.trim();
-    if (tipoCliente !== "alumno" || t.length < 2 || selectedMemberId) return [];
-    const exacto = buscarAlumno(members, t)?.member;
-    const q = t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const otros = members.filter(
-      (m) =>
-        m.id !== exacto?.id &&
-        (String(m.dni || "").startsWith(t) ||
-          String(m.codeLabel || "").toLowerCase().startsWith(q) ||
-          m.fullName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q)),
-    );
-    return [exacto, ...otros].filter(Boolean).slice(0, 8);
+    if (tipoCliente !== "alumno" || !t || selectedMemberId) return [];
+    return filtrarAlumnos(members, t).slice(0, 8);
   }, [buscaAlumno, members, tipoCliente, selectedMemberId]);
 
   // Checkout
@@ -377,18 +421,17 @@ export const StorePOS = ({ onAbrirCaja }) => {
         </div>
       )}
       {/* Top Header */}
-      <div className="rd-portada flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-2xl">
+      <div className="rd-portada rd-cabecera flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-blue-600 text-xs font-bold uppercase tracking-wider mb-0.5">
             <Store className="w-3.5 h-3.5" />
-            <span>Punto de Venta (POS) & Suplementos</span>
+            <span>Tienda</span>
           </div>
           <h1 className="text-lg font-bold text-slate-900">
-            Tienda del Gimnasio
+            Ventas
           </h1>
           <p className="text-xs text-gray-500">
-            Ventas rápidas de aguas, bebidas isotónicas, proteínas, creatinas,
-            shakers y accesorios deportivos.
+            Bebidas, suplementos y accesorios: cobro, inventario y reportes.
           </p>
         </div>
 
@@ -437,9 +480,9 @@ export const StorePOS = ({ onAbrirCaja }) => {
 
       {/* POS TERMINAL TAB */}
       {activeTab === "pos" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Products Grid (2 Cols) */}
-          <div className="lg:col-span-2 space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_330px] 2xl:grid-cols-[minmax(0,1fr)_360px] gap-4">
+          {/* Productos (a la izquierda) y carrito fijo a la derecha */}
+          <div className="min-w-0 space-y-3">
             {/* Real-time Search & Category Filters */}
             <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-xs space-y-3">
               <div className="relative flex items-center">
@@ -523,7 +566,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
             )}
 
             {/* Product Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
               {filteredProducts.map((prod) => {
                 const isOutOfStock = prod.stock <= 0;
                 const isLowStock = prod.stock <= prod.minStockAlert;
@@ -532,7 +575,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                   <div
                     key={prod.id}
                     onClick={() => !isOutOfStock && handleAddToCart(prod)}
-                    className={`p-3 rounded-xl border transition-all flex flex-col justify-between cursor-pointer group shadow-xs ${
+                    className={`p-2.5 rounded-xl border transition-all flex flex-col justify-between cursor-pointer group shadow-xs min-w-0 ${
                       isOutOfStock
                         ? "bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed"
                         : "bg-white border-gray-200 hover:border-blue-500 hover:shadow-sm"
@@ -540,7 +583,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                   >
                     <div>
                       {/* Product Image Thumbnail */}
-                      <div className="w-full h-28 bg-gray-100 rounded-lg mb-2 overflow-hidden relative flex items-center justify-center border border-gray-100">
+                      <div className="w-full h-20 bg-gray-100 rounded-lg mb-1.5 overflow-hidden relative flex items-center justify-center border border-gray-100">
                         {prod.image ? (
                           <img
                             src={prod.image}
@@ -572,12 +615,12 @@ export const StorePOS = ({ onAbrirCaja }) => {
                         ) : null}
                       </div>
 
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-gray-400 uppercase truncate max-w-[90px]">
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase truncate min-w-0 flex-1">
                           {prod.brand}
                         </span>
                         <span
-                          className={`text-xs font-bold px-1.5 py-0.2 rounded border ${
+                          className={`shrink-0 whitespace-nowrap text-[10px] font-bold px-1 py-0.2 rounded border ${
                             isOutOfStock
                               ? "bg-rose-50 text-rose-700 border-rose-200"
                               : isLowStock
@@ -809,8 +852,6 @@ export const StorePOS = ({ onAbrirCaja }) => {
                   >
                     <option value="efectivo">💵 Efectivo</option>
                     <option value="yape_plin">📱 Yape / Plin</option>
-                    <option value="tarjeta">💳 Tarjeta POS</option>
-                    <option value="transferencia">🏦 Transferencia</option>
                   </select>
                 </div>
 
@@ -1038,7 +1079,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
       {/* Product Create / Edit Modal */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
-          <div className="rd-claro w-full max-w-3xl mx-auto min-h-full sm:px-8 sm:py-8 bg-white p-5 text-slate-800">
+          <div className="w-full max-w-3xl mx-auto min-h-full sm:px-8 sm:py-8 bg-white p-5 text-slate-800">
             <div className="flex items-center justify-between pb-3 border-b border-gray-200">
               <h3 className="text-sm font-bold text-slate-900">
                 {editingProduct
@@ -1055,7 +1096,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
 
             <form
               onSubmit={handleSaveProduct}
-              className="space-y-3 my-3 text-xs"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-3 my-3 text-xs max-w-5xl mx-auto items-start"
             >
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
@@ -1083,6 +1124,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                   >
                     <option value="bebidas">Bebidas & Aguas</option>
                     <option value="suplementos">Suplementos & Proteínas</option>
+                    <option value="quemadores">Quemadores & Termogénicos</option>
                     <option value="snacks">Snacks & Barras</option>
                     <option value="accesorios">
                       Accesorios de Entrenamiento
@@ -1222,34 +1264,57 @@ export const StorePOS = ({ onAbrirCaja }) => {
                     />
 
                     <p className="text-xs text-gray-500">
-                      Pega la URL de una foto o haz clic en uno de los presets
-                      fitness de abajo.
+                      Pega el enlace de una foto o elige una de la galería.
                     </p>
                   </div>
                 </div>
 
-                {/* Presets 1-Click Select */}
-                <div>
-                  <span className="text-xs font-bold text-gray-400 block mb-1">
-                    Fotos de Catálogo Rápido (1 Clic):
-                  </span>
-                  <div className="flex flex-wrap gap-1">
-                    {PRESET_PRODUCT_IMAGES.map((preset, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setProdImage(preset.url)}
-                        className={`px-2 py-0.5 rounded text-xs font-medium transition-colors cursor-pointer border ${
-                          prodImage === preset.url
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white hover:bg-gray-100 text-slate-700 border-gray-200"
-                        }`}
-                      >
-                        + {preset.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* Galería: imágenes ya usadas en productos + imágenes de referencia */}
+                {(() => {
+                  const usadas = [...new Map(products.filter((p) => p.image).map((p) => [p.image, p.name])).entries()].slice(0, 24);
+                  const Miniatura = ({ url, nombre }) => (
+                    <button
+                      type="button"
+                      title={nombre}
+                      onClick={() => setProdImage(url)}
+                      className={`w-12 h-12 rounded-lg overflow-hidden border-2 bg-white cursor-pointer shrink-0 ${prodImage === url ? "border-blue-600 ring-2 ring-blue-200" : "border-gray-200 hover:border-blue-400"}`}
+                    >
+                      <img src={url} alt={nombre} className="w-full h-full object-cover" loading="lazy" onError={(e) => (e.target.style.opacity = 0.2)} />
+                    </button>
+                  );
+                  return (
+                    <div className="space-y-2">
+                      {usadas.length > 0 && (
+                        <div>
+                          <span className="text-xs font-bold text-gray-500 block mb-1">Imágenes de tus productos ({usadas.length}) · toca una para reutilizarla</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {usadas.map(([url, nombre]) => (
+                              <Miniatura key={url} url={url} nombre={nombre} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-xs font-bold text-gray-500 block mb-1">Galería de imágenes de referencia</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {PRESET_PRODUCT_IMAGES.filter((p) => prodCategory === "quemadores" ? ["suplementos", "quemadores"].includes(p.cat) : !p.cat || p.cat === prodCategory || prodCategory === "").map((preset) => (
+                            <Miniatura key={preset.url} url={preset.url} nombre={preset.name} />
+                          ))}
+                          {PRESET_PRODUCT_IMAGES.filter((p) => p.cat && p.cat !== prodCategory).length > 0 && (
+                            <details className="w-full">
+                              <summary className="text-[11px] font-bold text-blue-700 cursor-pointer">Ver imágenes de otras categorías</summary>
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {PRESET_PRODUCT_IMAGES.filter((p) => p.cat && p.cat !== prodCategory).map((preset) => (
+                                  <Miniatura key={preset.url} url={preset.url} nombre={preset.name} />
+                                ))}
+                              </div>
+                            </details>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div>
@@ -1265,7 +1330,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
+              <div className="lg:col-span-2 flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => setIsProductModalOpen(false)}
@@ -1291,6 +1356,10 @@ export const StorePOS = ({ onAbrirCaja }) => {
       {lastReceipt && (
         <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
           <div className="w-full max-w-3xl mx-auto min-h-full sm:px-8 sm:py-8 bg-white p-5 text-slate-800">
+            <div className="flex items-center justify-between gap-2 mb-2 print:hidden">
+              <BotonVolver onClick={cerrarTicket} />
+              <BotonCerrar onClick={cerrarTicket} />
+            </div>
             <div className="text-center pb-3 border-b border-dashed border-gray-200">
               <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center mb-1.5">
                 <Check className="w-5 h-5" />
@@ -1355,13 +1424,61 @@ export const StorePOS = ({ onAbrirCaja }) => {
                 <Printer className="w-3.5 h-3.5" />
                 Imprimir
               </button>
+              <BotonesDescarga compacto nombre={`Boleta_${lastReceipt?.id || ""}`} />
               <button
-                onClick={() => setLastReceipt(null)}
+                onClick={cerrarTicket}
                 className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold shadow-xs cursor-pointer"
               >
                 Aceptar
               </button>
             </div>
+
+            {/* ¿Se cobró mal? Corregir o anular */}
+            {!lastReceipt.voided && lastReceipt.id && (
+              <div className="mt-4 pt-3 border-t border-dashed border-gray-200 print:hidden">
+                {!accionTicket ? (
+                  <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+                    <span className="text-slate-500">¿Hubo un error?</span>
+                    {puedeEliminar ? (
+                      <>
+                        <button type="button" onClick={() => setAccionTicket("corregir")} className="px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-bold cursor-pointer">
+                          ✏️ Corregir venta
+                        </button>
+                        <button type="button" onClick={() => setAccionTicket("anular")} className="px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-bold cursor-pointer">
+                          ✕ Anular venta
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-slate-500">Pide a administración que la corrija o anule desde «Ventas y reportes».</span>
+                    )}
+                  </div>
+                ) : (
+                  <form onSubmit={ejecutarAccionTicket} className={`rounded-xl border p-3 space-y-2 text-xs ${accionTicket === "corregir" ? "bg-amber-50 border-amber-200" : "bg-rose-50 border-rose-200"}`}>
+                    <p className="font-bold text-slate-800">
+                      {accionTicket === "corregir"
+                        ? "Se anula este ticket, el stock vuelve y los productos regresan al carrito para que cambies lo necesario y cobres de nuevo."
+                        : "Se anula la venta: los productos vuelven al stock y se quita el ingreso de la caja."}
+                    </p>
+                    <input
+                      autoFocus
+                      value={motivoTicket}
+                      onChange={(e) => setMotivoTicket(e.target.value)}
+                      placeholder={accionTicket === "corregir" ? "Qué se corrige (opcional). Ej. cantidad equivocada" : "Motivo. Ej. se cobró dos veces"}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm"
+                    />
+                    {errorTicket && <p className="font-bold text-rose-600">{errorTicket}</p>}
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => { setAccionTicket(null); setErrorTicket(""); }} className="flex-1 py-2 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 cursor-pointer">
+                        Cancelar
+                      </button>
+                      <button disabled={procesandoTicket} className={`flex-1 py-2 rounded-lg font-black text-white cursor-pointer disabled:opacity-60 ${accionTicket === "corregir" ? "bg-amber-600" : "bg-rose-600"}`}>
+                        {procesandoTicket ? "Procesando…" : accionTicket === "corregir" ? "Anular y corregir" : "Anular venta"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

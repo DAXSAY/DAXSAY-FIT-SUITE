@@ -7,6 +7,8 @@
 //  - Carbohidratos según horas de ejercicio
 // =====================================================================
 import React from "react";
+import { EditorComidas } from "./EditorComidas";
+import { PORCIONES_PESO, CONSEJOS_MANO } from "../../data/nutricionOpciones";
 
 // --- Porciones con la mano --------------------------------------------
 // Los gramos son una referencia aproximada para estimar macros.
@@ -67,9 +69,19 @@ export const MODELOS_PLATO = {
   deportivo: { nombre: "Deportivo / pre-post", protein: 25, veg: 25, carbs: 45, fats: 5, nota: "Días de entrenamiento largo: el carbohidrato es el combustible principal." },
   cetogenico: { nombre: "Cetogénico", protein: 30, veg: 45, carbs: 0, fats: 25, nota: "Por calorías: ~75% grasas, ~15% proteína, ~10% carbohidratos (solo de verduras)." },
   paleo: { nombre: "Paleo", protein: 35, veg: 40, carbs: 15, fats: 10, nota: "Alimentos sin procesar: carnes, pescado, huevos, verduras, frutas, frutos secos; sin lácteos ni granos." },
+  alto_proteina: { nombre: "Alto en proteína", protein: 40, veg: 35, carbs: 20, fats: 5, nota: "Prioriza la proteína en cada comida: más saciedad y conserva el músculo en déficit." },
+  bajo_carbo: { nombre: "Bajo en carbohidratos", protein: 35, veg: 50, carbs: 5, fats: 10, nota: "Casi sin harinas: verduras en abundancia, proteína y grasas buenas." },
+  recomposicion: { nombre: "Recomposición", protein: 35, veg: 40, carbs: 20, fats: 5, nota: "Bajar grasa y ganar músculo: proteína alta, carbohidrato moderado alrededor del entreno." },
+  grasa_visceral: { nombre: "Grasa visceral", protein: 30, veg: 55, carbs: 10, fats: 5, nota: "Mucha fibra y verdura, carbohidratos integrales en poca cantidad, sin azúcares ni frituras." },
+  vegetariano: { nombre: "Vegetariano", protein: 25, veg: 45, carbs: 25, fats: 5, nota: "Proteína de huevos, lácteos, menestras, tofu o seitán; combina cereales con menestras." },
+  vegano: { nombre: "Vegano", protein: 25, veg: 40, carbs: 30, fats: 5, nota: "Menestras, tofu, tempeh y semillas como proteína; suplementar B12." },
+  dash: { nombre: "DASH (presión)", protein: 20, veg: 50, carbs: 25, fats: 5, nota: "Poca sal, mucha verdura y fruta, lácteos bajos en grasa y granos integrales." },
+  glucemico: { nombre: "Control de glucosa", protein: 30, veg: 50, carbs: 15, fats: 5, nota: "Carbohidratos integrales de índice glucémico bajo, siempre acompañados de proteína y fibra." },
+  antiinflamatorio: { nombre: "Antiinflamatorio", protein: 25, veg: 50, carbs: 15, fats: 10, nota: "Pescado azul, aceite de oliva, frutos secos, cúrcuma y vegetales de colores." },
+  post_entreno: { nombre: "Post-entreno", protein: 35, veg: 15, carbs: 45, fats: 5, nota: "Recarga después de entrenar: proteína + carbohidrato de fácil digestión." },
 };
 
-export const COLORES_PLATO = { protein: "#e11d48", veg: "#16a34a", carbs: "#f59e0b", fats: "#a16207" };
+export const COLORES_PLATO = { protein: "var(--color-rose-600)", veg: "var(--color-green-600)", carbs: "var(--color-amber-500)", fats: "var(--color-yellow-700)" };
 export const NOMBRES_PLATO = { protein: "Proteína", veg: "Verduras / ensalada", carbs: "Carbohidratos", fats: "Grasas" };
 const EMOJI_PLATO = { protein: "🍗", veg: "🥗", carbs: "🍚", fats: "🥑" };
 
@@ -213,15 +225,15 @@ export const PorcionesMano = ({ plate, oscuro = false }) => {
   const extras = Object.values(MANOS_EXTRA).filter((m) => Number(plate[m.campo]) > 0);
   return (
     <div className="space-y-2">
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
       {filas.map(([k, n]) => (
-        <div key={k} className={`rounded-xl p-3 text-center border ${oscuro ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
+        <div key={k} className={`min-w-0 rounded-xl p-3 text-center border ${oscuro ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
           <div className="text-2xl leading-none">{MANOS[k].emoji.repeat(Math.max(0, Math.min(3, Math.round(n))) || 0) || "—"}</div>
-          <p className={`mt-1 text-lg font-black ${oscuro ? "text-white" : "text-slate-900"}`}>
+          <p className={`mt-1 text-base leading-tight font-black break-words ${oscuro ? "text-white" : "text-slate-900"}`}>
             {n} {MANOS[k].nombre.toLowerCase()}
             {n === 1 ? "" : "s"}
           </p>
-          <p className={`text-[11px] font-bold uppercase ${oscuro ? "text-slate-300" : "text-slate-500"}`}>{MANOS[k].que}</p>
+          <p className={`text-[10px] font-bold uppercase break-words leading-tight ${oscuro ? "text-slate-300" : "text-slate-500"}`}>{MANOS[k].que}</p>
         </div>
       ))}
     </div>
@@ -465,6 +477,37 @@ export const GuiaPorciones = ({ oscuro = false, sexo }) => (
         </div>
       ))}
     </div>
+    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs ${oscuro ? "text-slate-200" : "text-slate-700"}`}>
+      {CONSEJOS_MANO.map(([e, t]) => (
+        <div key={t} className={`rounded-xl p-2.5 border flex gap-2 ${oscuro ? "bg-white/5 border-white/10" : "bg-emerald-50/60 border-emerald-200"}`}>
+          <span className="text-lg leading-none">{e}</span>
+          <span>{t}</span>
+        </div>
+      ))}
+    </div>
+    <div className={`overflow-x-auto rounded-2xl border ${oscuro ? "border-white/10" : "border-slate-200 bg-white"}`}>
+      <p className={`px-3 pt-3 text-xs font-black uppercase tracking-wider ${oscuro ? "text-amber-300" : "text-amber-700"}`}>⚖️ Porciones por peso (para quien prefiere pesar)</p>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className={`text-left text-[11px] uppercase ${oscuro ? "text-slate-300" : "text-slate-500"}`}>
+            <th className="p-3">Alimento</th>
+            <th className="p-3">Crudo</th>
+            <th className="p-3">Cocido</th>
+            <th className="p-3">Aporta</th>
+          </tr>
+        </thead>
+        <tbody>
+          {PORCIONES_PESO.map((g) => (
+            <tr key={g.grupo} className={`border-t ${oscuro ? "border-white/10 text-slate-100" : "border-slate-100 text-slate-700"}`}>
+              <td className="p-3 font-bold">{g.grupo}</td>
+              <td className="p-3 whitespace-nowrap">{g.crudo}</td>
+              <td className="p-3 whitespace-nowrap">{g.cocido}</td>
+              <td className="p-3">{g.aporta}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
     <p className={`text-xs ${oscuro ? "text-slate-400" : "text-slate-500"}`}>
       Ración ≠ porción: la porción es la medida estándar (la de la etiqueta o esta guía); la ración es lo que tú te sirves, que puede ser más o
       menos.
@@ -512,115 +555,163 @@ export const TablaCarbosEjercicio = ({ peso }) => (
 
 const NOMBRES_SUGERIDOS = ["Desayuno", "Media mañana", "Almuerzo", "Merienda", "Cena", "Pre-entreno", "Post-entreno"];
 
-/** Editor de los platos de la dieta (los que el nutricionista quiera asignar) */
-export const EditorPlatos = ({ value, onChange, sexo, metas, comidas = [] }) => {
+/**
+ * Comidas del día: cada comida es UN plato con su distribución, porciones con la mano
+ * y sus alimentos del catálogo (se programan al tocar el plato). Los alimentos viven
+ * en `comidas` enlazados al plato por `plateId`.
+ */
+export const EditorPlatos = ({ value, onChange, sexo, metas, comidas = [], setComidas }) => {
   const platos = value || [];
-  const [activo, setActivo] = React.useState(0);
-  const i = Math.min(activo, Math.max(0, platos.length - 1));
+  const [abierto, setAbierto] = React.useState(null); // id del plato que se está programando
+  const [pestana, setPestana] = React.useState("distribucion");
+  const comidaDe = (p) => comidas.findIndex((m) => m.plateId === p.id || (!m.plateId && m.name === p.name));
+  const kcalDe = (p) => {
+    const k = comidaDe(p);
+    return k >= 0 ? Number(comidas[k].totalCalories || 0) : 0;
+  };
+  const nuevaComida = (pl) => ({ id: `m${Date.now()}${Math.random().toString(36).slice(2, 5)}`, plateId: pl.id, name: pl.name, time: pl.time || "", totalCalories: 0, totalProteins: 0, totalCarbs: 0, totalFats: 0, items: [] });
   const agregar = (nombre, hora) => {
     const base = platos[platos.length - 1];
     const nuevo = normalizarPlato({ ...(base ? { ...base, id: undefined, notes: "" } : {}), name: nombre, time: hora || "" }, sexo);
     onChange([...platos, nuevo]);
-    setActivo(platos.length);
+    setComidas?.((prev) => [...prev, nuevaComida(nuevo)]);
+    setAbierto(nuevo.id);
+    setPestana("distribucion");
   };
   const unoPorComida = () => {
     const base = platos[0];
-    onChange(comidas.map((c) => normalizarPlato({ ...(base ? { ...base, id: undefined, notes: "" } : {}), name: c.name, time: /^\d{2}:\d{2}$/.test(c.time || "") ? c.time : "" }, sexo)));
-    setActivo(0);
+    const nuevos = comidas.map((c) => normalizarPlato({ ...(base ? { ...base, id: undefined, notes: "" } : {}), name: c.name, time: /^\d{2}:\d{2}$/.test(c.time || "") ? c.time : "" }, sexo));
+    onChange(nuevos);
+    setComidas?.((prev) => prev.map((c, k) => ({ ...c, plateId: nuevos[k].id })));
   };
+  const cambiarPlato = (id, cambios) => {
+    onChange(platos.map((p) => (p.id === id ? { ...p, ...cambios } : p)));
+    if (setComidas && (cambios.name !== undefined || cambios.time !== undefined)) {
+      const pl = platos.find((p) => p.id === id);
+      setComidas((prev) =>
+        prev.map((m) => (m.plateId === id || (!m.plateId && m.name === pl?.name) ? { ...m, plateId: id, ...(cambios.name !== undefined ? { name: cambios.name } : {}), ...(cambios.time !== undefined ? { time: cambios.time } : {}) } : m)),
+      );
+    }
+  };
+  const quitar = (pl) => {
+    const k = comidaDe(pl);
+    if (k >= 0 && comidas[k].items?.length && !window.confirm(`¿Quitar "${pl.name}" con sus ${comidas[k].items.length} alimento(s)?`)) return;
+    onChange(platos.filter((p) => p.id !== pl.id));
+    if (k >= 0) setComidas?.((prev) => prev.filter((_, z) => z !== k));
+    setAbierto(null);
+  };
+  const programar = (pl) => {
+    if (abierto === pl.id) return setAbierto(null);
+    if (setComidas && comidaDe(pl) < 0) setComidas((prev) => [...prev, nuevaComida(pl)]);
+    setAbierto(pl.id);
+  };
+  const activo = platos.find((p) => p.id === abierto);
+  const idxComida = activo ? comidaDe(activo) : -1;
+
   return (
-    <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/70 to-white p-4 space-y-4">
+    <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/70 to-white p-3 sm:p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-extrabold text-emerald-900">🍽️ Platos del alumno</p>
-          <p className="text-xs text-slate-500">Asigna los platos que necesite: uno, tres, siete… cada uno con su distribución y porciones.</p>
+          <p className="text-sm font-extrabold text-emerald-900">🍽️ Comidas del día</p>
+          <p className="text-xs text-slate-500">Cada comida es un plato. Tócalo para programar su distribución, porciones y alimentos.</p>
         </div>
         <div className="flex flex-wrap gap-1.5">
-          {comidas.length > 0 && (
+          {comidas.length > 0 && platos.length === 0 && (
             <button type="button" onClick={unoPorComida} className="px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-emerald-800 text-xs font-bold cursor-pointer hover:bg-emerald-50">
-              Un plato por cada comida ({comidas.length})
+              Crear un plato por cada comida ({comidas.length})
             </button>
           )}
+          {NOMBRES_SUGERIDOS.filter((n) => !platos.some((p) => p.name === n))
+            .slice(0, 3)
+            .map((n) => (
+              <button key={n} type="button" disabled={platos.length >= 12} onClick={() => agregar(n)} className="px-2.5 py-1.5 rounded-xl bg-white border border-emerald-300 text-emerald-800 text-xs font-bold cursor-pointer hover:bg-emerald-50 disabled:opacity-50">
+                + {n}
+              </button>
+            ))}
           <button
             type="button"
             disabled={platos.length >= 12}
-            onClick={() => agregar(NOMBRES_SUGERIDOS.find((n) => !platos.some((p) => p.name === n)) || `Plato ${platos.length + 1}`)}
+            onClick={() => agregar(`Comida ${platos.length + 1}`)}
             className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
           >
-            + Agregar plato
+            + Otra comida
           </button>
         </div>
       </div>
 
       {platos.length === 0 ? (
-        <p className="text-sm text-slate-500 bg-white rounded-xl border border-dashed border-slate-300 p-4 text-center">
-          Sin platos asignados. Agrega uno o crea uno por cada comida.
-        </p>
+        <p className="text-sm text-slate-500 bg-white rounded-xl border border-dashed border-slate-300 p-4 text-center">Sin comidas todavía. Agrega Desayuno, Almuerzo, Cena…</p>
       ) : (
-        <>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {platos.map((p, k) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+          {platos.map((p, k) => {
+            const on = abierto === p.id;
+            const kcal = kcalDe(p);
+            return (
               <button
                 key={p.id}
                 type="button"
-                onClick={() => setActivo(k)}
-                className={`shrink-0 flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-2xl border text-left cursor-pointer transition-all ${
-                  k === i ? "bg-white border-emerald-500 shadow-sm" : "bg-white/60 border-slate-200 hover:border-emerald-300"
-                }`}
+                onClick={() => programar(p)}
+                className={`relative text-left rounded-2xl border p-2 cursor-pointer transition-all ${on ? "bg-white border-emerald-500 ring-2 ring-emerald-200 shadow" : "bg-white/80 border-slate-200 hover:border-emerald-300"}`}
               >
-                <PlatoSVG plate={p} size={44} sinCubiertos />
-                <span>
-                  <span className="block text-xs font-extrabold text-slate-900">{p.name}</span>
-                  <span className="block text-[10px] text-slate-500">{p.time || `Plato ${k + 1}`}</span>
+                <span className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center">{k + 1}</span>
+                <div className="flex justify-center">
+                  <PlatoSVG plate={p} size={70} sinCubiertos />
+                </div>
+                <span className="block text-xs font-extrabold text-slate-900 truncate mt-1">{p.name}</span>
+                <span className="block text-[10px] text-slate-500 truncate">
+                  {p.time || "sin hora"} · {(MODELOS_PLATO[p.model] || {}).nombre || "Personalizado"}
                 </span>
+                <span className={`mt-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-black ${kcal ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-400"}`}>{kcal ? `${kcal} kcal` : "sin alimentos"}</span>
+                <span className={`block mt-1 text-[10px] font-black ${on ? "text-emerald-700" : "text-blue-700"}`}>{on ? "▲ Cerrar" : "⚙ Programar"}</span>
               </button>
-            ))}
-          </div>
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-4">
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="flex-1 min-w-[160px]">
-                <span className="block text-[11px] font-bold text-slate-500">Nombre del plato</span>
-                <input
-                  value={platos[i].name}
-                  maxLength={60}
-                  onChange={(e) => onChange(platos.map((p, k) => (k === i ? { ...p, name: e.target.value } : p)))}
-                  className="w-full px-2.5 py-2 rounded-xl border border-slate-300 text-sm font-bold"
-                />
-              </label>
-              <label>
-                <span className="block text-[11px] font-bold text-slate-500">Hora</span>
-                <input
-                  type="time"
-                  value={platos[i].time}
-                  onChange={(e) => onChange(platos.map((p, k) => (k === i ? { ...p, time: e.target.value } : p)))}
-                  className="px-2.5 py-2 rounded-xl border border-slate-300 text-sm"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={() => agregar(`${platos[i].name} (copia)`, platos[i].time)}
-                className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
-              >
-                Duplicar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onChange(platos.filter((_, k) => k !== i));
-                  setActivo(Math.max(0, i - 1));
-                }}
-                className="px-3 py-2 rounded-xl border border-rose-200 text-xs font-bold text-rose-600 hover:bg-rose-50 cursor-pointer"
-              >
-                Quitar
-              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {activo && (
+        <div className="bg-white rounded-2xl border-2 border-emerald-300 p-3 sm:p-4 space-y-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="flex-1 min-w-[150px]">
+              <span className="block text-[11px] font-bold text-slate-500">Comida</span>
+              <input value={activo.name} maxLength={60} onChange={(e) => cambiarPlato(activo.id, { name: e.target.value })} className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-sm font-bold" />
+            </label>
+            <label>
+              <span className="block text-[11px] font-bold text-slate-500">Hora</span>
+              <input type="time" value={activo.time} onChange={(e) => cambiarPlato(activo.id, { time: e.target.value })} className="px-2.5 py-1.5 rounded-xl border border-slate-300 text-sm" />
+            </label>
+            <div className="inline-flex p-1 rounded-xl bg-slate-100 gap-1">
+              {[
+                ["distribucion", "🥧 Distribución y porciones"],
+                ["alimentos", `🥗 Alimentos${idxComida >= 0 && comidas[idxComida].items?.length ? ` (${comidas[idxComida].items.length})` : ""}`],
+              ].map(([k, l]) => (
+                <button key={k} type="button" onClick={() => setPestana(k)} className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${pestana === k ? "bg-white shadow text-emerald-800" : "text-slate-600"}`}>
+                  {l}
+                </button>
+              ))}
             </div>
-            <EditorPlato value={platos[i]} sexo={sexo} onChange={(nuevo) => onChange(platos.map((p, k) => (k === i ? { ...nuevo, id: p.id, name: p.name, time: p.time } : p)))} />
+            <button type="button" onClick={() => agregar(`${activo.name} (copia)`, activo.time)} className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">
+              Duplicar
+            </button>
+            <button type="button" onClick={() => quitar(activo)} className="px-3 py-1.5 rounded-xl border border-rose-200 text-xs font-bold text-rose-600 hover:bg-rose-50 cursor-pointer">
+              Quitar
+            </button>
           </div>
-          <div className="bg-white rounded-2xl border border-slate-200 p-4">
-            <p className="text-xs font-black uppercase tracking-wider text-slate-600 mb-2">Total del día con {platos.length} plato(s) vs. metas del plan</p>
-            <ComparaMacros plates={platos} metas={metas} />
-          </div>
-        </>
+          {pestana === "distribucion" ? (
+            <EditorPlato value={activo} sexo={sexo} onChange={(nuevo) => onChange(platos.map((p) => (p.id === activo.id ? { ...nuevo, id: p.id, name: p.name, time: p.time } : p)))} />
+          ) : idxComida >= 0 && setComidas ? (
+            <EditorComidas meals={comidas} setMeals={setComidas} metas={{}} indices={[idxComida]} compacto />
+          ) : (
+            <p className="text-sm text-slate-500">Preparando la lista de alimentos…</p>
+          )}
+        </div>
+      )}
+
+      {platos.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-3">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-600 mb-2">Porciones con la mano del día ({platos.length} comida(s)) vs. metas</p>
+          <ComparaMacros plates={platos} metas={metas} />
+        </div>
       )}
     </div>
   );

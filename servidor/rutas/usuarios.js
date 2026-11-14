@@ -7,6 +7,8 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { consultar, transaccion } from "../db.js";
 import { ErrorHttp, requierePermiso } from "../seguridad.js";
+import { codigoAlumno } from "../codigoAlumno.js";
+import { crearOCambiarCuenta } from "./alumnos.js";
 
 const router = Router();
 
@@ -229,6 +231,90 @@ router.post("/:id/clave", requierePermiso("users", "editar"), async (req, res, n
       await consultar("UPDATE sesiones SET fecha_cierre = NOW() WHERE idusuario = ? AND fecha_cierre IS NULL", [actual.id]);
     }
     res.json({ usuario: actual.username, claveTemporal: clave });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// =====================================================================
+// SOCIOS (cuentas de los alumnos para el portal)
+// Las contraseñas se guardan cifradas: nadie puede verlas, ni el admin.
+// Lo que sí se puede es ver el usuario, si ya cambió su clave, si está
+// bloqueado, y restablecerla al instante.
+// =====================================================================
+
+// GET /api/usuarios/socios
+router.get("/socios", requierePermiso("users", "ver"), async (req, res, next) => {
+  try {
+    const filas = await consultar(
+      `SELECT a.idalumno, a.codigo, a.nombres, a.apellidos, a.dni, a.telefono,
+              u.idusuario, u.usuario, u.activo, u.debe_cambiar_clave, u.ultimo_acceso, u.bloqueado_hasta, u.intentos_fallidos
+         FROM alumnos a
+         LEFT JOIN usuarios u ON u.idalumno = a.idalumno
+        WHERE a.activo = 1
+        ORDER BY a.codigo IS NULL, a.codigo, a.nombres`,
+    );
+    const ahora = new Date();
+    res.json(
+      filas.map((f) => ({
+        id: String(f.idalumno),
+        code: f.codigo != null ? Number(f.codigo) : null,
+        codeLabel: codigoAlumno(f.codigo, f.nombres, f.apellidos),
+        fullName: `${f.nombres} ${f.apellidos}`.trim(),
+        dni: f.dni || "",
+        phone: f.telefono || "",
+        hasAccount: !!f.idusuario,
+        username: f.usuario || "",
+        active: !!f.activo,
+        mustChangePassword: !!f.debe_cambiar_clave,
+        lastAccess: f.ultimo_acceso,
+        locked: !!(f.bloqueado_hasta && new Date(f.bloqueado_hasta) > ahora),
+        failedAttempts: Number(f.intentos_fallidos || 0),
+      })),
+    );
+  } catch (e) {
+    next(e);
+  }
+});
+
+// POST /api/usuarios/socios/:id/clave { modo: "dni" | "temporal" | "propia", clave? }
+//   dni      -> usuario y clave = su DNI (como al matricularse)
+//   temporal -> clave al azar para dictársela
+//   propia   -> la que escribe el admin (8+ caracteres, letras y números)
+// Siempre le pedirá crear su propia clave al entrar y cierra sus sesiones abiertas.
+router.post("/socios/:id/clave", requierePermiso("users", "editar"), async (req, res, next) => {
+  try {
+    const [a] = await consultar("SELECT idalumno, dni FROM alumnos WHERE idalumno = ? AND activo = 1", [req.params.id]);
+    if (!a) throw new ErrorHttp(404, "Alumno no encontrado");
+    if (!a.dni) throw new ErrorHttp(400, "El alumno no tiene DNI registrado: complétalo en su ficha");
+    const modo = String(req.body?.modo || "dni");
+    // La cuenta siempre existe y queda activa con usuario = DNI
+    const cuenta = await crearOCambiarCuenta(null, a.idalumno, a.dni, req.usuario.idusuario);
+    let clave = cuenta.claveTemporal;
+    if (modo !== "dni") {
+      clave = modo === "propia" ? String(req.body?.clave || "").trim() : claveTemporal();
+      validarClave(clave);
+      await consultar("UPDATE usuarios SET clave_hash = ?, debe_cambiar_clave = 1 WHERE idalumno = ?", [await bcrypt.hash(clave, 10), a.idalumno]);
+    }
+    res.json({ usuario: cuenta.usuario, claveTemporal: clave });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// PUT /api/usuarios/socios/:id/estado { activo }  -> permite o bloquea el acceso al portal
+router.put("/socios/:id/estado", requierePermiso("users", "editar"), async (req, res, next) => {
+  try {
+    const activo = req.body?.activo ? 1 : 0;
+    const r = await consultar("UPDATE usuarios SET activo = ?, intentos_fallidos = 0, bloqueado_hasta = NULL WHERE idalumno = ?", [activo, req.params.id]);
+    if (!r.affectedRows) throw new ErrorHttp(404, "El alumno aún no tiene cuenta: restablece su clave para crearla");
+    if (!activo) {
+      await consultar(
+        "UPDATE sesiones s JOIN usuarios u ON u.idusuario = s.idusuario SET s.fecha_cierre = NOW() WHERE u.idalumno = ? AND s.fecha_cierre IS NULL",
+        [req.params.id],
+      );
+    }
+    res.json({ ok: true, activo: !!activo });
   } catch (e) {
     next(e);
   }

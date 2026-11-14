@@ -34,17 +34,44 @@ export async function procedimiento(nombre, parametros = []) {
 }
 
 /** Ejecuta varias consultas dentro de una transacción. */
+// Varias personas usando el sistema a la vez: si dos operaciones chocan
+// (bloqueo mutuo, espera de bloqueo o dos alumnos nuevos que reciben el mismo
+// código al mismo tiempo), la transacción se repite sola hasta 5 veces.
+const esChoque = (e) =>
+  e?.errno === 1213 || e?.errno === 1205 || (e?.errno === 1062 && /codigo|pase_codigo|token/i.test(String(e?.sqlMessage || e?.message)));
+
 export async function transaccion(fn) {
-  const conexion = await pool.getConnection();
-  try {
-    await conexion.beginTransaction();
-    const resultado = await fn(conexion);
-    await conexion.commit();
-    return resultado;
-  } catch (e) {
-    await conexion.rollback();
-    throw e;
-  } finally {
-    conexion.release();
+  for (let intento = 1; ; intento++) {
+    const conexion = await pool.getConnection();
+    try {
+      await conexion.beginTransaction();
+      const resultado = await fn(conexion);
+      await conexion.commit();
+      return resultado;
+    } catch (e) {
+      await conexion.rollback().catch(() => {});
+      if (intento < 6 && esChoque(e)) {
+        await new Promise((ok) => setTimeout(ok, 60 * intento + Math.random() * 120));
+        continue;
+      }
+      throw e;
+    } finally {
+      conexion.release();
+    }
   }
+}
+
+/**
+ * Fila de espera en el servidor: las operaciones con la misma clave se hacen
+ * una tras otra (p. ej. dos recepcionistas matriculando al mismo tiempo: así
+ * los correlativos —código de alumno, ticket— nunca chocan).
+ */
+const filas = new Map();
+export function enFila(clave, fn) {
+  const previa = filas.get(clave) || Promise.resolve();
+  const actual = previa.catch(() => {}).then(fn);
+  const cola = actual.catch(() => {});
+  filas.set(clave, cola);
+  cola.then(() => filas.get(clave) === cola && filas.delete(clave));
+  return actual;
 }

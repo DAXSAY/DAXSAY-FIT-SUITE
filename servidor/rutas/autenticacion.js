@@ -38,6 +38,20 @@ async function perfil(idusuario) {
   };
 }
 
+// Intentos fallidos por USUARIO + EQUIPO: si alguien se equivoca 5 veces en la
+// PC de recepción, se bloquea ese equipo para esa cuenta, pero la persona
+// dueña puede seguir entrando desde su propio equipo.
+const MAX_FALLOS = 5;
+const fallosPorEquipo = new Map(); // "usuario|ip" -> { n, hasta }
+setInterval(() => {
+  const ahora = Date.now();
+  for (const [k, v] of fallosPorEquipo) if (v.hasta < ahora) fallosPorEquipo.delete(k);
+}, 10 * 60_000).unref?.();
+const equiposConFallos = (usuario) => {
+  const ahora = Date.now();
+  return [...fallosPorEquipo].filter(([k, v]) => k.startsWith(`${usuario}|`) && v.hasta > ahora).length;
+};
+
 // POST /api/auth/ingresar  { usuario, clave }
 router.post("/ingresar", async (req, res, next) => {
   try {
@@ -45,9 +59,22 @@ router.post("/ingresar", async (req, res, next) => {
     const clave = String(req.body?.clave || "");
     if (!usuario || !clave) throw new ErrorHttp(400, "Ingresa tu usuario y contraseña");
 
+    const clavEquipo = `${usuario}|${req.ip}`;
+    const previo = fallosPorEquipo.get(clavEquipo);
+    if (previo && previo.hasta > Date.now() && previo.n >= MAX_FALLOS) {
+      const min = Math.ceil((previo.hasta - Date.now()) / 60_000);
+      throw new ErrorHttp(423, `Demasiados intentos fallidos desde este equipo. Espera ${min} min o entra desde otro equipo.`);
+    }
+
     const [filas] = await procedimiento("sp_login_buscar", [usuario]);
     const u = filas?.[0];
     const correcta = u ? await bcrypt.compare(clave, normalizarHash(u.clave_hash)) : false;
+
+    // Clave correcta desde un equipo SIN fallos: si la cuenta quedó bloqueada por
+    // errores en otro equipo (y no parece un ataque desde muchos equipos), se desbloquea.
+    if (correcta && u?.bloqueado && !previo && equiposConFallos(usuario) <= 2) {
+      await consultar("UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL WHERE idusuario = ?", [u.idusuario]);
+    }
 
     const tokenId = nuevoTokenId();
     const [resultado] = await procedimiento("sp_login_registrar", [
@@ -64,9 +91,78 @@ router.post("/ingresar", async (req, res, next) => {
       throw new ErrorHttp(423, "Cuenta bloqueada por varios intentos fallidos. Intenta de nuevo en 15 minutos o pide a administración que la desbloquee.");
     }
     if (estado === "inactivo") throw new ErrorHttp(403, "Este usuario está desactivado. Consulta con administración.");
-    if (estado !== "exitoso") throw new ErrorHttp(401, "Usuario o contraseña incorrectos.");
+    if (estado !== "exitoso") {
+      const actual = previo && previo.hasta > Date.now() ? previo : { n: 0 };
+      const n = actual.n + 1;
+      fallosPorEquipo.set(clavEquipo, { n, hasta: Date.now() + 15 * 60_000 });
+      const quedan = MAX_FALLOS - n;
+      throw new ErrorHttp(
+        401,
+        quedan > 0
+          ? `Usuario o contraseña incorrectos. ${quedan === 1 ? "Te queda 1 intento" : `Te quedan ${quedan} intentos`} en este equipo.`
+          : "Usuario o contraseña incorrectos. Este equipo queda en espera 15 minutos para esta cuenta.",
+      );
+    }
+    fallosPorEquipo.delete(clavEquipo);
 
     res.json({ token: firmarToken(u.idusuario, tokenId), usuario: await perfil(u.idusuario) });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// POST /api/auth/olvide-clave  { usuario }  (sin sesión)
+// No envía correos: avisa a recepción y administración (campanita). Recepción
+// confirma que es el alumno y restablece su contraseña (queda su DNI).
+// Siempre responde lo mismo, exista o no el usuario (no revela cuentas).
+const pedidosPorIp = new Map();
+setInterval(() => {
+  const ahora = Date.now();
+  for (const [ip, v] of pedidosPorIp) if (v.hasta < ahora) pedidosPorIp.delete(ip);
+}, 60_000).unref();
+
+router.post("/olvide-clave", async (req, res, next) => {
+  try {
+    const ahora = Date.now();
+    const v = pedidosPorIp.get(req.ip);
+    if (v && v.hasta > ahora && v.n >= 5) throw new ErrorHttp(429, "Ya enviaste varias solicitudes. Espera unos minutos o acércate a recepción.");
+    if (!v || v.hasta < ahora) pedidosPorIp.set(req.ip, { n: 1, hasta: ahora + 15 * 60_000 });
+    else v.n += 1;
+
+    const usuario = String(req.body?.usuario || "").trim().toLowerCase().slice(0, 40);
+    if (!usuario) throw new ErrorHttp(400, "Escribe tu usuario (si eres alumno, tu DNI)");
+    const [u] = await consultar(
+      `SELECT u.idusuario, u.idalumno, r.codigo AS rol,
+              COALESCE(CONCAT(a.nombres, ' ', a.apellidos), CONCAT(e.nombres, ' ', e.apellidos), u.usuario) AS nombre
+         FROM usuarios u JOIN roles r ON r.idrol = u.idrol
+         LEFT JOIN alumnos a ON a.idalumno = u.idalumno
+         LEFT JOIN empleados e ON e.idempleado = u.idempleado
+        WHERE u.usuario = ? AND u.activo = 1`,
+      [usuario],
+    );
+    if (u) {
+      const [pendiente] = await consultar(
+        `SELECT idalerta FROM alertas_administracion
+          WHERE tipo = 'olvido_clave' AND vista = 0 AND idusuario_origen = ? LIMIT 1`,
+        [u.idusuario],
+      );
+      if (!pendiente) {
+        const esAlumno = u.rol === "student";
+        await consultar(
+          `INSERT INTO alertas_administracion (tipo, titulo, mensaje, idalumno, idusuario_origen)
+           VALUES ('olvido_clave', 'Olvidó su contraseña', ?, ?, ?)`,
+          [
+            `${u.nombre} (${usuario}) olvidó su contraseña del ${esAlumno ? "portal del alumno" : "sistema"} y pide restablecerla.`.slice(0, 500),
+            esAlumno ? u.idalumno : null,
+            u.idusuario,
+          ],
+        );
+      }
+    }
+    res.json({
+      mensaje:
+        "Listo. Recepción recibió tu solicitud. Cuando la atiendan podrás ingresar con tu DNI como contraseña y crear una nueva.",
+    });
   } catch (e) {
     next(e);
   }

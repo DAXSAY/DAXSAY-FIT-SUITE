@@ -10,7 +10,6 @@ import {
   Clock,
   Activity,
   ShieldAlert,
-  Sparkles,
   ChevronRight,
   ChevronDown,
   Share2,
@@ -18,21 +17,18 @@ import {
   Trash2,
   Target,
   Eye,
-  Flame,
   Download,
   Edit3,
   TrendingUp,
   Check,
   Info,
   ArrowRight,
-  ShieldCheck,
   X,
   BookmarkPlus,
   BookOpen,
   Layers,
   Save,
   CheckCircle,
-  Pill,
   ClipboardList,
   Stethoscope,
   ClipboardCheck,
@@ -76,6 +72,7 @@ import {
   AUTO_POSTURE_LABELS,
 } from "./PosturaEvaluacion";
 import { WilliamsVisuals, DEFAULT_WILLIAMS_EXERCISES } from "./WilliamsVisuals";
+import { PATOLOGIAS_POR_REGION } from "../../data/patologias";
 import {
   EditableTreatments,
   DEFAULT_TREATMENT_ITEMS,
@@ -84,9 +81,12 @@ import { ExercisePrescriptionCard } from "./ExercisePrescriptionCard";
 import { PhysioTextualRecordsView } from "./PhysioTextualRecordsView";
 import { PhysioReportModal } from "./PhysioReportModal";
 import { ESTADOS_EVOLUCION, estadoEvolucion, ADHERENCIA, FRECUENCIA_SESIONES, PRONOSTICO } from "./evolucion";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import { api } from "../../api/cliente";
+import { SelectorAlumno, CodigoAlumno, coincideAlumno } from "../common/BuscarAlumno";
 import { SelectorIndicaciones, sugerirIndicaciones, textoIndicaciones } from "../indicaciones/Indicaciones";
+import { ContextoClinico } from "./ContextoClinico";
 
 const PHYSIO_STEPS = [
   { id: "anamnesis", label: "Anamnesis y dolor", icon: ClipboardList },
@@ -109,6 +109,17 @@ const COMMON_TREATMENTS = [
   "Vendaje neuromuscular / Kinesiotaping",
   "Estiramientos miofasciales globales",
 ];
+
+// Encabezado numerado de cada parte del plan de tratamiento
+const PasoPlan = ({ n, titulo, ayuda }) => (
+  <div className="flex items-start gap-2.5">
+    <span className="w-7 h-7 shrink-0 rounded-full bg-blue-600 text-white text-sm font-black flex items-center justify-center">{n}</span>
+    <div>
+      <p className="text-sm font-black text-slate-900 leading-tight">{titulo}</p>
+      {ayuda && <p className="text-xs text-slate-500">{ayuda}</p>}
+    </div>
+  </div>
+);
 
 const COMMON_ANTECEDENTS = [
   "Hernia discal lumbar o cervical previa",
@@ -134,61 +145,46 @@ const COMMON_MEDICATIONS = [
 ];
 
 const DEFAULT_FUNCTIONAL_TESTS = [
-  {
-    testName: "Test de Lasègue (Radiculopatía L5-S1)",
-    joint: "Columna Lumbar",
-    result: "negativo",
-  },
-  {
-    testName: "Test de Thomas (Retracción de Psoas)",
-    joint: "Cadera / Psoas",
-    result: "negativo",
-  },
-  {
-    testName: "Test de Ober (Tensor Fascia Lata)",
-    joint: "Cadera / TFL",
-    result: "negativo",
-  },
-  {
-    testName: "Test de Lachman (LCA de Rodilla)",
-    joint: "Rodilla / Ligamentos",
-    result: "negativo",
-  },
-  {
-    testName: "Test de McMurray (Meniscos de Rodilla)",
-    joint: "Rodilla / Meniscos",
-    result: "negativo",
-  },
-  {
-    testName: "Test de Hawkins-Kennedy (Manguito Rotador)",
-    joint: "Hombro / Manguito",
-    result: "negativo",
-  },
-  {
-    testName: "Test de Neer (Pinzamiento Subacromial)",
-    joint: "Hombro / Manguito",
-    result: "negativo",
-  },
-  {
-    testName: "Test de Spurling (Compresión Cervical)",
-    joint: "Columna Cervical",
-    result: "negativo",
-  },
-  {
-    testName: "Test de Cozen (Epicondilitis / Codo)",
-    joint: "Codo & Antebrazo",
-    result: "negativo",
-  },
-  {
-    testName: "Test de Phalen (Túnel Carpiano / Muñeca)",
-    joint: "Muñeca & Mano",
-    result: "negativo",
-  },
-  {
-    testName: "Test de Finkelstein (Tendinitis De Quervain)",
-    joint: "Muñeca & Pulgar",
-    result: "negativo",
-  },
+  { testName: "Test de Spurling (compresión foraminal)", joint: "Columna Cervical", result: "no_evaluado" },
+  { testName: "Test de distracción cervical", joint: "Columna Cervical", result: "no_evaluado" },
+  { testName: "Test de Adson (desfiladero torácico)", joint: "Columna Cervical", result: "no_evaluado" },
+  { testName: "Test de Neer (pinzamiento subacromial)", joint: "Hombro / Manguito", result: "no_evaluado" },
+  { testName: "Test de Hawkins-Kennedy (manguito rotador)", joint: "Hombro / Manguito", result: "no_evaluado" },
+  { testName: "Test de Jobe (supraespinoso)", joint: "Hombro / Manguito", result: "no_evaluado" },
+  { testName: "Test de Speed (tendón bicipital)", joint: "Hombro / Bíceps", result: "no_evaluado" },
+  { testName: "Test de Yergason (porción larga del bíceps)", joint: "Hombro / Bíceps", result: "no_evaluado" },
+  { testName: "Test de aprehensión (inestabilidad anterior)", joint: "Hombro / Inestabilidad", result: "no_evaluado" },
+  { testName: "Test de Cozen (epicondilitis lateral)", joint: "Codo & Antebrazo", result: "no_evaluado" },
+  { testName: "Test de Mill (epicondilitis lateral)", joint: "Codo & Antebrazo", result: "no_evaluado" },
+  { testName: "Test de golfista (epitrocleítis)", joint: "Codo & Antebrazo", result: "no_evaluado" },
+  { testName: "Test de Phalen (túnel carpiano)", joint: "Muñeca & Mano", result: "no_evaluado" },
+  { testName: "Signo de Tinel en muñeca (nervio mediano)", joint: "Muñeca & Mano", result: "no_evaluado" },
+  { testName: "Test de Finkelstein (De Quervain)", joint: "Muñeca & Pulgar", result: "no_evaluado" },
+  { testName: "Signo de Froment (nervio cubital)", joint: "Dedos de la mano", result: "no_evaluado" },
+  { testName: "Test de dedo en gatillo (bloqueo en flexión)", joint: "Dedos de la mano", result: "no_evaluado" },
+  { testName: "Test de expansión costal", joint: "Columna Dorsal", result: "no_evaluado" },
+  { testName: "Test de Lasègue / SLR (radiculopatía L5-S1)", joint: "Columna Lumbar", result: "no_evaluado" },
+  { testName: "Test de Slump (tensión neural)", joint: "Columna Lumbar", result: "no_evaluado" },
+  { testName: "Test de Schober (movilidad lumbar)", joint: "Columna Lumbar", result: "no_evaluado" },
+  { testName: "Test de Gaenslen (sacroilíaca)", joint: "Sacroilíaca", result: "no_evaluado" },
+  { testName: "Test de compresión / distracción sacroilíaca", joint: "Sacroilíaca", result: "no_evaluado" },
+  { testName: "Test de Thomas (retracción de psoas)", joint: "Cadera / Psoas", result: "no_evaluado" },
+  { testName: "Test de Ober (tensor de la fascia lata)", joint: "Cadera / TFL", result: "no_evaluado" },
+  { testName: "Test de FABER / Patrick (cadera-sacroilíaca)", joint: "Cadera", result: "no_evaluado" },
+  { testName: "Test de FADIR (pinzamiento femoroacetabular)", joint: "Cadera", result: "no_evaluado" },
+  { testName: "Signo de Trendelenburg", joint: "Cadera / Glúteo medio", result: "no_evaluado" },
+  { testName: "Test de Lachman (LCA)", joint: "Rodilla / Ligamentos", result: "no_evaluado" },
+  { testName: "Cajón anterior / posterior de rodilla", joint: "Rodilla / Ligamentos", result: "no_evaluado" },
+  { testName: "Estrés en valgo / varo (LCM / LCL)", joint: "Rodilla / Ligamentos", result: "no_evaluado" },
+  { testName: "Test de McMurray (meniscos)", joint: "Rodilla / Meniscos", result: "no_evaluado" },
+  { testName: "Test de Apley (meniscos)", joint: "Rodilla / Meniscos", result: "no_evaluado" },
+  { testName: "Test de Clarke (condromalacia rotuliana)", joint: "Rodilla / Rótula", result: "no_evaluado" },
+  { testName: "Cajón anterior de tobillo (LPAA)", joint: "Tobillo & Pie", result: "no_evaluado" },
+  { testName: "Test de Thompson (rotura de Aquiles)", joint: "Tobillo & Pie", result: "no_evaluado" },
+  { testName: "Squeeze test (sindesmosis)", joint: "Tobillo & Pie", result: "no_evaluado" },
+  { testName: "Test de Windlass (fascitis plantar / espolón)", joint: "Talón / Fascia plantar", result: "no_evaluado" },
+  { testName: "Test de movilidad del hallux (hallux rigidus / valgus)", joint: "Dedos del pie / Hallux", result: "no_evaluado" },
+  { testName: "Test de Mulder (neuroma de Morton)", joint: "Dedos del pie / Hallux", result: "no_evaluado" },
 ];
 
 export const PhysiotherapyModule = () => {
@@ -257,6 +253,8 @@ export const PhysiotherapyModule = () => {
   // 2. EVALUACIÓN FÍSICA & VISIÓN LATERAL & RODILLAS/TOBILLOS
   const [formClinicalHistory, setFormClinicalHistory] = useState("");
   const [formMedicalBackground, setFormMedicalBackground] = useState([]);
+  const [formPatologias, setFormPatologias] = useState([]); // diagnóstico presuntivo
+  const [verTodasPatologias, setVerTodasPatologias] = useState(false);
   const [formCustomBackground, setFormCustomBackground] = useState("");
   const [formMedications, setFormMedications] = useState([]);
   const [formCustomMedication, setFormCustomMedication] = useState("");
@@ -366,10 +364,7 @@ export const PhysiotherapyModule = () => {
   // Filtered members for sidebar
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
-      const matchSearch =
-        m.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.dni.includes(searchTerm) ||
-        (m.phone && m.phone.includes(searchTerm));
+      const matchSearch = coincideAlumno(m, searchTerm);
       const hasRestrictions =
         m.medicalNotes && m.medicalNotes.trim().length > 0;
       if (filterRestrictionsOnly && !hasRestrictions) return false;
@@ -832,6 +827,7 @@ export const PhysiotherapyModule = () => {
     setFormPainEVA(0);
     setFormClinicalScales(EMPTY_CLINICAL_SCALES);
     setFormMedicalBackground([]);
+    setFormPatologias([]);
     setFormMedicationsText("");
     setFormPostureFindings([]);
     setFormPostureNotes("");
@@ -904,6 +900,7 @@ export const PhysiotherapyModule = () => {
       setFormMedicalBackground(
         session.physicalEvaluation.medicalAntecedents || ["Sin antecedentes"],
       );
+      setFormPatologias(session.physicalEvaluation.pathologies || []);
       setFormMedications(session.physicalEvaluation.medications || []);
       setFormMedicationsText(
         session.physicalEvaluation.medicationsText ||
@@ -933,7 +930,9 @@ export const PhysiotherapyModule = () => {
       );
       setFormPainNature(fe.painOnMovement?.painNature || "Punzante");
       if (fe.functionalJointTests && fe.functionalJointTests.length > 0) {
-        setFormFunctionalTests(fe.functionalJointTests);
+        // Se agregan las pruebas nuevas del catálogo que el registro antiguo no tenía
+        const nombres = new Set(fe.functionalJointTests.map((t) => t.testName));
+        setFormFunctionalTests([...fe.functionalJointTests, ...DEFAULT_FUNCTIONAL_TESTS.filter((t) => !nombres.has(t.testName))]);
       }
       if (fe.palpationPainZone) {
         setFormMuscleTone(
@@ -1033,6 +1032,7 @@ export const PhysiotherapyModule = () => {
         formClinicalHistory.trim() ||
         "Sin antecedentes clínicos relevantes reportados.",
       medicalAntecedents: formMedicalBackground,
+      pathologies: formPatologias,
       medications: formMedications,
       medicationsText: formMedicationsText.trim() || undefined,
       posturalVisualEvaluation: {
@@ -1152,9 +1152,12 @@ export const PhysiotherapyModule = () => {
       rangeOfMotion: romLines.length ? romLines.join("; ") : "Goniometría no registrada",
       functionalTests:
         formFunctionalTests
-          .filter((t) => t.result !== "negativo")
+          .filter((t) => t.result === "positivo" || t.result === "dudoso")
           .map((t) => `${t.testName} (${t.result})`)
-          .join(", ") || "Pruebas ortopédicas sin signos agudos de rotura.",
+          .join(", ") ||
+        (formFunctionalTests.some((t) => t.result === "negativo")
+          ? `Pruebas ortopédicas negativas (${formFunctionalTests.filter((t) => t.result === "negativo").length} evaluadas).`
+          : "Pruebas ortopédicas no evaluadas."),
       treatmentsApplied: formPlanEnabled
         ? formEditableTreatments.filter((t) => t.applied).map((t) => t.name)
         : [],
@@ -1230,7 +1233,7 @@ export const PhysiotherapyModule = () => {
       addPhysioRecord(recordData);
       const createdSession = {
         ...recordData,
-        id: `phy-rec-${Date.now()}`,
+        id: `phy-rec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       };
       setReportModalSession(createdSession);
     }
@@ -1268,32 +1271,14 @@ export const PhysiotherapyModule = () => {
   return (
     <div className="space-y-6">
       {/* HEADER BANNER */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-5 sm:p-6 rounded-2xl shadow-lg border border-blue-800/40 relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-cyan-500/10 to-transparent pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+      <div className="rd-portada rd-cabecera">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="bg-cyan-500/20 text-cyan-300 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-cyan-400/30 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-cyan-400" />
-                Módulo Clínico & Readaptación Deportiva
-              </span>
-              <span className="bg-blue-500/20 text-blue-200 text-xs font-bold px-2 py-0.5 rounded-full border border-blue-400/30">
-                Selección Múltiple de Zonas + PDF Descargable
-              </span>
-            </div>
-
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-              <HeartPulse className="w-6 h-6 text-cyan-400" />
-              <span>Fisioterapia, Lesiones & Historial de Mejoras</span>
-            </h1>
-
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Selecciona múltiples zonas afectadas simultáneas (ej: Lumbar +
-              Muñeca), gestiona observaciones del fisioterapeuta con
-              agregar/editar/eliminar, monitorea la evolución clínica del alumno
-              y descarga la ficha ilustrada en PDF.
-            </p>
+            <span className="text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
+              <HeartPulse className="w-4 h-4" /> Salud
+            </span>
+            <h1>Fisioterapia</h1>
+            <p className="text-sm text-slate-300 max-w-2xl">Evaluaciones por zona, evolución del dolor, ejercicios para casa y ficha en PDF.</p>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
@@ -1362,7 +1347,7 @@ export const PhysiotherapyModule = () => {
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Buscar por alumno, DNI o teléfono..."
+                  placeholder="Código (12 o DR-12), nombre, DNI o teléfono..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -1435,8 +1420,9 @@ export const PhysiotherapyModule = () => {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <h4 className="text-xs font-bold text-slate-900 truncate">
-                              {member.fullName}
+                            <h4 className="text-xs font-bold text-slate-900 truncate flex items-center gap-1.5">
+                              <CodigoAlumno m={member} className="shrink-0" />
+                              <span className="truncate">{member.fullName}</span>
                             </h4>
                             <p className="text-xs text-slate-500">
                               DNI: {member.dni} • {member.planName}
@@ -1561,7 +1547,7 @@ export const PhysiotherapyModule = () => {
 
                 {/* CLINICAL PROGRESS & IMPROVEMENTS DASHBOARD FOR THIS STUDENT */}
                 {progressStats && progressStats.sessionCount > 0 && (
-                  <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-4 sm:p-5 border border-indigo-800/40 shadow-md space-y-3.5">
+                  <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-4 sm:p-5 border border-indigo-800/40 shadow-md space-y-3.5 rd-panel-oscuro">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-800/40 pb-2.5">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-400/30">
@@ -1741,14 +1727,14 @@ export const PhysiotherapyModule = () => {
                               <YAxis
                                 yAxisId="left"
                                 domain={[0, 10]}
-                                stroke="#f43f5e"
-                                tick={{ fontSize: 13, fill: "#f43f5e" }}
+                                stroke="var(--color-rose-500)"
+                                tick={{ fontSize: 13, fill: "var(--color-rose-500)" }}
                                 tickLine={false}
                                 label={{
                                   value: "EVA (0-10)",
                                   angle: -90,
                                   position: "insideLeft",
-                                  fill: "#f43f5e",
+                                  fill: "var(--color-rose-500)",
                                   fontSize: 12,
                                   offset: 12,
                                 }}
@@ -1760,14 +1746,14 @@ export const PhysiotherapyModule = () => {
                                 yAxisId="right"
                                 orientation="right"
                                 domain={[0, 100]}
-                                stroke="#06b6d4"
-                                tick={{ fontSize: 13, fill: "#06b6d4" }}
+                                stroke="var(--color-cyan-500)"
+                                tick={{ fontSize: 13, fill: "var(--color-cyan-500)" }}
                                 tickLine={false}
                                 label={{
                                   value: "ROM (% normal)",
                                   angle: 90,
                                   position: "insideRight",
-                                  fill: "#06b6d4",
+                                  fill: "var(--color-cyan-500)",
                                   fontSize: 12,
                                   offset: 12,
                                 }}
@@ -1829,38 +1815,38 @@ export const PhysiotherapyModule = () => {
 
                             {(chartMetricView === "both" ||
                               chartMetricView === "eva") && (
-                              <Line
+                              <Line isAnimationActive={false}
                                 yAxisId="left"
                                 type="monotone"
                                 dataKey="painEVA"
                                 name="Dolor EVA (0-10)"
-                                stroke="#f43f5e"
+                                stroke="var(--color-rose-500)"
                                 strokeWidth={3}
                                 dot={{
                                   r: 4,
-                                  fill: "#f43f5e",
+                                  fill: "var(--color-rose-500)",
                                   stroke: "#ffffff",
                                   strokeWidth: 1.5,
                                 }}
-                                activeDot={{ r: 6, fill: "#f43f5e" }}
+                                activeDot={{ r: 6, fill: "var(--color-rose-500)" }}
                               />
                             )}
                             {(chartMetricView === "both" ||
                               chartMetricView === "rom") && (
-                              <Line
+                              <Line isAnimationActive={false}
                                 yAxisId="right"
                                 type="monotone"
                                 dataKey="romDegrees"
                                 name="Rango articular (% normal)"
-                                stroke="#06b6d4"
+                                stroke="var(--color-cyan-500)"
                                 strokeWidth={3}
                                 dot={{
                                   r: 4,
-                                  fill: "#06b6d4",
+                                  fill: "var(--color-cyan-500)",
                                   stroke: "#ffffff",
                                   strokeWidth: 1.5,
                                 }}
-                                activeDot={{ r: 6, fill: "#06b6d4" }}
+                                activeDot={{ r: 6, fill: "var(--color-cyan-500)" }}
                               />
                             )}
                           </LineChart>
@@ -2212,8 +2198,8 @@ export const PhysiotherapyModule = () => {
 
       {/* MODAL: REGISTRAR / EDITAR EVALUACIÓN CLÍNICA */}
       {isNewSessionModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-100">
-          <div className="bg-slate-50 w-full h-full overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 rd-velo">
+          <div className="rd-hoja bg-slate-50 overflow-hidden flex flex-col">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 text-white px-4 sm:px-8 py-4 flex items-center justify-between gap-4 shrink-0">
               <div className="flex items-center gap-3 min-w-0">
@@ -2227,7 +2213,7 @@ export const PhysiotherapyModule = () => {
                   <h3 className="text-lg font-extrabold text-white truncate">
                     {members.find((m) => m.id === formMemberId)?.fullName || "Nueva evaluación"}
                     <span className="text-slate-400 font-semibold text-sm ml-2">
-                      {formDate} · {formTime}
+                      {String(formDate || "").split("-").reverse().join("/")} · {formTime}
                     </span>
                   </h3>
                 </div>
@@ -2315,19 +2301,12 @@ export const PhysiotherapyModule = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className={LBL}>Paciente *</label>
-                        <select
+                        <SelectorAlumno
+                          alumnos={members}
                           value={formMemberId}
-                          onChange={(e) => setFormMemberId(e.target.value)}
+                          onChange={(id) => setFormMemberId(id)}
                           required
-                          className={INP}
-                        >
-                          <option value="">Seleccione un alumno…</option>
-                          {members.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.fullName} (DNI: {m.dni})
-                            </option>
-                          ))}
-                        </select>
+                        />
                         {members.length === 0 && (
                           <p className="text-xs text-amber-700 mt-1">
                             Aún no hay alumnos registrados en el sistema.
@@ -2443,6 +2422,44 @@ export const PhysiotherapyModule = () => {
                     onRemoveZone={handleRemoveZone}
                   />
 
+                  {/* Diagnóstico presuntivo: patologías por región (primero las de las zonas marcadas) */}
+                  <Card icon={Stethoscope} color="text-rose-600" title="Diagnóstico fisioterapéutico presuntivo" subtitle="Elija una o varias patologías. Primero aparecen las de las zonas marcadas en el mapa corporal.">
+                    {(() => {
+                      const deZona = PATOLOGIAS_POR_REGION.filter((r) => r.zonas.some((z) => formZones.includes(z)));
+                      const regiones = verTodasPatologias || !deZona.length ? PATOLOGIAS_POR_REGION : deZona;
+                      return (
+                        <div className="space-y-2.5 select-none">
+                          {regiones.map((r) => (
+                            <div key={r.region} className="flex flex-wrap items-center gap-1.5">
+                              <span className="w-32 shrink-0 text-[11px] font-black uppercase text-slate-500">{r.region}</span>
+                              {r.items.map((p) => {
+                                const on = formPatologias.includes(p);
+                                return (
+                                  <button
+                                    type="button"
+                                    key={p}
+                                    onClick={() => setFormPatologias((prev) => (on ? prev.filter((x) => x !== p) : [...prev, p]))}
+                                    className={`px-2.5 py-1 rounded-full border text-xs font-bold cursor-pointer ${on ? "bg-rose-600 border-rose-600 text-white" : "bg-white border-slate-300 text-slate-700 hover:border-rose-300"}`}
+                                  >
+                                    {on ? "✓ " : ""}
+                                    {p}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ))}
+                          {deZona.length > 0 && (
+                            <button type="button" onClick={() => setVerTodasPatologias((v) => !v)} className="text-xs font-bold text-rose-700 underline underline-offset-2 cursor-pointer">
+                              {verTodasPatologias ? "Ver solo las de las zonas marcadas" : `Ver todas las regiones (${PATOLOGIAS_POR_REGION.length})`}
+                            </button>
+                          )}
+                          {formPatologias.length > 0 && <p className="text-xs text-slate-600">Elegidas: <b>{formPatologias.join(" · ")}</b></p>}
+                        </div>
+                      );
+                    })()}
+                  </Card>
+
+                  <ContextoClinico scales={formClinicalScales} set={setScales} />
                   <PainSection scales={formClinicalScales} set={setScales} />
                   <RedFlagsSection scales={formClinicalScales} set={setScales} />
                 </div>
@@ -2521,8 +2538,16 @@ export const PhysiotherapyModule = () => {
 
                   {formPlanEnabled ? (
                     <>
+                      {/* Resumen del plan: lo que se va registrando */}
+                      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50/60 px-4 py-2.5 text-xs">
+                        <span className="font-black uppercase tracking-wider text-blue-800">Plan de hoy</span>
+                        <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">① {formEditableTreatments.filter((t) => t.applied).length} técnica(s)</span>
+                        <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">② {formCustomExercises.length} ejercicio(s)</span>
+                        <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">③ Williams: {formWilliamsEval.enabled ? "sí" : "no"}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">④ Indicaciones para el gimnasio</span>
+                      </div>
                       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
-                        <p className="text-xs font-bold text-slate-600">Técnicas aplicadas hoy · toca para marcar</p>
+                        <PasoPlan n="1" titulo="Técnicas aplicadas hoy" ayuda="Toca las que usaste. Con «Editar parámetros» anotas dosis o notas." />
                         <div className="flex flex-wrap gap-2">
                           {formEditableTreatments.map((t) => (
                             <button
@@ -2574,11 +2599,9 @@ export const PhysiotherapyModule = () => {
                     onChange={setFormEditableTreatments}
                   />
                       )}
-                      <details className="bg-white rounded-2xl border border-slate-200 p-4 group">
-                        <summary className="cursor-pointer text-sm font-bold text-slate-800">
-                          Ejercicios terapéuticos en la sesión <span className="font-normal text-slate-500">(opcional)</span>
-                        </summary>
-                        <div className="mt-3">
+                      <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+                        <PasoPlan n="2" titulo="Ejercicios terapéuticos" ayuda="Opcional. Elige del banco (derecha) y ajusta series y repeticiones (izquierda). El alumno los verá en su portal." />
+                        <div>
                   <ExercisePrescriptionCard
                     exercises={formCustomExercises}
                     onChange={setFormCustomExercises}
@@ -2588,8 +2611,9 @@ export const PhysiotherapyModule = () => {
                     onCardFrequencyChange={setFormCardFrequency}
                   />
                         </div>
-                      </details>
-                  <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                      </section>
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+                    <PasoPlan n="3" titulo="Protocolo de Williams" ayuda="Solo si hay dolor lumbar extensor o facetario." />
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox"
@@ -2622,6 +2646,7 @@ export const PhysiotherapyModule = () => {
                   )}
 
                   <div>
+                  {formPlanEnabled && <PasoPlan n="4" titulo="Indicaciones para el entrenador del gimnasio" ayuda="Qué puede y qué debe evitar en sala, y la carga máxima." />}
                   <Card
                     icon={Dumbbell}
                     color="text-emerald-700"
@@ -2693,13 +2718,16 @@ export const PhysiotherapyModule = () => {
               {/* PASO 5: EVOLUCIÓN E INDICACIONES */}
               {activeModalTab === "evolucion" && (
                 <div className="space-y-6">
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-base font-extrabold text-slate-900">Ejercicios e indicaciones para el alumno</p>
-                      <p className="text-sm text-slate-500">
-                        Estiramientos 3 × 30 s, movilidad y calentamiento 2 × 15, postura y cuidados. Se guardan en el portal del alumno (Mi Rutina) y salen en el reporte.
-                      </p>
-                    </div>
+                  {/* Guía del paso 5 */}
+                  <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50/60 px-4 py-2.5 text-xs">
+                    <span className="font-black uppercase tracking-wider text-blue-800">Cierre de la evaluación</span>
+                    <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">① Indicaciones para casa: {formIndicaciones.length}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">② Evolución y pronóstico</span>
+                    <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">③ Observaciones</span>
+                    <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">④ Explicación para el alumno</span>
+                  </div>
+                  <div className="space-y-2 bg-white rounded-2xl border border-slate-200 p-4">
+                    <PasoPlan n="1" titulo="Ejercicios e indicaciones para casa" ayuda="Estiramientos 3 × 30 s, movilidad 2 × 15, postura y cuidados. A la izquierda lo indicado, a la derecha el catálogo. El alumno lo ve en Mi Rutina." />
                     <SelectorIndicaciones
                       items={formIndicaciones}
                       onChange={setFormIndicaciones}
@@ -2716,6 +2744,7 @@ export const PhysiotherapyModule = () => {
                     />
                   </div>
 
+                  <PasoPlan n="2" titulo="Evolución, pronóstico y próximo control" ayuda="Compara con la sesión anterior y define cuántas sesiones necesita." />
                   <Card
                     icon={TrendingUp}
                     color="text-blue-700"
@@ -2814,7 +2843,7 @@ export const PhysiotherapyModule = () => {
                   <Card
                     icon={Edit3}
                     color="text-indigo-600"
-                    title="Observaciones clínicas"
+                    title="③ Observaciones clínicas"
                     subtitle="Hallazgos o notas que saldrán en el informe."
                     right={
                       <span className="text-sm font-bold text-indigo-800 bg-indigo-100 px-3 py-1 rounded-full">
@@ -2875,7 +2904,7 @@ export const PhysiotherapyModule = () => {
                   <Card
                     icon={Info}
                     color="text-cyan-700"
-                    title="Explicación para el alumno (opcional)"
+                    title="④ Explicación para el alumno (opcional)"
                     subtitle="En palabras sencillas: qué tiene y qué debe cuidar. La verá en su portal y en su reporte."
                     right={
                       <button

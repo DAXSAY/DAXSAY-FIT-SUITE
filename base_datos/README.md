@@ -31,6 +31,7 @@ Base MySQL 8 de Radical Gym. Toma el diseño de Darío (tablas en español, `ida
 17. `21_seguimiento_asistencia.sql`: notas de seguimiento cuando un alumno deja de venir (motivo, si se le contactó) para el calendario de asistencias.
 18. `22_pase_con_nombre.sql`: el código del pase libre lleva el nombre del interesado (DAVID-K7Q2M); amplía `prospectos.pase_codigo` a 24 caracteres. Sin este script el sistema funciona igual, pero recorta los nombres largos a 6 letras.
 19. `23_pases_libres.sql`: historial de pases libres del CRM (`pases_libres`): pendiente, usado o no concretado con su motivo (viaje, vacaciones, no le interesa...) y la fecha para volver a llamar. Alimenta el apartado "Pases libres" y el reporte del CRM (interesados por turno, hora y día). El servidor aplica los scripts 22 y 23 solo al iniciar si faltan.
+20. `24_pesos_por_serie.sql`: progreso de pesos (`registro_peso_serie`). El alumno anota el peso y las repeticiones de cada serie de su rutina, en cualquier día; guarda una copia de lo planificado para que el historial no se pierda si el entrenador cambia la rutina. Alimenta el progreso del alumno, del entrenador y de administración. Ejecutar como root.
 
 ### Herramientas (no son actualizaciones)
 

@@ -5,17 +5,12 @@ import {
   CreditCard,
   Calendar,
   Activity,
-  Clock,
   CheckCircle2,
   Utensils,
   HeartPulse,
   FileText,
   Share2,
-  Key,
-  Ticket,
   User,
-  TrendingUp,
-  Check,
   CalendarCheck,
 } from "lucide-react";
 import { fechaCorta } from "../../utils/fecha";
@@ -33,13 +28,17 @@ import {
   Legend,
   ReferenceLine,
 } from "recharts";
-import confetti from "canvas-confetti";
+// Sin confeti: el sistema usa avisos de color en su lugar
+const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 import { MiRutina, MiDieta, MiFisioterapia } from "./StudentExtras";
+import ProgresoPesos from "../progreso/ProgresoPesos";
+import { RecordatorioPesos } from "../common/Avisos";
 import { CalendarioAsistencias } from "../attendances/CalendarioAsistencias";
 import { MiCongelamiento } from "./MiCongelamiento";
 import { MisIndicaciones } from "../indicaciones/Indicaciones";
 
+import { textoObjetivos } from "../../utils/objetivos";
 // Lectura segura de los datos de cada evaluación corporal
 const fatPct = (a) => a?.bioimpedance?.bodyFatPercentage ?? a?.bodyFatPercentage;
 const muscleKg = (a) => a?.bioimpedance?.muscleMassKg ?? a?.muscleMassKg;
@@ -76,6 +75,36 @@ export const StudentPortalModule = ({
   } = useGym();
 
   const [activeTab, setActiveTab] = useState(currentSection);
+  const [vistaRutina, setVistaRutina] = useState("pesos"); // pesos | rutina
+  const [anotarPedido, setAnotarPedido] = useState(null); // { fecha, n } desde un aviso
+
+  // Un aviso "Anotar ahora" (campanita o franja) abre la fecha pendiente
+  React.useEffect(() => {
+    const abrir = (fecha) => {
+      setActiveTab("routine");
+      setVistaRutina("pesos");
+      setAnotarPedido((p) => ({ fecha: fecha || null, n: (p?.n || 0) + 1 }));
+    };
+    try {
+      const f = sessionStorage.getItem("radical_anotar_pesos");
+      if (f !== null) {
+        sessionStorage.removeItem("radical_anotar_pesos");
+        abrir(f);
+      }
+    } catch {
+      /* nada */
+    }
+    const alAviso = (e) => {
+      try {
+        sessionStorage.removeItem("radical_anotar_pesos");
+      } catch {
+        /* nada */
+      }
+      abrir(e.detail);
+    };
+    window.addEventListener("radical:anotar-pesos", alAviso);
+    return () => window.removeEventListener("radical:anotar-pesos", alAviso);
+  }, []);
 
   // Sync internal tab if prop changes
   React.useEffect(() => {
@@ -396,7 +425,7 @@ export const StudentPortalModule = ({
             }`}
           >
             <Dumbbell className="w-4 h-4 text-blue-300" />
-            <span>4. Mi Rutina</span>
+            <span>4. Mi Rutina & Pesos</span>
           </button>
 
           <button
@@ -440,6 +469,16 @@ export const StudentPortalModule = ({
       {/* =========================================================================
            TAB 1: MI MEMBRESÍA & MATRÍCULA
           ========================================================================= */}
+      {!(activeTab === "routine" && vistaRutina === "pesos") && (
+        <RecordatorioPesos
+          setActiveTab={() => {
+            setActiveTab("routine");
+            setVistaRutina("pesos");
+            if (onSectionChange) onSectionChange("routine");
+          }}
+        />
+      )}
+
       {activeTab === "membership" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Digital Member Card */}
@@ -640,7 +679,7 @@ export const StudentPortalModule = ({
                     Objetivo Deportivo
                   </span>
                   <span className="text-xs font-extrabold text-slate-800 capitalize">
-                    {String(currentMember?.objective || "—").replace("_", " ")}
+                    {textoObjetivos(currentMember?.objective, true)}
                   </span>
                 </div>
 
@@ -1050,10 +1089,10 @@ export const StudentPortalModule = ({
                       x2="0"
                       y2="1"
                     >
-                      <stop offset="5%" stopColor="#0c8794" stopOpacity={0.4} />
+                      <stop offset="5%" stopColor="var(--color-blue-600)" stopOpacity={0.4} />
                       <stop
                         offset="95%"
-                        stopColor="#0c8794"
+                        stopColor="var(--color-blue-600)"
                         stopOpacity={0.02}
                       />
                     </linearGradient>
@@ -1064,10 +1103,10 @@ export const StudentPortalModule = ({
                       x2="0"
                       y2="1"
                     >
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+                      <stop offset="5%" stopColor="var(--color-amber-500)" stopOpacity={0.4} />
                       <stop
                         offset="95%"
-                        stopColor="#f59e0b"
+                        stopColor="var(--color-amber-500)"
                         stopOpacity={0.02}
                       />
                     </linearGradient>
@@ -1078,10 +1117,10 @@ export const StudentPortalModule = ({
                       x2="0"
                       y2="1"
                     >
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                      <stop offset="5%" stopColor="var(--color-emerald-500)" stopOpacity={0.4} />
                       <stop
                         offset="95%"
-                        stopColor="#10b981"
+                        stopColor="var(--color-emerald-500)"
                         stopOpacity={0.02}
                       />
                     </linearGradient>
@@ -1092,10 +1131,10 @@ export const StudentPortalModule = ({
                       x2="0"
                       y2="1"
                     >
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                      <stop offset="5%" stopColor="var(--color-violet-500)" stopOpacity={0.4} />
                       <stop
                         offset="95%"
-                        stopColor="#8b5cf6"
+                        stopColor="var(--color-violet-500)"
                         stopOpacity={0.02}
                       />
                     </linearGradient>
@@ -1172,14 +1211,14 @@ export const StudentPortalModule = ({
                           ? 72
                           : undefined
                     }
-                    stroke="#10b981"
+                    stroke="var(--color-emerald-500)"
                     strokeDasharray="4 4"
                     label={{
                       value:
                         progressMetric === "fat"
                           ? "Meta Grasa: 15%"
                           : "Meta Peso: 72kg",
-                      fill: "#059669",
+                      fill: "var(--color-emerald-600)",
                       fontSize: 12,
                       position: "top",
                     }}
@@ -1187,11 +1226,11 @@ export const StudentPortalModule = ({
 
                   {(progressMetric === "combined" ||
                     progressMetric === "weight") && (
-                    <Area
+                    <Area isAnimationActive={false}
                       type="monotone"
                       dataKey="peso"
                       name="peso"
-                      stroke="#0c8794"
+                      stroke="var(--color-blue-600)"
                       strokeWidth={2.5}
                       fillOpacity={1}
                       fill="url(#studentWeightGrad)"
@@ -1201,11 +1240,11 @@ export const StudentPortalModule = ({
 
                   {(progressMetric === "combined" ||
                     progressMetric === "fat") && (
-                    <Area
+                    <Area isAnimationActive={false}
                       type="monotone"
                       dataKey="grasaPct"
                       name="grasaPct"
-                      stroke="#f59e0b"
+                      stroke="var(--color-amber-500)"
                       strokeWidth={2.5}
                       fillOpacity={1}
                       fill="url(#studentFatGrad)"
@@ -1215,11 +1254,11 @@ export const StudentPortalModule = ({
 
                   {(progressMetric === "combined" ||
                     progressMetric === "muscle") && (
-                    <Area
+                    <Area isAnimationActive={false}
                       type="monotone"
                       dataKey="musculoKg"
                       name="musculoKg"
-                      stroke="#10b981"
+                      stroke="var(--color-emerald-500)"
                       strokeWidth={2.5}
                       fillOpacity={1}
                       fill="url(#studentMuscleGrad)"
@@ -1229,22 +1268,22 @@ export const StudentPortalModule = ({
 
                   {progressMetric === "perimeter" && (
                     <>
-                      <Area
+                      <Area isAnimationActive={false}
                         type="monotone"
                         dataKey="cintura"
                         name="cintura"
-                        stroke="#8b5cf6"
+                        stroke="var(--color-violet-500)"
                         strokeWidth={2.5}
                         fillOpacity={1}
                         fill="url(#studentPerimeterGrad)"
                         activeDot={{ r: 6, stroke: "#ffffff", strokeWidth: 2 }}
                       />
 
-                      <Line
+                      <Line isAnimationActive={false}
                         type="monotone"
                         dataKey="brazos"
                         name="brazos"
-                        stroke="#ec4899"
+                        stroke="var(--color-pink-500)"
                         strokeWidth={2}
                         dot={{ r: 4 }}
                       />
@@ -1445,8 +1484,29 @@ export const StudentPortalModule = ({
         </div>
       )}
 
-      {activeTab === "routine" && <MisIndicaciones memberId={currentMember?.id} />}
       {activeTab === "routine" && (
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl w-fit">
+          {[
+            ["pesos", "💪 Anotar pesos y mi progreso"],
+            ["rutina", "📋 Ver mi rutina completa"],
+          ].map(([k, t]) => (
+            <button
+              key={k}
+              onClick={() => setVistaRutina(k)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold cursor-pointer ${
+                vistaRutina === k ? "bg-blue-600 text-white shadow" : "text-slate-600 hover:bg-white"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
+      {activeTab === "routine" && vistaRutina === "pesos" && currentMember && (
+        <ProgresoPesos memberId={currentMember.id} modo="alumno" abrirAnotar={anotarPedido} />
+      )}
+      {activeTab === "routine" && vistaRutina === "rutina" && <MisIndicaciones memberId={currentMember?.id} />}
+      {activeTab === "routine" && vistaRutina === "rutina" && (
         <MiRutina
           routines={routines}
           memberId={currentMember?.id}

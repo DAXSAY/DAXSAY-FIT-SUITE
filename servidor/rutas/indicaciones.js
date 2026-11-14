@@ -18,10 +18,13 @@ export const CATEGORIAS = ["calentamiento", "movilidad", "estiramiento", "postur
 export const LUGARES = ["antes", "despues", "casa"];
 const MODULOS = ["routines", "physiotherapy"];
 
-const puedeIndicar = (req) => tienePermiso(req.usuario.idusuario, MODULOS, "editar");
+// Las indicaciones las da fisioterapia (y administración). El entrenador solo
+// las ve para respetarlas: no es especialista en lesiones.
+const puedeIndicar = async (req) =>
+  !["trainer", "student", "reception"].includes(req.usuario.rol) && tienePermiso(req.usuario.idusuario, MODULOS, "editar");
 async function exigirIndicar(req) {
   if (req.usuario.rol === "student" || !(await puedeIndicar(req))) {
-    throw new ErrorHttp(403, "Solo el entrenador o el fisioterapeuta pueden dar indicaciones");
+    throw new ErrorHttp(403, "Solo fisioterapia o administración pueden dar o cambiar indicaciones");
   }
 }
 

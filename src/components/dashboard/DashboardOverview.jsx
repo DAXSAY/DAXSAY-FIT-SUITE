@@ -9,9 +9,6 @@ import {
   Clock,
   MessageCircle,
   Calendar,
-  Utensils,
-  HeartPulse,
-  Briefcase,
   PieChart as PieIcon,
   Activity,
   ZoomIn,
@@ -138,7 +135,6 @@ export const DashboardOverview = ({
     });
   }, [timePeriod, transactions]);
 
-
   // Apply zoom level filter (narrows visible points if zoom > 1)
   const cashflowData = useMemo(() => {
     if (zoomLevel === 1) return fullCashflowData;
@@ -211,10 +207,10 @@ export const DashboardOverview = ({
     const total = memRev + posRev + servRev + otrosRev;
     const pct = (v) => (total > 0 ? Math.round((v / total) * 100) : 0);
     return [
-      { name: "Membresías & Matrículas", value: memRev, color: "#0ea7b3", percentage: pct(memRev) },
-      { name: "Suplementos & Tienda POS", value: posRev, color: "#10b981", percentage: pct(posRev) },
-      { name: "Fisioterapia, Nutrición & PT", value: servRev, color: "#06b6d4", percentage: pct(servRev) },
-      { name: "Otros ingresos", value: otrosRev, color: "#a855f7", percentage: pct(otrosRev) },
+      { name: "Membresías & Matrículas", value: memRev, color: "var(--color-blue-500)", percentage: pct(memRev) },
+      { name: "Tienda (suplementos y bebidas)", value: posRev, color: "var(--color-emerald-500)", percentage: pct(posRev) },
+      { name: "Fisioterapia, Nutrición & PT", value: servRev, color: "var(--color-cyan-500)", percentage: pct(servRev) },
+      { name: "Otros ingresos", value: otrosRev, color: "var(--color-purple-500)", percentage: pct(otrosRev) },
     ].filter((s) => s.value > 0 || total === 0);
   }, [transactions]);
 
@@ -244,7 +240,6 @@ export const DashboardOverview = ({
     return filas;
   }, [members, transactions]);
 
-
   // Calculated Totals for Selected Cashflow
   const totals = useMemo(() => {
     const totalIng = cashflowData.reduce((acc, curr) => acc + curr.ingresos, 0);
@@ -267,7 +262,6 @@ export const DashboardOverview = ({
   const activosMesAnterior = growthData[growthData.length - 2]?.activos || 0;
   const variacionActivos = metrics.totalActiveMembers - activosMesAnterior;
   const asistencias30 = occupancyData.reduce((s, h) => s + h.general, 0);
-
 
   // Helper for micro SVG sparklines
   const renderSparkline = (data, color, isFilled = true) => {
@@ -406,7 +400,7 @@ export const DashboardOverview = ({
         {itemData.memberships !== undefined && (
           <div className="pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
             <span>Cuotas: S/{itemData.memberships}</span>
-            <span>• POS: S/{itemData.pos}</span>
+            <span>• Tienda: S/{itemData.pos}</span>
             <span>• Fisio/Nutri: S/{itemData.servicios}</span>
           </div>
         )}
@@ -417,7 +411,7 @@ export const DashboardOverview = ({
   return (
     <div className="space-y-4 pb-8">
       {/* Bienvenida */}
-      <div className="rd-portada rounded-2xl p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="rd-portada rd-cabecera flex flex-wrap items-center justify-between gap-4">
         <div>
           <span className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-300">
             {new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
@@ -456,7 +450,7 @@ export const DashboardOverview = ({
           </div>
           <div className="flex items-end justify-between mt-1">
             <div>
-              <span className="text-2xl font-black text-slate-900">
+              <span className="text-[clamp(1.05rem,1.6vw,1.5rem)] whitespace-nowrap font-black text-slate-900">
                 <NumeroAnimado valor={metrics.totalActiveMembers} />
               </span>
               <span className="block text-xs text-emerald-600 font-bold flex items-center gap-0.5 mt-0.5">
@@ -464,8 +458,8 @@ export const DashboardOverview = ({
                 {variacionActivos} vs mes anterior
               </span>
             </div>
-            <div className="shrink-0 pl-2">
-              {renderSparkline(memberSparkline, "#0ea7b3")}
+            <div className="shrink-0 pl-2 hidden xl:block">
+              {renderSparkline(memberSparkline, "var(--color-blue-500)")}
             </div>
           </div>
         </div>
@@ -491,15 +485,15 @@ export const DashboardOverview = ({
           </div>
           <div className="flex items-end justify-between mt-1">
             <div>
-              <span className="text-2xl font-black text-slate-900">
+              <span className="text-[clamp(1.05rem,1.6vw,1.5rem)] whitespace-nowrap font-black text-slate-900">
                 <NumeroAnimado valor={metrics.totalIncome || 0} decimales={2} prefijo="S/ " />
               </span>
               <span className="block text-xs text-blue-600 font-semibold mt-0.5">
                 Cuotas + Tienda
               </span>
             </div>
-            <div className="shrink-0 pl-2">
-              {renderSparkline(incomeSparkline, "#10b981")}
+            <div className="shrink-0 pl-2 hidden xl:block">
+              {renderSparkline(incomeSparkline, "var(--color-emerald-500)")}
             </div>
           </div>
         </div>
@@ -525,15 +519,15 @@ export const DashboardOverview = ({
           </div>
           <div className="flex items-end justify-between mt-1">
             <div>
-              <span className="text-2xl font-black text-slate-900">
+              <span className="text-[clamp(1.05rem,1.6vw,1.5rem)] whitespace-nowrap font-black text-slate-900">
                 <NumeroAnimado valor={metrics.totalExpense || 0} decimales={2} prefijo="S/ " />
               </span>
               <span className="block text-xs text-slate-400 font-semibold mt-0.5">
                 Nómina + Operación
               </span>
             </div>
-            <div className="shrink-0 pl-2">
-              {renderSparkline(expenseSparkline, "#f43f5e")}
+            <div className="shrink-0 pl-2 hidden xl:block">
+              {renderSparkline(expenseSparkline, "var(--color-rose-500)")}
             </div>
           </div>
         </div>
@@ -556,8 +550,8 @@ export const DashboardOverview = ({
                 Acción inmediata
               </span>
             </div>
-            <div className="shrink-0 pl-2">
-              {renderSparkline(alertSparkline, "#e11d48")}
+            <div className="shrink-0 pl-2 hidden xl:block">
+              {renderSparkline(alertSparkline, "var(--color-rose-600)")}
             </div>
           </div>
         </div>
@@ -859,12 +853,12 @@ export const DashboardOverview = ({
                       >
                         <stop
                           offset="5%"
-                          stopColor="#10b981"
+                          stopColor="var(--color-emerald-500)"
                           stopOpacity={0.45}
                         />
                         <stop
                           offset="95%"
-                          stopColor="#10b981"
+                          stopColor="var(--color-emerald-500)"
                           stopOpacity={0.02}
                         />
                       </linearGradient>
@@ -877,12 +871,12 @@ export const DashboardOverview = ({
                       >
                         <stop
                           offset="5%"
-                          stopColor="#f43f5e"
+                          stopColor="var(--color-rose-500)"
                           stopOpacity={0.35}
                         />
                         <stop
                           offset="95%"
-                          stopColor="#f43f5e"
+                          stopColor="var(--color-rose-500)"
                           stopOpacity={0.02}
                         />
                       </linearGradient>
@@ -895,12 +889,12 @@ export const DashboardOverview = ({
                       >
                         <stop
                           offset="5%"
-                          stopColor="#0ea7b3"
+                          stopColor="var(--color-blue-500)"
                           stopOpacity={0.35}
                         />
                         <stop
                           offset="95%"
-                          stopColor="#0ea7b3"
+                          stopColor="var(--color-blue-500)"
                           stopOpacity={0.02}
                         />
                       </linearGradient>
@@ -943,12 +937,10 @@ export const DashboardOverview = ({
                     />
 
                     {activeSeries.ingresos && (
-                      <Area
-                        animationDuration={1100}
-                        animationEasing="ease-out"
+                      <Area isAnimationActive={false}
                         type="monotone"
                         dataKey="ingresos"
-                        stroke="#10b981"
+                        stroke="var(--color-emerald-500)"
                         strokeWidth={2.5}
                         fillOpacity={1}
                         fill="url(#ingresosGrad)"
@@ -956,12 +948,10 @@ export const DashboardOverview = ({
                       />
                     )}
                     {activeSeries.egresos && (
-                      <Area
-                        animationDuration={1100}
-                        animationEasing="ease-out"
+                      <Area isAnimationActive={false}
                         type="monotone"
                         dataKey="egresos"
-                        stroke="#f43f5e"
+                        stroke="var(--color-rose-500)"
                         strokeWidth={2.5}
                         fillOpacity={1}
                         fill="url(#egresosGrad)"
@@ -969,12 +959,10 @@ export const DashboardOverview = ({
                       />
                     )}
                     {activeSeries.margen && (
-                      <Area
-                        animationDuration={1100}
-                        animationEasing="ease-out"
+                      <Area isAnimationActive={false}
                         type="monotone"
                         dataKey="margen"
-                        stroke="#0ea7b3"
+                        stroke="var(--color-blue-500)"
                         strokeWidth={2}
                         strokeDasharray="4 4"
                         fillOpacity={1}
@@ -988,7 +976,7 @@ export const DashboardOverview = ({
                       <Brush
                         dataKey="label"
                         height={26}
-                        stroke="#0ea7b3"
+                        stroke="var(--color-blue-500)"
                         fill="rgba(14,167,179,0.08)"
                         travellerWidth={10}
                       />
@@ -1084,39 +1072,33 @@ export const DashboardOverview = ({
 
                     <ReferenceLine
                       y={80}
-                      stroke="#f59e0b"
+                      stroke="var(--color-amber-500)"
                       strokeDasharray="3 3"
                       label={{
                         value: "Alerta Alta Demanda (80%)",
-                        fill: "#d97706",
+                        fill: "var(--color-amber-600)",
                         fontSize: 12,
                         position: "top",
                       }}
                     />
-                    <Bar
-                        animationDuration={1100}
-                        animationEasing="ease-out"
+                    <Bar isAnimationActive={false} maxBarSize={56}
                       dataKey="general"
                       stackId="a"
-                      fill="#0ea7b3"
+                      fill="var(--color-blue-500)"
                       radius={[0, 0, 0, 0]}
                       barSize={24}
                     />
-                    <Bar
-                        animationDuration={1100}
-                        animationEasing="ease-out"
+                    <Bar isAnimationActive={false} maxBarSize={56}
                       dataKey="fisio"
                       stackId="a"
-                      fill="#06b6d4"
+                      fill="var(--color-cyan-500)"
                       radius={[4, 4, 0, 0]}
                       barSize={24}
                     />
-                    <Line
-                        animationDuration={1100}
-                        animationEasing="ease-out"
+                    <Line isAnimationActive={false}
                       type="monotone"
                       dataKey="capacidadPct"
-                      stroke="#10b981"
+                      stroke="var(--color-emerald-500)"
                       strokeWidth={2.5}
                       dot={{ r: 3 }}
                     />
@@ -1156,13 +1138,12 @@ export const DashboardOverview = ({
                 <div className="h-64 w-full relative flex items-center justify-center">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        animationDuration={1100}
+                      <Pie isAnimationActive={false}
                         data={revenueSources}
                         cx="50%"
                         cy="50%"
-                        innerRadius={65}
-                        outerRadius={95}
+                        innerRadius="64%"
+                        outerRadius="86%"
                         paddingAngle={4}
                         dataKey="value"
                         onMouseEnter={(_, index) => setHoveredSlice(index)}
@@ -1171,7 +1152,7 @@ export const DashboardOverview = ({
                         {revenueSources.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
-                            fill={entry.color}
+                            fill={hoveredSlice != null && hoveredSlice !== index ? "#cbd5e1" : entry.color}
                             stroke={
                               hoveredSlice === index ? "#ffffff" : "transparent"
                             }
@@ -1182,11 +1163,6 @@ export const DashboardOverview = ({
                                   ? "drop-shadow(0px 0px 8px rgba(0,0,0,0.25))"
                                   : "none",
                               cursor: "pointer",
-                              transform:
-                                hoveredSlice === index
-                                  ? "scale(1.05)"
-                                  : "scale(1)",
-                              transformOrigin: "center center",
                               transition: "all 0.2s ease-out",
                             }}
                           />
@@ -1362,28 +1338,22 @@ export const DashboardOverview = ({
                       )}
                     />
 
-                    <Bar
-                        animationDuration={1100}
-                        animationEasing="ease-out"
+                    <Bar isAnimationActive={false} maxBarSize={56}
                       dataKey="nuevos"
-                      fill="#0ea7b3"
+                      fill="var(--color-blue-500)"
                       radius={[4, 4, 0, 0]}
                       barSize={18}
                     />
-                    <Bar
-                        animationDuration={1100}
-                        animationEasing="ease-out"
+                    <Bar isAnimationActive={false} maxBarSize={56}
                       dataKey="renovaciones"
-                      fill="#10b981"
+                      fill="var(--color-emerald-500)"
                       radius={[4, 4, 0, 0]}
                       barSize={18}
                     />
-                    <Line
-                        animationDuration={1100}
-                        animationEasing="ease-out"
+                    <Line isAnimationActive={false}
                       type="monotone"
                       dataKey="activos"
-                      stroke="#8b5cf6"
+                      stroke="var(--color-violet-500)"
                       strokeWidth={3}
                       dot={{ r: 4 }}
                     />
@@ -1447,7 +1417,7 @@ export const DashboardOverview = ({
       {/* SECONDARY ROW: MEMBRESÍAS POR VENCER & RESUMEN FINANCIERO RÁPIDO */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Table: Membresías Próximas a Vencer */}
-        <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col overflow-hidden h-[340px]">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col">
           <div className="p-3.5 px-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
             <h3 className="text-xs font-bold text-gray-700 uppercase tracking-tight flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-blue-600" />
@@ -1539,11 +1509,11 @@ export const DashboardOverview = ({
         </div>
 
         {/* Quick POS & Cash Flow Summary */}
-        <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col overflow-hidden h-[340px]">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col">
           <div className="p-3.5 px-4 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
             <h3 className="text-xs font-bold text-gray-700 uppercase tracking-tight flex items-center gap-1.5">
               <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
-              Terminal de Ventas & Productos Estrella
+              Ventas & productos estrella
             </h3>
             <button
               onClick={() => setActiveTab("store")}
@@ -1559,7 +1529,7 @@ export const DashboardOverview = ({
                 Top Productos con Mayor Rotación
               </span>
               <div className="space-y-1.5">
-                {products.slice(0, 4).map((prod) => (
+                {products.slice(0, 3).map((prod) => (
                   <div
                     key={prod.id}
                     className="p-2 rounded-lg border border-slate-100 flex items-center justify-between hover:bg-slate-50 transition-colors"
@@ -1591,20 +1561,20 @@ export const DashboardOverview = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100 text-center">
-              <div className="bg-emerald-50/50 p-2 rounded-lg border border-emerald-100">
-                <span className="text-xs text-gray-500 font-semibold uppercase">
-                  Ventas POS Hoy
+            <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-gray-100 text-center">
+              <div className="bg-emerald-50/50 px-2 py-2.5 rounded-lg border border-emerald-100">
+                <span className="block text-[11px] text-gray-500 font-semibold uppercase">
+                  Ventas de hoy
                 </span>
-                <p className="text-xs font-bold text-emerald-700">
+                <p className="text-sm font-black text-emerald-700">
                   S/ {(metrics.posSalesTotal || 0).toFixed(2)}
                 </p>
               </div>
-              <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100">
-                <span className="text-xs text-gray-500 font-semibold uppercase">
-                  Membresías Mes
+              <div className="bg-blue-50/50 px-2 py-2.5 rounded-lg border border-blue-100">
+                <span className="block text-[11px] text-gray-500 font-semibold uppercase">
+                  Membresías del mes
                 </span>
-                <p className="text-xs font-bold text-blue-700">
+                <p className="text-sm font-black text-blue-700">
                   S/ {(metrics.membershipsRevenue || 0).toFixed(2)}
                 </p>
               </div>
@@ -1613,151 +1583,6 @@ export const DashboardOverview = ({
         </div>
       </div>
 
-      {/* Specialized Health, Physiotherapy, Appointments & Staff Quick Hub */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* Nutrición & Medidas */}
-        <div
-          onClick={() => setActiveTab("nutrition")}
-          className="bg-white p-4 rounded-xl shadow-xs border border-gray-200 hover:border-emerald-400 transition-all cursor-pointer flex items-center justify-between group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-              <Utensils className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
-                Dietas & Medidas
-              </span>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
-                Nutrición & Medidas
-              </h4>
-              <p className="text-xs text-slate-500">
-                Antropometría y macros
-              </p>
-            </div>
-          </div>
-          <span className="text-slate-400 group-hover:text-emerald-600 text-xs font-bold">
-            &rarr;
-          </span>
-        </div>
-
-        {/* Fisioterapia */}
-        <div
-          onClick={() => setActiveTab("physiotherapy")}
-          className="bg-white p-4 rounded-xl shadow-xs border border-gray-200 hover:border-cyan-400 transition-all cursor-pointer flex items-center justify-between group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 border border-cyan-200 flex items-center justify-center group-hover:bg-cyan-600 group-hover:text-white transition-colors">
-              <HeartPulse className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-cyan-600">
-                Rehabilitación
-              </span>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-cyan-700 transition-colors">
-                Fisioterapia
-              </h4>
-              <p className="text-xs text-slate-500">
-                Restricciones e historial
-              </p>
-            </div>
-          </div>
-          <span className="text-slate-400 group-hover:text-cyan-600 text-xs font-bold">
-            &rarr;
-          </span>
-        </div>
-
-        {/* Horarios & Citas */}
-        <div
-          onClick={() => setActiveTab("appointments")}
-          className="bg-white p-4 rounded-xl shadow-xs border border-gray-200 hover:border-indigo-400 transition-all cursor-pointer flex items-center justify-between group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
-                Agenda Médica
-              </span>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">
-                Horarios & Citas
-              </h4>
-              <p className="text-xs text-slate-500">
-                Turnos de fisio y nutri
-              </p>
-            </div>
-          </div>
-          <span className="text-slate-400 group-hover:text-indigo-600 text-xs font-bold">
-            &rarr;
-          </span>
-        </div>
-
-        {/* Contratos de Personal */}
-        <div
-          onClick={() => setActiveTab("staff")}
-          className="bg-white p-4 rounded-xl shadow-xs border border-gray-200 hover:border-blue-400 transition-all cursor-pointer flex items-center justify-between group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
-              <Briefcase className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                Recursos Humanos
-              </span>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
-                Contratos Personal
-              </h4>
-              <p className="text-xs text-slate-500">3M, 6M, 1A & sueldos</p>
-            </div>
-          </div>
-          <span className="text-slate-400 group-hover:text-blue-600 text-xs font-bold">
-            &rarr;
-          </span>
-        </div>
-      </div>
-
-      {/* Bottom POS Quick Bar */}
-      <div className="bg-slate-900 rounded-xl shadow-lg border border-slate-800 p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex-1 flex flex-wrap items-center gap-4 lg:gap-8">
-          <div>
-            <div className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1.5">
-              Punto de Venta Rápido
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {products.slice(0, 4).map((prod) => (
-                <button
-                  key={prod.id}
-                  onClick={() => setActiveTab("store")}
-                  className="bg-slate-800 border border-slate-700 text-white px-2.5 py-1 rounded text-xs hover:bg-slate-700 transition-colors cursor-pointer"
-                >
-                  {prod.name} (S/{" "}
-                  {(prod.salePrice ?? prod.purchaseCost ?? 0).toFixed(2)})
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="hidden md:block h-8 w-px bg-slate-800"></div>
-
-          <div>
-            <div className="text-xs text-slate-400 uppercase font-bold tracking-wider">
-              Balance en Caja Hoy
-            </div>
-            <div className="text-base font-mono font-bold text-green-400">
-              S/ {(metrics.netProfit || 0).toFixed(2)}
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setActiveTab("store")}
-          className="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg shadow-sm transition-transform active:scale-95 text-xs uppercase tracking-wider cursor-pointer"
-        >
-          Ir al Terminal POS &rarr;
-        </button>
-      </div>
     </div>
   );
 };
