@@ -10,6 +10,7 @@
 import React, { useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, Ticket, BadgeCheck, Clock, XCircle, X } from "lucide-react";
+import { textoObjetivos } from "../../utils/objetivos";
 
 let actual = null;
 // Corto para que, si llegan varios seguidos, no haya que esperar: 1.5 s (los de atención, 3 s).
@@ -111,5 +112,6 @@ export function avisoAlumno(m, { repetido, visitasPrevias = 1 } = {}) {
   if (m.status === "expired") return { tipo: "error", codigo: m.codeLabel, titulo: `Acceso denegado: membresía vencida`, detalle: `${m.fullName} · venció el ${fecha(m.membershipEndDate)}. Pásalo por caja para renovar.` };
   const saludo = visitasPrevias > 0 ? `¡Bienvenido(a) de nuevo, ${primerNombre(m.fullName)}!` : `¡Bienvenido(a) a RADICAL, ${primerNombre(m.fullName)}!`;
   if (m.status === "expiring_soon") return { tipo: "alerta", codigo: m.codeLabel, titulo: saludo, detalle: `Su membresía vence el ${fecha(m.membershipEndDate)}. Recuérdale renovar.` };
-  return { tipo: "ok", codigo: m.codeLabel, titulo: saludo, detalle: `${m.planName || "Membresía"} · vigente hasta el ${fecha(m.membershipEndDate)}` };
+  const obj = m.objective ? ` · ${textoObjetivos(m.objective, true)}` : "";
+  return { tipo: "ok", codigo: m.codeLabel, titulo: saludo, detalle: `${m.planName || "Membresía"} · vigente hasta el ${fecha(m.membershipEndDate)}${obj}` };
 }

@@ -183,7 +183,7 @@ export const BotonColor = ({ valor, activo, onCambiar, className = "", children,
       </button>
       {abierto && (
         <div className="absolute z-50 bottom-full mb-2 left-1/2 -translate-x-1/2">
-          <PanelColor valor={activo ? valor : "#0ea7b3"} onCambiar={onCambiar} onCerrar={() => setAbierto(false)} />
+          <PanelColor valor={valor && String(valor).startsWith("#") ? valor : "#0ea7b3"} onCambiar={onCambiar} onCerrar={() => setAbierto(false)} />
         </div>
       )}
     </div>

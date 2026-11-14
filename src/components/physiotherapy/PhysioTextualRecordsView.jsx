@@ -6,8 +6,8 @@ import { FileText, Search, Copy, Check, Share2 } from "lucide-react";
 const confetti = () => {};
 
 export const PhysioTextualRecordsView = ({
-  records,
-  members,
+  records = [],
+  members = [],
   onSelectSessionToEdit,
   onOpenReportModal,
 }) => {
@@ -22,8 +22,8 @@ export const PhysioTextualRecordsView = ({
     if (!searchTerm.trim()) return records;
     const term = searchTerm.toLowerCase();
     return records.filter((r) => {
-      const matchName = r.memberName.toLowerCase().includes(term);
-      const matchDni = r.memberDni.includes(term);
+      const matchName = String(r.memberName || "").toLowerCase().includes(term);
+      const matchDni = String(r.memberDni || "").includes(term);
       const matchReason = r.consultationReason?.toLowerCase().includes(term);
       const matchMeds =
         r.physicalEvaluation?.medicationsText?.toLowerCase().includes(term) ||

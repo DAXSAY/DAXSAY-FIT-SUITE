@@ -12,7 +12,8 @@ import {
   Dumbbell,
   Store,
   Wrench,
-  Trash2,
+  Ban,
+  LogOut as LogOutIcon,
   X,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
@@ -22,6 +23,78 @@ import { DURACIONES, FUNCIONES_POR_ROL, MODALIDADES, etiquetaDuracion, fechaFin,
 import { coincidePersonal } from "../../utils/buscarPersona";
 // Sin confeti: el sistema usa avisos de color en su lugar
 const confetti = () => {};
+
+const COLOR_CARGO = {
+  trainer: "var(--rd-rol-naranja)",
+  physiotherapist: "var(--rd-rol-azul)",
+  nutritionist: "var(--rd-rol-rojo)",
+  receptionist: "var(--rd-rol-verde)",
+  maintenance: "var(--rd-rol-turquesa)",
+  admin: "var(--rd-rol-morado)",
+};
+const MOTIVOS_TERMINO = ["Renuncia", "Despido", "Mutuo acuerdo", "Fin del periodo de prueba", "Otro"];
+
+// Terminar antes de tiempo o anular un contrato registrado por error (queda en el historial)
+const CerrarContrato = ({ contrato, tipo, onCerrar, onConfirmar }) => {
+  const hoy = new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 10);
+  const [motivo, setMotivo] = useState(tipo === "anular" ? "" : MOTIVOS_TERMINO[0]);
+  const [detalle, setDetalle] = useState("");
+  const [fecha, setFecha] = useState(hoy);
+  const [error, setError] = useState("");
+  const anular = tipo === "anular";
+  const confirmar = (e) => {
+    e.preventDefault();
+    const razon = anular ? detalle.trim() : `${motivo}${detalle.trim() ? `: ${detalle.trim()}` : ""}`;
+    if (razon.length < 3) return setError("Escribe el motivo.");
+    onConfirmar(
+      anular
+        ? { status: "annulled", terminationReason: razon, terminationDate: hoy }
+        : { status: "terminated", terminationReason: razon, terminationDate: fecha, endDate: fecha },
+    );
+  };
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4">
+      <form onSubmit={confirmar} className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-xl p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={onCerrar} className="px-3 py-1.5 rounded-xl border border-slate-200 text-sm font-bold cursor-pointer">← Volver</button>
+          <div className="min-w-0 flex-1">
+            <b className="block text-slate-900">{anular ? "Anular contrato" : "Terminar contrato"}</b>
+            <span className="text-xs text-slate-500 truncate block">{contrato.fullName} · {contrato.roleTitle}</span>
+          </div>
+          <button type="button" onClick={onCerrar} title="Cerrar" className="w-8 h-8 rounded-full border border-slate-200 text-slate-500 cursor-pointer">✕</button>
+        </div>
+        <p className={`p-3 rounded-xl text-sm border ${anular ? "bg-rose-50 border-rose-200 text-rose-800" : "bg-amber-50 border-amber-200 text-amber-900"}`}>
+          {anular
+            ? "Úsalo si el contrato se registró por error. No se borra: queda en el historial marcado como ANULADO y puedes deshacerlo."
+            : "El contrato termina en la fecha que elijas (renuncia, despido o mutuo acuerdo). Queda en el historial y la planilla se calcula hasta ese día."}
+        </p>
+        {!anular && (
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-sm">
+              <span className="font-bold text-slate-700">Motivo</span>
+              <select value={motivo} onChange={(e) => setMotivo(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+                {MOTIVOS_TERMINO.map((m) => <option key={m}>{m}</option>)}
+              </select>
+            </label>
+            <label className="block text-sm">
+              <span className="font-bold text-slate-700">Último día</span>
+              <input type="date" value={fecha} min={contrato.startDate} max={contrato.endDate} onChange={(e) => setFecha(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 text-sm" />
+            </label>
+          </div>
+        )}
+        <label className="block text-sm">
+          <span className="font-bold text-slate-700">{anular ? "¿Por qué se anula? *" : "Detalle (opcional)"}</span>
+          <input value={detalle} onChange={(e) => setDetalle(e.target.value)} placeholder={anular ? "Ej. se registró dos veces / datos de otra persona" : "Ej. se muda de ciudad"} className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 text-sm" />
+        </label>
+        {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
+        <div className="flex gap-2">
+          <button type="button" onClick={onCerrar} className="flex-1 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-700 cursor-pointer">Cancelar</button>
+          <button className={`flex-1 py-2.5 rounded-xl font-black text-white cursor-pointer ${anular ? "bg-rose-600" : "bg-amber-600"}`}>{anular ? "Anular contrato" : "Terminar contrato"}</button>
+        </div>
+      </form>
+    </div>
+  );
+};
 
 export const StaffContractsModule = () => {
   const {
@@ -42,6 +115,7 @@ export const StaffContractsModule = () => {
   const [isNewContractModalOpen, setIsNewContractModalOpen] = useState(false);
   const [selectedContractForDoc, setSelectedContractForDoc] = useState(null);
   const [renewingContract, setRenewingContract] = useState(null);
+  const [cierre, setCierre] = useState(null); // { contrato, tipo: "terminar" | "anular" }
 
   // New Contract Form State
   const [formName, setFormName] = useState("");
@@ -190,6 +264,11 @@ export const StaffContractsModule = () => {
   };
 
   const getRoleBadge = (role) => {
+    const c = COLOR_CARGO[role] || "var(--rd-rol-morado)";
+    const base = getRoleBadgeBase(role);
+    return { ...base, color: c };
+  };
+  const getRoleBadgeBase = (role) => {
     switch (role) {
       case "trainer":
         return {
@@ -373,6 +452,8 @@ export const StaffContractsModule = () => {
             <option value="active">Activos</option>
             <option value="expiring_soon">Por Vencer</option>
             <option value="expired">Vencidos</option>
+            <option value="terminated">Terminados</option>
+            <option value="annulled">Anulados</option>
           </select>
         </div>
       </div>
@@ -383,11 +464,15 @@ export const StaffContractsModule = () => {
           const roleBadge = getRoleBadge(contract.role);
           const RoleIcon = roleBadge.icon;
           const isExpiring = contract.status === "expiring_soon";
+          const cerrado = contract.status === "terminated" || contract.status === "annulled";
 
           return (
             <div
               key={contract.id}
-              className={`bg-white rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all space-y-4 ${
+              style={{ "--c": roleBadge.color }}
+              className={`rd-tarjeta-cargo bg-white rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all space-y-4 ${
+                cerrado ? "opacity-75" : ""
+              } ${
                 isExpiring
                   ? "border-amber-400 ring-1 ring-amber-400/50"
                   : "border-slate-200"
@@ -430,11 +515,15 @@ export const StaffContractsModule = () => {
                 </div>
 
                 {/* Role Icon Badge */}
-                <span
-                  className={`p-1.5 rounded-lg border text-xs shrink-0 ${roleBadge.bg}`}
-                  title={roleBadge.label}
-                >
-                  <RoleIcon className="w-4 h-4" />
+                <span className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="rd-chip-rol inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-black" title={roleBadge.label}>
+                    <RoleIcon className="w-3.5 h-3.5" /> {roleBadge.label}
+                  </span>
+                  {cerrado && (
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${contract.status === "annulled" ? "bg-rose-50 text-rose-700 border border-rose-200" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
+                      {contract.status === "annulled" ? "ANULADO" : "TERMINADO"}
+                    </span>
+                  )}
                 </span>
               </div>
 
@@ -471,14 +560,14 @@ export const StaffContractsModule = () => {
 
               {/* Salary & Hours Worked breakdown */}
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl">
-                  <span className="text-xs font-semibold text-blue-800 block">
+                <div className="rd-caja-cargo p-2.5 rounded-xl">
+                  <span className="rd-caja-cargo-t text-xs font-semibold block">
                     Sueldo Mensual
                   </span>
-                  <span className="text-base font-extrabold text-blue-950">
+                  <span className="text-base font-extrabold text-slate-900">
                     S/. {Number(contract.monthlySalary || 0).toLocaleString()}
                   </span>
-                  <span className="text-xs text-blue-700 block">
+                  <span className="rd-caja-cargo-t text-xs block">
                     (S/. {Number(contract.hourlyRate || 0).toFixed(2)}/hora)
                   </span>
                 </div>
@@ -534,13 +623,33 @@ export const StaffContractsModule = () => {
                     <span>Renovar</span>
                   </button>
 
-                  <button
-                    onClick={() => deleteStaffContract(contract.id)}
-                    className="text-slate-400 hover:text-rose-600 p-1.5 transition-colors cursor-pointer rounded-lg hover:bg-rose-50"
-                    title="Eliminar registro"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {!cerrado && (
+                    <button
+                      onClick={() => setCierre({ contrato: contract, tipo: "terminar" })}
+                      className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-xl transition-colors cursor-pointer"
+                      title="Terminar antes de tiempo (renuncia, despido, mutuo acuerdo)"
+                    >
+                      <LogOutIcon className="w-3.5 h-3.5" />
+                      <span>Terminar</span>
+                    </button>
+                  )}
+                  {!cerrado ? (
+                    <button
+                      onClick={() => setCierre({ contrato: contract, tipo: "anular" })}
+                      className="text-slate-400 hover:text-rose-600 p-1.5 transition-colors cursor-pointer rounded-lg hover:bg-rose-50"
+                      title="Anular (se registró por error)"
+                    >
+                      <Ban className="w-3.5 h-3.5" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => updateStaffContract(contract.id, { status: contract.previousStatus || "active", terminationReason: undefined, terminationDate: undefined, previousStatus: undefined })}
+                      className="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-xl cursor-pointer"
+                      title="Deshacer: el contrato vuelve a estar vigente"
+                    >
+                      Deshacer
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -550,6 +659,18 @@ export const StaffContractsModule = () => {
 
       {/* DOCUMENTO DEL CONTRATO */}
       {selectedContractForDoc && <DocumentoContrato contrato={selectedContractForDoc} onCerrar={() => setSelectedContractForDoc(null)} />}
+
+      {/* TERMINAR O ANULAR CONTRATO */}
+      {cierre && (
+        <CerrarContrato
+          {...cierre}
+          onCerrar={() => setCierre(null)}
+          onConfirmar={(datos) => {
+            updateStaffContract(cierre.contrato.id, { ...datos, previousStatus: cierre.contrato.status });
+            setCierre(null);
+          }}
+        />
+      )}
 
       {/* RENOVAR CONTRATO */}
       {renewingContract && <RenovarContrato contrato={renewingContract} onCerrar={() => setRenewingContract(null)} onConfirmar={handleConfirmRenewal} />}

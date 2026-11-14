@@ -934,7 +934,7 @@ export const CrmModule = () => {
             </span>
             <span className="min-w-0">
               <span className="block text-sm font-black leading-tight">{l}</span>
-              <span className={`block text-[11px] truncate ${vista === k ? "text-white/80" : "text-slate-500"}`}>{sub}</span>
+              <span className={`block text-[11px] truncate ${vista === k ? "text-white" : "text-slate-500"}`}>{sub}</span>
             </span>
           </button>
         ))}

@@ -111,6 +111,21 @@ const OBJETIVO_EQUIVALENTE = {
   grasa_visceral: "perdida_peso", aumento_peso: "hipertrofia", control_glucemico: "rehabilitacion", presion_arterial: "rehabilitacion",
   colesterol: "rehabilitacion", digestivo: "rehabilitacion", embarazo_lactancia: "rehabilitacion",
 };
+// Si la tabla rutinas ya acepta los objetivos nuevos (script 35), se guardan tal cual
+let OBJETIVOS_RUTINA_BD = null;
+const cargarObjetivosRutina = async (cx) => {
+  if (OBJETIVOS_RUTINA_BD) return OBJETIVOS_RUTINA_BD;
+  const [[c]] = await cx.query(
+    "SELECT COLUMN_TYPE AS t FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rutinas' AND COLUMN_NAME = 'objetivo'",
+  );
+  OBJETIVOS_RUTINA_BD = [...String(c?.t || "").matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  return OBJETIVOS_RUTINA_BD;
+};
+const objetivoRutina = async (cx, v) => {
+  const o = String(v || "").split(",")[0].trim().replace("salud_rehabilitacion", "rehabilitacion");
+  const permitidos = await cargarObjetivosRutina(cx).catch(() => []);
+  return permitidos.includes(o) ? o : objetivo(v);
+};
 const objetivo = (v) => {
   let o = String(v || "").split(",")[0].trim().replace("salud_rehabilitacion", "rehabilitacion");
   o = OBJETIVO_EQUIVALENTE[o] || o;
@@ -228,7 +243,7 @@ const MAPAS = {
       titulo: txt(d.title, 150),
       descripcion: txt(d.description, 500),
       nivel: nivel(d.level),
-      objetivo: objetivo(d.objective),
+      objetivo: await objetivoRutina(cx, d.objective),
       dias_por_semana: entero(dias.length, 0, 7),
       identrenador: await idEmpleado(cx, d.trainerId, d.trainerName),
       idalumno: await idAlumno(cx, d.targetStudentId),
@@ -570,7 +585,7 @@ const MAPAS = {
       horas_semanales: entero(d.assignedWeeklyHours, 0, 127) ?? 0,
       documento: url(d.signedDocumentUrl, 200),
       notas: txt(d.notes, 300),
-      estado: { active: "vigente", expiring_soon: "por_vencer", expired: "vencido", renewed: "renovado" }[d.status] || "vigente",
+      estado: { active: "vigente", expiring_soon: "por_vencer", expired: "vencido", renewed: "renovado", terminated: "vencido", annulled: "vencido" }[d.status] || "vigente",
     });
   },
 

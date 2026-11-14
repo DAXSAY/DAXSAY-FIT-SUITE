@@ -260,7 +260,7 @@ const TarjetaMeta = ({ meta, admin, onEditar, onEliminar, onBono }) => {
 // ------------------------------------------------------------
 // Formulario de meta (admin)
 // ------------------------------------------------------------
-const FormMeta = ({ tipo, meta, mes, onVolver, onGuardada }) => {
+const FormMeta = ({ tipo, meta, mes, historial = [], onVolver, onGuardada }) => {
   const { staffDirectory } = useGym();
   const [turnos, setTurnos] = useState([]);
   const [f, setF] = useState({
@@ -359,7 +359,97 @@ const FormMeta = ({ tipo, meta, mes, onVolver, onGuardada }) => {
         {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
         <button className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black cursor-pointer">Guardar meta</button>
       </form>
+      <VistaPreviaMeta tipo={tipo} f={f} porFechas={porFechas} turno={turnos.find((t) => String(t.id) === String(f.receptionShiftId))} especialista={entrenadores.find((t) => String(t.id) === String(f.staffId))} />
+      <OtrasMetas tipo={tipo} metas={(historial || []).filter((m) => m.type === tipo && m.id !== meta?.id)} />
     </Pantalla>
+  );
+};
+
+// Otras metas del mismo tipo en el periodo: sirven de referencia al fijar la nueva
+const OtrasMetas = ({ tipo, metas }) => {
+  const dinero = tipo === "recepcion";
+  const fmt = (v) => (dinero ? `S/ ${Number(v || 0).toLocaleString("es-PE", { maximumFractionDigits: 0 })}` : `${v || 0}`);
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-5">
+      <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-3">Metas de este periodo como referencia</span>
+      {metas.length ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {metas.slice(0, 4).map((m) => {
+            const obj = Number(m.progress?.objetivo) || 0;
+            const log = Number(m.progress?.logrado) || 0;
+            const pct = obj ? Math.min(100, Math.round((log / obj) * 100)) : 0;
+            return (
+              <div key={m.id} className="rounded-xl border border-slate-200 p-3">
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <b className="truncate text-slate-900">{m.name || "Meta"}</b>
+                  <span className={`shrink-0 text-xs font-black ${m.progress?.cumplida ? "text-emerald-700" : "text-slate-600"}`}>{m.progress?.cumplida ? "✓ Cumplida" : `${pct} %`}</span>
+                </div>
+                <div className="mt-2 h-2 rounded-full bg-slate-100 overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-blue-500" style={{ width: `${Math.max(pct, 3)}%` }} /></div>
+                <p className="mt-1 text-[11px] text-slate-500">{fmt(log)} de {fmt(obj)}{m.bonus ? ` · bono S/ ${Number(m.bonus).toFixed(2)}` : ""}</p>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-sm text-slate-500">Todavía no hay otras metas de este tipo en el mes. La que crees será la primera.</p>
+      )}
+    </div>
+  );
+};
+
+// Vista previa de la meta: cómo la verá el equipo y cuánto representa por día
+const VistaPreviaMeta = ({ tipo, f, porFechas, turno, especialista }) => {
+  const dias = (() => {
+    if (porFechas) {
+      if (!f.start || !f.end) return 0;
+      return Math.max(1, Math.round((new Date(`${f.end}T12:00:00`) - new Date(`${f.start}T12:00:00`)) / 864e5) + 1);
+    }
+    if (!f.month) return 0;
+    const [y, m] = f.month.split("-").map(Number);
+    return new Date(y, m, 0).getDate();
+  })();
+  const esDinero = tipo === "recepcion";
+  const objetivo = Number(esDinero ? f.amount : f.achievements) || 0;
+  const bono = Number(f.bonus) || 0;
+  const porDia = dias ? objetivo / dias : 0;
+  const quien = esDinero ? turno?.name || "Turno de recepción" : especialista?.fullName || "Especialista";
+  const fmt = (v) => (esDinero ? `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 2 })}` : `${Math.round(v * 10) / 10}`);
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">Así la verá el equipo</span>
+        <div className="flex items-center justify-between gap-2">
+          <b className="text-slate-900 truncate">{quien}</b>
+          {bono > 0 && <span className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">Bono S/ {bono.toFixed(2)}</span>}
+        </div>
+        <p className="text-xs text-slate-500 mt-0.5">{esDinero ? "Meta de cobros del turno" : "Objetivos de alumnos logrados"} · {dias ? `${dias} días` : "elige el periodo"}</p>
+        <div className="mt-3 h-3 rounded-full bg-slate-100 overflow-hidden">
+          <div className="h-full w-[8%] rounded-full bg-gradient-to-r from-emerald-400 to-blue-500" />
+        </div>
+        <div className="flex justify-between text-[11px] font-bold text-slate-500 mt-1">
+          <span>Avance (empieza en 0)</span>
+          <span className="text-slate-800">{objetivo ? fmt(objetivo) : "—"}</span>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">Para lograrla</span>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-xl bg-blue-50 border border-blue-200 p-2.5">
+            <span className="block text-[10px] font-bold uppercase text-blue-700">Por día</span>
+            <span className="block text-lg font-black text-blue-800 font-mono">{objetivo && dias ? fmt(porDia) : "—"}</span>
+          </div>
+          <div className="rounded-xl bg-violet-50 border border-violet-200 p-2.5">
+            <span className="block text-[10px] font-bold uppercase text-violet-700">Por semana</span>
+            <span className="block text-lg font-black text-violet-800 font-mono">{objetivo && dias ? fmt(porDia * 7) : "—"}</span>
+          </div>
+        </div>
+        <ul className="mt-3 space-y-1 text-[11px] text-slate-600">
+          <li>✓ El avance se calcula solo con {esDinero ? "las matrículas, renovaciones y ventas cobradas en ese turno" : "los objetivos que se cumplen en los controles"}.</li>
+          <li>✓ Al cumplirla, el bono se aprueba en «Bonos» y luego se marca como pagado.</li>
+          <li>✓ Puedes editarla o anularla mientras el periodo esté abierto.</li>
+        </ul>
+      </div>
+    </div>
   );
 };
 
@@ -904,7 +994,7 @@ const ListaBonos = ({ admin }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {personas.map((x) => (
             <div key={x.nombre} className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
-              <div className="p-4 flex items-center gap-3 bg-gradient-to-r from-amber-50 to-white border-b border-slate-100">
+              <div className="p-4 flex items-center gap-3 bg-amber-50 border-b border-slate-100">
                 <span className="w-11 h-11 rounded-2xl bg-amber-500 text-white font-black flex items-center justify-center">{iniciales(x.nombre)}</span>
                 <div className="min-w-0 flex-1">
                   <p className="font-black text-slate-900 truncate">{x.nombre}</p>
@@ -1048,7 +1138,7 @@ export const GoalsModule = () => {
     }
   };
 
-  if (vista?.form) return <FormMeta tipo={vista.form} meta={vista.meta} mes={mes} onVolver={() => setVista(null)} onGuardada={() => listo("Meta guardada.")} />;
+  if (vista?.form) return <FormMeta tipo={vista.form} meta={vista.meta} mes={mes} historial={metas} onVolver={() => setVista(null)} onGuardada={() => listo("Meta guardada.")} />;
   if (vista?.bono) return <FormBono meta={vista.bono} onVolver={() => setVista(null)} onListo={() => listo("Bono aprobado. Págalo desde la pestaña Bonos.")} />;
 
   const de = (tipo) => (metas || []).filter((m) => m.type === tipo);

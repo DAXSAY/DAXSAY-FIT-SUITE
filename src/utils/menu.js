@@ -31,3 +31,21 @@ export const useMenuPlegado = () => {
   };
   return [plegado, alternar];
 };
+
+// Menú en celular (pantalla angosta): se abre y cierra con el botón ☰
+const EVENTO_MOVIL = "radical:menu-movil";
+let abiertoMovil = false;
+export const useMenuMovil = () => {
+  const [abierto, setAbierto] = useState(abiertoMovil);
+  useEffect(() => {
+    const sync = (e) => setAbierto(e.detail);
+    window.addEventListener(EVENTO_MOVIL, sync);
+    return () => window.removeEventListener(EVENTO_MOVIL, sync);
+  }, []);
+  const poner = (v) => {
+    abiertoMovil = typeof v === "function" ? v(abiertoMovil) : !!v;
+    window.dispatchEvent(new CustomEvent(EVENTO_MOVIL, { detail: abiertoMovil }));
+  };
+  return [abierto, poner];
+};
+export const esPantallaAngosta = () => typeof window !== "undefined" && window.innerWidth < 768;

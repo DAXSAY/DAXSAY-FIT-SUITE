@@ -1,3 +1,4 @@
+import { avisarCambio } from "../utils/ventanas";
 // Cliente de la API de RADICAL (servidor/index.js)
 const CLAVE_TOKEN = "radicalgym_token";
 
@@ -40,6 +41,8 @@ export async function api(ruta, { method = "GET", body } = {}) {
     throw new Error("No se pudo conectar con el servidor. Verifica que la API esté encendida (npm run dev).");
   }
 
+  // Otra ventana del mismo navegador se entera de que algo cambió
+  if (method !== "GET" && respuesta.ok) avisarCambio();
   const renovado = respuesta.headers.get("X-Nuevo-Token");
   if (renovado && obtenerToken()) guardarToken(renovado);
 

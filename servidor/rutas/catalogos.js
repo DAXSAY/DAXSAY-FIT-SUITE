@@ -262,14 +262,55 @@ caja.post("/", soloPersonal, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Movimientos que se pueden corregir o anular a mano (los automáticos se corrigen en su origen)
+async function movimientoEditable(id) {
+  const [f] = await consultar(
+    `SELECT m.*, t.estado AS estado_turno FROM movimientos_caja m LEFT JOIN turnos_caja t ON t.idturno = m.idturno WHERE m.idmovimiento = ?`,
+    [id],
+  );
+  if (!f) throw new ErrorHttp(404, "Movimiento no encontrado");
+  if (f.categoria === "matricula" && f.idreferencia) throw new ErrorHttp(400, "Este ingreso pertenece a una matrícula. Para corregirlo, anula o edita la matrícula.");
+  if (f.categoria === "venta" && f.idreferencia) throw new ErrorHttp(400, "Este ingreso es de una venta. Corrígela o anúlala desde el ticket en Ventas.");
+  if (f.idturno && f.estado_turno && f.estado_turno !== "abierto") {
+    throw new ErrorHttp(409, "El movimiento pertenece a un turno de caja ya cerrado. Registra un ajuste (ingreso o gasto) en el turno actual.");
+  }
+  return f;
+}
+const auditar = (req, accion, id, detalle) =>
+  consultar("INSERT INTO auditoria (idusuario, tabla, accion, idregistro, detalle) VALUES (?, 'movimientos_caja', ?, ?, ?)", [
+    req.usuario.idusuario,
+    accion,
+    Number(id),
+    String(detalle).slice(0, 255),
+  ]).catch(() => {});
+
+// PUT /api/caja/:id  { amount, description, paymentMethod, motivo }  -> corregir un movimiento
+caja.put("/:id", requierePermiso("finance", "editar"), async (req, res, next) => {
+  try {
+    const f = await movimientoEditable(req.params.id);
+    const d = req.body || {};
+    const motivo = String(d.motivo || "").trim();
+    if (motivo.length < 3) throw new ErrorHttp(400, "Escribe el motivo de la corrección");
+    const monto = d.amount === undefined ? Number(f.monto) : Number(d.amount);
+    if (!(monto > 0)) throw new ErrorHttp(400, "El monto debe ser mayor a 0");
+    const metodos = ["efectivo", "tarjeta", "transferencia", "yape_plin"];
+    const metodo = metodos.includes(d.paymentMethod) ? d.paymentMethod : f.metodo_pago;
+    const desc = String(d.description || f.descripcion).trim().slice(0, 255);
+    await consultar("UPDATE movimientos_caja SET monto = ?, descripcion = ?, metodo_pago = ? WHERE idmovimiento = ?", [monto, desc, metodo, f.idmovimiento]);
+    await auditar(req, "actualizar", f.idmovimiento, `Corregido: S/ ${Number(f.monto).toFixed(2)} → S/ ${monto.toFixed(2)} · ${motivo}`);
+    const [m] = await consultar("SELECT * FROM movimientos_caja WHERE idmovimiento = ?", [f.idmovimiento]);
+    res.json(aMovimiento(m));
+  } catch (e) { next(e); }
+});
+
+// DELETE /api/caja/:id  { motivo }  -> anular un movimiento registrado por error (queda en la auditoría)
 caja.delete("/:id", requierePermiso("finance", "eliminar"), async (req, res, next) => {
   try {
-    const [f] = await consultar("SELECT categoria, idreferencia FROM movimientos_caja WHERE idmovimiento = ?", [req.params.id]);
-    if (f?.categoria === "matricula" && f.idreferencia) {
-      throw new ErrorHttp(400, "Este ingreso pertenece a una matrícula. Para quitarlo, anula la matrícula.");
-    }
-    await consultar("DELETE FROM movimientos_caja WHERE idmovimiento = ?", [req.params.id]);
-    res.json({ mensaje: "Movimiento eliminado" });
+    const f = await movimientoEditable(req.params.id);
+    const motivo = String(req.body?.motivo || req.query?.motivo || "sin motivo").trim();
+    await consultar("DELETE FROM movimientos_caja WHERE idmovimiento = ?", [f.idmovimiento]);
+    await auditar(req, "eliminar", f.idmovimiento, `Anulado ${f.tipo} S/ ${Number(f.monto).toFixed(2)} «${f.descripcion}» · ${motivo}`);
+    res.json({ mensaje: "Movimiento anulado" });
   } catch (e) { next(e); }
 });
 

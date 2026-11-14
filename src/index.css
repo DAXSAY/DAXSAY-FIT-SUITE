@@ -1988,7 +1988,7 @@ html.dark .rd-chip-gym { background: rgba(16, 185, 129, .15) !important; color: 
 .recharts-pie-sector:hover path { filter: drop-shadow(0 0 6px rgba(0, 0, 0, .22)); }
 
 /* Menú lateral fijo: el pie (usuario y cerrar sesión) siempre a la vista */
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .rd-menu-fijo {
     position: sticky;
     top: var(--rd-alto-cabecera, 56px);
@@ -2000,8 +2000,8 @@ html.dark .rd-chip-gym { background: rgba(16, 185, 129, .15) !important; color: 
 html:not(.dark) .rd-menu-usuario { background: #fbf9f4; border-color: #ddd4c4; }
 html:not(.dark) .rd-menu .rd-menu-usuario .text-white:not([style]) { color: #2e2b25 !important; }
 html:not(.dark) .rd-menu [style*="background"].text-white { color: #ffffff !important; }
-.rd-menu-fijo > .lg\:overflow-y-auto { scrollbar-width: none; }
-.rd-menu-fijo > .lg\:overflow-y-auto::-webkit-scrollbar { display: none; }
+.rd-menu-fijo > .overflow-y-auto { scrollbar-width: none; }
+.rd-menu-fijo > .overflow-y-auto::-webkit-scrollbar { display: none; }
 
 /* Modo claro: franjas con degradado oscuro (cabeceras de ficha, banners) pasan a claro */
 @media screen {
@@ -3042,3 +3042,164 @@ html.dark .fixed button.rd-ctrl-unificado.rd-ctrl-cerrar:hover { background: rgb
 .rd-boton-salir:hover { background: color-mix(in srgb, var(--color-rose-400) 24%, transparent); }
 html:not(.dark) .rd-menu .rd-boton-salir { background: color-mix(in srgb, var(--color-rose-300) 22%, #fffdf9) !important; border-color: color-mix(in srgb, var(--color-rose-300) 55%, transparent) !important; color: color-mix(in srgb, var(--color-rose-500) 75%, #4a3a36) !important; }
 html:not(.dark) .rd-menu .rd-boton-salir:hover { background: color-mix(in srgb, var(--color-rose-300) 38%, #fffdf9) !important; }
+
+/* Texto seleccionado (p. ej. el monto al abrir caja): suave y redondeado, no un bloque azul */
+::selection { background: color-mix(in srgb, var(--color-blue-400) 32%, transparent); color: inherit; }
+html.dark ::selection { background: color-mix(in srgb, var(--color-blue-400) 35%, transparent); color: #fff; }
+:is(input, select, textarea):focus { outline: none; }
+:is(input, select, textarea):focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-blue-400) 30%, transparent); }
+
+.rd-abrir-ventana { color: #94a3b8; background: rgba(255,255,255,.06); }
+.rd-abrir-ventana:hover { color: #fff; background: rgba(255,255,255,.14); }
+html:not(.dark) .rd-abrir-ventana { color: #7a705f; background: #f3eee4; }
+html:not(.dark) .rd-abrir-ventana:hover { color: var(--color-blue-700); background: #ebe3d4; }
+
+/* Guía animada del campo "Marcar asistencia" */
+.rd-pista-marcar { z-index: 1; }
+.rd-pista-opcion { animation: rd-pista-entra .45s ease-out; color: var(--color-blue-600); font-weight: 600; }
+html.dark .rd-pista-opcion { color: var(--color-blue-300); }
+@keyframes rd-pista-entra { from { opacity: 0; transform: translateY(60%); } to { opacity: 1; transform: none; } }
+
+/* Contratos: cada cargo con su color (pastel en claro, neón medio en oscuro) */
+.rd-tarjeta-cargo { border-left: 4px solid var(--c) !important; }
+.rd-caja-cargo { background: color-mix(in srgb, var(--c) 12%, transparent); border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); }
+.rd-caja-cargo-t { color: color-mix(in srgb, var(--c) 70%, #2e2b25); }
+html.dark .rd-caja-cargo-t { color: color-mix(in srgb, var(--c) 85%, #fff); }
+
+/* Modo claro: tonos pastel un poco más profundos para que el texto blanco y los grises se lean bien */
+html:not(.dark) {
+  --color-orange-500: #c39778;
+  --color-orange-600: #b1805e;
+  --color-amber-500: #b69d72;
+  --color-amber-600: #a28759;
+  --color-amber-700: #8a7044;
+  --color-yellow-500: #ac9e6e;
+  --color-yellow-600: #998a56;
+  --color-yellow-700: #837342;
+  --color-lime-500: #8da66b;
+  --color-lime-600: #779253;
+  --color-lime-700: #637d41;
+  --color-green-500: #6cad85;
+  --color-green-600: #52986e;
+  --color-green-700: #40825a;
+  --color-emerald-500: #6cad99;
+  --color-emerald-600: #529882;
+  --color-emerald-700: #3f7f6c;
+  --color-teal-500: #6aaaa4;
+  --color-teal-600: #51958f;
+  --color-teal-700: #3f7f7a;
+  --color-cyan-500: #6fa9b4;
+  --color-cyan-600: #55939e;
+  --color-cyan-700: #417c87;
+  --color-sky-500: #75a6bd;
+  --color-sky-600: #5a90a9;
+  --color-sky-700: #457a92;
+  --color-blue-500: #6ca8ae;
+  --color-blue-600: #529399;
+  --color-blue-700: #407d83;
+}
+
+/* Modo claro: textos -300/-400 (pensados para fondo oscuro) se leen en fondo claro */
+html:not(.dark) :is(.text-red-300,.text-red-400){color:var(--color-red-700)}
+html:not(.dark) :is(.text-orange-300,.text-orange-400){color:var(--color-orange-700)}
+html:not(.dark) :is(.text-amber-300,.text-amber-400){color:var(--color-amber-700)}
+html:not(.dark) :is(.text-yellow-300,.text-yellow-400){color:var(--color-yellow-700)}
+html:not(.dark) :is(.text-lime-300,.text-lime-400){color:var(--color-lime-700)}
+html:not(.dark) :is(.text-green-300,.text-green-400){color:var(--color-green-700)}
+html:not(.dark) :is(.text-emerald-300,.text-emerald-400){color:var(--color-emerald-700)}
+html:not(.dark) :is(.text-teal-300,.text-teal-400){color:var(--color-teal-700)}
+html:not(.dark) :is(.text-cyan-300,.text-cyan-400){color:var(--color-cyan-700)}
+html:not(.dark) :is(.text-sky-300,.text-sky-400){color:var(--color-sky-700)}
+html:not(.dark) :is(.text-blue-300,.text-blue-400){color:var(--color-blue-700)}
+html:not(.dark) :is(.text-indigo-300,.text-indigo-400){color:var(--color-indigo-700)}
+html:not(.dark) :is(.text-violet-300,.text-violet-400){color:var(--color-violet-700)}
+html:not(.dark) :is(.text-purple-300,.text-purple-400){color:var(--color-purple-700)}
+html:not(.dark) :is(.text-fuchsia-300,.text-fuchsia-400){color:var(--color-fuchsia-700)}
+html:not(.dark) :is(.text-pink-300,.text-pink-400){color:var(--color-pink-700)}
+html:not(.dark) :is(.text-rose-300,.text-rose-400){color:var(--color-rose-700)}
+html:not(.dark) :is(.bg-slate-800,.bg-slate-900,.bg-gray-900) :is([class*='text-'][class*='-300'],[class*='text-'][class*='-400']){color:revert-layer}
+
+/* Modo oscuro: rellenos sólidos (botones, chips) algo más profundos para que el texto blanco se lea; el neón queda en textos y bordes */
+html.dark :is(.bg-orange-500,.hover\:bg-orange-500:hover):not(.rd-claro,.rd-claro *){background-color:#d37636}
+html.dark :is(.bg-amber-500,.hover\:bg-amber-500:hover):not(.rd-claro,.rd-claro *){background-color:#b58432}
+html.dark :is(.bg-amber-600,.hover\:bg-amber-600:hover):not(.rd-claro,.rd-claro *){background-color:#a87826}
+html.dark :is(.bg-yellow-500,.hover\:bg-yellow-500:hover):not(.rd-claro,.rd-claro *){background-color:#a88c31}
+html.dark :is(.bg-yellow-600,.hover\:bg-yellow-600:hover):not(.rd-claro,.rd-claro *){background-color:#9a7e25}
+html.dark :is(.bg-yellow-700,.hover\:bg-yellow-700:hover):not(.rd-claro,.rd-claro *){background-color:#8a7122}
+html.dark :is(.bg-lime-500,.hover\:bg-lime-500:hover):not(.rd-claro,.rd-claro *){background-color:#6b9a2e}
+html.dark :is(.bg-lime-600,.hover\:bg-lime-600:hover):not(.rd-claro,.rd-claro *){background-color:#608d24}
+html.dark :is(.bg-lime-700,.hover\:bg-lime-700:hover):not(.rd-claro,.rd-claro *){background-color:#588022}
+html.dark :is(.bg-green-500,.hover\:bg-green-500:hover):not(.rd-claro,.rd-claro *){background-color:#2aa25b}
+html.dark :is(.bg-green-600,.hover\:bg-green-600:hover):not(.rd-claro,.rd-claro *){background-color:#20944e}
+html.dark :is(.bg-green-700,.hover\:bg-green-700:hover):not(.rd-claro,.rd-claro *){background-color:#1f8547}
+html.dark :is(.bg-emerald-500,.hover\:bg-emerald-500:hover):not(.rd-claro,.rd-claro *){background-color:#299e7c}
+html.dark :is(.bg-emerald-600,.hover\:bg-emerald-600:hover):not(.rd-claro,.rd-claro *){background-color:#1f916f}
+html.dark :is(.bg-emerald-700,.hover\:bg-emerald-700:hover):not(.rd-claro,.rd-claro *){background-color:#1f8264}
+html.dark :is(.bg-teal-500,.hover\:bg-teal-500:hover):not(.rd-claro,.rd-claro *){background-color:#299e95}
+html.dark :is(.bg-teal-600,.hover\:bg-teal-600:hover):not(.rd-claro,.rd-claro *){background-color:#1f9187}
+html.dark :is(.bg-teal-700,.hover\:bg-teal-700:hover):not(.rd-claro,.rd-claro *){background-color:#1f827a}
+html.dark :is(.bg-cyan-500,.hover\:bg-cyan-500:hover):not(.rd-claro,.rd-claro *){background-color:#2d9cb1}
+html.dark :is(.bg-cyan-600,.hover\:bg-cyan-600:hover):not(.rd-claro,.rd-claro *){background-color:#218da1}
+html.dark :is(.bg-cyan-700,.hover\:bg-cyan-700:hover):not(.rd-claro,.rd-claro *){background-color:#218091}
+html.dark :is(.bg-sky-500,.hover\:bg-sky-500:hover):not(.rd-claro,.rd-claro *){background-color:#3299c8}
+html.dark :is(.bg-sky-600,.hover\:bg-sky-600:hover):not(.rd-claro,.rd-claro *){background-color:#268ab8}
+html.dark :is(.bg-blue-500,.hover\:bg-blue-500:hover):not(.rd-claro,.rd-claro *){background-color:#2b9da9}
+html.dark :is(.bg-blue-600,.hover\:bg-blue-600:hover):not(.rd-claro,.rd-claro *){background-color:#208f9a}
+html.dark :is(.bg-blue-700,.hover\:bg-blue-700:hover):not(.rd-claro,.rd-claro *){background-color:#208189}
+
+/* Modo claro: grises secundarios y textos -500 con lectura suficiente */
+html:not(.dark){--color-slate-400:#7d8a9b;--color-gray-400:#848b96}
+html:not(.dark) .text-red-500{color:var(--color-red-700)}
+html:not(.dark) .text-orange-500{color:var(--color-orange-700)}
+html:not(.dark) .text-amber-500{color:var(--color-amber-700)}
+html:not(.dark) .text-yellow-500{color:var(--color-yellow-700)}
+html:not(.dark) .text-lime-500{color:var(--color-lime-700)}
+html:not(.dark) .text-green-500{color:var(--color-green-700)}
+html:not(.dark) .text-emerald-500{color:var(--color-emerald-700)}
+html:not(.dark) .text-teal-500{color:var(--color-teal-700)}
+html:not(.dark) .text-cyan-500{color:var(--color-cyan-700)}
+html:not(.dark) .text-sky-500{color:var(--color-sky-700)}
+html:not(.dark) .text-blue-500{color:var(--color-blue-700)}
+html:not(.dark) .text-indigo-500{color:var(--color-indigo-700)}
+html:not(.dark) .text-violet-500{color:var(--color-violet-700)}
+html:not(.dark) .text-purple-500{color:var(--color-purple-700)}
+html:not(.dark) .text-fuchsia-500{color:var(--color-fuchsia-700)}
+html:not(.dark) .text-pink-500{color:var(--color-pink-700)}
+html:not(.dark) .text-rose-500{color:var(--color-rose-700)}
+
+/* Oscuro: el tono 600 (rellenos de botones y chips) más profundo; el texto 600 usa el neón 400 */
+html.dark{--color-amber-600:#a87826;--color-yellow-600:#9a7e25;--color-lime-600:#608d24;--color-green-600:#20944e;--color-emerald-600:#1f916f;--color-teal-600:#1f9187;--color-cyan-600:#218da1;--color-sky-600:#268ab8;--color-blue-600:#208f9a;}
+html.dark .text-red-600:not(.rd-claro,.rd-claro *){color:var(--color-red-400)}
+html.dark .text-orange-600:not(.rd-claro,.rd-claro *){color:var(--color-orange-400)}
+html.dark .text-amber-600:not(.rd-claro,.rd-claro *){color:var(--color-amber-400)}
+html.dark .text-yellow-600:not(.rd-claro,.rd-claro *){color:var(--color-yellow-400)}
+html.dark .text-lime-600:not(.rd-claro,.rd-claro *){color:var(--color-lime-400)}
+html.dark .text-green-600:not(.rd-claro,.rd-claro *){color:var(--color-green-400)}
+html.dark .text-emerald-600:not(.rd-claro,.rd-claro *){color:var(--color-emerald-400)}
+html.dark .text-teal-600:not(.rd-claro,.rd-claro *){color:var(--color-teal-400)}
+html.dark .text-cyan-600:not(.rd-claro,.rd-claro *){color:var(--color-cyan-400)}
+html.dark .text-sky-600:not(.rd-claro,.rd-claro *){color:var(--color-sky-400)}
+html.dark .text-blue-600:not(.rd-claro,.rd-claro *){color:var(--color-blue-400)}
+html.dark .text-indigo-600:not(.rd-claro,.rd-claro *){color:var(--color-indigo-400)}
+html.dark .text-violet-600:not(.rd-claro,.rd-claro *){color:var(--color-violet-400)}
+html.dark .text-purple-600:not(.rd-claro,.rd-claro *){color:var(--color-purple-400)}
+html.dark .text-fuchsia-600:not(.rd-claro,.rd-claro *){color:var(--color-fuchsia-400)}
+html.dark .text-pink-600:not(.rd-claro,.rd-claro *){color:var(--color-pink-400)}
+html.dark .text-rose-600:not(.rd-claro,.rd-claro *){color:var(--color-rose-400)}
+/* Claro: amarillos/verdes 500 con texto blanco legible */
+html:not(.dark){--color-amber-500:#a7916b;--color-yellow-500:#9e9268;--color-orange-500:#b38c71;--color-lime-500:#849c66;--color-green-500:#65a07c;--color-emerald-500:#65a08e;--color-teal-500:#639d98;--color-cyan-500:#679ca7;--color-sky-500:#6d99af;}
+
+/* Login: el panel de marca siempre es oscuro, en ambos modos */
+html .rd-panel-marca h1 { color: #ffffff; }
+html .rd-panel-marca .text-blue-300 { color: #6ee7e0 !important; }
+html .rd-panel-marca :is(.text-slate-300, .text-slate-400) { color: #b8c7d8 !important; }
+html .rd-panel-marca :is(.text-slate-500, .text-slate-600) { color: #8ea2b8; }
+
+/* Degradados que terminan en blanco: en oscuro terminan en la superficie */
+html.dark .to-white:not(.rd-claro, .rd-claro *) { --tw-gradient-to: var(--rd-surface); }
+html.dark .via-white:not(.rd-claro, .rd-claro *) { --tw-gradient-via: var(--rd-surface); }
+/* Cabeceras con degradado y texto blanco: un velo suave para que el texto se lea (claro y oscuro) */
+:is(main, .fixed) [class*="bg-gradient-to-"].text-white:not(.rd-sin-velo) { box-shadow: inset 0 0 0 999px rgba(10, 20, 35, .22); }
+html.dark :is(main, .fixed) [class*="bg-gradient-to-"].text-white:not(.rd-sin-velo) { box-shadow: inset 0 0 0 999px rgba(4, 10, 20, .34); }
+html .rd-panel-marca .rd-sub-marca { color: #b8c7d8; }
+html.dark .rd-num-cal { text-shadow: 0 1px 3px rgba(0,0,0,.85), 0 0 1px rgba(0,0,0,.9); }

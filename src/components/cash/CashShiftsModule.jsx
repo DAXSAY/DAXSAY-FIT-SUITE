@@ -929,7 +929,7 @@ export const CashShiftsModule = () => {
                 {puedeCerrar && (
                   <button
                     onClick={() => setVista("cerrar")}
-                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 font-black text-sm flex items-center gap-1.5 cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-sm flex items-center gap-1.5 cursor-pointer"
                   >
                     <Lock className="w-4 h-4" /> Cerrar caja (arqueo)
                   </button>

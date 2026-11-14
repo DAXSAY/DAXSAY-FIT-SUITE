@@ -525,9 +525,10 @@ export const RoutinesAndExercises = () => {
                       type="button"
                       title={d}
                       onClick={() => setRoutineLevel(k)}
-                      className={`px-1.5 py-1.5 rounded-md border text-[10.5px] leading-tight font-bold cursor-pointer ${routineLevel === k ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-gray-300 text-slate-700 hover:border-blue-400"}`}
+                      className={`min-w-0 px-1.5 py-1.5 rounded-lg border text-[10.5px] leading-tight font-bold cursor-pointer flex items-center justify-center gap-1 ${routineLevel === k ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-gray-300 text-slate-700 hover:border-blue-400"}`}
                     >
-                      {ic} {l}
+                      <span className="shrink-0">{ic}</span>
+                      <span className="truncate tracking-tight">{l}</span>
                     </button>
                   ))}
                 </div>

@@ -27,7 +27,7 @@ import { EditorComidas, totalesComida } from "./EditorComidas";
 import { CatalogoAlimentos } from "./CatalogoAlimentos";
 
 import { SelectorAlumno, CodigoAlumno, coincideAlumno } from "../common/BuscarAlumno";
-import { objetivoPrincipal } from "../../utils/objetivos";
+import { objetivoNutricion } from "../../utils/objetivos";
 import { OBJETIVOS_NUTRI, COLOR_OBJETIVO, objetivoNutri, calcularTdee, ACTIVIDADES, SUPLEMENTOS_BASE } from "../../data/nutricionOpciones";
 import { BotonesDescarga } from "../common/BotonesDescarga";
 const OBJECTIVE_LABELS = Object.fromEntries(OBJETIVOS_NUTRI.map((o) => [o.id, `${o.emoji} ${o.label}`]));
@@ -408,7 +408,7 @@ export const NutritionModule = () => {
     const member = members.find((m) => m.id === memberId);
     if (!member) return;
 
-    if (member.objective) setCalcGoal(objetivoPrincipal(member.objective));
+    if (member.objective) setCalcGoal(objetivoNutricion(member.objective));
     if (member.gender === "F") setCalcGender("F");
     else setCalcGender("M");
 
@@ -1000,7 +1000,7 @@ export const NutritionModule = () => {
                   {(() => {
                     const platos = platosDePlan(selectedPlan, sexoAlumno(selectedPlan.targetStudentId));
                     return (
-                      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/60 to-white p-4">
+                      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4">
                         <h3 className="font-extrabold text-sm sm:text-base text-slate-900 mb-3">🍽️ Platos asignados ({platos.length})</h3>
                         {platos.length ? (
                           <VistaPlatos
@@ -1579,20 +1579,20 @@ export const NutritionModule = () => {
               />
 
               {/* Macros Target Banner */}
-              <div className="p-4 bg-slate-900 rounded-xl text-white space-y-3">
-                <span className="text-xs font-black uppercase text-blue-400">
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 space-y-3">
+                <span className="text-xs font-black uppercase text-blue-700">
                   Metas Diarias de Macronutrientes
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                  <div className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5">
-                    <span className="block text-xs text-slate-400">Calorías (calculadas)</span>
-                    <span className="text-lg font-black text-white">
+                  <div className="bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                    <span className="block text-xs text-slate-500">Calorías (calculadas)</span>
+                    <span className="text-lg font-black text-slate-900">
                       {Math.round(Number(formProteins) * 4 + Number(formCarbs) * 4 + Number(formFats) * 9)} kcal
                     </span>
                   </div>
 
                   <div>
-                    <label className="block text-xs text-emerald-400 mb-1">
+                    <label className="block text-xs text-emerald-700 mb-1">
                       Proteínas (g)
                     </label>
                     <input
@@ -1600,12 +1600,12 @@ export const NutritionModule = () => {
                       required
                       value={formProteins}
                       onChange={(e) => setFormProteins(Number(e.target.value))}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-emerald-400"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-bold text-emerald-700"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs text-cyan-400 mb-1">
+                    <label className="block text-xs text-cyan-700 mb-1">
                       Carbohidratos (g)
                     </label>
                     <input
@@ -1613,12 +1613,12 @@ export const NutritionModule = () => {
                       required
                       value={formCarbs}
                       onChange={(e) => setFormCarbs(Number(e.target.value))}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-cyan-400"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-bold text-cyan-700"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs text-rose-400 mb-1">
+                    <label className="block text-xs text-rose-700 mb-1">
                       Grasas (g)
                     </label>
                     <input
@@ -1626,12 +1626,12 @@ export const NutritionModule = () => {
                       required
                       value={formFats}
                       onChange={(e) => setFormFats(Number(e.target.value))}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-rose-400"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-bold text-rose-700"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs text-blue-300 mb-1">
+                    <label className="block text-xs text-blue-700 mb-1">
                       Agua (Litros/día)
                     </label>
                     <input
@@ -1640,7 +1640,7 @@ export const NutritionModule = () => {
                       required
                       value={formWater}
                       onChange={(e) => setFormWater(Number(e.target.value))}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-blue-300"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-bold text-blue-700"
                     />
                   </div>
                 </div>

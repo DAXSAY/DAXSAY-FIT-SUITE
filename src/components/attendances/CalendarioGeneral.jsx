@@ -141,8 +141,8 @@ export const CalendarioGeneral = ({ onVerLista }) => {
                     sel ? "ring-2 ring-offset-1 ring-slate-900 border-transparent" : "border-slate-200"
                   } ${!n && !futuro ? "bg-slate-50" : ""}`}
                 >
-                  <span className={`text-xs font-bold ${f === hoy ? "bg-slate-900 text-white rounded px-1" : "text-slate-600"}`}>{Number(f.slice(8))}</span>
-                  {n > 0 && <span className="absolute bottom-1 right-1.5 text-base sm:text-lg font-black text-slate-900">{n}</span>}
+                  <span className={`text-xs font-bold ${f === hoy ? "bg-slate-900 text-white rounded px-1" : n > 0 ? "text-slate-800 rd-num-cal" : "text-slate-600"}`}>{Number(f.slice(8))}</span>
+                  {n > 0 && <span className="absolute bottom-1 right-1.5 text-base sm:text-lg font-black text-slate-900 rd-num-cal">{n}</span>}
                 </button>
               );
             })}

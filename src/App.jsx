@@ -33,6 +33,7 @@ import { AvisoIngreso } from "./components/attendances/AvisoIngreso";
 import { CorregirIngreso } from "./components/attendances/CorregirIngreso";
 import { AvisoStockBajo } from "./components/store/AvisoStockBajo";
 import { hayVentanaAbierta, cerrarVentanaSuperior } from "./utils/controlesVentana";
+import { moduloDeLaDireccion } from "./utils/ventanas";
 
 function MainAppContent() {
   const { currentUser, authChecked } = useGym();
@@ -107,11 +108,14 @@ function MainAppContent() {
     const inicio = userCanAccess(currentUser, base)
       ? base
       : getAllowedTabs(roleKey).find((t) => userCanAccess(currentUser, t)) || base;
-    tabInicio.current = inicio;
-    tabActual.current = inicio;
-    window.history.replaceState({ radical: inicio, raiz: true }, "");
-    window.history.pushState({ radical: inicio }, "");
-    setTabInterno(inicio);
+    // Ventana abierta para un módulo (?modulo=cash): empieza ahí
+    const pedido = moduloDeLaDireccion();
+    const arranque = pedido && userCanAccess(currentUser, pedido) ? pedido : inicio;
+    tabInicio.current = arranque;
+    tabActual.current = arranque;
+    window.history.replaceState({ radical: arranque, raiz: true }, "");
+    window.history.pushState({ radical: arranque }, "");
+    setTabInterno(arranque);
   }, [currentUser?.id]);
 
   // Verificando la sesión guardada con la API
@@ -242,7 +246,7 @@ function MainAppContent() {
         onOpenNewExpenseModal={() => setActiveTab("finance")}
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row w-full mx-auto">
+      <div className="flex-1 flex flex-col md:flex-row w-full mx-auto">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         <main className="flex-1 p-3 sm:p-5 lg:p-6 overflow-y-auto min-w-0">

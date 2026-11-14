@@ -4,14 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 
 import { SelectorObjetivos } from "../common/SelectorObjetivos";
-const OBJETIVOS = [
-  ["hipertrofia", "Ganancia muscular / Hipertrofia"],
-  ["perdida_peso", "Pérdida de grasa / peso"],
-  ["fuerza", "Aumento de fuerza"],
-  ["tonificacion", "Tonificación general"],
-  ["resistencia", "Resistencia"],
-  ["rehabilitacion", "Salud / Rehabilitación"],
-];
+
 
 export const EditMemberScreen = ({ member, onVolver }) => {
   const { updateMember, trainers } = useGym();

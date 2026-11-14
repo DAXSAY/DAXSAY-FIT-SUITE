@@ -958,7 +958,7 @@ const ReporteIngresos = ({ ventas = false }) => {
 // ============================================================
 // 3b. DEUDAS Y PENDIENTES DE PAGO
 // ============================================================
-const COLOR_ESTADO = { Vencida: "var(--color-red-600)", "Por vencer": "var(--color-amber-500)", "En plazo": "var(--color-blue-600)", "Sin fecha": "#94a3b8" };
+const COLOR_ESTADO = { Vencida: "var(--color-red-600)", "Por vencer": "var(--color-amber-600)", "En plazo": "var(--color-blue-600)", "Sin fecha": "#94a3b8" };
 const TRAMOS = [
   ["Vencida +30 días", (d) => d < -30],
   ["Vencida 8-30 días", (d) => d < -7 && d >= -30],

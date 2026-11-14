@@ -25,6 +25,8 @@ import { CampanaAvisos, SeccionAvisos, useAvisos } from "./Avisos";
 import { CrmCampana } from "../crm/CrmAvisos";
 import { PanelLateral, CabeceraPanel, fechaHoyTexto } from "./PanelLateral";
 import { CintaAvisos } from "./CintaAvisos";
+import { PistaMarcar, TEXTO_MARCAR } from "./PistaMarcar";
+import { useMenuMovil, esPantallaAngosta } from "../../utils/menu";
 import { candidatosPorCodigo } from "../../utils/buscarPersona";
 import { ListaCandidatos } from "./ListaCandidatos";
 import { useMenuPlegado } from "../../utils/menu";
@@ -56,6 +58,7 @@ export const Header = ({
   } = useGym();
   const role = getRole(currentUser.role);
   const [menuPlegado, alternarMenu] = useMenuPlegado();
+  const [, setMenuMovil] = useMenuMovil();
   // Alto de la barra superior: el menú lateral se fija justo debajo
   useEffect(() => {
     const h = document.querySelector(".rd-cabecera-app");
@@ -215,16 +218,16 @@ export const Header = ({
 
   return (
     <header className="rd-cabecera-app sticky top-0 z-30 rd-vidrio border-b border-slate-200/80 pl-4 lg:pl-6 pr-2 lg:pr-3 py-2 text-slate-800 shadow-[0_1px_0_rgba(16,181,167,0.15)] transition-all">
-      <div className="w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="w-full mx-auto flex flex-col md:flex-row md:flex-wrap lg:flex-nowrap items-center justify-between gap-3 md:gap-y-2">
         {/* Brand logo */}
         <div className="flex items-center justify-between w-full md:w-auto gap-3">
           <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={alternarMenu}
+            onClick={() => (esPantallaAngosta() ? setMenuMovil((v) => !v) : alternarMenu())}
             title={menuPlegado ? "Mostrar el menú" : "Ocultar el menú (solo íconos)"}
             aria-label="Mostrar u ocultar el menú"
-            className="hidden lg:flex w-9 h-9 items-center justify-center rounded-xl text-slate-500 hover:text-blue-600 hover:bg-slate-100 cursor-pointer transition-colors"
+            className="flex md:hidden lg:flex w-9 h-9 items-center justify-center rounded-xl text-slate-500 hover:text-blue-600 hover:bg-slate-100 cursor-pointer transition-colors"
           >
             <IconoMenu className="w-5 h-5" />
           </button>
@@ -270,11 +273,12 @@ export const Header = ({
 
         {/* Middle Section: Staff Check-in bar OR Student Quick Navigator */}
         {can("attendances") ? (
-          <div className={`w-full relative ${!isStudent && (can("crm") || can("alerts")) ? "md:w-80 xl:w-[28rem] 2xl:w-[32rem] shrink-0" : "md:flex-1 md:max-w-[42rem]"}`}>
+          <div className={`w-full relative ${!isStudent && (can("crm") || can("alerts")) ? "md:flex-1 md:min-w-[13rem] lg:flex-none lg:w-[24rem] xl:w-[28rem] 2xl:w-[32rem]" : "md:flex-1 md:max-w-[42rem]"}`}>
             <form onSubmit={handleQuickCheckIn} className="relative">
               <input
                 type="text"
-                placeholder="Marcar asistencia: código, DNI o pase"
+                aria-label={TEXTO_MARCAR}
+                title={TEXTO_MARCAR}
                 value={searchCheckIn}
                 onChange={(e) => {
                   setSearchCheckIn(e.target.value);
@@ -292,6 +296,7 @@ export const Header = ({
                 className="rd-campo-checkin w-full pl-9 pr-24 py-2 rounded-xl text-sm font-semibold focus:outline-none transition-all"
               />
 
+              <PistaMarcar visible={!searchCheckIn} corta className="left-9 right-24 text-sm text-slate-400" />
               <UserCheck className="rd-icono-checkin w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <button
                 type="submit"
@@ -335,6 +340,8 @@ export const Header = ({
 
         {/* Cinta de avisos (CRM y gimnasio) */}
         {!isStudent && (can("crm") || can("alerts")) && <CintaAvisos verCrm={can("crm")} verGym={can("alerts")} />}
+        {/* Pantallas medianas o angostas: la cinta de avisos va en su propia fila */}
+        {!isStudent && (can("crm") || can("alerts")) && <CintaAvisos fila verCrm={can("crm")} verGym={can("alerts")} />}
 
         {/* Accesos rápidos y avisos */}
         <div className="flex items-center gap-1.5 w-full md:w-auto justify-end shrink-0 md:ml-auto">

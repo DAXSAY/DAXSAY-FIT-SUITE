@@ -9,7 +9,6 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Receipt,
-  Trash2,
   PieChart as PieIcon,
   CreditCard,
   Wrench,
@@ -23,6 +22,7 @@ import {
   Upload,
   FileCheck,
   BarChart3,
+  PencilLine,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import {
@@ -53,6 +53,7 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
     transactions,
     addTransaction,
     deleteTransaction,
+    correctTransaction,
     metrics,
     payrollEntries,
     payStaffSalary,
@@ -61,6 +62,7 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
   } = useGym();
 
   const [activeTab, setActiveTab] = useState("ledger");
+  const [corrigiendo, setCorrigiendo] = useState(null);
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -1133,19 +1135,11 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                         </span>
 
                         <button
-                          onClick={() => {
-                            if (
-                              confirm(
-                                `¿Eliminar la transacción "${t.description}"?`,
-                              )
-                            ) {
-                              deleteTransaction(t.id);
-                            }
-                          }}
-                          className="text-gray-400 hover:text-rose-600 p-1 cursor-pointer"
-                          title="Eliminar movimiento"
+                          onClick={() => setCorrigiendo(t)}
+                          className="text-gray-400 hover:text-amber-600 p-1 cursor-pointer"
+                          title="Corregir o anular este movimiento"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <PencilLine className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -1965,6 +1959,94 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
           </div>
         </div>
       )}
+    {corrigiendo && (
+        <CorregirMovimiento
+          mov={corrigiendo}
+          onCerrar={() => setCorrigiendo(null)}
+          onCorregir={(datos) => correctTransaction(corrigiendo.id, datos)}
+          onAnular={(motivo) => deleteTransaction(corrigiendo.id, motivo)}
+        />
+      )}
+    </div>
+  );
+};
+
+// Corregir (monto, descripción, método) o anular un ingreso / gasto registrado a mano
+const METODOS = [["efectivo", "Efectivo"], ["yape_plin", "Yape / Plin"], ["tarjeta", "Tarjeta"], ["transferencia", "Transferencia"]];
+const CorregirMovimiento = ({ mov, onCerrar, onCorregir, onAnular }) => {
+  const [modo, setModo] = useState("corregir");
+  const [monto, setMonto] = useState(mov.amount || 0);
+  const [desc, setDesc] = useState(mov.description || "");
+  const [metodo, setMetodo] = useState(mov.paymentMethod || "efectivo");
+  const [motivo, setMotivo] = useState("");
+  const [error, setError] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const enviar = async (e) => {
+    e.preventDefault();
+    if (motivo.trim().length < 3) return setError("Escribe el motivo (queda registrado en la auditoría).");
+    setEnviando(true);
+    setError("");
+    try {
+      if (modo === "corregir") await onCorregir({ amount: Number(monto), description: desc, paymentMethod: metodo, motivo });
+      else await onAnular(motivo);
+      onCerrar();
+    } catch (er) {
+      setError(er.message);
+    } finally {
+      setEnviando(false);
+    }
+  };
+  const ingreso = mov.type === "income";
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4">
+      <form onSubmit={enviar} className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-xl p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={onCerrar} className="px-3 py-1.5 rounded-xl border border-slate-200 text-sm font-bold cursor-pointer">← Volver</button>
+          <div className="min-w-0 flex-1">
+            <b className="block text-slate-900">¿Hubo un error en este movimiento?</b>
+            <span className="text-xs text-slate-500 truncate block">{ingreso ? "Ingreso" : "Gasto"} · S/ {Number(mov.amount || 0).toFixed(2)} · {mov.description}</span>
+          </div>
+          <button type="button" onClick={onCerrar} title="Cerrar" className="w-8 h-8 rounded-full border border-slate-200 text-slate-500 cursor-pointer">✕</button>
+        </div>
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-100 text-sm font-bold">
+          <button type="button" onClick={() => setModo("corregir")} className={`py-2 rounded-lg cursor-pointer ${modo === "corregir" ? "bg-white shadow-sm text-amber-700" : "text-slate-500"}`}>✏️ Corregir</button>
+          <button type="button" onClick={() => setModo("anular")} className={`py-2 rounded-lg cursor-pointer ${modo === "anular" ? "bg-white shadow-sm text-rose-700" : "text-slate-500"}`}>✕ Anular</button>
+        </div>
+        {modo === "corregir" ? (
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-sm">
+              <span className="font-bold text-slate-700">Monto (S/)</span>
+              <input type="number" min="0.01" step="0.01" value={monto} onChange={(e) => setMonto(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-black" />
+            </label>
+            <label className="block text-sm">
+              <span className="font-bold text-slate-700">Método de pago</span>
+              <select value={metodo} onChange={(e) => setMetodo(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+                {METODOS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </label>
+            <label className="block text-sm col-span-2">
+              <span className="font-bold text-slate-700">Descripción</span>
+              <input value={desc} onChange={(e) => setDesc(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 text-sm" />
+            </label>
+          </div>
+        ) : (
+          <p className="p-3 rounded-xl text-sm border bg-rose-50 border-rose-200 text-rose-800">
+            Se quita de la caja y de los reportes. Queda en la auditoría quién lo anuló, cuándo y por qué.
+          </p>
+        )}
+        <label className="block text-sm">
+          <span className="font-bold text-slate-700">Motivo *</span>
+          <input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder={modo === "corregir" ? "Ej. se digitó 50 en vez de 15" : "Ej. se registró dos veces"} className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 text-sm" />
+        </label>
+        <p className="text-[11px] text-slate-500">Matrículas y ventas se corrigen desde su origen (ficha del alumno o ticket). Un movimiento de un turno de caja ya cerrado no se cambia: registra un ajuste en el turno actual.</p>
+        {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
+        <div className="flex gap-2">
+          <button type="button" onClick={onCerrar} className="flex-1 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-700 cursor-pointer">Cancelar</button>
+          <button disabled={enviando} className={`flex-1 py-2.5 rounded-xl font-black text-white cursor-pointer disabled:opacity-60 ${modo === "corregir" ? "bg-amber-600" : "bg-rose-600"}`}>
+            {enviando ? "Guardando…" : modo === "corregir" ? "Guardar corrección" : "Anular movimiento"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

@@ -7,6 +7,7 @@ import React, {
   useRef,
 } from "react";
 import { INITIAL_PHYSIO_TEMPLATES } from "../data/physioTemplates";
+import { alCambiarEnOtraVentana } from "../utils/ventanas";
 import { api, guardarToken, obtenerToken, alPerderSesion } from "../api/cliente";
 import {
   INITIAL_ROUTINES,
@@ -322,10 +323,21 @@ export const GymProvider = ({ children }) => {
         loadServerData(true);
       }
     }, 10000);
+    // Otra ventana guardó algo: se actualiza esta al instante (medio segundo después)
+    let espera = null;
+    const quitarCanal = alCambiarEnOtraVentana(() => {
+      clearTimeout(espera);
+      espera = setTimeout(() => {
+        ultima = Date.now();
+        loadServerData(true);
+      }, 500);
+    });
     window.addEventListener("focus", refrescar);
     document.addEventListener("visibilitychange", refrescar);
     return () => {
       clearInterval(t);
+      quitarCanal();
+      clearTimeout(espera);
       window.removeEventListener("focus", refrescar);
       document.removeEventListener("visibilitychange", refrescar);
     };
@@ -802,13 +814,16 @@ export const GymProvider = ({ children }) => {
 
   const addTransaction = (txData) => persistTransaction({ ...txData, id: undefined });
 
-  const deleteTransaction = async (id) => {
-    try {
-      if (!String(id).startsWith("tmp-")) await api(`/caja/${id}`, { method: "DELETE" });
-      setTransactions((prev) => prev.filter((t) => t.id !== id));
-    } catch (e) {
-      alert(e.message);
-    }
+  // Anular un movimiento registrado por error (queda en la auditoría con su motivo)
+  const deleteTransaction = async (id, motivo) => {
+    if (!String(id).startsWith("tmp-")) await api(`/caja/${id}`, { method: "DELETE", body: { motivo } });
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  };
+  // Corregir monto, descripción o método de pago de un movimiento
+  const correctTransaction = async (id, datos) => {
+    const m = await api(`/caja/${id}`, { method: "PUT", body: datos });
+    setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...m } : t)));
+    return m;
   };
 
   // Notification Rule Management
@@ -1577,6 +1592,7 @@ export const GymProvider = ({ children }) => {
         processPOSSale,
         addTransaction,
         deleteTransaction,
+        correctTransaction,
         updateNotificationRule,
         toggleNotificationRule,
         addNotificationLog,

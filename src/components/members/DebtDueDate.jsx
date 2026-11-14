@@ -56,7 +56,7 @@ export const DebtDueDatePicker = ({ value, onChange, membershipEnd, required = t
 
 const ESTILOS = {
   vencida: "bg-rose-600 text-white",
-  por_vencer: "bg-amber-500 text-white",
+  por_vencer: "bg-amber-100 text-amber-800 border border-amber-300",
   al_dia: "bg-rose-50 text-rose-700 border border-rose-200",
   sin_fecha: "bg-rose-50 text-rose-700 border border-rose-200",
 };

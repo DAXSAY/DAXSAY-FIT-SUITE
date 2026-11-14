@@ -373,7 +373,7 @@ export const MembershipsPlans = () => {
             {porMes && p.durationDays > 31 && (
               <p className="text-sm font-bold text-white/90 flex items-center gap-1.5">
                 {soles(porMes)} al mes
-                {ahorro > 0 && <span className="bg-emerald-400 text-emerald-950 rounded-md px-1.5 py-0.5 text-[10px] font-black leading-none">Ahorra {ahorro}%</span>}
+                {ahorro > 0 && <span className="bg-emerald-600 text-white rounded-md px-1.5 py-0.5 text-[10px] font-black leading-none">Ahorra {ahorro}%</span>}
               </p>
             )}
             {Number(p.durationDays) > 0 && <p className="text-xs font-semibold text-white/75">{soles(p.price / Number(p.durationDays))} al día</p>}
@@ -462,16 +462,16 @@ export const MembershipsPlans = () => {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3 mt-5 pt-5 border-t border-white/10">
-          <div className="flex bg-white/10 rounded-xl p-1">
+          <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1">
             <button
               onClick={() => setVista("tarjetas")}
-              className={`px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 cursor-pointer ${vista === "tarjetas" ? "bg-white text-slate-900" : "text-white/80"}`}
+              className={`px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 cursor-pointer ${vista === "tarjetas" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
             >
               <LayoutGrid className="w-4 h-4" /> Tarjetas
             </button>
             <button
               onClick={() => setVista("comparar")}
-              className={`px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 cursor-pointer ${vista === "comparar" ? "bg-white text-slate-900" : "text-white/80"}`}
+              className={`px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 cursor-pointer ${vista === "comparar" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
             >
               <Table2 className="w-4 h-4" /> Comparar
             </button>
@@ -769,16 +769,22 @@ export const MembershipsPlans = () => {
                       }`}
                     />
                   ))}
+                  {esColorLibre(form.color) && (
+                    <span
+                      title={`Color personalizado ${form.color.toUpperCase()}`}
+                      className="w-9 h-9 rounded-full ring-4 ring-offset-2 ring-slate-400 scale-110"
+                      style={{ background: form.color }}
+                    />
+                  )}
+                  {/* El «+» siempre está: para probar otro color cuando quieras */}
                   <BotonColor
-                    title="Elegir cualquier color"
-                    valor={form.color}
-                    activo={esColorLibre(form.color)}
+                    title="Elegir otro color"
+                    valor={esColorLibre(form.color) ? form.color : "#0ea7b3"}
+                    activo={false}
                     onCambiar={(c) => setForm((f) => ({ ...f, color: c }))}
-                    className={`relative w-9 h-9 rounded-full cursor-pointer flex items-center justify-center border-2 border-dashed border-slate-400 text-slate-500 hover:scale-110 transition-transform ${
-                      esColorLibre(form.color) ? "ring-4 ring-offset-2 ring-slate-400" : ""
-                    }`}
+                    className="relative w-9 h-9 rounded-full cursor-pointer flex items-center justify-center border-2 border-dashed border-slate-400 text-slate-500 hover:scale-110 transition-transform"
                   >
-                    {!esColorLibre(form.color) && <Plus className="w-4 h-4" />}
+                    <Plus className="w-4 h-4" />
                   </BotonColor>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1.5">

@@ -31,7 +31,7 @@ export const LoginScreen = () => {
   return (
     <div className="min-h-screen flex bg-slate-950 text-white font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Panel izquierdo: marca */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-marino-800 via-marino-950 to-[#04101e] p-12 flex-col justify-between">
+      <div className="rd-panel-marca hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-marino-800 via-marino-950 to-[#04101e] p-12 flex-col justify-between">
         <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)", backgroundSize: "42px 42px" }} />
         <img src="/logo-radical.png" alt="" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[28rem] max-w-[80%] opacity-[0.07] rounded-full pointer-events-none" />
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-blue-400/25 blur-3xl" />
@@ -45,7 +45,7 @@ export const LoginScreen = () => {
         <div className="relative space-y-4 max-w-md">
           <h1 className="font-['Outfit',sans-serif] text-4xl font-extrabold leading-tight">
             Entrena, mide y <span className="text-blue-300">avanza</span>.
-            <span className="block text-2xl font-semibold text-slate-300 mt-1">Sistema de gestión del gimnasio</span>
+            <span className="rd-sub-marca block text-2xl font-semibold mt-1">Sistema de gestión del gimnasio</span>
           </h1>
           <p className="text-slate-300/90 text-sm leading-relaxed">
             Alumnos, membresías, rutinas, nutrición, fisioterapia, asistencias,
@@ -62,7 +62,7 @@ export const LoginScreen = () => {
 
       {/* Panel derecho: formulario */}
       <div className="relative flex-1 flex items-center justify-center p-6 rd-fondo text-slate-900">
-        <div className="absolute top-4 right-4"><BotonTema /></div>
+        <div className="absolute top-2 right-6 z-10"><BotonTema vertical /></div>
         <div className="w-full max-w-sm">
           <div className="flex lg:hidden items-center justify-center gap-2.5 mb-8">
             <LogoRadical size={44} />

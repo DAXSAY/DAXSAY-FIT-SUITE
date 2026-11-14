@@ -70,7 +70,8 @@ export function filtrarAlumnos(lista = [], texto) {
 /** Una sola persona del personal por contrato (prefiere el vigente) */
 const unicos = (contratos) => {
   const mapa = new Map();
-  contratos.forEach((c) => {
+  // Un contrato terminado o anulado ya no marca asistencia
+  contratos.filter((c) => c.status !== "terminated" && c.status !== "annulled").forEach((c) => {
     const k = String(c.staffId || c.dni || c.id);
     const prev = mapa.get(k);
     if (!prev || (c.status === "active" && prev.status !== "active")) mapa.set(k, c);

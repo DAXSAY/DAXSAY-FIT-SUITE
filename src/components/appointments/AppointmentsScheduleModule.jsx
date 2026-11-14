@@ -1495,7 +1495,7 @@ export const AppointmentsScheduleModule = () => {
                   <div
                     className={`p-5 text-white ${formService === "nutrition" ? "bg-emerald-600" : formService ? "bg-cyan-700" : "bg-slate-700"}`}
                   >
-                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">Resumen</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-white">Resumen</span>
                     <p className="text-3xl font-black mt-1">{formSlot}</p>
                     <p className="text-sm capitalize">{fechaLarga(formDate)}</p>
                   </div>

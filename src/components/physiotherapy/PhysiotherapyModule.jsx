@@ -1327,6 +1327,10 @@ export const PhysiotherapyModule = () => {
 
       {activeMainView === "textual" ? (
         <PhysioTextualRecordsView
+          records={physioRecords}
+          members={members}
+          onSelectSessionToEdit={(session) => handleEditSession(session)}
+          onOpenReportModal={(session) => setReportModalSession(session)}
           onNewEvaluation={() => handleOpenNewSession()}
         />
       ) : (

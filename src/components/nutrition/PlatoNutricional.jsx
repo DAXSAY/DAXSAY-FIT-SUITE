@@ -609,7 +609,7 @@ export const EditorPlatos = ({ value, onChange, sexo, metas, comidas = [], setCo
   const idxComida = activo ? comidaDe(activo) : -1;
 
   return (
-    <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/70 to-white p-3 sm:p-4 space-y-3">
+    <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-3 sm:p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm font-extrabold text-emerald-900">🍽️ Comidas del día</p>

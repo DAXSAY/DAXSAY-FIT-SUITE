@@ -16,7 +16,7 @@ const ACCION = { llamada: "Llamar a", whatsapp: "Escribir a", visita: "Recibe a"
 const primer = (n) => String(n || "").trim().split(/\s+/).slice(0, 2).join(" ");
 const CINCO_MIN = 5 * 60 * 1000;
 
-export const CintaAvisos = ({ verCrm = true, verGym = true }) => {
+export const CintaAvisos = ({ fila = false, verCrm = true, verGym = true }) => {
   const d = useAvisosCrm();
   const { renewalAlerts = [], lowStockProducts = [] } = useGym();
   const [destello, setDestello] = useState(false);
@@ -65,7 +65,7 @@ export const CintaAvisos = ({ verCrm = true, verGym = true }) => {
   const gym = items.filter((x) => x.tipo === "gym");
   if (!items.length) {
     return (
-      <div className="hidden lg:flex flex-1 min-w-0 items-center justify-center text-xs font-semibold text-slate-400">
+      <div className={`${fila ? "hidden" : "hidden lg:flex"} flex-1 min-w-0 items-center justify-center text-xs font-semibold text-slate-400`}>
         ✓ Sin avisos pendientes
       </div>
     );
@@ -74,7 +74,7 @@ export const CintaAvisos = ({ verCrm = true, verGym = true }) => {
 
   return (
     <div
-      className={`hidden lg:flex flex-1 min-w-[12rem] items-center gap-1.5 rounded-xl pl-1.5 pr-1 py-0.5 transition-all ${
+      className={`${fila ? "flex lg:hidden w-full basis-full order-last" : "hidden lg:flex flex-1 min-w-[12rem]"} items-center gap-1.5 rounded-xl pl-1.5 pr-1 py-0.5 transition-all ${
         destello ? "rd-destello ring-2 ring-rose-500 rd-cinta-fondo-alerta" : "rd-cinta-fondo"
       }`}
     >

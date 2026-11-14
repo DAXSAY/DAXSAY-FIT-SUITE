@@ -200,13 +200,31 @@ function validarFicha(d, parcial = false) {
     throw new ErrorHttp(400, "Ingresa un celular válido");
   }
 }
-const OBJETIVOS = ["hipertrofia", "perdida_peso", "fuerza", "resistencia", "tonificacion", "rehabilitacion"];
+// Objetivos del alumno: la misma lista que las rutinas (src/utils/rutinas.js)
+const OBJETIVOS_TODOS = ["hipertrofia", "perdida_peso", "recomposicion", "fuerza", "potencia", "tonificacion", "resistencia",
+  "acondicionamiento", "funcional", "movilidad", "postura", "rehabilitacion", "adulto_mayor", "deportivo"];
+// Si la base aún no tiene los objetivos nuevos (falta el script 35), se guarda el más parecido
+const EQUIVALENTE = {
+  recomposicion: "perdida_peso", potencia: "fuerza", acondicionamiento: "resistencia", funcional: "resistencia",
+  movilidad: "rehabilitacion", postura: "rehabilitacion", adulto_mayor: "rehabilitacion", deportivo: "fuerza",
+};
+let OBJETIVOS = ["hipertrofia", "perdida_peso", "fuerza", "resistencia", "tonificacion", "rehabilitacion"];
+consultar(
+  "SELECT COLUMN_TYPE AS t FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'alumnos' AND COLUMN_NAME = 'objetivo'",
+)
+  .then(([c]) => {
+    const vals = [...String(c?.t || "").matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    if (vals.length) OBJETIVOS = vals;
+  })
+  .catch(() => {});
 // Uno o varios objetivos ("perdida_peso,tonificacion" o un arreglo) -> texto para la columna SET
 const objetivosValidos = (v) => {
   const l = (Array.isArray(v) ? v : String(v || "").split(","))
     .map((x) => String(x).trim())
     .map((x) => (x === "salud_rehabilitacion" ? "rehabilitacion" : x))
-    .filter((x, i, a) => OBJETIVOS.includes(x) && a.indexOf(x) === i);
+    .filter((x) => OBJETIVOS_TODOS.includes(x))
+    .map((x) => (OBJETIVOS.includes(x) ? x : EQUIVALENTE[x] || "tonificacion"))
+    .filter((x, i, a) => a.indexOf(x) === i);
   return l.length ? l.join(",") : null;
 };
 const vacio = (v) => (v === undefined || v === null || String(v).trim() === "" ? null : String(v).trim());

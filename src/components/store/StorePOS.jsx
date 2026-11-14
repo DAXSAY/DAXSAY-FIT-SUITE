@@ -72,6 +72,13 @@ export const PRESET_PRODUCT_IMAGES = [
   },
 ];
 
+const TONO_CAJA = {
+  emerald: ["bg-emerald-50 border-emerald-200", "text-emerald-700", "text-emerald-800"],
+  amber: ["bg-amber-50 border-amber-200", "text-amber-700", "text-amber-800"],
+  rose: ["bg-rose-50 border-rose-200", "text-rose-700", "text-rose-800"],
+  slate: ["bg-slate-50 border-slate-200", "text-slate-600", "text-slate-800"],
+};
+
 export const StorePOS = ({ onAbrirCaja }) => {
   const {
     currentUser,
@@ -1191,30 +1198,44 @@ export const StorePOS = ({ onAbrirCaja }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">
-                    {editingProduct ? "Stock actual (si cambia, queda como ajuste en el kárdex)" : "Stock inicial"}
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={prodStock}
-                    onChange={(e) => setProdStock(Number(e.target.value))}
-                    className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
-                  />
-                </div>
+              <div className="space-y-2.5">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">
+                      {editingProduct ? "Stock actual (si cambia, queda como ajuste en el kárdex)" : "Stock inicial"}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={prodStock}
+                      onChange={(e) => setProdStock(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
+                    />
+                  </div>
 
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">
+                      Alerta de Stock Mínimo
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={prodMinStock}
+                      onChange={(e) => setProdMinStock(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
+                    />
+                  </div>
+                </div>
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1">
-                    Alerta de Stock Mínimo
+                    Descripción Breve
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={prodMinStock}
-                    onChange={(e) => setProdMinStock(Number(e.target.value))}
-                    className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
+                  <textarea
+                    rows={4}
+                    placeholder="Ej. Botella 750ml con tapa deportiva"
+                    value={prodDesc}
+                    onChange={(e) => setProdDesc(e.target.value)}
+                    className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 resize-none focus:outline-none focus:border-blue-600 focus:bg-white"
                   />
                 </div>
               </div>
@@ -1317,18 +1338,129 @@ export const StorePOS = ({ onAbrirCaja }) => {
                 })()}
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Descripción Breve
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej. Botella 750ml con tapa deportiva"
-                  value={prodDesc}
-                  onChange={(e) => setProdDesc(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
-                />
+              {/* Precio sugerido y productos parecidos: ayudan a fijar el precio */}
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <span className="block text-slate-800 font-bold text-xs mb-2">Precio sugerido según margen</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {[25, 35, 50].map((m) => {
+                    const sug = Number(prodCost) > 0 ? Math.ceil((Number(prodCost) / (1 - m / 100)) * 2) / 2 : 0;
+                    const activo = sug > 0 && Number(prodPrice) === sug;
+                    return (
+                      <button key={m} type="button" disabled={!sug} onClick={() => setProdPrice(sug)}
+                        className={`rounded-lg border px-2 py-1.5 text-left cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${activo ? "bg-blue-50 border-blue-300" : "bg-white border-gray-200 hover:border-blue-300"}`}>
+                        <span className="block text-[10px] font-bold uppercase text-slate-500">Margen {m} %</span>
+                        <span className="block text-sm font-black font-mono text-slate-900">{sug ? `S/ ${sug.toFixed(2)}` : "—"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1.5 text-[11px] text-slate-500">Toca uno para usarlo como precio de venta (se calcula desde el costo de compra).</p>
               </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <span className="block text-slate-800 font-bold text-xs mb-2">Productos parecidos en tu tienda</span>
+                {(() => {
+                  const parecidos = (products || []).filter((x) => x.category === prodCategory && (!editingProduct || x.id !== editingProduct.id)).slice(0, 3);
+                  if (!parecidos.length) return <p className="text-[11px] text-slate-500">Aún no hay otros productos en esta categoría.</p>;
+                  return (
+                    <ul className="space-y-1">
+                      {parecidos.map((x) => (
+                        <li key={x.id} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="truncate text-slate-700">{x.name}</span>
+                          <span className="shrink-0 font-mono font-bold text-slate-900">S/ {Number(x.salePrice || 0).toFixed(2)} <span className="font-sans font-semibold text-slate-500">· {x.stock ?? 0} un.</span></span>
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                })()}
+              </div>
+
+              {/* Vista previa y rentabilidad: así se verá en la tienda y cuánto deja */}
+              {(() => {
+                const costo = Number(prodCost) || 0;
+                const precio = Number(prodPrice) || 0;
+                const stock = Number(prodStock) || 0;
+                const gan = precio - costo;
+                const margen = precio > 0 ? (gan / precio) * 100 : 0;
+                const tono = gan <= 0 ? "rose" : margen < 20 ? "amber" : "emerald";
+                const cat = categories.find((c) => c.id === prodCategory);
+                return (
+                  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-[230px_1fr] gap-4 pt-3 border-t border-gray-200">
+                    <div>
+                      <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Así se verá en la tienda</span>
+                      <div className="p-2.5 rounded-xl border border-gray-200 bg-white shadow-xs">
+                        <div className="w-full h-24 bg-gray-100 rounded-lg mb-1.5 overflow-hidden flex items-center justify-center border border-gray-100">
+                          {prodImage ? <img src={prodImage} alt="" className="w-full h-full object-cover" onError={(e) => (e.target.style.display = "none")} /> : <span className="text-3xl">{cat?.icon || "📦"}</span>}
+                        </div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase truncate">{prodBrand || "Marca"}</span>
+                          <span className="shrink-0 text-[10px] font-bold px-1 rounded border bg-emerald-50 text-emerald-700 border-emerald-200">{stock} un.</span>
+                        </div>
+                        <p className="text-xs font-bold text-slate-900 leading-tight line-clamp-2 min-h-[2rem]">{prodName || "Nombre del producto"}</p>
+                        <p className="text-sm font-black text-blue-700 mt-1 font-mono">S/ {precio.toFixed(2)}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Rentabilidad</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {[
+                          ["Ganas por unidad", `S/ ${gan.toFixed(2)}`, tono],
+                          ["Margen", `${margen.toFixed(0)} %`, tono],
+                          ["Inviertes en stock", `S/ ${(costo * stock).toFixed(2)}`, "slate"],
+                          ["Si vendes todo", `S/ ${(gan * stock).toFixed(2)}`, tono],
+                        ].map(([t, v, c]) => (
+                          <div key={t} className={`rounded-xl border p-2.5 ${TONO_CAJA[c][0]}`}>
+                            <span className={`block text-[10px] font-bold uppercase ${TONO_CAJA[c][1]}`}>{t}</span>
+                            <span className={`block text-base font-black font-mono ${TONO_CAJA[c][2]}`}>{v}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <ul className="mt-2.5 space-y-1 text-[11px] text-slate-600">
+                        <li>{gan <= 0 ? "⚠️ El precio de venta no cubre el costo: revisa los montos." : margen < 20 ? "⚠️ Margen bajo: para suplementos se suele trabajar sobre 25–40 %." : "✓ Buen margen para este tipo de producto."}</li>
+                        <li>🔔 Te avisaremos cuando queden {Number(prodMinStock) || 0} unidades o menos (alerta de stock en la campana y en Ventas).</li>
+                        <li>📦 Cada entrada, venta y anulación queda en el kárdex del producto.</li>
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Contexto de la tienda: la categoría elegida y lo que falta reponer */}
+              {(() => {
+                const enCat = (products || []).filter((x) => x.category === prodCategory);
+                const prom = enCat.length ? enCat.reduce((a, x) => a + Number(x.salePrice || 0), 0) / enCat.length : 0;
+                const stockCat = enCat.reduce((a, x) => a + Number(x.stock || 0), 0);
+                const reponer = (lowStockProducts || []).slice(0, 4);
+                return (
+                  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-gray-200">
+                    <div>
+                      <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1.5">En esta categoría</span>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[["Productos", enCat.length], ["Precio promedio", `S/ ${prom.toFixed(2)}`], ["Unidades en stock", stockCat]].map(([t, v]) => (
+                          <div key={t} className="rounded-xl border border-gray-200 bg-white p-2.5">
+                            <span className="block text-[10px] font-bold uppercase text-slate-500">{t}</span>
+                            <span className="block text-base font-black font-mono text-slate-900">{v}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Por reponer en la tienda</span>
+                      {reponer.length ? (
+                        <ul className="rounded-xl border border-amber-200 bg-amber-50 divide-y divide-amber-100">
+                          {reponer.map((x) => (
+                            <li key={x.id} className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs">
+                              <span className="truncate text-slate-800">{x.name}</span>
+                              <span className="shrink-0 font-bold text-amber-800">quedan {x.stock ?? 0}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-xs font-semibold text-emerald-800">✓ Todo el stock está por encima de su mínimo.</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="lg:col-span-2 flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
                 <button

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { PistaMarcar, TEXTO_MARCAR } from "../common/PistaMarcar";
 import {
   FileCheck2,
   UserCheck,
@@ -459,9 +460,11 @@ export const AttendanceModule = () => {
         >
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <PistaMarcar visible={!quickInput} className="left-10 right-4 text-sm text-slate-400" />
             <input
               type="text"
-              placeholder="Alumno: DF-1 o 1 · Personal: 1-COACH, 1-NUTRI · DNI o pase libre"
+              aria-label={TEXTO_MARCAR}
+              title={TEXTO_MARCAR}
               value={quickInput}
               onChange={(e) => (setQuickInput(e.target.value), setPunchIdx(0), setVerPunch(true))}
               onKeyDown={(e) => {
@@ -1151,6 +1154,8 @@ export const AttendanceModule = () => {
                 />
               </div>
 
+              <PreviaIngreso alumno={members.find((m) => String(m.id) === String(modalStudentId))} asistencias={attendances} />
+
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
@@ -1171,6 +1176,60 @@ export const AttendanceModule = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+/** Vista previa al registrar un ingreso: estado del alumno elegido y los últimos ingresos de hoy */
+const PreviaIngreso = ({ alumno, asistencias = [] }) => {
+  const hoy = hoyISO();
+  const deHoy = asistencias.filter((a) => a.date === hoy && a.userRole === "student").slice(-6).reverse();
+  const suyas = alumno ? asistencias.filter((a) => String(a.userId) === String(alumno.id) || a.userName === alumno.fullName).slice(-5).reverse() : [];
+  const estado = !alumno ? null : alumno.status === "expired" ? ["Membresía vencida", "bg-rose-50 text-rose-800 border-rose-200"] : alumno.status === "frozen" ? ["Congelado", "bg-sky-50 text-sky-800 border-sky-200"] : alumno.status === "expiring_soon" ? ["Por vencer", "bg-amber-50 text-amber-800 border-amber-200"] : ["Activo", "bg-emerald-50 text-emerald-800 border-emerald-200"];
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+        <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Estado del alumno</span>
+        {alumno ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <b className="text-sm text-slate-900 truncate">{alumno.fullName}</b>
+              <span className={`shrink-0 px-2 py-0.5 rounded-full border text-[11px] font-bold ${estado[1]}`}>{estado[0]}</span>
+            </div>
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[12px]">
+              <dt className="text-slate-500">Código</dt><dd className="font-bold text-slate-800 text-right">{alumno.codeLabel || "—"}</dd>
+              <dt className="text-slate-500">Plan</dt><dd className="font-bold text-slate-800 text-right truncate">{alumno.planName || "—"}</dd>
+              <dt className="text-slate-500">Vence</dt><dd className="font-bold text-slate-800 text-right">{fc(alumno.membershipEndDate) || "—"}</dd>
+              <dt className="text-slate-500">Deuda</dt><dd className={`font-bold text-right ${Number(alumno.debt) > 0 ? "text-rose-700" : "text-emerald-700"}`}>{Number(alumno.debt) > 0 ? `S/ ${Number(alumno.debt).toFixed(2)}` : "Al día"}</dd>
+            </dl>
+            <div>
+              <span className="block text-[11px] font-bold text-slate-500 mb-1">Últimas asistencias</span>
+              {suyas.length ? (
+                <div className="flex flex-wrap gap-1">{suyas.map((a) => <span key={a.id} className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[11px] font-semibold text-slate-700">{fc(a.date)}</span>)}</div>
+              ) : (
+                <p className="text-[11px] text-slate-500">Sin asistencias registradas.</p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <p className="text-[12px] text-slate-500">Elige al alumno para ver su plan, vencimiento, deuda y últimas asistencias antes de validar.</p>
+        )}
+      </div>
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+        <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Ingresos de hoy ({asistencias.filter((a) => a.date === hoy && a.userRole === "student").length})</span>
+        {deHoy.length ? (
+          <ul className="divide-y divide-slate-200">
+            {deHoy.map((a) => (
+              <li key={a.id} className="flex items-center justify-between gap-2 py-1.5 text-[12px]">
+                <span className="truncate text-slate-800 font-semibold">{a.userName || a.memberName || "Alumno"}</span>
+                <span className="shrink-0 font-mono text-slate-500">{String(a.time || a.checkIn || "").slice(0, 5)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[12px] text-slate-500">Todavía no hay ingresos registrados hoy.</p>
+        )}
+      </div>
     </div>
   );
 };

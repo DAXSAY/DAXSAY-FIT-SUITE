@@ -1,13 +1,8 @@
 // Objetivos de entrenamiento del alumno. Puede tener varios a la vez
 // (ej. bajar de peso + tonificar): se guardan separados por coma.
-export const OBJETIVOS_ALUMNO = [
-  ["hipertrofia", "💪", "Ganancia muscular / hipertrofia"],
-  ["perdida_peso", "🔥", "Pérdida de grasa / peso"],
-  ["fuerza", "⚡", "Aumento de fuerza"],
-  ["tonificacion", "✨", "Tonificación general"],
-  ["resistencia", "🏃", "Resistencia cardiovascular y funcional"],
-  ["rehabilitacion", "🩺", "Salud, postura / rehabilitación"],
-];
+// La MISMA lista que usan las rutinas (así matrícula, ficha, rutinas y reportes hablan igual)
+import { OBJETIVOS_RUTINA } from "./rutinas";
+export const OBJETIVOS_ALUMNO = OBJETIVOS_RUTINA;
 export const listaObjetivos = (v) =>
   (Array.isArray(v) ? v : String(v || "").split(","))
     .map((x) => x.trim())
@@ -26,3 +21,12 @@ export const textoObjetivos = (v, corto = false) => {
 };
 /** El primero (para cálculos que necesitan uno solo, ej. calorías) */
 export const objetivoPrincipal = (v) => listaObjetivos(v)[0] || "tonificacion";
+/** Objetivo del alumno -> objetivo de la calculadora de nutrición */
+const A_NUTRICION = {
+  potencia: "fuerza", deportivo: "fuerza", acondicionamiento: "salud_rehabilitacion", funcional: "resistencia",
+  movilidad: "salud_rehabilitacion", postura: "salud_rehabilitacion", rehabilitacion: "salud_rehabilitacion",
+};
+export const objetivoNutricion = (v) => {
+  const o = objetivoPrincipal(v);
+  return A_NUTRICION[o] || o;
+};
