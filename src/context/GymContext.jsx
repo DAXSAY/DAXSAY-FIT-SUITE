@@ -653,6 +653,8 @@ export const GymProvider = ({ children }) => {
       ...routineData,
       id: `routine-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       createdDate: hoyISO(),
+      creadaPor: routineData.creadaPor || currentUser?.fullName || "",
+      creadaPorId: routineData.creadaPorId || currentUser?.id,
     };
     setRoutines((prev) => [newRoutine, ...prev]);
   };

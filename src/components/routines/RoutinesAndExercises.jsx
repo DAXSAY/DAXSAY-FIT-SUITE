@@ -97,6 +97,7 @@ export const RoutinesAndExercises = () => {
   const [alumnoSel, setAlumnoSel] = useState("");
   const [filtroRut, setFiltroRut] = useState("todas");
   const [buscarRut, setBuscarRut] = useState("");
+  const [entrenadorRut, setEntrenadorRut] = useState("");
   const plantillas = useMemo(() => routines.filter((r) => !r.targetStudentId), [routines]);
   const conRutina = useMemo(() => {
     const ids = new Set(routines.filter((r) => r.targetStudentId).map((r) => String(r.targetStudentId)));
@@ -339,7 +340,7 @@ export const RoutinesAndExercises = () => {
         </div>
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
           {[
-            ["routines", Layers, "Rutinas", routines.length, "Todas: generales y de cada alumno", "blue"],
+            ["routines", Layers, "Rutinas", routines.length, "Todas las rutinas · por nivel y entrenador", "blue"],
             ["asignadas", Users, "Rutinas asignadas", conRutina, "Alumnos con rutina · busca por código", "violet"],
             ["exercises", Dumbbell, "Banco de ejercicios", allExercises.length, "Ejercicios con animación y propios", "teal"],
             ["builder", editando ? Pencil : Plus, editando ? "Editando rutina" : "Crear rutina", null, editando ? "Continúa la edición" : "Diseña una rutina nueva", "amber"],
@@ -388,25 +389,40 @@ export const RoutinesAndExercises = () => {
           )}
           {(() => {
             const q = buscarRut.trim().toLowerCase();
-            const visibles = routines
-              .filter((r) => (filtroRut === "generales" ? !r.targetStudentId : filtroRut === "alumnos" ? !!r.targetStudentId : true))
-              .filter((r) => !q || `${r.title} ${r.targetStudentName || ""} ${r.trainerName || ""}`.toLowerCase().includes(q))
-              .sort((a, b) => (a.targetStudentId ? 1 : 0) - (b.targetStudentId ? 1 : 0));
-            const deAlumnos = routines.length - plantillas.length;
+            const autor = (r) => r.trainerName || r.creadaPor || "Sin entrenador";
+            const entrenadores = [...new Set(routines.map(autor))].sort();
+            const porEntrenador = routines.filter((r) => !entrenadorRut || autor(r) === entrenadorRut);
+            const visibles = porEntrenador
+              .filter((r) => filtroRut === "todas" || (r.level || "intermedio") === filtroRut)
+              .filter((r) => !q || String(r.title || "").toLowerCase().includes(q));
             return (
               <>
                 {routines.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    {[
-                      ["todas", `Todas (${routines.length})`],
-                      ["generales", `Generales (${plantillas.length})`],
-                      ["alumnos", `De alumnos (${deAlumnos})`],
-                    ].map(([k, l]) => (
-                      <button key={k} type="button" onClick={() => setFiltroRut(k)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${filtroRut === k ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-700 hover:border-blue-300"}`}>
-                        {l}
-                      </button>
-                    ))}
-                    <input value={buscarRut} onChange={(e) => setBuscarRut(e.target.value)} placeholder="Buscar rutina, alumno o coach…" className="flex-1 min-w-[200px] max-w-sm px-3 py-1.5 bg-white border border-slate-300 rounded-full text-xs focus:outline-none focus:border-blue-600" />
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 mr-1">Nivel</span>
+                      {[["todas", "📋", "Todas"], ...NIVELES_RUTINA].map(([k, ic, l]) => {
+                        const n = k === "todas" ? porEntrenador.length : porEntrenador.filter((r) => (r.level || "intermedio") === k).length;
+                        return (
+                          <button key={k} type="button" onClick={() => setFiltroRut(k)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${filtroRut === k ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-700 hover:border-blue-300"}`}>
+                            {ic} {l} <span className="opacity-70">{n}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Entrenador</span>
+                      <select value={entrenadorRut} onChange={(e) => setEntrenadorRut(e.target.value)} className="px-3 py-1.5 bg-white border border-slate-300 rounded-full text-xs font-semibold">
+                        <option value="">Todos los entrenadores ({routines.length})</option>
+                        {entrenadores.map((t) => (
+                          <option key={t} value={t}>
+                            {t} ({routines.filter((r) => autor(r) === t).length})
+                          </option>
+                        ))}
+                      </select>
+                      <input value={buscarRut} onChange={(e) => setBuscarRut(e.target.value)} placeholder="Buscar por nombre de rutina…" className="flex-1 min-w-[200px] max-w-sm px-3 py-1.5 bg-white border border-slate-300 rounded-full text-xs focus:outline-none focus:border-blue-600" />
+                      <span className="text-xs text-slate-500">{visibles.length} rutina(s)</span>
+                    </div>
                   </div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -448,6 +464,12 @@ export const RoutinesAndExercises = () => {
                               <div className="flex items-center justify-between text-slate-700">
                                 <span className="text-gray-500">Coach:</span>
                                 <span className="font-semibold text-blue-700">{routine.trainerName}</span>
+                              </div>
+                            )}
+                            {routine.creadaPor && routine.creadaPor !== routine.trainerName && (
+                              <div className="flex items-center justify-between text-slate-700">
+                                <span className="text-gray-500">Creada por:</span>
+                                <span className="font-semibold text-slate-700">{routine.creadaPor}</span>
                               </div>
                             )}
                             {assignedStudent || routine.targetStudentId ? (

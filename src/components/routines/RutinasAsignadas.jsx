@@ -31,7 +31,7 @@ export const RutinasAsignadas = ({
 }) => {
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(seleccionInicial || "");
-  const [verSinRutina, setVerSinRutina] = useState(false);
+  const [vista, setVista] = useState("con"); // con · sin · todos
   const [rIdx, setRIdx] = useState(0);
   const [dia, setDia] = useState(0);
   const [plantillaElegida, setPlantillaElegida] = useState("");
@@ -67,11 +67,11 @@ export const RutinasAsignadas = ({
   }, [routines, members]);
 
   const lista = useMemo(() => {
-    let l = members.filter((m) => verSinRutina || porAlumno.has(String(m.id)));
+    let l = members.filter((m) => (vista === "todos" ? true : vista === "con" ? porAlumno.has(String(m.id)) : !porAlumno.has(String(m.id))));
     if (q.trim()) l = l.filter((m) => coincideAlumno(m, q)).sort((a, b) => puntaje(a, q) - puntaje(b, q));
     else l = [...l].sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0));
     return l;
-  }, [members, porAlumno, q, verSinRutina]);
+  }, [members, porAlumno, q, vista]);
 
   const conRutina = members.filter((m) => porAlumno.has(String(m.id))).length;
   const alumno = members.find((m) => String(m.id) === String(sel));
@@ -89,7 +89,8 @@ export const RutinasAsignadas = ({
     const exacto = members.find((m) => puntaje(m, q) === 0 && coincideAlumno(m, q));
     const m = exacto || lista[0];
     if (m) {
-      if (!porAlumno.has(String(m.id))) setVerSinRutina(true);
+      const tiene = porAlumno.has(String(m.id));
+      if ((vista === "con" && !tiene) || (vista === "sin" && tiene)) setVista("todos");
       ir(m);
     }
   };
@@ -110,18 +111,25 @@ export const RutinasAsignadas = ({
             className="w-full pl-9 pr-3 py-2.5 bg-white border-2 border-blue-300 rounded-xl text-sm font-semibold focus:outline-none focus:border-blue-600"
           />
         </div>
-        <div className="flex items-center justify-between gap-2 text-xs">
-          <span className="text-slate-500">
-            <Users className="w-3.5 h-3.5 inline -mt-0.5 mr-1 text-violet-600" />
-            {conRutina} alumno(s) con rutina
-          </span>
-          <button
-            type="button"
-            onClick={() => setVerSinRutina((v) => !v)}
-            className={`px-2 py-1 rounded-full border font-bold cursor-pointer ${verSinRutina ? "bg-violet-600 border-violet-600 text-white" : "bg-violet-50 border-violet-200 text-violet-800"}`}
-          >
-            {verSinRutina ? "Todos los alumnos" : "+ sin rutina"}
-          </button>
+        <div className="grid grid-cols-3 gap-1">
+          {[
+            ["con", "Con rutina", conRutina, "emerald"],
+            ["sin", "Sin rutina", members.length - conRutina, "rose"],
+            ["todos", "Todos", members.length, "blue"],
+          ].map(([k, l, n, c]) => {
+            const on = vista === k;
+            const col = {
+              emerald: on ? "bg-emerald-600 border-emerald-600 text-white" : "bg-emerald-50 border-emerald-200 text-emerald-800",
+              rose: on ? "bg-rose-600 border-rose-600 text-white" : "bg-rose-50 border-rose-200 text-rose-800",
+              blue: on ? "bg-blue-600 border-blue-600 text-white" : "bg-blue-50 border-blue-200 text-blue-800",
+            }[c];
+            return (
+              <button key={k} type="button" onClick={() => setVista(k)} className={`rounded-xl border px-1.5 py-1.5 text-center cursor-pointer ${col}`}>
+                <span className="block text-lg font-black leading-none">{n}</span>
+                <span className="block text-[10px] font-bold mt-0.5">{l}</span>
+              </button>
+            );
+          })}
         </div>
         <div className="max-h-[calc(100vh-17rem)] min-h-[200px] overflow-y-auto -mx-1 px-1 space-y-1">
           {lista.length === 0 && <p className="text-sm text-slate-500 text-center py-6">Ningún alumno con «{q}».</p>}
@@ -143,7 +151,7 @@ export const RutinasAsignadas = ({
                   <span className={`flex-1 min-w-0 truncate text-sm font-bold ${on ? "text-white" : "text-slate-900"}`}>{m.fullName}</span>
                 </span>
                 <span className={`block mt-0.5 text-[11px] truncate ${on ? "text-blue-100" : "text-slate-500"}`}>
-                  {rs.length ? rs.map((r) => `${r.title}${r.personalizada ? " ✎" : ""}`).join(" · ") : "Sin rutina"}
+                  {rs.length ? rs.map((r) => `${r.title}${r.personalizada ? " ✎" : ""}`).join(" · ") : <b className={on ? "" : "text-rose-600"}>⚠ Sin rutina</b>}
                 </span>
               </button>
             );
@@ -227,6 +235,12 @@ export const RutinasAsignadas = ({
                     {textoNivelRutina(rutina.level)} • {textoObjetivoRutina(rutina.objective)}
                   </span>
                   <span className="text-sm font-black text-slate-900">{rutina.title}</span>
+                  {(rutina.trainerName || rutina.creadaPor) && (
+                    <span className="text-[11px] text-slate-500">
+                      · {rutina.trainerName ? `Entrenador: ${rutina.trainerName}` : ""}
+                      {rutina.creadaPor && rutina.creadaPor !== rutina.trainerName ? ` · creada por ${rutina.creadaPor}` : ""}
+                    </span>
+                  )}
                   {rutina.actualizadaEn && <span className="text-[11px] text-slate-500">· actualizada {String(rutina.actualizadaEn).slice(0, 16)}</span>}
                 </div>
                 <div className="flex flex-wrap gap-1.5">

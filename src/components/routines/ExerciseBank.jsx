@@ -1,7 +1,7 @@
 import { tipoDia } from "./SistemasEntrenamiento";
 import { textoNivelRutina } from "../../utils/rutinas";
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Plus, X, Dumbbell, Target, Layers, ListOrdered, Info } from "lucide-react";
+import { Search, Plus, X, Dumbbell, Target, Layers, ListOrdered, Info, ShieldCheck, Gauge, Shuffle } from "lucide-react";
 
 /* ------------------------------------------------------------------
    BANCO DE EJERCICIOS CON GIFS
@@ -266,8 +266,56 @@ export const ExerciseLibrary = ({ exercises, onOpen, onNew }) => {
 };
 
 /* ===================== Detalle (pantalla completa) ===================== */
-export const ExerciseDetail = ({ ex, onClose, onAdd }) => {
+// Claves de técnica según equipo y zona (guía general)
+const CLAVES_EQUIPO = [
+  [/barra/i, "Agarre firme y simétrico; usa collarines en los discos."],
+  [/mancuern/i, "Muñecas neutras y el mismo recorrido con ambos brazos."],
+  [/m[aá]quina|smith/i, "Ajusta asiento y respaldo para que la articulación coincida con el eje de la máquina."],
+  [/polea|cable/i, "Mantén la tensión todo el recorrido; no dejes que el peso caiga de golpe."],
+  [/kettlebell|pesa rusa/i, "El impulso sale de la cadera, no de la espalda."],
+  [/banda|el[aá]stic/i, "Revisa que la banda esté bien anclada y no la sueltes en tensión."],
+  [/corporal/i, "Progresa sumando repeticiones, tiempo o una variante más difícil."],
+];
+const CLAVES_ZONA = {
+  core_abdomen: "No aguantes la respiración; la zona lumbar no se despega ni se arquea.",
+  oblicuos: "Gira desde el tronco, sin tirar del cuello.",
+  lumbar: "Columna neutra; evita hiperextender al final.",
+  pecho: "Escápulas juntas y hacia abajo; no rebotes en el pecho.",
+  espalda: "Lleva los codos hacia atrás y aprieta las escápulas; no balancees el cuerpo.",
+  hombros: "No subas los hombros hacia las orejas; codos ligeramente por delante.",
+  biceps: "Codos pegados al cuerpo; sin balanceo.",
+  triceps: "Codos fijos; solo se mueve el antebrazo.",
+  cuadriceps: "Rodillas en la línea de los pies; talones apoyados.",
+  isquiotibiales_gluteos: "Cadera hacia atrás con espalda neutra; aprieta glúteos al subir.",
+  gluteos: "Empuja con el talón y aprieta el glúteo arriba.",
+  pantorrillas: "Recorrido completo: estira abajo y sube hasta la punta.",
+  cuello: "Movimientos lentos y cortos; nunca con dolor.",
+  cardio_funcional: "Mantén la técnica aunque te canses; baja el ritmo antes que perder la postura.",
+};
+const DOSIS = [
+  ["💪", "Fuerza", "3-5 series", "3-6 reps", "2-3 min"],
+  ["🏋️", "Hipertrofia", "3-4 series", "8-12 reps", "60-90 s"],
+  ["🔋", "Resistencia", "2-3 series", "15-20 reps", "30-45 s"],
+  ["⚡", "Potencia", "3-5 series", "3-5 explosivas", "2 min"],
+];
+
+export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
+  const [ex, setEx] = useState(inicial);
+  useEffect(() => setEx(inicial), [inicial]);
+  const banco = useExerciseBank();
+  const similares = useMemo(() => {
+    if (!ex) return [];
+    const mismos = banco.filter((x) => x.id !== ex.id && x.muscleGroup === ex.muscleGroup);
+    const objetivo = mismos.filter((x) => x.target && x.target === ex.target);
+    return [...objetivo, ...mismos.filter((x) => !objetivo.includes(x))].slice(0, 6);
+  }, [banco, ex]);
   if (!ex) return null;
+  const claves = [
+    "Exhala al hacer fuerza e inhala al volver.",
+    "Controla la bajada (2-3 s) y usa el rango completo sin dolor.",
+    ...CLAVES_EQUIPO.filter(([r]) => r.test(ex.equipment || "")).map(([, t]) => t).slice(0, 1),
+    ...(CLAVES_ZONA[ex.muscleGroup] ? [CLAVES_ZONA[ex.muscleGroup]] : []),
+  ];
   const steps = ex.steps?.length ? ex.steps : (ex.instructions || "").split(/(?<=\.)\s+/).filter(Boolean);
   return (
     <div className="fixed inset-0 z-50 rd-velo">
@@ -357,6 +405,54 @@ export const ExerciseDetail = ({ ex, onClose, onAdd }) => {
               <div className="bg-amber-50 rounded-2xl border border-amber-200 p-4 text-sm text-amber-900 flex gap-2">
                 <Info className="w-5 h-5 shrink-0" />
                 <span>{ex.tips}</span>
+              </div>
+            )}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+                <h3 className="text-sm font-extrabold text-slate-900 mb-2 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Claves de técnica y seguridad
+                </h3>
+                <ul className="space-y-1.5">
+                  {claves.map((c, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-700">
+                      <span className="text-emerald-600 font-black">✓</span>
+                      <span>{c}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+                <h3 className="text-sm font-extrabold text-slate-900 mb-2 flex items-center gap-2">
+                  <Gauge className="w-4 h-4 text-violet-600" /> Cómo dosificarlo según el objetivo
+                </h3>
+                <div className="space-y-1">
+                  {DOSIS.map(([ic, o, se, re, de]) => (
+                    <div key={o} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center text-xs rounded-lg bg-slate-50 border border-slate-100 px-2 py-1.5">
+                      <b className="text-slate-800">
+                        {ic} {o}
+                      </b>
+                      <span className="text-slate-600">{se}</span>
+                      <span className="font-bold text-blue-700">{re}</span>
+                      <span className="text-slate-500">⏱ {de}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5">Guía general: ajústala al alumno y a sus indicaciones de fisioterapia.</p>
+              </div>
+            </div>
+            {similares.length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+                <h3 className="text-sm font-extrabold text-slate-900 mb-2 flex items-center gap-2">
+                  <Shuffle className="w-4 h-4 text-blue-600" /> Ejercicios similares · {MUSCLE_LABELS[ex.muscleGroup] || ex.muscleGroup}
+                </h3>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {similares.map((x) => (
+                    <button key={x.id} type="button" onClick={() => setEx(x)} className="text-left rounded-xl border border-slate-200 p-1.5 hover:border-blue-400 cursor-pointer" title="Ver este ejercicio">
+                      <ExerciseThumb ex={x} className="w-full aspect-square rounded-lg" />
+                      <span className="block text-[11px] font-bold text-slate-800 mt-1 line-clamp-2 leading-tight">{x.name}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>

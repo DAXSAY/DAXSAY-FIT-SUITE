@@ -514,7 +514,7 @@ router.get("/:id/ficha", async (req, res, next) => {
           titulo: d.title, objetivo: d.objective, nutricionista: d.trainerName, desde: d.createdDate,
           kcal: d.dailyCaloriesTarget, proteinas: d.proteinsTargetGrams, carbohidratos: d.carbsTargetGrams, grasas: d.fatsTargetGrams, agua: d.waterLitersTarget,
           comidas: (d.plates?.length ? d.plates : d.meals || []).map((m) => ({ nombre: m.name, hora: m.time, notas: m.notes || "" })),
-          suplementos: d.supplements || [], recomendaciones: d.recommendations || "",
+          suplementos: d.supplements || [], recomendaciones: d.recommendations || "", hidratacion: d.hydrationGuidelines || "",
         }
       : null;
     res.json({
