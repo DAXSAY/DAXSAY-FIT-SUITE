@@ -4,6 +4,7 @@
 // movimientos_inventario) a través de /api/tienda.
 // ============================================================
 import React, { useEffect, useMemo, useState } from "react";
+import { tono } from "../../utils/tonos";
 import {
   ArrowLeft,
   PackagePlus,
@@ -402,15 +403,15 @@ export const SalesReport = ({ puedeAnular, onReimprimir, onCambio }) => {
     <div className="space-y-4">
       <div className="bg-white p-3.5 rounded-xl border border-gray-200 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          {rangos.map(([l, a, b]) => (
+          {rangos.map(([l, a, b], i) => (
             <button
               key={l}
               onClick={() => {
                 setDesde(a);
                 setHasta(b);
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${
-                desde === a && hasta === b ? "bg-blue-600 text-white" : "bg-gray-100 text-slate-700 hover:bg-gray-200"
+              className={`px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
+                desde === a && hasta === b ? `${tono(i).activo} shadow-sm` : tono(i).suave
               }`}
             >
               {l}
@@ -435,10 +436,10 @@ export const SalesReport = ({ puedeAnular, onReimprimir, onCambio }) => {
               ["Ticket promedio", soles(resumen.avgTicket), TrendingUp, "text-blue-700"],
               ["Ganancia estimada", soles(resumen.profit), TrendingUp, "text-emerald-700"],
               ["Unidades vendidas", resumen.units, Boxes, "text-slate-900"],
-            ].map(([l, v, Icono, c]) => (
-              <div key={l} className="bg-white rounded-xl border border-gray-200 p-4">
+            ].map(([l, v, Icono, c], i) => (
+              <div key={l} className={`bg-white rounded-xl border border-gray-200 border-l-4 ${tono(i).borde} p-4`}>
                 <span className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">
-                  <Icono className="w-3.5 h-3.5" /> {l}
+                  <Icono className={`w-3.5 h-3.5 ${tono(i).texto}`} /> {l}
                 </span>
                 <span className={`text-xl font-black ${c}`}>{v}</span>
               </div>
@@ -449,7 +450,7 @@ export const SalesReport = ({ puedeAnular, onReimprimir, onCambio }) => {
             <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-4 space-y-2.5">
               <h3 className="text-xs font-black uppercase text-slate-500">Productos más vendidos</h3>
               {resumen.topProducts.length === 0 && <p className="text-sm text-slate-500">Sin ventas en estas fechas.</p>}
-              {resumen.topProducts.map((p) => (
+              {resumen.topProducts.map((p, i) => (
                 <div key={p.id} className="space-y-1">
                   <div className="flex justify-between text-sm">
                     <span className="font-semibold text-slate-800">{p.name}</span>
@@ -458,7 +459,7 @@ export const SalesReport = ({ puedeAnular, onReimprimir, onCambio }) => {
                     </span>
                   </div>
                   <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full" style={{ width: `${(p.units / maxUnidades) * 100}%` }} />
+                    <div className={`h-full ${tono(i).barra} rounded-full`} style={{ width: `${(p.units / maxUnidades) * 100}%` }} />
                   </div>
                 </div>
               ))}
@@ -466,11 +467,11 @@ export const SalesReport = ({ puedeAnular, onReimprimir, onCambio }) => {
             <div className="space-y-4">
               <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2 text-sm">
                 <h3 className="text-xs font-black uppercase text-slate-500">Por método de pago</h3>
-                {Object.entries(METODO).map(([k, l]) => {
+                {Object.entries(METODO).map(([k, l], i) => {
                   const m = resumen.byMethod.find((x) => x.method === k);
                   return (
                     <div key={k} className="flex justify-between">
-                      <span className="text-slate-600">{l}</span>
+                      <span className="text-slate-600 flex items-center gap-2"><span className={`w-2.5 h-2.5 rounded-full ${tono(i + 4).punto}`} />{l}</span>
                       <strong>{soles(m?.total)}</strong>
                     </div>
                   );

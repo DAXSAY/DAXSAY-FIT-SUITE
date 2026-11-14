@@ -9,6 +9,7 @@
 // personas abajo, se abre su ficha y se descarga en Excel o PDF.
 // =====================================================================
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { tono } from "../../utils/tonos";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from "recharts";
 import { Clock, Compass, Users, AlertTriangle, Filter, X, ShieldCheck, ChevronDown, MousePointerClick } from "lucide-react";
 import { api } from "../../api/cliente";
@@ -244,8 +245,8 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
       {/* Periodo */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-wrap items-end gap-3">
         <div className="flex flex-wrap gap-1.5">
-          {rangos.map(([l, a, b]) => (
-            <button key={l} type="button" onClick={() => (setDesde(a), setHasta(b))} className={`px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer ${desde === a && hasta === b ? "bg-slate-900 border-slate-900 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
+          {rangos.map(([l, a, b], i) => (
+            <button key={l} type="button" onClick={() => (setDesde(a), setHasta(b))} className={`px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer ${desde === a && hasta === b ? `${tono(i).activo} shadow-sm` : tono(i).suave}`}>
               {l}
             </button>
           ))}

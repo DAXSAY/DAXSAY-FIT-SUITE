@@ -36,7 +36,7 @@ import {
   mrcTotal,
 } from "./ClinicalScalesPanel";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 import { lineasContexto } from "./ContextoClinico";
 import { BotonesDescarga } from "../common/BotonesDescarga";
 
@@ -987,14 +987,20 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
                         </div>
 
                         {/* SVG Vector Drawing */}
-                        <div className="bg-slate-900 rounded-lg p-2 flex items-center justify-center my-1.5">
-                          <ExerciseVectorDrawing
-                            type={
-                              matchedPreset ? matchedPreset.type : "movilidad"
-                            }
-                            name={ex.name}
-                          />
-                        </div>
+                        {ex.imageUrl ? (
+                          <div className="bg-white rounded-lg border border-slate-200 p-1.5 flex items-center justify-center my-1.5">
+                            <img src={ex.imageUrl} alt={ex.name} crossOrigin="anonymous" className="h-36 w-full object-contain" />
+                          </div>
+                        ) : (
+                          <div className="bg-slate-900 rounded-lg p-2 flex items-center justify-center my-1.5">
+                            <ExerciseVectorDrawing
+                              type={
+                                matchedPreset ? matchedPreset.type : "movilidad"
+                              }
+                              name={ex.name}
+                            />
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-1.5 pt-1 border-t border-slate-200">

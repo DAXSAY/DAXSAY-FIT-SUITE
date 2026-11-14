@@ -20,7 +20,7 @@ const objetivoDe = (boton, selector) =>
   document.querySelector("main");
 
 async function capturar(el) {
-  const html2canvas = (await import("html2canvas")).default;
+  const html2canvas = (await import("html2canvas-pro")).default;
   const oscuro = document.documentElement.classList.contains("dark");
   // El documento sale siempre en claro (se imprime y se comparte mejor)
   if (oscuro) document.documentElement.classList.remove("dark");

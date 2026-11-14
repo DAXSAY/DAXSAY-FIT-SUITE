@@ -521,7 +521,7 @@ function Tarjeta({ activo, nivel, onClick, disabled, dibujo, titulo, desc, alto 
       className={`relative ${ancho} rounded-xl border-2 p-1 pb-1.5 text-center transition-colors cursor-pointer disabled:cursor-default ${borde}`}
     >
       {activo && (
-        <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-slate-900 text-white flex items-center justify-center">
+        <span className="absolute top-1 right-1 z-10 w-4 h-4 rounded-full bg-slate-900 text-white flex items-center justify-center">
           <Check className="w-3 h-3" />
         </span>
       )}

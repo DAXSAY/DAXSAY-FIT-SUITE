@@ -435,7 +435,7 @@ export const ExercisePicker = ({ exercises, onPick, picked = [], compacto = fals
                   className={`relative flex flex-col text-left rounded-xl border p-1.5 cursor-pointer transition-colors h-full ${n ? "border-emerald-400 bg-emerald-50" : "border-slate-200 hover:border-blue-400 hover:bg-blue-50/40"}`}
                 >
                   {n > 0 && (
-                    <span className="absolute top-1.5 right-1.5 min-w-5 h-5 px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
+                    <span className="absolute top-1.5 right-1.5 z-10 min-w-5 h-5 px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
                       ✓{n > 1 ? n : ""}
                     </span>
                   )}

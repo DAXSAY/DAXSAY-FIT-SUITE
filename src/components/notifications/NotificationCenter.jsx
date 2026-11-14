@@ -25,6 +25,7 @@ const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 import { PanelAlertasAdmin } from "../alerts/AlertasAdmin";
 import { MensajesCategorias } from "./MensajesCategorias";
+import { TodasLasAlertas } from "./TodasLasAlertas";
 
 // Color y emoji de cada tipo de regla
 const ESTILOS_REGLA = {
@@ -74,7 +75,7 @@ export const NotificationCenter = () => {
     clearNotificationLogs,
   } = useGym();
 
-  const [activeTab, setActiveTab] = useState("mensajes");
+  const [activeTab, setActiveTab] = useState("todas");
   const [verCongelados, setVerCongelados] = useState(false);
   // Las reglas automáticas solo las configura quien puede editar avisos (admin)
   const puedeEditarReglas = userCan(currentUser, "alerts", "editar");
@@ -373,9 +374,10 @@ export const NotificationCenter = () => {
             <span>Probar avisos del navegador</span>
           </button>
 
-          <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold rounded-md">
-            {renewalAlerts.length} Alertas Activas
-          </span>
+          <button type="button" onClick={() => setActiveTab("todas")} title="Ver todas las alertas por prioridad"
+            className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold rounded-md cursor-pointer hover:bg-amber-100">
+            {renewalAlerts.length} membresías vencidas o por vencer · Ver todas
+          </button>
         </div>
       </div>
 
@@ -394,7 +396,7 @@ export const NotificationCenter = () => {
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-2">
             {congelados.slice(0, verCongelados ? 60 : 8).map((m) => {
               const c = m.freeze.current;
               const activo = c.status === "activo";
@@ -424,6 +426,18 @@ export const NotificationCenter = () => {
       )}
       {/* Tabs Navigation */}
       <div className="flex items-center gap-1.5 bg-white border border-slate-200 p-1.5 rounded-2xl overflow-x-auto shadow-sm">
+        <button
+          onClick={() => setActiveTab("todas")}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === "todas"
+              ? "bg-gradient-to-r from-rose-600 to-orange-500 text-white shadow-md [&_svg]:text-white"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          }`}
+        >
+          <BellRing className="w-3.5 h-3.5 text-rose-600" />
+          <span>Todas las alertas</span>
+        </button>
+
         <button
           onClick={() => setActiveTab("mensajes")}
           className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
@@ -474,6 +488,7 @@ export const NotificationCenter = () => {
       </div>
 
       {/* TAB 1: AUTOMATIC NOTIFICATION RULES CONFIGURATION (ADMIN) */}
+      {activeTab === "todas" && <TodasLasAlertas />}
       {activeTab === "mensajes" && <MensajesCategorias />}
 
       {activeTab === "rules" && (

@@ -211,8 +211,8 @@ const Periodo = ({ desde, hasta, setRango }) => {
   ];
   return (
     <div className="flex flex-wrap items-end gap-1.5">
-      {opciones.map(([l, a, b]) => (
-        <Chip key={l} activo={desde === a && hasta === b} onClick={() => setRango(a, b)}>
+      {opciones.map(([l, a, b], i) => (
+        <Chip key={l} tono={["sky", "violet", "emerald", "amber", "orange", "indigo"][i % 6]} activo={desde === a && hasta === b} onClick={() => setRango(a, b)}>
           {l}
         </Chip>
       ))}

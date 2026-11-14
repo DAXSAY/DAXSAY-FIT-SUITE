@@ -215,11 +215,11 @@ export function MensajesCategorias() {
   return (
     <div className="space-y-4">
       {/* Categorías */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr_1.3fr] gap-3">
+      <div className="grid grid-cols-1 xl:grid-cols-[3fr_3fr_4fr] gap-3">
         {GRUPOS_MSG.map((g) => (
         <div key={g.id} className="space-y-1.5">
         <p className={`text-[11px] font-black uppercase tracking-wider ${g.clase}`}>{g.label}</p>
-        <div className={`grid gap-2 ${g.id === "relacion" ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3"}`}>
+        <div className={`grid gap-2 auto-rows-fr ${g.id === "relacion" ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3"}`}>
         {CATEGORIAS_MSG.filter((c) => c.grupo === g.id).map((c) => {
           const n = (dest.categorias[c.id] || []).length;
           const on = c.id === cat;
@@ -228,7 +228,7 @@ export function MensajesCategorias() {
               key={c.id}
               type="button"
               onClick={() => setCat(c.id)}
-              className={`text-left rounded-xl border p-2.5 cursor-pointer transition-colors ${on ? g.on : `${g.borde} hover:border-slate-400`}`}
+              className={`h-full text-left rounded-xl border p-2.5 cursor-pointer transition-colors ${on ? g.on : `${g.borde} hover:border-slate-400`}`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-lg">{c.emoji}</span>

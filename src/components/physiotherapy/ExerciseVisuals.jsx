@@ -661,12 +661,18 @@ export const ExerciseVisuals = ({
                   </div>
 
                   {/* Exercise Vector Graphic Display */}
-                  <div className="bg-slate-900 rounded-lg p-2 flex items-center justify-center">
-                    <ExerciseVectorDrawing
-                      type={matchedPreset ? matchedPreset.type : "movilidad"}
-                      name={ex.name}
-                    />
-                  </div>
+                  {ex.imageUrl ? (
+                    <div className="bg-white rounded-lg border border-slate-200 p-1.5 flex items-center justify-center">
+                      <img src={ex.imageUrl} alt={ex.name} className="h-32 w-full object-contain" loading="lazy" />
+                    </div>
+                  ) : (
+                    <div className="bg-slate-900 rounded-lg p-2 flex items-center justify-center">
+                      <ExerciseVectorDrawing
+                        type={matchedPreset ? matchedPreset.type : "movilidad"}
+                        name={ex.name}
+                      />
+                    </div>
+                  )}
 
                   {/* Sets, Reps, Rest Badges */}
                   <div className="flex flex-wrap items-center gap-1.5 text-xs pt-1 border-t border-slate-200">

@@ -467,7 +467,7 @@ export const WilliamsVisuals = ({ williamsEval, onChange, readOnly = false }) =>
             onClick={() => alternar(e.id)}
             className={`relative rounded-xl border p-1.5 text-left cursor-pointer transition-colors ${e.selected ? "border-indigo-400 bg-indigo-500/15" : "border-slate-700 bg-slate-950/50 opacity-70 hover:opacity-100"}`}
           >
-            {e.selected && <span className="absolute top-1 right-1 w-5 h-5 rounded-full bg-indigo-500 text-white text-[11px] font-black flex items-center justify-center">✓</span>}
+            {e.selected && <span className="absolute top-2.5 right-2.5 z-10 w-6 h-6 rounded-full bg-indigo-500 text-white ring-2 ring-white shadow-md text-[11px] font-black flex items-center justify-center">✓</span>}
             <div className="w-full aspect-[5/3] rounded-lg overflow-hidden">
               <WilliamsExerciseSVG exerciseNumber={e.number} />
             </div>

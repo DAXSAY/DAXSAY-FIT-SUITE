@@ -633,8 +633,8 @@ export const DashboardOverview = ({
                 }}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   timePeriod === "7d"
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-sky-600 text-white shadow-xs"
+                    : "text-sky-700 hover:bg-sky-50"
                 }`}
                 title="Filtrar datos por los últimos 7 días con desglose diario"
               >
@@ -648,8 +648,8 @@ export const DashboardOverview = ({
                 }}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   timePeriod === "30d"
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-violet-600 text-white shadow-xs"
+                    : "text-violet-700 hover:bg-violet-50"
                 }`}
                 title="Filtrar datos por los últimos 30 días con desglose semanal"
               >
@@ -663,8 +663,8 @@ export const DashboardOverview = ({
                 }}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   timePeriod === "annual"
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-amber-600 text-white shadow-xs"
+                    : "text-amber-700 hover:bg-amber-50"
                 }`}
                 title="Filtrar datos anuales de los 12 meses"
               >
