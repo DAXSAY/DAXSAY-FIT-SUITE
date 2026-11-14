@@ -429,14 +429,14 @@ export const BodyMapVisual = ({
   };
 
   return (
-    <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 sm:p-6 text-white rd-panel-oscuro">
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+    <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 text-white rd-panel-oscuro">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
         <div>
-          <h4 className="text-base font-extrabold flex items-center gap-2">
-            <Target className="w-5 h-5 text-rose-400" />
+          <h4 className="text-sm font-extrabold flex items-center gap-2">
+            <Target className="w-4 h-4 text-rose-400" />
             Mapa corporal del dolor
           </h4>
-          <p className="text-sm text-slate-400">
+          <p className="text-xs text-slate-400">
             Toque los puntos <span className="text-sky-400 font-bold">+</span> para marcar las zonas
             dolorosas. En articulaciones pares indique el lado (D = derecho, I = izquierdo).
           </p>
@@ -446,8 +446,8 @@ export const BodyMapVisual = ({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <div className="xl:col-span-6 bg-slate-950 rounded-xl border border-slate-800 py-3 flex justify-center gap-4 sm:gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        <div className="xl:col-span-5 bg-slate-950 rounded-xl border border-slate-800 py-3 flex justify-center gap-4 sm:gap-8">
           {["front", "back"].map((v) => (
             <BodyFigure
               key={v}
@@ -455,16 +455,16 @@ export const BodyMapVisual = ({
               selectedZones={selectedZones}
               zoneSides={zoneSides}
               onPoint={handlePoint}
-              size="w-36 h-[300px] sm:w-44 sm:h-[370px]"
+              size="w-32 h-[260px] sm:w-36 sm:h-[300px]"
             />
           ))}
         </div>
 
-        <div className="xl:col-span-6 space-y-2">
+        <div className="xl:col-span-7 space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
             Zonas anatómicas
           </span>
-          <div className="space-y-1.5 max-h-[360px] overflow-y-auto pr-1">
+          <div className="grid sm:grid-cols-2 gap-1.5 max-h-[300px] overflow-y-auto pr-1">
             {ZONE_DETAILS.filter((z) => !z.legacy || selectedZones.includes(z.id)).map((z) => {
               const on = selectedZones.includes(z.id);
               const sides = zoneSides?.[z.id] || [];

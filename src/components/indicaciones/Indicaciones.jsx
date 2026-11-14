@@ -44,7 +44,7 @@ const ordenar = (lista, orden) =>
  * Selector controlado de indicaciones (catálogo + plantillas a la izquierda, lo elegido a la derecha).
  * Lo usan el editor de Rutinas/Alumnos y la evaluación de fisioterapia.
  */
-export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", onNotas, titulo, subtitulo, sugerencias = [], pie, mensaje, sinNotas = false }) {
+export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", onNotas, titulo, subtitulo, sugerencias = [], pie, mensaje, sinNotas = false, horizontal = false }) {
   const [catalogo, setCatalogo] = useState({ items: [], plantillas: [], puedeIndicar: false });
   const [msg, setMsg] = useState({ ok: "", error: "" });
   const [nueva, setNueva] = useState(null);
@@ -135,9 +135,9 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
     catalogo.items.filter((i) => i.category === cat && (!q || i.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").includes(q)));
 
   return (
-    <div className="grid lg:grid-cols-2 gap-4 items-start">
-      {/* Derecha: catálogo para elegir (se desplaza solo, sin mover la página) */}
-      <div className="space-y-4 lg:order-2 lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1">
+    <div className={horizontal ? "flex flex-col gap-3" : "grid lg:grid-cols-2 gap-4 items-start"}>
+      {/* Catálogo para elegir (al lado, o debajo en la vista horizontal) */}
+      <div className={horizontal ? "order-2 grid xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-3 items-start" : "space-y-4 lg:order-2 lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1"}>
         <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-2.5">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Plantillas · un clic</p>
           <div className="flex flex-wrap gap-2">
@@ -246,7 +246,7 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
       </div>
 
       {/* Izquierda: lo indicado al alumno */}
-      <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 lg:order-1">
+      <section className={`bg-white rounded-2xl border border-slate-200 p-4 space-y-3 ${horizontal ? "order-1" : "lg:order-1"}`}>
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-bold text-slate-900 flex items-center gap-2">
             <ClipboardList className="w-4 h-4 text-blue-600" /> {titulo || "Indicaciones elegidas"}
@@ -264,9 +264,12 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
         )}
 
         {sel.length === 0 ? (
-          <p className="text-sm text-slate-500 py-6 text-center">Elige una plantilla o toca las indicaciones de la izquierda.</p>
+          <p className={`text-sm text-slate-500 text-center ${horizontal ? "py-2" : "py-6"}`}>
+            {horizontal ? "Elige una plantilla o toca las indicaciones de abajo." : "Elige una plantilla o toca las indicaciones de la izquierda."}
+          </p>
         ) : (
-          Object.entries(LUGARES).map(([lugar, L]) => {
+          <div className={horizontal ? "grid md:grid-cols-3 gap-3 items-start" : "space-y-3"}>
+          {Object.entries(LUGARES).map(([lugar, L]) => {
             const lista = sel.filter((x) => x.place === lugar);
             if (!lista.length) return null;
             const Icono = L.icon;
@@ -325,7 +328,8 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
                 ))}
               </div>
             );
-          })
+          })}
+          </div>
         )}
 
         {!sinNotas && <textarea

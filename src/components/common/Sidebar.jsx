@@ -25,6 +25,24 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
   // Pantalla mediana (tablet / ventana dividida): solo íconos. Grande: lo que elijas. Celular: menú que se abre.
   const ocultar = plegado ? "md:hidden" : "md:hidden lg:inline";
   const ocultarBloque = plegado ? "md:hidden" : "md:hidden lg:block";
+  // Etiqueta flotante (redondeada, con el tema) cuando el menú muestra solo íconos
+  const [tip, setTip] = useState(null);
+  const soloIconos = () => typeof window !== "undefined" && window.innerWidth >= 768 && (plegado || window.innerWidth < 1024);
+  const tipProps = (label) => ({
+    onMouseEnter: (e) => {
+      if (!soloIconos()) return;
+      const r = e.currentTarget.getBoundingClientRect();
+      setTip({ label, top: r.top + r.height / 2, left: r.right + 10 });
+    },
+    onMouseLeave: () => setTip(null),
+    onFocus: (e) => {
+      if (!soloIconos()) return;
+      const r = e.currentTarget.getBoundingClientRect();
+      setTip({ label, top: r.top + r.height / 2, left: r.right + 10 });
+    },
+    onBlur: () => setTip(null),
+    "aria-label": label,
+  });
   const ir = (tab) => {
     setActiveTab(tab);
     setMovil(false);
@@ -66,8 +84,8 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         key={tabId}
         onClick={(e) => (e.ctrlKey || e.metaKey ? abrirEnVentana(tabId, "pestana") : ir(tabId))}
         onAuxClick={(e) => e.button === 1 && abrirEnVentana(tabId, "pestana")}
-        title={plegado ? item.label : undefined}
-        className={`group relative w-full flex items-center md:justify-center md:px-0 ${plegado ? "" : "lg:justify-between lg:px-2.5"} justify-between gap-2 px-2.5 py-2 rounded-lg text-xs lg:text-sm transition-all text-left cursor-pointer ${
+        {...tipProps(item.label)}
+        className={`group relative w-full flex items-center md:justify-center md:px-0 md:py-2.5 ${plegado ? "" : "lg:justify-between lg:px-2.5 lg:py-2"} justify-between gap-2 px-2.5 py-2 rounded-xl text-xs lg:text-sm transition-all text-left cursor-pointer ${
           isActive
             ? "bg-gradient-to-r from-blue-500/25 to-blue-500/5 text-white font-semibold ring-1 ring-blue-400/40 shadow-[0_0_18px_-6px_rgba(38,194,205,0.7)]"
             : "text-slate-300 hover:bg-white/5 hover:text-white"
@@ -76,7 +94,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         <div className="flex items-center gap-2.5 min-w-0">
           {isActive && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-blue-400" />}
           <Icon
-            className={`w-4 h-4 shrink-0 ${isActive ? "text-blue-300" : "text-slate-400"}`}
+            className={`w-4 h-4 md:w-[22px] md:h-[22px] ${plegado ? "" : "lg:w-4 lg:h-4"} shrink-0 ${isActive ? "text-blue-300" : "text-slate-400"}`}
           />
           <span className={`truncate text-xs ${ocultar}`}>{item.label}</span>
         </div>
@@ -167,7 +185,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         <div className={`rd-menu-usuario rounded-lg px-2 py-1.5 md:p-1 ${plegado ? "" : "lg:px-2 lg:py-1.5"}`} style={{ borderLeft: `3px solid ${colors.hex}` }}>
           <div className={`flex items-center gap-2 md:justify-center ${plegado ? "" : "lg:justify-start"}`}>
             <div
-              title={`${currentUser.fullName} · ${role.label}`}
+              {...tipProps(`${currentUser.fullName} · ${role.label}`)}
               className="rd-chip-rol w-7 h-7 rounded-full overflow-hidden font-black text-xs flex items-center justify-center shrink-0"
               style={{ "--c": colors.hex }}
             >
@@ -183,7 +201,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
           {miContrato && (
             <button
               onClick={() => setVerContrato(true)}
-              title="Mi contrato"
+              {...tipProps("Mi contrato")}
               className="mt-1.5 w-full h-7 flex items-center justify-center gap-1 px-2 text-[11px] font-bold text-sky-200 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-400/30 rounded-lg cursor-pointer"
             >
               <FileText className="w-3.5 h-3.5" /> <span className={ocultar}>Mi contrato</span>
@@ -191,7 +209,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
           )}
           <button
             onClick={logout}
-            title="Cerrar sesión"
+            {...tipProps("Cerrar sesión")}
             className="rd-boton-salir mt-1.5 w-full h-7 flex items-center justify-center gap-1.5 px-2 text-[11px] font-bold rounded-lg cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" /> <span className={ocultar}>Cerrar sesión</span>
@@ -203,6 +221,18 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         </div>
       </div>
     </aside>
+    {tip &&
+      createPortal(
+        <div
+          role="tooltip"
+          className="rd-tip-menu fixed z-[95] -translate-y-1/2 pointer-events-none px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shadow-xl"
+          style={{ top: tip.top, left: tip.left }}
+        >
+          <span className="rd-tip-flecha" />
+          {tip.label}
+        </div>,
+        document.body,
+      )}
     </>
   );
 };

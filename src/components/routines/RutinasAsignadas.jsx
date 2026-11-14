@@ -2,12 +2,13 @@
 // Se busca por CÓDIGO (DF-12 o 12), nombre o DNI → Enter lleva directo al alumno.
 // Aquí "Editar" cambia SOLO la rutina de ese alumno.
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { CopyPlus, Eye, Pencil, RotateCcw, Search, UserCheck, UserPlus, Users } from "lucide-react";
+import { Eye, Pencil, RotateCcw, Search, UserCheck, UserPlus, Users } from "lucide-react";
 import { CodigoAlumno, coincideAlumno } from "../common/BuscarAlumno";
 import { ExerciseThumb, MUSCLE_LABELS } from "./ExerciseBank";
 import { InsigniaMetodo, InsigniaTipoDia, etiquetasGrupo } from "./SistemasEntrenamiento";
 import { textoNivelRutina, textoObjetivoRutina } from "../../utils/rutinas";
 import { SaludAlumno } from "./SaludAlumno";
+import { TONO, TONO_NIVEL } from "./FormEjercicioPropio";
 
 const sinT = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const puntaje = (m, q) => {
@@ -73,6 +74,22 @@ export const RutinasAsignadas = ({
     return l;
   }, [members, porAlumno, q, vista]);
 
+  // Todas las rutinas para asignar: generales y (sin repetir) las ya creadas para otros alumnos
+  const opcionesRutina = useMemo(() => {
+    const limpio = (t) => String(t || "Rutina").replace(/\s*·\s*[^·]+$/, "");
+    const vistas = new Set();
+    const generales = [];
+    const otras = [];
+    routines.forEach((r) => {
+      const titulo = r.targetStudentId ? limpio(r.title) : r.title || "Rutina";
+      const clave = `${titulo.toLowerCase()}|${r.level}|${(r.days || []).length}`;
+      if (vistas.has(clave)) return;
+      vistas.add(clave);
+      (r.targetStudentId ? otras : generales).push({ id: r.id, titulo, level: r.level, coach: r.trainerName || r.creadaPor || "" });
+    });
+    const orden = (a, b) => a.titulo.localeCompare(b.titulo);
+    return { generales: generales.sort(orden), otras: otras.sort(orden) };
+  }, [routines]);
   const conRutina = members.filter((m) => porAlumno.has(String(m.id))).length;
   const alumno = members.find((m) => String(m.id) === String(sel));
   const suyas = alumno ? porAlumno.get(String(alumno.id)) || [] : [];
@@ -96,10 +113,11 @@ export const RutinasAsignadas = ({
   };
 
   return (
-    <div className="grid lg:grid-cols-[340px_minmax(0,1fr)] gap-4 items-start">
-      {/* Lista de alumnos */}
-      <aside className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2 lg:sticky lg:top-24">
-        <div className="relative">
+    <div className="space-y-3">
+      {/* Barra horizontal: buscador + contadores + lista de alumnos */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2.5">
+        <div className="flex flex-wrap items-stretch gap-2">
+        <div className="relative flex-1 min-w-[260px]">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             ref={buscador}
@@ -108,10 +126,10 @@ export const RutinasAsignadas = ({
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={buscarEnter}
             placeholder="Código del alumno (DF-12 o 12), nombre o DNI · Enter"
-            className="w-full pl-9 pr-3 py-2.5 bg-white border-2 border-blue-300 rounded-xl text-sm font-semibold focus:outline-none focus:border-blue-600"
+            className="w-full h-full pl-9 pr-3 py-2.5 bg-white border-2 border-blue-300 rounded-xl text-sm font-semibold focus:outline-none focus:border-blue-600"
           />
         </div>
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto">
           {[
             ["con", "Con rutina", conRutina, "emerald"],
             ["sin", "Sin rutina", members.length - conRutina, "rose"],
@@ -124,15 +142,16 @@ export const RutinasAsignadas = ({
               blue: on ? "bg-blue-600 border-blue-600 text-white" : "bg-blue-50 border-blue-200 text-blue-800",
             }[c];
             return (
-              <button key={k} type="button" onClick={() => setVista(k)} className={`rounded-xl border px-1.5 py-1.5 text-center cursor-pointer ${col}`}>
-                <span className="block text-lg font-black leading-none">{n}</span>
-                <span className="block text-[10px] font-bold mt-0.5">{l}</span>
+              <button key={k} type="button" onClick={() => setVista(k)} className={`rounded-xl border px-4 py-1.5 text-center cursor-pointer min-w-[6.5rem] ${col}`}>
+                <span className="block text-xl font-black leading-none">{n}</span>
+                <span className="block text-[11px] font-bold mt-0.5">{l}</span>
               </button>
             );
           })}
         </div>
-        <div className="max-h-[calc(100vh-17rem)] min-h-[200px] overflow-y-auto -mx-1 px-1 space-y-1">
-          {lista.length === 0 && <p className="text-sm text-slate-500 text-center py-6">Ningún alumno con «{q}».</p>}
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1.5 -mx-1 px-1 snap-x">
+          {lista.length === 0 && <p className="text-sm text-slate-500 py-3 px-2">Ningún alumno con «{q}».</p>}
           {lista.map((m) => {
             const rs = porAlumno.get(String(m.id)) || [];
             const on = String(m.id) === String(sel);
@@ -142,7 +161,7 @@ export const RutinasAsignadas = ({
                 ref={on ? filaSel : null}
                 type="button"
                 onClick={() => ir(m)}
-                className={`w-full text-left rounded-xl border px-2.5 py-2 cursor-pointer transition-colors ${on ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 hover:border-blue-300"}`}
+                className={`snap-start shrink-0 w-56 text-left rounded-xl border px-2.5 py-2 cursor-pointer transition-colors ${on ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 hover:border-blue-300"}`}
               >
                 <span className="flex items-center gap-2">
                   <span className={on ? "" : ""}>
@@ -151,13 +170,13 @@ export const RutinasAsignadas = ({
                   <span className={`flex-1 min-w-0 truncate text-sm font-bold ${on ? "text-white" : "text-slate-900"}`}>{m.fullName}</span>
                 </span>
                 <span className={`block mt-0.5 text-[11px] truncate ${on ? "text-blue-100" : "text-slate-500"}`}>
-                  {rs.length ? rs.map((r) => `${r.title}${r.personalizada ? " ✎" : ""}`).join(" · ") : <b className={on ? "" : "text-rose-600"}>⚠ Sin rutina</b>}
+                  {rs.length ? rs.map((r) => `${String(r.title || "").replace(/\s*·\s*[^·]+$/, "")}${r.personalizada ? " ✎" : ""}`).join(" · ") : <b className={on ? "" : "text-rose-600"}>⚠ Sin rutina</b>}
                 </span>
               </button>
             );
           })}
         </div>
-      </aside>
+      </div>
 
       {/* Detalle del alumno */}
       <section className="min-w-0">
@@ -204,11 +223,6 @@ export const RutinasAsignadas = ({
                       <RotateCcw className="w-3.5 h-3.5" /> Volver a la rutina general
                     </button>
                   )}
-                  {!base && rutina.targetStudentId && (
-                    <button type="button" onClick={() => onPlantilla(rutina)} className="px-3 py-1.5 rounded-lg border border-violet-200 bg-violet-50 text-violet-800 text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-violet-100" title="Copiarla como rutina general para asignarla a otros">
-                      <CopyPlus className="w-3.5 h-3.5" /> Guardar como rutina general
-                    </button>
-                  )}
                   <button type="button" onClick={() => onEditar(rutina, alumno)} className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer">
                     <Pencil className="w-3.5 h-3.5" /> Editar solo para {String(alumno.fullName || "").split(" ")[0]}
                   </button>
@@ -231,9 +245,8 @@ export const RutinasAsignadas = ({
             {rutina ? (
               <>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md border border-blue-200">
-                    {textoNivelRutina(rutina.level)} • {textoObjetivoRutina(rutina.objective)}
-                  </span>
+                  <span className={`px-2 py-0.5 rounded-full border text-[11px] font-bold ${TONO[TONO_NIVEL[rutina.level || "intermedio"] || "slate"][0]}`}>{textoNivelRutina(rutina.level)}</span>
+                  <span className="px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50 text-slate-700 text-[11px] font-semibold">{textoObjetivoRutina(rutina.objective)}</span>
                   <span className="text-sm font-black text-slate-900">{rutina.title}</span>
                   {(rutina.trainerName || rutina.creadaPor) && (
                     <span className="text-[11px] text-slate-500">
@@ -258,7 +271,7 @@ export const RutinasAsignadas = ({
                         {d.focus}
                       </p>
                     )}
-                    <div className="grid xl:grid-cols-2 gap-2">
+                    <div className="grid md:grid-cols-2 2xl:grid-cols-3 gap-2">
                       {(d.exercises || []).map((ex, i) => (
                         <div key={i} className={`flex gap-3 rounded-xl border p-2.5 ${ex.metodo?.grupo ? "border-violet-300 border-l-4 border-l-violet-500" : "border-slate-200"}`}>
                           <div className="relative shrink-0">
@@ -286,12 +299,25 @@ export const RutinasAsignadas = ({
               <UserPlus className="w-4 h-4 text-blue-700" />
               <span className="text-xs font-bold text-blue-900">{rutina ? "Asignar otra rutina:" : "Este alumno no tiene rutina. Asignar rutina:"}</span>
               <select value={plantillaElegida} onChange={(e) => setPlantillaElegida(e.target.value)} className="flex-1 min-w-[200px] px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-sm">
-                <option value="">Elegir rutina general…</option>
-                {plantillas.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title} · {textoNivelRutina(p.level)}
-                  </option>
-                ))}
+                <option value="">Elegir rutina…</option>
+                {opcionesRutina.generales.length > 0 && (
+                  <optgroup label="Rutinas generales">
+                    {opcionesRutina.generales.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.titulo} · {textoNivelRutina(p.level)}{p.coach ? ` · ${p.coach}` : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {opcionesRutina.otras.length > 0 && (
+                  <optgroup label="Otras rutinas ya creadas (se copia)">
+                    {opcionesRutina.otras.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.titulo} · {textoNivelRutina(p.level)}{p.coach ? ` · ${p.coach}` : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
               <button
                 type="button"

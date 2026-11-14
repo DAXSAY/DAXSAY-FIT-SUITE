@@ -53,6 +53,7 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
   if (!member) return null;
   const f = ficha?.fisioterapia;
   const d = ficha?.dieta;
+  const pn = ficha?.progresoNutricion;
   const restricciones = [ficha?.restriccionesFicha, f?.restriccionesSala].filter((t) => !sinDato(t));
   const zonas = f?.zonas || [];
   const antecedentes = (f?.antecedentes || []).filter((a) => a && !/^sin /i.test(String(a)));
@@ -174,6 +175,54 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
             <Titulo icono={Salad} color="text-emerald-700" quien={d ? `${d.nutricionista || "Nutrición"}${d.desde ? ` · desde ${fc(d.desde)}` : ""}` : ""}>
               Alimentación
             </Titulo>
+            {pn && (
+              <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 space-y-1.5">
+                <p className="text-xs text-slate-700">
+                  {pn.controles === 0 ? (
+                    <b>Aún sin controles de medidas</b>
+                  ) : pn.controles === 1 ? (
+                    <>
+                      <b>1.ª sesión de control</b> · {fc(pn.primero?.fecha)}
+                    </>
+                  ) : (
+                    <>
+                      <b>{pn.controles} controles</b> · del {fc(pn.primero?.fecha)} al {fc(pn.ultimo?.fecha)}
+                    </>
+                  )}
+                  {pn.planes > 0 && <span className="text-slate-500"> · {pn.planes} plan(es) de alimentación</span>}
+                </p>
+                {pn.cambio ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                    {[
+                      ["Peso", pn.cambio.peso, "kg", pn.ultimo?.peso, true],
+                      ["% grasa", pn.cambio.grasa, "%", pn.ultimo?.grasa, true],
+                      ["Músculo", pn.cambio.musculo, "kg", pn.ultimo?.musculo, false],
+                      ["Cintura", pn.cambio.cintura, "cm", pn.ultimo?.cintura, true],
+                    ]
+                      .filter(([, c]) => c != null)
+                      .map(([l, c, u, actual, bajarEsBueno]) => {
+                        const bueno = c === 0 ? null : bajarEsBueno ? c < 0 : c > 0;
+                        return (
+                          <div key={l} className={`rounded-lg border px-2 py-1 text-center ${bueno == null ? "bg-white border-slate-200" : bueno ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+                            <span className="block text-[10px] font-bold text-slate-500">{l}</span>
+                            <span className={`block text-sm font-black ${bueno == null ? "text-slate-700" : bueno ? "text-emerald-700" : "text-amber-700"}`}>
+                              {c > 0 ? "+" : ""}
+                              {c} {u}
+                            </span>
+                            {actual != null && <span className="block text-[10px] text-slate-500">ahora {actual} {u}</span>}
+                          </div>
+                        );
+                      })}
+                  </div>
+                ) : pn.primero && (pn.primero.peso || pn.primero.grasa) ? (
+                  <p className="text-xs text-slate-600">
+                    Medida inicial: {pn.primero.peso ? `${pn.primero.peso} kg` : ""}
+                    {pn.primero.grasa ? ` · ${pn.primero.grasa}% grasa` : ""}
+                    {pn.primero.cintura ? ` · cintura ${pn.primero.cintura} cm` : ""}. El progreso se verá desde el 2.º control.
+                  </p>
+                ) : null}
+              </div>
+            )}
             {!d ? (
               <p className="text-xs text-slate-500">Aún no tiene plan de alimentación. Antes de cargas altas, pregúntale si comió.</p>
             ) : (

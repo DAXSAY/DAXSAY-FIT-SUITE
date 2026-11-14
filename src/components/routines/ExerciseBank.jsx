@@ -1,4 +1,5 @@
 import { tipoDia } from "./SistemasEntrenamiento";
+import { NOMBRES_ES, varianteDe } from "../../data/nombresEjercicios";
 import { textoNivelRutina } from "../../utils/rutinas";
 import React, { useEffect, useMemo, useState } from "react";
 import { Search, Plus, X, Dumbbell, Target, Layers, ListOrdered, Info, ShieldCheck, Gauge, Shuffle } from "lucide-react";
@@ -62,9 +63,26 @@ const loadCatalog = () => {
     pending = fetch("/ejercicios/catalogo.json")
       .then((r) => (r.ok ? r.json() : []))
       .then((list) => {
-        cache = list.map((x) => ({
+        // Nombres: traducción de los que venían en inglés y variante para los repetidos
+        const base = list.map((x) => (NOMBRES_ES[x.id] || x.nombre || "").trim());
+        const veces = {};
+        base.forEach((n) => (veces[n.toLowerCase()] = (veces[n.toLowerCase()] || 0) + 1));
+        const usados = new Set();
+        const nombres = base.map((n, i) => {
+          let nom = n;
+          if (veces[n.toLowerCase()] > 1) {
+            const v = varianteDe(list[i].nombreEn);
+            if (v && v.toLowerCase() !== n.toLowerCase()) nom = `${n} (${v})`;
+          }
+          let k = 2;
+          const raiz = nom;
+          while (usados.has(nom.toLowerCase())) nom = `${raiz} · v. ${k++}`;
+          usados.add(nom.toLowerCase());
+          return nom;
+        });
+        cache = list.map((x, i) => ({
           id: x.id,
-          name: x.nombre,
+          name: nombres[i],
           nameEn: x.nombreEn,
           muscleGroup: x.grupo,
           target: x.objetivo,
@@ -292,12 +310,30 @@ const CLAVES_ZONA = {
   cuello: "Movimientos lentos y cortos; nunca con dolor.",
   cardio_funcional: "Mantén la técnica aunque te canses; baja el ritmo antes que perder la postura.",
 };
+// Guía de dosificación por objetivo: [clave, ícono, objetivo, series, reps/tiempo, descanso, intensidad, tempo]
 const DOSIS = [
-  ["💪", "Fuerza", "3-5 series", "3-6 reps", "2-3 min"],
-  ["🏋️", "Hipertrofia", "3-4 series", "8-12 reps", "60-90 s"],
-  ["🔋", "Resistencia", "2-3 series", "15-20 reps", "30-45 s"],
-  ["⚡", "Potencia", "3-5 series", "3-5 explosivas", "2 min"],
+  ["fuerza", "💪", "Fuerza máxima", "3-5", "3-6 reps", "2-3 min", "80-90% 1RM · RIR 1-2", "controlado"],
+  ["hipertrofia", "🏋️", "Hipertrofia", "3-4", "8-12 reps", "60-90 s", "65-80% 1RM · RIR 1-3", "2-0-1"],
+  ["resistencia", "🔋", "Resistencia muscular", "2-3", "15-25 reps", "30-45 s", "50-65% 1RM", "fluido"],
+  ["potencia", "⚡", "Potencia", "3-5", "3-5 explosivas", "2-3 min", "30-60% 1RM · máxima velocidad", "subida explosiva"],
+  ["pliometria", "🦘", "Pliometría", "3-4", "5-10 saltos", "90-120 s", "Peso corporal · calidad > cantidad", "contacto corto"],
+  ["acondicionamiento", "🌱", "Acondicionamiento / principiante", "2-3", "10-15 reps", "60-90 s", "RPE 5-6 · técnica primero", "3-0-2"],
+  ["perdida_grasa", "🔥", "Pérdida de grasa / circuito", "3-4 vueltas", "12-15 reps o 40 s", "15-30 s entre ejercicios", "RPE 7-8", "constante"],
+  ["tonificacion", "✨", "Tonificación", "3", "12-15 reps", "45-60 s", "60-70% 1RM", "2-1-2"],
+  ["movilidad", "🧘", "Movilidad / flexibilidad", "2-3", "30-45 s o 8-10 lentas", "15-30 s", "Sin dolor · tensión suave", "lento"],
+  ["rehabilitacion", "🩺", "Rehabilitación / readaptación", "2-3", "10-15 reps", "60 s", "Dolor ≤ 3/10 · según fisioterapia", "3-1-3"],
+  ["adulto_mayor", "👵", "Adulto mayor / salud", "2", "10-12 reps", "90 s", "RPE 4-6", "lento y estable"],
 ];
+// Qué objetivos encajan mejor con el ejercicio (se resaltan)
+const objetivosSugeridos = (ex) => {
+  const n = `${ex.name} ${ex.nameEn || ""}`.toLowerCase();
+  if (/estiramiento|stretch|yoga|pose|movilidad/.test(n)) return ["movilidad", "rehabilitacion", "adulto_mayor"];
+  if (/salto|jump|plyo|pliom|lanzamiento|throw|slam|swing|sprint/.test(n)) return ["potencia", "pliometria"];
+  if (ex.muscleGroup === "cardio_funcional" || /caminata|bicicleta|el[ií]ptica|treadmill|escaladora|burpee/.test(n)) return ["perdida_grasa", "resistencia", "acondicionamiento"];
+  if (/peso corporal|banda|fitball|bosu/i.test(ex.equipment || "")) return ["acondicionamiento", "resistencia", "tonificacion", "rehabilitacion"];
+  if (/barra|smith|prensa|m[aá]quina/i.test(ex.equipment || "")) return ["fuerza", "hipertrofia", "potencia"];
+  return ["hipertrofia", "tonificacion", "resistencia"];
+};
 
 export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
   const [ex, setEx] = useState(inicial);
@@ -310,6 +346,7 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
     return [...objetivo, ...mismos.filter((x) => !objetivo.includes(x))].slice(0, 6);
   }, [banco, ex]);
   if (!ex) return null;
+  const sugeridos = objetivosSugeridos(ex);
   const claves = [
     "Exhala al hacer fuerza e inhala al volver.",
     "Controla la bajada (2-3 s) y usa el rango completo sin dolor.",
@@ -384,6 +421,19 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
                 </div>
               </div>
             )}
+  <div className="bg-white rounded-2xl border border-slate-200 p-4">
+                <h3 className="text-sm font-extrabold text-slate-900 mb-2 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Claves de técnica y seguridad
+                </h3>
+                <ul className="space-y-1.5">
+                  {claves.map((c, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-700">
+                      <span className="text-emerald-600 font-black">✓</span>
+                      <span>{c}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
           </div>
           <div className="lg:col-span-3 space-y-4">
             <div className="bg-white rounded-2xl border border-slate-200 p-5">
@@ -407,45 +457,53 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
                 <span>{ex.tips}</span>
               </div>
             )}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
-                <h3 className="text-sm font-extrabold text-slate-900 mb-2 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Claves de técnica y seguridad
-                </h3>
-                <ul className="space-y-1.5">
-                  {claves.map((c, i) => (
-                    <li key={i} className="flex gap-2 text-sm text-slate-700">
-                      <span className="text-emerald-600 font-black">✓</span>
-                      <span>{c}</span>
-                    </li>
-                  ))}
-                </ul>
+
+          </div>
+          <div className="lg:col-span-5 space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <h3 className="text-sm font-extrabold text-slate-900 mb-1 flex items-center gap-2">
+                <Gauge className="w-4 h-4 text-violet-600" /> Cómo dosificarlo según el objetivo
+              </h3>
+              <p className="text-[11px] text-slate-500 mb-2">Resaltados: los objetivos que mejor encajan con este ejercicio.</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-left text-[10px] uppercase tracking-wider text-slate-500">
+                      <th className="py-1 pr-2">Objetivo</th>
+                      <th className="py-1 pr-2">Series</th>
+                      <th className="py-1 pr-2">Reps / tiempo</th>
+                      <th className="py-1 pr-2">Descanso</th>
+                      <th className="py-1 pr-2">Intensidad</th>
+                      <th className="py-1">Tempo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {DOSIS.map(([k, ic, o, se, re, de, inten, tempo]) => {
+                      const on = sugeridos.includes(k);
+                      return (
+                        <tr key={k} className={`border-t border-slate-100 ${on ? "bg-violet-50" : ""}`}>
+                          <td className={`py-1.5 pr-2 font-bold whitespace-nowrap ${on ? "text-violet-800" : "text-slate-800"}`}>
+                            {ic} {o} {on && <span className="ml-1 px-1.5 rounded-full bg-violet-600 text-white text-[9px]">recomendado</span>}
+                          </td>
+                          <td className="py-1.5 pr-2 text-slate-700">{se}</td>
+                          <td className="py-1.5 pr-2 font-bold text-blue-700">{re}</td>
+                          <td className="py-1.5 pr-2 text-slate-600">⏱ {de}</td>
+                          <td className="py-1.5 pr-2 text-slate-600">{inten}</td>
+                          <td className="py-1.5 text-slate-500">{tempo}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
-                <h3 className="text-sm font-extrabold text-slate-900 mb-2 flex items-center gap-2">
-                  <Gauge className="w-4 h-4 text-violet-600" /> Cómo dosificarlo según el objetivo
-                </h3>
-                <div className="space-y-1">
-                  {DOSIS.map(([ic, o, se, re, de]) => (
-                    <div key={o} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center text-xs rounded-lg bg-slate-50 border border-slate-100 px-2 py-1.5">
-                      <b className="text-slate-800">
-                        {ic} {o}
-                      </b>
-                      <span className="text-slate-600">{se}</span>
-                      <span className="font-bold text-blue-700">{re}</span>
-                      <span className="text-slate-500">⏱ {de}</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1.5">Guía general: ajústala al alumno y a sus indicaciones de fisioterapia.</p>
-              </div>
+              <p className="text-[11px] text-slate-500 mt-1.5">Guía general: ajústala al nivel del alumno y a sus indicaciones de fisioterapia y nutrición.</p>
             </div>
             {similares.length > 0 && (
               <div className="bg-white rounded-2xl border border-slate-200 p-4">
                 <h3 className="text-sm font-extrabold text-slate-900 mb-2 flex items-center gap-2">
                   <Shuffle className="w-4 h-4 text-blue-600" /> Ejercicios similares · {MUSCLE_LABELS[ex.muscleGroup] || ex.muscleGroup}
                 </h3>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                   {similares.map((x) => (
                     <button key={x.id} type="button" onClick={() => setEx(x)} className="text-left rounded-xl border border-slate-200 p-1.5 hover:border-blue-400 cursor-pointer" title="Ver este ejercicio">
                       <ExerciseThumb ex={x} className="w-full aspect-square rounded-lg" />

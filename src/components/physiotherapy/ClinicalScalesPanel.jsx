@@ -299,15 +299,15 @@ const painColor = (v) =>
   v === null || v === undefined ? "#cbd5e1" : v <= 3 ? "var(--color-green-600)" : v <= 6 ? "var(--color-amber-500)" : "var(--color-red-600)";
 
 export const Card = ({ icon: Icon, title, subtitle, color = "text-blue-700", right, children }) => (
-  <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
-    <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
-      <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center ${color}`}>
-          <Icon className="w-5 h-5" />
+  <section className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
+    <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+      <div className="flex items-start gap-2.5">
+        <div className={`w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 ${color}`}>
+          <Icon className="w-4 h-4" />
         </div>
         <div>
-          <h4 className="text-base font-extrabold text-slate-900">{title}</h4>
-          {subtitle && <p className="text-sm text-slate-500 mt-0.5 max-w-3xl">{subtitle}</p>}
+          <h4 className="text-sm font-extrabold text-slate-900">{title}</h4>
+          {subtitle && <p className="text-xs text-slate-500 mt-0.5 max-w-3xl">{subtitle}</p>}
         </div>
       </div>
       {right}
@@ -547,6 +547,7 @@ export const RomSection = ({ scales, set, zones = [] }) => {
 
   const toggleJoint = (id) =>
     set({ romJoints: joints.includes(id) ? joints.filter((j) => j !== id) : [...joints, id] });
+  const [grafico, setGrafico] = useState(false);
 
   const setVal = (mid, k, v) =>
     set({ rom: { ...scales.rom, [mid]: { ...(scales.rom[mid] || {}), [k]: v } } });
@@ -575,9 +576,21 @@ export const RomSection = ({ scales, set, zones = [] }) => {
       icon={Ruler}
       color="text-cyan-700"
       title="Rango de movimiento articular (goniometría)"
-      subtitle="Seleccione una o varias articulaciones a evaluar y anote los grados medidos. Se compara con el valor normal de referencia (AAOS) y entre lados: una diferencia > 10 % se marca como asimetría."
+      subtitle="Elija las articulaciones y anote los grados. Se compara con el valor normal (AAOS) y entre lados (> 10 % = asimetría)."
+      right={
+        joints.length > 0 && (
+          <div className="flex rounded-xl border border-slate-200 overflow-hidden text-xs font-bold">
+            <button type="button" onClick={() => setGrafico(false)} className={`px-3 py-1.5 cursor-pointer ${!grafico ? "bg-cyan-600 text-white" : "bg-white text-slate-600"}`}>
+              Compacto
+            </button>
+            <button type="button" onClick={() => setGrafico(true)} className={`px-3 py-1.5 cursor-pointer ${grafico ? "bg-cyan-600 text-white" : "bg-white text-slate-600"}`}>
+              Con medidores
+            </button>
+          </div>
+        )
+      }
     >
-      <div className="flex flex-wrap items-center gap-2 mb-5">
+      <div className="flex flex-wrap items-center gap-1.5 mb-3">
         {ROM_JOINTS.map((j) => {
           const on = joints.includes(j.id);
           const sug = suggested.includes(j.id);
@@ -586,7 +599,7 @@ export const RomSection = ({ scales, set, zones = [] }) => {
               type="button"
               key={j.id}
               onClick={() => toggleJoint(j.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex items-center gap-1.5 select-none ${
+              className={`px-2.5 py-1 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex items-center gap-1.5 select-none ${
                 on
                   ? "bg-cyan-600 border-cyan-600 text-white shadow"
                   : sug
@@ -612,18 +625,18 @@ export const RomSection = ({ scales, set, zones = [] }) => {
       </div>
 
       {joints.length === 0 ? (
-        <div className="p-8 rounded-xl border-2 border-dashed border-slate-200 text-center text-slate-500 text-sm">
-          <Info className="w-7 h-7 mx-auto mb-2 text-slate-400" />
-          Seleccione arriba las articulaciones que desea medir. Las sugeridas provienen del mapa corporal.
-        </div>
+        <p className="px-3 py-2 rounded-xl border border-dashed border-slate-200 text-center text-slate-500 text-xs flex items-center justify-center gap-1.5">
+          <Info className="w-4 h-4 text-slate-400" />
+          Toque arriba las articulaciones a medir. Las sugeridas salen del mapa corporal.
+        </p>
       ) : (
-        <div className="space-y-5">
+        <div className={grafico ? "space-y-4" : "grid xl:grid-cols-2 gap-3"}>
           {ROM_JOINTS.filter((j) => joints.includes(j.id)).map((j) => {
             const jp = scales.romPain[j.id] || {};
             return (
               <div key={j.id} className="rounded-2xl border border-slate-200 bg-slate-50/60 overflow-hidden">
-                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-white border-b border-slate-200">
-                  <h5 className="text-base font-extrabold text-slate-900">{j.id}</h5>
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-white border-b border-slate-200">
+                  <h5 className="text-sm font-extrabold text-slate-900">{j.id}</h5>
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="font-semibold text-slate-600">Dolor al movimiento:</span>
                     <select
@@ -664,6 +677,60 @@ export const RomSection = ({ scales, set, zones = [] }) => {
                     </button>
                   </div>
                 </div>
+                {!grafico && (
+                  <div className="p-2 space-y-1">
+                    <div className="grid grid-cols-[minmax(0,1.3fr)_64px_64px_minmax(0,1fr)] gap-1.5 px-1 text-[10px] font-bold uppercase text-slate-500">
+                      <span>Movimiento</span>
+                      <span className="text-center text-indigo-700">Izq.</span>
+                      <span className="text-center text-cyan-700">Der.</span>
+                      <span>% del normal</span>
+                    </div>
+                    {j.movs.map((m) => {
+                      const bil = m.bilateral !== false;
+                      const v = scales.rom[m.id] || {};
+                      const pct = (x) => (x == null ? null : Math.round((x / m.norm) * 100));
+                      const pI = pct(bil ? v.izq : v.val);
+                      const pD = bil ? pct(v.der) : null;
+                      const worst = [pI, pD].filter((x) => x != null);
+                      const st = romStatusLabel(worst.length ? Math.min(...worst) : null);
+                      const asym = bil && v.izq != null && v.der != null && Math.max(v.izq, v.der) > 0 && Math.abs(v.izq - v.der) / Math.max(v.izq, v.der) > 0.1;
+                      const inp = "w-full text-sm font-bold py-1 px-1 rounded-lg border border-slate-300 bg-white text-center";
+                      const barra = (p, c) =>
+                        p == null ? null : (
+                          <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width: `${Math.min(p, 100)}%`, background: c }} />
+                          </div>
+                        );
+                      return (
+                        <div key={m.id} className="grid grid-cols-[minmax(0,1.3fr)_64px_64px_minmax(0,1fr)] gap-1.5 items-center bg-white rounded-lg border border-slate-200 px-1.5 py-1">
+                          <span className="min-w-0">
+                            <span className="block text-xs font-bold text-slate-800 truncate">{m.mov}</span>
+                            <span className="block text-[10px] font-mono text-slate-500">normal 0–{m.norm}°</span>
+                          </span>
+                          {bil ? (
+                            <>
+                              <input type="number" min="0" max="200" value={v.izq ?? ""} onChange={(e) => setVal(m.id, "izq", e.target.value === "" ? null : Number(e.target.value))} className={inp} placeholder="°" />
+                              <input type="number" min="0" max="200" value={v.der ?? ""} onChange={(e) => setVal(m.id, "der", e.target.value === "" ? null : Number(e.target.value))} className={inp} placeholder="°" />
+                            </>
+                          ) : (
+                            <input type="number" min="0" max="200" value={v.val ?? ""} onChange={(e) => setVal(m.id, "val", e.target.value === "" ? null : Number(e.target.value))} className={`${inp} col-span-2`} placeholder="° medido" />
+                          )}
+                          <span className="min-w-0 space-y-0.5">
+                            {barra(pI, "var(--color-indigo-500)")}
+                            {barra(pD, "var(--color-cyan-500)")}
+                            {(st || asym) && (
+                              <span className="flex flex-wrap gap-1">
+                                {st && <span className={`text-[10px] font-bold px-1.5 rounded-full ${st[1]}`}>{st[0]} · {Math.min(...worst)}%</span>}
+                                {asym && <span className="text-[10px] font-bold px-1.5 rounded-full bg-rose-100 text-rose-700">Asimetría</span>}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {grafico && (
                 <div className="p-3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5 select-none">
                   {j.movs.map((m) => {
                     const bil = m.bilateral !== false;
@@ -716,16 +783,17 @@ export const RomSection = ({ scales, set, zones = [] }) => {
                     );
                   })}
                 </div>
+                )}
               </div>
             );
           })}
 
           {chartData.length > 0 && (
-            <div className="rounded-2xl border border-slate-200 p-4 bg-white">
+            <div className={`rounded-2xl border border-slate-200 p-3 bg-white ${grafico ? "" : "xl:col-span-2"}`}>
               <h5 className="text-sm font-extrabold text-slate-800 mb-2">
                 Resumen: % del rango normal alcanzado
               </h5>
-              <div style={{ height: Math.max(260, chartData.length * 48 + 60) }}>
+              <div style={{ height: Math.max(180, chartData.length * 30 + 50) }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} />

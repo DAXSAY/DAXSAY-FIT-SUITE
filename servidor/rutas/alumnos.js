@@ -464,12 +464,39 @@ router.get("/:id/ficha", async (req, res, next) => {
     if (!al) throw new ErrorHttp(404, "Alumno no encontrado");
     const filas = await consultar(
       `SELECT modulo, datos FROM registros_app
-        WHERE idalumno = ? AND modulo IN ('fisioterapia', 'planes_nutricion', 'asignaciones_rutina')`,
+        WHERE idalumno = ? AND modulo IN ('fisioterapia', 'planes_nutricion', 'asignaciones_rutina', 'evaluaciones_corporales')`,
       [id],
     );
     const leer = (f) => (typeof f.datos === "string" ? JSON.parse(f.datos) : f.datos);
     const fis = filas.filter((f) => f.modulo === "fisioterapia").map(leer).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
-    const dietas = filas.filter((f) => f.modulo === "planes_nutricion").map(leer).filter((d) => d.active !== false);
+    const todasDietas = filas.filter((f) => f.modulo === "planes_nutricion").map(leer);
+    const dietas = todasDietas.filter((d) => d.active !== false);
+    // Controles de nutrición (evaluaciones corporales): primera, última y cambio
+    const num = (v) => (v === "" || v == null || isNaN(Number(v)) ? null : Number(v));
+    const control = (e) =>
+      e && {
+        fecha: e.date,
+        peso: num(e.weightKg),
+        grasa: num(e.bioimpedance?.bodyFatPercentage ?? e.bodyFatPercentage),
+        musculo: num(e.bioimpedance?.muscleMassKg ?? e.muscleMassKg),
+        cintura: num(e.perimeters?.waist ?? e.measurements?.waistCm),
+      };
+    const evals = filas
+      .filter((f) => f.modulo === "evaluaciones_corporales")
+      .map(leer)
+      .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+    const dif = (a, b) => (a != null && b != null ? Math.round((b - a) * 10) / 10 : null);
+    const primero = control(evals[0]);
+    const ultimo = control(evals[evals.length - 1]);
+    const progresoNutricion = {
+      controles: evals.length,
+      planes: todasDietas.length,
+      primero,
+      ultimo: evals.length > 1 ? ultimo : null,
+      cambio: evals.length > 1
+        ? { peso: dif(primero.peso, ultimo.peso), grasa: dif(primero.grasa, ultimo.grasa), musculo: dif(primero.musculo, ultimo.musculo), cintura: dif(primero.cintura, ultimo.cintura) }
+        : null,
+    };
     const asign = filas.filter((f) => f.modulo === "asignaciones_rutina").map(leer)[0];
     let rutina = null;
     if (asign?.routineId) {
@@ -521,6 +548,7 @@ router.get("/:id/ficha", async (req, res, next) => {
       restriccionesFicha: al.restricciones_medicas || "",
       fisioterapia: resumenFis,
       dieta: resumenDieta,
+      progresoNutricion,
       rutina,
       asistencia: { ultimos30: Number(asis?.dias30 || 0), ultima: asis?.ultima || null, total: Number(asis?.total || 0) },
     });

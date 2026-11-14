@@ -95,9 +95,9 @@ const PHYSIO_STEPS = [
   { id: "plan", label: "Plan de tratamiento", icon: Dumbbell },
   { id: "evolucion", label: "Evolución e indicaciones", icon: ClipboardCheck },
 ];
-const LBL = "block text-sm font-bold text-slate-700 mb-1.5";
+const LBL = "block text-xs font-bold text-slate-700 mb-1";
 const INP =
-  "w-full text-sm p-2.5 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+  "w-full text-sm px-2.5 py-1.5 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
 
 const COMMON_TREATMENTS = [
   "Terapia manual miofascial / Masoterapia",
@@ -2293,10 +2293,10 @@ export const PhysiotherapyModule = () => {
               onSubmit={handleSaveSession}
               className="flex-1 overflow-y-auto"
             >
-              <div className="w-full max-w-[1700px] mx-auto p-4 sm:p-8 space-y-6">
+              <div className="w-full max-w-[1700px] mx-auto p-3 sm:p-5 space-y-4">
               {/* PASO 1: ANAMNESIS */}
               {activeModalTab === "anamnesis" && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <Card
                     icon={ClipboardList}
                     color="text-blue-700"
@@ -2490,7 +2490,7 @@ export const PhysiotherapyModule = () => {
 
               {/* PASO 3: EXPLORACIÓN FÍSICA */}
               {activeModalTab === "exploracion" && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <RomSection scales={formClinicalScales} set={setScales} zones={formZones} />
                   <MrcSection scales={formClinicalScales} set={setScales} />
                   <SpecialTestsSection
@@ -2515,30 +2515,32 @@ export const PhysiotherapyModule = () => {
               {/* PASO 4: PLAN DE TRATAMIENTO */}
               {activeModalTab === "plan" && (
                 <div className="space-y-4">
-                  <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="font-bold text-slate-900">¿Hoy se aplicó tratamiento?</p>
-                      <p className="text-xs text-slate-500">
-                        Opcional. Si fue solo evaluación, déjalo en «No» y pasa al paso 5.
-                      </p>
-                    </div>
-                    <div className="flex rounded-xl bg-slate-100 p-1">
-                      {[
-                        [false, "No, solo evaluación"],
-                        [true, "Sí, registrar"],
-                      ].map(([v, t]) => (
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {[
+                      [false, "📋", "Solo evaluación", "Hoy se evaluó y no se aplicó tratamiento. Completa abajo las indicaciones para el entrenador y pasa al paso 5."],
+                      [true, "🩺", "Sí, apliqué tratamiento", "Registra las técnicas, los ejercicios terapéuticos y el protocolo de Williams."],
+                    ].map(([v, ic, t, d]) => {
+                      const on = formPlanEnabled === v;
+                      return (
                         <button
                           key={t}
                           type="button"
                           onClick={() => setFormPlanEnabled(v)}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-bold cursor-pointer ${
-                            formPlanEnabled === v ? (v ? "bg-blue-600 text-white" : "bg-white text-slate-900 shadow-sm") : "text-slate-500"
+                          className={`flex items-start gap-3 rounded-2xl border-2 p-3 text-left cursor-pointer transition-colors ${
+                            on ? (v ? "bg-blue-600 border-blue-600 text-white" : "bg-slate-800 border-slate-800 text-white") : "bg-white border-slate-200 hover:border-blue-300"
                           }`}
                         >
-                          {t}
+                          <span className="text-2xl leading-none">{ic}</span>
+                          <span className="flex-1">
+                            <span className="flex items-center gap-2 text-sm font-black">
+                              {t}
+                              {on && <span className="px-1.5 py-px rounded-full bg-white/20 text-[10px]">✓ elegido</span>}
+                            </span>
+                            <span className={`block text-xs mt-0.5 ${on ? "opacity-90" : "text-slate-500"}`}>{d}</span>
+                          </span>
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
 
                   {formPlanEnabled ? (
@@ -2651,12 +2653,11 @@ export const PhysiotherapyModule = () => {
                   )}
 
                   <div>
-                  {formPlanEnabled && <PasoPlan n="4" titulo="Indicaciones para el entrenador del gimnasio" ayuda="Qué puede y qué debe evitar en sala, y la carga máxima." />}
                   <Card
                     icon={Dumbbell}
                     color="text-emerald-700"
-                    title="Adaptación del entrenamiento en el gimnasio"
-                    subtitle="Esta información la verá el entrenador del alumno."
+                    title={`${formPlanEnabled ? "④ " : ""}Indicaciones para el entrenador del gimnasio`}
+                    subtitle="Qué puede y qué debe evitar en sala, y la carga máxima. El entrenador lo ve (solo lectura) en Rutinas asignadas."
                   >
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div>
@@ -2722,18 +2723,11 @@ export const PhysiotherapyModule = () => {
 
               {/* PASO 5: EVOLUCIÓN E INDICACIONES */}
               {activeModalTab === "evolucion" && (
-                <div className="space-y-6">
-                  {/* Guía del paso 5 */}
-                  <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50/60 px-4 py-2.5 text-xs">
-                    <span className="font-black uppercase tracking-wider text-blue-800">Cierre de la evaluación</span>
-                    <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">① Indicaciones para casa: {formIndicaciones.length}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">② Evolución y pronóstico</span>
-                    <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">③ Observaciones</span>
-                    <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 font-bold text-slate-700">④ Explicación para el alumno</span>
-                  </div>
+                <div className="space-y-4">
                   <div className="space-y-2 bg-white rounded-2xl border border-slate-200 p-4">
-                    <PasoPlan n="1" titulo="Ejercicios e indicaciones para casa" ayuda="Estiramientos 3 × 30 s, movilidad 2 × 15, postura y cuidados. A la izquierda lo indicado, a la derecha el catálogo. El alumno lo ve en Mi Rutina." />
+                    <PasoPlan n="1" titulo="Ejercicios e indicaciones para casa" ayuda="Estiramientos 3 × 30 s, movilidad 2 × 15, postura y cuidados. Arriba lo indicado, abajo el catálogo. El alumno lo ve en Mi Rutina y el entrenador en Rutinas asignadas." />
                     <SelectorIndicaciones
+                      horizontal
                       items={formIndicaciones}
                       onChange={setFormIndicaciones}
                       sinNotas
@@ -2749,11 +2743,11 @@ export const PhysiotherapyModule = () => {
                     />
                   </div>
 
-                  <PasoPlan n="2" titulo="Evolución, pronóstico y próximo control" ayuda="Compara con la sesión anterior y define cuántas sesiones necesita." />
                   <Card
                     icon={TrendingUp}
                     color="text-blue-700"
-                    title="Evolución y seguimiento"
+                    title="② Evolución, pronóstico y próximo control"
+                    subtitle="Compara con la sesión anterior y define cuántas sesiones necesita."
                   >
                     {(() => {
                       const previa = physioRecords

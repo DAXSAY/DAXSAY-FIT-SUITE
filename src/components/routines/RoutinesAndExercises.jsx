@@ -41,7 +41,7 @@ import {
   cambiarMetodo,
   etiquetasGrupo,
 } from "./SistemasEntrenamiento";
-import { FormEjercicioPropio } from "./FormEjercicioPropio";
+import { FormEjercicioPropio, TONO, TONO_NIVEL } from "./FormEjercicioPropio";
 import { RutinasAsignadas } from "./RutinasAsignadas";
 import { SaludAlumno } from "./SaludAlumno";
 export const RoutinesAndExercises = () => {
@@ -432,67 +432,56 @@ export const RoutinesAndExercises = () => {
                     const asignados = routine.targetStudentId ? [] : asignadosDe(routine);
                     const base = routine.baseRoutineId ? routines.find((r) => r.id === routine.baseRoutineId) : null;
                     const tiposDia = [...new Set((routine.days || []).map((d) => d.tipo).filter(Boolean))];
+                    const nivelR = NIVELES_RUTINA.find(([k]) => k === (routine.level || "intermedio"));
+                    const tonoN = TONO[TONO_NIVEL[routine.level || "intermedio"] || "slate"];
+                    const objetivoR = OBJETIVOS_RUTINA.find(([k]) => k === routine.objective);
+                    const tituloR = routine.targetStudentId ? String(routine.title || "").replace(/\s*·\s*[^·]+$/, "") : routine.title;
+                    const barra = { emerald: "border-l-emerald-500", sky: "border-l-sky-500", amber: "border-l-amber-500", rose: "border-l-rose-500", violet: "border-l-violet-500" }[TONO_NIVEL[routine.level || "intermedio"]] || "border-l-slate-400";
                     return (
                       <div
                         key={routine.id}
-                        className="bg-white border border-gray-200 hover:border-gray-300 rounded-xl p-4 flex flex-col justify-between transition-all shadow-xs group"
+                        className={`bg-white border border-gray-200 border-l-4 ${barra} hover:shadow-md rounded-2xl p-4 flex flex-col justify-between transition-all shadow-xs group`}
                       >
                         <div>
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md border border-blue-200">
-                              {textoNivelRutina(routine.level)} • {textoObjetivoRutina(routine.objective)}
-                            </span>
-                            <span className="text-xs text-gray-500 font-mono">{(routine.days || []).length} Días / sem</span>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {nivelR && <span className={`px-2 py-0.5 rounded-full border text-[11px] font-bold ${tonoN[0]}`}>{nivelR[1]} {nivelR[2]}</span>}
+                            {objetivoR && <span className="px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50 text-slate-700 text-[11px] font-semibold">{objetivoR[1]} {objetivoR[2]}</span>}
                           </div>
 
-                          <h3 className="text-sm font-bold text-slate-900 mt-2 mb-1 group-hover:text-blue-600 transition-colors">{routine.title}</h3>
-                          <p className="text-xs text-slate-600 line-clamp-2 mb-2 leading-relaxed">{routine.description}</p>
+                          <h3 className="text-base font-black text-slate-900 mt-2 leading-tight group-hover:text-blue-600 transition-colors">{tituloR}</h3>
+                          {routine.description && <p className="text-xs text-slate-500 line-clamp-2 mt-0.5 leading-relaxed">{routine.description}</p>}
                           {tiposDia.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-2">
+                            <div className="flex flex-wrap gap-1 mt-2">
                               {tiposDia.map((t) => (
                                 <InsigniaTipoDia key={t} tipo={t} />
                               ))}
                             </div>
                           )}
 
-                          <div className="space-y-1.5 bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-xs">
-                            <div className="flex items-center justify-between text-slate-700">
-                              <span className="text-gray-500">Total ejercicios:</span>
-                              <span className="font-semibold">{totalExercises} ejercicios</span>
+                          <div className="grid grid-cols-3 gap-1.5 mt-3 text-center">
+                            <div className="rounded-xl bg-slate-50 border border-slate-100 py-1.5">
+                              <span className="block text-base font-black text-slate-900 leading-none">{totalExercises}</span>
+                              <span className="text-[10px] font-semibold text-slate-500">ejercicios</span>
                             </div>
-                            {routine.trainerName && (
-                              <div className="flex items-center justify-between text-slate-700">
-                                <span className="text-gray-500">Coach:</span>
-                                <span className="font-semibold text-blue-700">{routine.trainerName}</span>
-                              </div>
-                            )}
-                            {routine.creadaPor && routine.creadaPor !== routine.trainerName && (
-                              <div className="flex items-center justify-between text-slate-700">
-                                <span className="text-gray-500">Creada por:</span>
-                                <span className="font-semibold text-slate-700">{routine.creadaPor}</span>
-                              </div>
-                            )}
-                            {assignedStudent || routine.targetStudentId ? (
-                              <div className="pt-1 border-t border-gray-200 space-y-1">
-                                <div className="flex items-center justify-between text-slate-700">
-                                  <span className="text-gray-500">Rutina de:</span>
-                                  <button type="button" onClick={() => irAAlumno(routine.targetStudentId)} className="font-bold text-emerald-700 hover:underline cursor-pointer" title="Ver en Rutinas asignadas">
-                                    {assignedStudent?.fullName || routine.targetStudentName}
-                                  </button>
-                                </div>
-                                {base && (
-                                  <p className="text-[11px] text-slate-500">
-                                    Copia de «{base.title}» · {routine.personalizada ? <b className="text-amber-700">personalizada</b> : "sigue a la rutina general"}
-                                  </p>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="pt-1 border-t border-gray-200 space-y-1.5">
-                                <div className="flex items-center justify-between text-slate-700">
-                                  <span className="text-gray-500">Tipo:</span>
-                                  <span className="text-gray-500 font-medium">Rutina general</span>
-                                </div>
-                                <details className="rounded-lg bg-white border border-violet-200">
+                            <div className="rounded-xl bg-slate-50 border border-slate-100 py-1.5">
+                              <span className="block text-base font-black text-slate-900 leading-none">{(routine.days || []).length}</span>
+                              <span className="text-[10px] font-semibold text-slate-500">días / sem</span>
+                            </div>
+                            <div className="rounded-xl bg-slate-50 border border-slate-100 py-1.5 px-1 min-w-0">
+                              <span className="block text-[11px] font-black text-blue-700 leading-tight truncate" title={routine.trainerName || routine.creadaPor || ""}>
+                                {routine.trainerName || routine.creadaPor || "—"}
+                              </span>
+                              <span className="text-[10px] font-semibold text-slate-500">coach</span>
+                            </div>
+                          </div>
+                          {routine.creadaPor && routine.creadaPor !== routine.trainerName && (
+                            <p className="text-[11px] text-slate-500 mt-1.5">Creada por {routine.creadaPor}</p>
+                          )}
+
+                          <div className="mt-2 text-xs">
+                            {routine.targetStudentId ? null : (
+                              <div>
+                                <details className="rounded-xl bg-white border border-violet-200">
                                   <summary className="px-2 py-1.5 cursor-pointer select-none font-bold text-violet-800 flex items-center gap-1">
                                     <Users className="w-3.5 h-3.5" /> Asignada a {asignados.length} alumno(s)
                                   </summary>
