@@ -27,7 +27,6 @@ import {
   ExerciseThumb,
   MUSCLE_LABELS,
 } from "./ExerciseBank";
-import { PanelIndicaciones } from "../indicaciones/Indicaciones";
 
 import { OBJETIVOS_RUTINA, NIVELES_RUTINA, textoObjetivoRutina, textoNivelRutina } from "../../utils/rutinas";
 import { SelectorAlumno } from "../common/BuscarAlumno";
@@ -44,6 +43,7 @@ import {
 } from "./SistemasEntrenamiento";
 import { FormEjercicioPropio } from "./FormEjercicioPropio";
 import { RutinasAsignadas } from "./RutinasAsignadas";
+import { SaludAlumno } from "./SaludAlumno";
 export const RoutinesAndExercises = () => {
   const {
     exercises,
@@ -326,85 +326,53 @@ export const RoutinesAndExercises = () => {
 
   return (
     <div className="space-y-4">
-      {/* Sub Navigation Bar */}
-      <div className="rd-portada rd-cabecera flex flex-col 2xl:flex-row 2xl:items-center 2xl:justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Dumbbell className="w-4 h-4 text-blue-600" />
-            <span>Rutinas y ejercicios</span>
-          </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Banco de {allExercises.length} ejercicios con animación, creador de rutinas y asignación a alumnos.
-          </p>
-        </div>
-
-        {/* Tab switcher */}
-        <div className="flex flex-wrap items-center gap-1 bg-gray-100 p-1 rounded-lg self-start">
-          <button
-            onClick={() => setActiveSubTab("routines")}
-            className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all ${
-              activeSubTab === "routines"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-gray-600 hover:text-slate-900"
-            }`}
-          >
-            Plantillas ({plantillas.length})
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab("asignadas")}
-            className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 ${
-              activeSubTab === "asignadas"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-gray-600 hover:text-slate-900"
-            }`}
-          >
-            <Users className="w-3.5 h-3.5 text-violet-600" />
-            <span>Rutinas asignadas</span>
-            <span className="px-1.5 bg-violet-100 text-violet-800 text-xs rounded-full font-bold">{conRutina}</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab("exercises")}
-            className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 ${
-              activeSubTab === "exercises"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-gray-600 hover:text-slate-900"
-            }`}
-          >
-            <span>Banco de ejercicios</span>
-            <span className="px-1.5 py-0.2 bg-blue-100 text-blue-700 text-xs rounded-full font-bold">
-              {allExercises.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab("indicaciones")}
-            className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all ${
-              activeSubTab === "indicaciones"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-gray-600 hover:text-slate-900"
-            }`}
-          >
-            Indicaciones
-          </button>
-
+      {/* Cabecera + menú de secciones */}
+      <div className="rd-portada rd-cabecera space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Dumbbell className="w-4 h-4 text-blue-600" />
+              <span>Rutinas y ejercicios</span>
+            </h1>
+            <p className="text-xs text-gray-500 mt-0.5">Crea rutinas, asígnalas a tus alumnos y ajústalas a cada uno.</p>
+          </div>
           <button
             onClick={() => (editando ? setActiveSubTab("builder") : nuevaRutina())}
-            className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
-              activeSubTab === "builder"
-                ? "bg-blue-600 text-white shadow-xs"
-                : "text-gray-600 hover:text-slate-900"
+            className={`px-4 py-2 rounded-xl text-sm font-bold cursor-pointer flex items-center gap-1.5 shadow-xs transition-all ${
+              activeSubTab === "builder" ? "bg-blue-700 text-white ring-2 ring-blue-300" : "bg-blue-600 hover:bg-blue-700 text-white"
             }`}
           >
-            {editando ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-            <span>{editando ? "Editando rutina" : "Crear Rutina"}</span>
+            {editando ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            <span>{editando ? "Editando rutina" : "Crear rutina"}</span>
           </button>
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {[
+            ["routines", Layers, "Rutinas", plantillas.length, "Rutinas generales para reutilizar y asignar", "blue"],
+            ["asignadas", Users, "Rutinas asignadas", conRutina, "Alumnos con rutina · busca por código", "violet"],
+            ["exercises", Dumbbell, "Banco de ejercicios", allExercises.length, "Ejercicios con animación y propios", "teal"],
+          ].map(([k, Icono, l, n, d, c]) => {
+            const on = activeSubTab === k;
+            const col = {
+              blue: on ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-blue-200 text-blue-800 hover:bg-blue-50",
+              violet: on ? "bg-violet-600 border-violet-600 text-white" : "bg-white border-violet-200 text-violet-800 hover:bg-violet-50",
+              teal: on ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-teal-200 text-teal-700 hover:bg-teal-50",
+            }[c];
+            return (
+              <button key={k} type="button" onClick={() => setActiveSubTab(k)} className={`flex items-center gap-3 rounded-xl border-2 px-3 py-2 text-left cursor-pointer transition-colors ${col}`}>
+                <Icono className="w-5 h-5 shrink-0" />
+                <span className="flex-1 min-w-0">
+                  <span className="flex items-center gap-2 text-sm font-black">
+                    {l}
+                    <span className={`px-1.5 rounded-full text-[11px] ${on ? "bg-white/25" : "bg-slate-100 text-slate-700"}`}>{n}</span>
+                  </span>
+                  <span className={`block text-[11px] truncate ${on ? "opacity-90" : "text-slate-500"}`}>{d}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
-
-      {/* SUBTAB: INDICACIONES (estiramientos, movilidad, calentamiento, postura y cuidados) */}
-      {activeSubTab === "indicaciones" && <PanelIndicaciones />}
 
       {/* SUBTAB 1: ROUTINES LIST */}
       {activeSubTab === "routines" && (
@@ -412,9 +380,9 @@ export const RoutinesAndExercises = () => {
           {plantillas.length === 0 && (
             <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center">
               <Dumbbell className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-base font-bold text-slate-800">Aún no hay plantillas generales</p>
+              <p className="text-base font-bold text-slate-800">Aún no hay rutinas generales</p>
               <p className="text-sm text-slate-500 mb-4">
-                Crea una con el banco de ejercicios, o en <b>Rutinas asignadas</b> usa «Guardar como plantilla» sobre la rutina de un alumno.
+                Crea una con el banco de ejercicios, o en <b>Rutinas asignadas</b> usa «Guardar como rutina general» sobre la rutina de un alumno.
               </p>
               <button
                 onClick={nuevaRutina}
@@ -428,15 +396,6 @@ export const RoutinesAndExercises = () => {
             const visibles = plantillas;
             return (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-violet-200 bg-violet-50/60 px-3 py-2">
-                  <p className="text-xs text-slate-700">
-                    <b>Plantillas generales:</b> «Editar» cambia la plantilla y llega a todos sus alumnos. La rutina de un alumno se edita en{" "}
-                    <b>Rutinas asignadas</b>.
-                  </p>
-                  <button type="button" onClick={() => setActiveSubTab("asignadas")} className="px-3 py-1 rounded-full bg-violet-600 text-white text-xs font-bold cursor-pointer flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5" /> Buscar alumno por código
-                  </button>
-                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                   {visibles.map((routine) => {
                     const assignedStudent = members.find((m) => String(m.id) === String(routine.targetStudentId));
@@ -486,7 +445,7 @@ export const RoutinesAndExercises = () => {
                                 </div>
                                 {base && (
                                   <p className="text-[11px] text-slate-500">
-                                    Copia de «{base.title}» · {routine.personalizada ? <b className="text-amber-700">personalizada</b> : "sigue a la plantilla"}
+                                    Copia de «{base.title}» · {routine.personalizada ? <b className="text-amber-700">personalizada</b> : "sigue a la rutina general"}
                                   </p>
                                 )}
                               </div>
@@ -494,7 +453,7 @@ export const RoutinesAndExercises = () => {
                               <div className="pt-1 border-t border-gray-200 space-y-1.5">
                                 <div className="flex items-center justify-between text-slate-700">
                                   <span className="text-gray-500">Tipo:</span>
-                                  <span className="text-gray-500 font-medium">Plantilla general</span>
+                                  <span className="text-gray-500 font-medium">Rutina general</span>
                                 </div>
                                 <details className="rounded-lg bg-white border border-violet-200">
                                   <summary className="px-2 py-1.5 cursor-pointer select-none font-bold text-violet-800 flex items-center gap-1">
@@ -538,7 +497,7 @@ export const RoutinesAndExercises = () => {
                             <button
                               onClick={() => abrirEditor(routine, "general")}
                               className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-semibold rounded-md flex items-center gap-1 cursor-pointer"
-                              title={routine.targetStudentId ? "Editar la rutina de este alumno" : "Editar la plantilla (llega a todos sus alumnos)"}
+                              title="Editar la rutina general (llega a todos sus alumnos)"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                               <span>Editar</span>
@@ -596,7 +555,7 @@ export const RoutinesAndExercises = () => {
             const { id, targetStudentId, targetStudentName, baseRoutineId, personalizada, cambios, actualizadaEn, actualizadaPor, actualizadaPorId, ultimoCambio, ...resto } = r;
             const titulo = String(r.title || "Rutina").replace(/\s*·\s*[^·]+$/, "");
             addRoutine({ ...resto, title: titulo, days: JSON.parse(JSON.stringify(r.days || [])) });
-            avisoBreve(`✓ «${titulo}» guardada como plantilla general`);
+            avisoBreve(`✓ «${titulo}» guardada como rutina general`);
           }}
           onRestablecer={(r, base) =>
             updateRoutine(r.id, {
@@ -642,7 +601,7 @@ export const RoutinesAndExercises = () => {
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 flex flex-wrap items-center gap-3">
                 <Pencil className="w-4 h-4 text-amber-700 shrink-0" />
                 <div className="flex-1 min-w-[220px] text-xs text-amber-900">
-                  <b>Editando la plantilla general.</b>{" "}
+                  <b>Editando la rutina general.</b>{" "}
                   {n ? `Al guardar, el cambio llega a ${n - pers} alumno(s) que la tienen asignada (su portal se actualiza y reciben aviso).` : "Aún no tiene alumnos asignados."}
                   {pers > 0 && (
                     <label className="mt-1.5 flex items-center gap-1.5 font-semibold cursor-pointer">
@@ -659,7 +618,7 @@ export const RoutinesAndExercises = () => {
               <div className="rounded-xl border border-violet-200 bg-violet-50 p-3 flex flex-wrap items-center gap-3">
                 <Pencil className="w-4 h-4 text-violet-700 shrink-0" />
                 <p className="flex-1 min-w-[220px] text-xs text-violet-900">
-                  <b>Editando solo la rutina de {editando.alumno || "este alumno"}.</b> El cambio no afecta a la plantilla ni a otros alumnos
+                  <b>Editando solo la rutina de {editando.alumno || "este alumno"}.</b> El cambio no afecta a la rutina general ni a otros alumnos
                   {editando.base ? "; esta copia quedará como personalizada." : "."}
                 </p>
                 <button type="button" onClick={() => { limpiarCreador(); setActiveSubTab("asignadas"); }} className="px-3 py-1.5 rounded-lg border border-violet-300 bg-white text-violet-800 text-xs font-bold cursor-pointer">
@@ -758,9 +717,12 @@ export const RoutinesAndExercises = () => {
                 <label className="block text-slate-700 font-semibold mb-1">
                   Asignar a Alumno Directo (Opcional)
                 </label>
-                <SelectorAlumno alumnos={members} value={routineTargetMemberId} onChange={(id) => setRoutineTargetMemberId(id)} vacio="Dejar como plantilla general" />
+                <SelectorAlumno alumnos={members} value={routineTargetMemberId} onChange={(id) => setRoutineTargetMemberId(id)} vacio="Dejar como rutina general" />
               </div>
             </div>
+            {routineTargetMemberId && (
+              <SaludAlumno abiertoInicial={false} member={members.find((m) => String(m.id) === String(routineTargetMemberId))} />
+            )}
 
             {/* Days Section */}
             <div className="space-y-3 pt-3 border-t border-gray-200">
@@ -1121,6 +1083,9 @@ export const RoutinesAndExercises = () => {
                 </label>
                 <SelectorAlumno alumnos={members} value={studentToAssignId} onChange={(id) => setStudentToAssignId(id)} required />
               </div>
+              {studentToAssignId && (
+                <SaludAlumno member={members.find((m) => String(m.id) === String(studentToAssignId))} />
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
                 <button

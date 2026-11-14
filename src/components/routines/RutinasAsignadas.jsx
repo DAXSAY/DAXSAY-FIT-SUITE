@@ -7,6 +7,7 @@ import { CodigoAlumno, coincideAlumno } from "../common/BuscarAlumno";
 import { ExerciseThumb, MUSCLE_LABELS } from "./ExerciseBank";
 import { InsigniaMetodo, InsigniaTipoDia, etiquetasGrupo } from "./SistemasEntrenamiento";
 import { textoNivelRutina, textoObjetivoRutina } from "../../utils/rutinas";
+import { SaludAlumno } from "./SaludAlumno";
 
 const sinT = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const puntaje = (m, q) => {
@@ -170,13 +171,13 @@ export const RutinasAsignadas = ({
                   <p className="text-xs text-slate-500 mt-0.5">
                     {base ? (
                       <>
-                        Basada en la plantilla «{base.title}» ·{" "}
-                        {rutina.personalizada ? <b className="text-amber-700">personalizada para este alumno</b> : "sigue los cambios de la plantilla"}
+                        Basada en la rutina general «{base.title}» ·{" "}
+                        {rutina.personalizada ? <b className="text-amber-700">personalizada para este alumno</b> : "sigue los cambios de la rutina general"}
                       </>
                     ) : rutina.targetStudentId ? (
                       "Rutina hecha para este alumno"
                     ) : (
-                      <b className="text-amber-700">Usa la plantilla general directamente (editar aquí le crea su propia copia)</b>
+                      <b className="text-amber-700">Usa la rutina general directamente (editar aquí le crea su propia copia)</b>
                     )}
                   </p>
                 )}
@@ -189,15 +190,15 @@ export const RutinasAsignadas = ({
                   {base && rutina.personalizada && (
                     <button
                       type="button"
-                      onClick={() => confirm(`¿Volver a la plantilla «${base.title}»? Se pierden los ajustes de ${alumno.fullName}.`) && onRestablecer(rutina, base)}
+                      onClick={() => confirm(`¿Volver a la rutina general «${base.title}»? Se pierden los ajustes de ${alumno.fullName}.`) && onRestablecer(rutina, base)}
                       className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-slate-50"
                     >
-                      <RotateCcw className="w-3.5 h-3.5" /> Volver a la plantilla
+                      <RotateCcw className="w-3.5 h-3.5" /> Volver a la rutina general
                     </button>
                   )}
                   {!base && rutina.targetStudentId && (
-                    <button type="button" onClick={() => onPlantilla(rutina)} className="px-3 py-1.5 rounded-lg border border-violet-200 bg-violet-50 text-violet-800 text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-violet-100" title="Copiarla como plantilla general para asignarla a otros">
-                      <CopyPlus className="w-3.5 h-3.5" /> Guardar como plantilla
+                    <button type="button" onClick={() => onPlantilla(rutina)} className="px-3 py-1.5 rounded-lg border border-violet-200 bg-violet-50 text-violet-800 text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-violet-100" title="Copiarla como rutina general para asignarla a otros">
+                      <CopyPlus className="w-3.5 h-3.5" /> Guardar como rutina general
                     </button>
                   )}
                   <button type="button" onClick={() => onEditar(rutina, alumno)} className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer">
@@ -206,6 +207,8 @@ export const RutinasAsignadas = ({
                 </div>
               )}
             </div>
+
+            <SaludAlumno member={alumno} abiertoInicial={true} />
 
             {suyas.length > 1 && (
               <div className="flex flex-wrap gap-1.5">
@@ -267,9 +270,9 @@ export const RutinasAsignadas = ({
             {/* Asignar (o cambiar) plantilla rápido */}
             <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3 flex flex-wrap items-center gap-2">
               <UserPlus className="w-4 h-4 text-blue-700" />
-              <span className="text-xs font-bold text-blue-900">{rutina ? "Asignar otra plantilla:" : "Este alumno no tiene rutina. Asignar plantilla:"}</span>
+              <span className="text-xs font-bold text-blue-900">{rutina ? "Asignar otra rutina:" : "Este alumno no tiene rutina. Asignar rutina:"}</span>
               <select value={plantillaElegida} onChange={(e) => setPlantillaElegida(e.target.value)} className="flex-1 min-w-[200px] px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-sm">
-                <option value="">Elegir plantilla…</option>
+                <option value="">Elegir rutina general…</option>
                 {plantillas.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.title} · {textoNivelRutina(p.level)}
