@@ -67,28 +67,27 @@ export const TarjetaKpi = ({ titulo, valor = 0, decimales = 0, prefijo = "", suf
       type={onClick ? "button" : undefined}
       onClick={onClick}
       title={title}
-      className={`rd-kpi rd-aparece rd-levanta relative overflow-hidden w-full text-left px-3 py-2.5 rounded-xl border transition-all flex items-center gap-2.5 ${onClick ? "cursor-pointer" : ""} ${
+      className={`rd-kpi @container rd-aparece rd-levanta relative overflow-hidden w-full text-left px-3 py-2.5 rounded-xl border transition-all flex items-center gap-2.5 ${onClick ? "cursor-pointer" : ""} ${
         alerta ? "bg-rose-50 border-rose-300 hover:border-rose-400" : `${t.fondo} ${activo ? t.borde : t.hover}`
       }`}
     >
-      {I && <I className="absolute -right-2 -bottom-2 w-14 h-14 opacity-[0.06] pointer-events-none" aria-hidden />}
       {I && (
         <span className={`relative w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br ${t.grad} text-white flex items-center justify-center shadow-md ${pulso ? "animate-pulse" : ""}`}>
           <I className="w-[18px] h-[18px]" />
         </span>
       )}
       <span className="min-w-0 flex-1">
-        <span className={`block text-[10px] font-black uppercase tracking-wider truncate ${alerta ? "text-rose-700" : "text-slate-500"}`}>{titulo}</span>
-        <span className={`block text-lg font-black leading-tight truncate ${t.texto}`}>
+        <span className={`block text-[10px] font-black uppercase tracking-wider leading-tight line-clamp-2 ${alerta ? "text-rose-700" : "text-slate-500"}`}>{titulo}</span>
+        <span className={`block text-lg font-black leading-tight whitespace-nowrap ${t.texto}`}>
           {texto != null ? texto : <NumeroAnimado valor={Number(valor) || 0} decimales={decimales} prefijo={prefijo} />}
           {sufijo}
         </span>
-        {sub && <span className="block text-[11px] font-semibold text-slate-500 truncate" title={typeof sub === "string" ? sub : undefined}>{sub}</span>}
+        {sub && <span className="block text-[11px] font-semibold text-slate-500 leading-tight line-clamp-2" title={typeof sub === "string" ? sub : undefined}>{sub}</span>}
       </span>
       {progreso != null ? (
-        <Anillo pct={progreso} clase={t.texto} />
+        <span className="hidden @[13rem]:block shrink-0"><Anillo pct={progreso} clase={t.texto} /></span>
       ) : serie ? (
-        <span className="shrink-0 pl-1">
+        <span className="hidden @[16rem]:block shrink-0 pl-1">
           <MiniGrafico serie={serie} color={t.color} ancho={52} alto={22} />
         </span>
       ) : null}

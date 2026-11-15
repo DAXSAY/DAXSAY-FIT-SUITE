@@ -1,3 +1,5 @@
+import { TarjetaKpi } from "../common/TarjetaKpi";
+import { Activity as CitaActiva, UserX as CitaFalta } from "lucide-react";
 import React, { useState, useMemo } from "react";
 import {
   Calendar as CalendarIcon,
@@ -468,67 +470,13 @@ export const AppointmentsScheduleModule = () => {
           </div>
         </div>
 
-        {/* Real-time Status Counters */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mt-5 pt-4 border-t border-slate-800 text-xs">
-          <div className="bg-emerald-950/60 border border-emerald-500/40 p-2.5 rounded-xl flex items-center justify-between">
-            <div>
-              <span className="text-xs text-emerald-400 font-bold uppercase block">
-                Atendiendo Ahora
-              </span>
-              <span className="text-lg font-extrabold text-emerald-200">
-                {atendiendoCount}
-              </span>
-            </div>
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-          </div>
-
-          <div className="bg-blue-950/60 border border-blue-500/40 p-2.5 rounded-xl flex items-center justify-between">
-            <div>
-              <span className="text-xs text-blue-400 font-bold uppercase block">
-                Por Atender
-              </span>
-              <span className="text-lg font-extrabold text-blue-200">
-                {porAtenderCount}
-              </span>
-            </div>
-            <Clock className="w-4 h-4 text-blue-400" />
-          </div>
-
-          <div className="bg-slate-800/80 border border-slate-700 p-2.5 rounded-xl flex items-center justify-between">
-            <div>
-              <span className="text-xs text-slate-400 font-bold uppercase block">
-                Atendidos
-              </span>
-              <span className="text-lg font-extrabold text-white">
-                {atendidoCount}
-              </span>
-            </div>
-            <CheckCircle2 className="w-4 h-4 text-slate-400" />
-          </div>
-
-          <div className="bg-amber-950/60 border border-amber-500/40 p-2.5 rounded-xl flex items-center justify-between">
-            <div>
-              <span className="text-xs text-amber-400 font-bold uppercase block">
-                Pospuestos
-              </span>
-              <span className="text-lg font-extrabold text-amber-200">
-                {pospuestoCount}
-              </span>
-            </div>
-            <AlertCircle className="w-4 h-4 text-amber-400" />
-          </div>
-
-          <div className="bg-rose-950/60 border border-rose-500/40 p-2.5 rounded-xl flex items-center justify-between">
-            <div>
-              <span className="text-xs text-rose-400 font-bold uppercase block">
-                Faltas (Liberados)
-              </span>
-              <span className="text-lg font-extrabold text-rose-200">
-                {faltaCount}
-              </span>
-            </div>
-            <X className="w-4 h-4 text-rose-400" />
-          </div>
+        {/* Contadores del día (mismo diseño de indicadores que el resto del sistema) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 mt-4 pt-4 border-t border-slate-800">
+          <TarjetaKpi titulo="Atendiendo ahora" valor={atendiendoCount} sub="en consulta" icono={CitaActiva} tono="verde" pulso={atendiendoCount > 0} />
+          <TarjetaKpi titulo="Por atender" valor={porAtenderCount} sub="citas pendientes" icono={Clock} tono="azul" />
+          <TarjetaKpi titulo="Atendidos" valor={atendidoCount} sub="citas cerradas" icono={CheckCircle2} tono="teal" />
+          <TarjetaKpi titulo="Pospuestos" valor={pospuestoCount} sub="para otra fecha" icono={AlertCircle} tono="ambar" />
+          <TarjetaKpi titulo="Faltas (liberados)" valor={faltaCount} sub="no vinieron" icono={CitaFalta} tono="rojo" />
         </div>
       </div>
 

@@ -40,6 +40,34 @@ import { TarjetaKpi } from "../common/TarjetaKpi";
 import { coincideAlumno } from "../common/BuscarAlumno";
 const soles = (n) => `S/ ${Number(n || 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fCorta = (f) => (f ? `${String(f).slice(8, 10)}/${String(f).slice(5, 7)}` : "");
+const fLarga = (f) => (f ? `${String(f).slice(8, 10)}/${String(f).slice(5, 7)}/${String(f).slice(0, 4)}` : "");
+const num = (v) => (v == null || v === "" ? null : Number(v));
+/** Camino del objetivo: inicio → hoy → meta, con barra de avance */
+const CaminoObjetivo = ({ o, hoy }) => {
+  const ini = num(o.initialValue);
+  const meta = num(o.targetValue);
+  const actual = num(hoy ?? o.finalValue ?? o.lastControl?.value ?? o.initialValue);
+  const pct = ini != null && meta != null && actual != null && meta !== ini ? Math.max(0, Math.min(100, Math.round(((actual - ini) / (meta - ini)) * 100))) : o.progressPct ?? null;
+  const dif = ini != null && actual != null ? Math.round((actual - ini) * 10) / 10 : null;
+  const u = o.unit || "";
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div><span className="block text-[10px] font-black uppercase tracking-wide text-slate-400">Al empezar</span><b className="text-sm text-slate-700">{ini ?? "—"} {u}</b></div>
+        <div><span className="block text-[10px] font-black uppercase tracking-wide text-blue-600">Hoy</span><b className="text-base text-blue-700">{actual ?? "—"} {u}</b>{dif != null && dif !== 0 && <span className={`block text-[10px] font-bold ${(meta ?? 0) < (ini ?? 0) ? (dif < 0 ? "text-emerald-600" : "text-rose-600") : dif > 0 ? "text-emerald-600" : "text-rose-600"}`}>{dif > 0 ? "+" : ""}{dif} {u} desde el inicio</span>}</div>
+        <div><span className="block text-[10px] font-black uppercase tracking-wide text-emerald-600">Meta</span><b className="text-sm text-emerald-700">{meta ?? "—"} {u}</b></div>
+      </div>
+      {pct != null && (
+        <div className="mt-2">
+          <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
+            <div className={`h-full rounded-full transition-all ${pct >= 100 ? "bg-emerald-500" : pct >= 50 ? "bg-blue-500" : "bg-amber-500"}`} style={{ width: `${pct}%` }} />
+          </div>
+          <p className="mt-1 text-[11px] font-bold text-slate-500">{pct >= 100 ? "¡Ya llegó a la meta! Ciérralo como logrado." : `Lleva el ${pct}% del camino a la meta`}</p>
+        </div>
+      )}
+    </div>
+  );
+};
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 const nombreMes = (m) => `${MESES[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`;
 const CATEGORIA = { composicion: "Peso / masa muscular", lesion: "Lesiones / dolor", general: "Todos los logros", ingresos: "Ingresos" };
@@ -60,8 +88,8 @@ const ESTADO_OBJ = {
 };
 
 const Pantalla = ({ titulo, subtitulo, onVolver, children, ancho = "max-w-3xl" }) => (
-  <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
-    <div className={`w-full ${ancho} mx-auto min-h-full p-4 sm:p-6 space-y-5`}>
+  <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-[2px] overflow-y-auto p-3 sm:p-6 flex items-start justify-center">
+    <div className={`w-full ${ancho} my-auto bg-slate-50 rounded-2xl border border-slate-200 shadow-2xl p-4 sm:p-5 space-y-4`}>
       <div className="flex items-center gap-3">
         <button onClick={onVolver} className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-sm font-bold flex items-center gap-1.5 cursor-pointer">
           <ArrowLeft className="w-4 h-4" /> Volver
@@ -672,8 +700,8 @@ const RegistrarControl = ({ objetivo, onVolver, onListo }) => {
   };
   const previo = objetivo.lastControl?.value ?? objetivo.initialValue;
   return (
-    <Pantalla titulo={`Anotar avance · ${objetivo.memberName}`} subtitulo={objetivo.description} onVolver={onVolver}>
-      <form onSubmit={guardar} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+    <Pantalla titulo={`Registrar medida de hoy · ${objetivo.memberName}`} subtitulo={objetivo.description} onVolver={onVolver}>
+      <form onSubmit={guardar} className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200"><span className="text-xs font-bold text-slate-400 block">{objetivo.lastControl ? "ÚLTIMO CONTROL" : "INICIAL"}</span><strong>{previo ?? "—"} {objetivo.unit}</strong></div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200"><span className="text-xs font-bold text-slate-400 block">META</span><strong>{objetivo.targetValue ?? "—"} {objetivo.unit}</strong></div>
@@ -684,10 +712,15 @@ const RegistrarControl = ({ objetivo, onVolver, onListo }) => {
           <label className="block text-sm"><span className="font-bold text-slate-700">Próximo control</span><input type="date" min={hoyISO()} value={f.nextControl} onChange={set("nextControl")} className={campo} /></label>
         </div>
         <label className="block text-sm"><span className="font-bold text-slate-700">Observación</span><textarea rows={2} value={f.observation} onChange={set("observation")} placeholder="Ej. cumple la dieta, bajó 1.5 kg / dolor al levantar el brazo bajó de 7 a 5" className={campo} /></label>
-        <p className="text-xs text-slate-500">El objetivo sigue en proceso. El entrenador del alumno verá el avance y, si mejoró, le llega un aviso.</p>
+        {f.value !== "" && <CaminoObjetivo o={objetivo} hoy={f.value} />}
+        <p className="text-xs text-slate-500">Anota la medida de hoy (peso, % de grasa, dolor…). El objetivo sigue abierto hasta la evaluación final; el entrenador del alumno ve el avance.</p>
         {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
-        <button className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black cursor-pointer">Guardar avance</button>
+        <button className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black cursor-pointer">Guardar medida de hoy</button>
       </form>
+      <div className="bg-white rounded-2xl border border-slate-200 p-4">
+        <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Medidas anteriores</p>
+        <HistorialControles objetivo={objetivo} />
+      </div>
     </Pantalla>
   );
 };
@@ -703,16 +736,24 @@ const HistorialControles = ({ objetivo }) => {
     ...lista,
     objetivo.finalValue != null ? { id: "fin", date: String(objetivo.evaluatedAt || "").slice(0, 10), value: objetivo.finalValue, note: "Evaluación final", by: objetivo.evaluatedBy } : null,
   ].filter(Boolean);
-  if (!filas.length) return <p className="text-xs text-slate-400">Aún no hay controles.</p>;
+  if (!filas.length) return <p className="text-xs text-slate-400">Aún no hay medidas anotadas.</p>;
   return (
-    <ol className="text-xs space-y-1 bg-slate-50 rounded-lg p-2">
-      {filas.map((k) => (
-        <li key={k.id} className="flex items-center gap-2">
-          <span className="w-16 text-slate-500">{fCorta(k.date)}</span>
-          <strong className="w-20">{k.value} {objetivo.unit}</strong>
-          <span className="text-slate-600 truncate">{k.note}{k.by ? ` · ${k.by}` : ""}</span>
-        </li>
-      ))}
+    <ol className="relative border-l-2 border-slate-200 ml-2 space-y-2.5">
+      {filas.map((k, i) => {
+        const prev = i > 0 ? num(filas[i - 1].value) : null;
+        const d = prev != null && num(k.value) != null ? Math.round((num(k.value) - prev) * 10) / 10 : null;
+        return (
+          <li key={k.id} className="pl-3 relative">
+            <span className={`absolute -left-[7px] top-1 w-3 h-3 rounded-full border-2 border-white ${k.id === "ini" ? "bg-slate-400" : k.id === "fin" ? "bg-emerald-500" : "bg-blue-500"}`} />
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <b className="text-sm text-slate-900">{k.value} {objetivo.unit}</b>
+              {d != null && d !== 0 && <span className="text-[11px] font-bold text-slate-500">({d > 0 ? "+" : ""}{d} {objetivo.unit})</span>}
+              <span className="text-[11px] text-slate-500">{fLarga(k.date)}</span>
+            </div>
+            <p className="text-[11px] text-slate-600">{k.id === "ini" ? "Medida al empezar" : k.id === "fin" ? "Evaluación final" : "Control"}{k.note && k.note !== "Inicio" ? ` · ${k.note}` : ""}{k.by ? ` · ${k.by}` : ""}</p>
+          </li>
+        );
+      })}
     </ol>
   );
 };
@@ -775,8 +816,8 @@ const ListaObjetivos = ({ puedeCrear, areaPropia, admin }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {[
           ["1", "Crear el objetivo", "Nutrición o fisio anota el valor de inicio (ej. 82 kg, dolor 7/10), la meta y la fecha de control.", "bg-blue-50 border-blue-200 text-blue-900"],
-          ["2", "Anotar avances", "En cada cita se anota cómo va (ej. 80.5 kg). El objetivo sigue abierto y el entrenador ve el avance.", "bg-amber-50 border-amber-200 text-amber-900"],
-          ["3", "Cerrar: ¿lo logró?", "En la fecha final se indica si lo consiguió: es un logro del especialista y una mancuerna para el entrenador.", "bg-emerald-50 border-emerald-200 text-emerald-900"],
+          ["2", "Registrar medidas", "En cada cita se anota la medida de ese día (ej. 80.5 kg). Se ve cuánto avanzó hacia la meta.", "bg-amber-50 border-amber-200 text-amber-900"],
+          ["3", "Evaluación final", "En la fecha final se marca si llegó a la meta: suma un logro al especialista y una mancuerna al entrenador.", "bg-emerald-50 border-emerald-200 text-emerald-900"],
         ].map(([n, t, d, c]) => (
           <div key={n} className={`rounded-xl border p-3 flex gap-2.5 ${c}`}>
             <span className="w-7 h-7 rounded-full bg-white font-black flex items-center justify-center shrink-0 shadow-sm">{n}</span>
@@ -828,9 +869,10 @@ const ListaObjetivos = ({ puedeCrear, areaPropia, admin }) => {
               <span className={`px-2 py-0.5 rounded-full text-xs font-black ${ESTADO_OBJ[o.status][1]}`}>{ESTADO_OBJ[o.status][0]}</span>
             </div>
             <p className="text-sm text-slate-700">{o.description}</p>
+            <CaminoObjetivo o={o} />
             <p className="text-xs text-slate-500">
-              {o.initialValue != null && `Inicio ${o.initialValue} ${o.unit} → meta ${o.targetValue ?? "—"} ${o.unit}`}
-              {o.finalValue != null && ` · Final ${o.finalValue} ${o.unit}`} · Control: <strong className={o.status === "en_proceso" && o.controlDate <= h ? "text-amber-700" : ""}>{fCorta(o.controlDate)}</strong>
+              Evaluación final: <strong className={o.status === "en_proceso" && o.controlDate <= h ? "text-amber-700" : ""}>{fLarga(o.controlDate)}</strong>
+              {o.status === "en_proceso" && o.controlDate <= h ? " · ya toca evaluarlo" : ""}
             </p>
             {o.lastControl && o.status === "en_proceso" && (
               <p className="text-xs text-blue-800 bg-blue-50 border border-blue-100 rounded-lg p-2">
@@ -838,29 +880,21 @@ const ListaObjetivos = ({ puedeCrear, areaPropia, admin }) => {
                 {o.lastControl.note ? ` · ${o.lastControl.note}` : ""}{o.lastControl.by ? ` · ${o.lastControl.by}` : ""}
               </p>
             )}
-            {o.progressPct != null && (
-              <div>
-                <div className="flex justify-between text-[11px] font-bold text-slate-500"><span>Avance hacia la meta</span><span>{o.progressPct}%</span></div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden mt-0.5">
-                  <div className={`h-full ${o.progressPct >= 100 ? "bg-emerald-500" : o.progressPct >= 50 ? "bg-blue-500" : "bg-amber-500"}`} style={{ width: `${o.progressPct}%` }} />
-                </div>
-              </div>
-            )}
             {o.observation && <p className="text-xs text-slate-600 bg-slate-50 rounded-lg p-2">{o.observation} {o.evaluatedBy && `· ${o.evaluatedBy}`}</p>}
             {o.achievementGranted && <p className="text-xs font-black text-amber-700 flex items-center gap-1"><Dumbbell className="w-3.5 h-3.5" /> Logro otorgado a {o.trainerName}</p>}
             <div className="flex flex-wrap gap-1.5">
               {puedeEvaluar(o) && (
                 <>
                   <button onClick={() => setVista({ control: o })} className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-black cursor-pointer">
-                    + Anotar avance
+                    📏 Registrar medida de hoy
                   </button>
                   <button onClick={() => setVista({ evaluar: o })} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black cursor-pointer">
-                    ✓ Cerrar: ¿lo logró?
+                    🏁 Evaluación final
                   </button>
                 </>
               )}
               <button onClick={() => setAbiertoHist(abiertoHist === o.id ? null : o.id)} className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1 cursor-pointer">
-                <History className="w-3.5 h-3.5" /> {abiertoHist === o.id ? "Ocultar avances" : `Avances${o.controls ? ` (${o.controls})` : ""}`}
+                <History className="w-3.5 h-3.5" /> {abiertoHist === o.id ? "Ocultar historial" : `Ver historial${o.controls ? ` (${o.controls})` : ""}`}
               </button>
             </div>
             {abiertoHist === o.id && <HistorialControles objetivo={o} />}
@@ -1210,8 +1244,14 @@ export const GoalsModule = () => {
 
       {tab === "recepcion" && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 flex-1 min-w-[280px]">
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-white rounded-2xl border border-slate-200 px-4 py-2.5">
+            <p className="text-sm font-black text-slate-800 flex items-center gap-1.5"><Target className="w-4 h-4 text-amber-500" /> Metas de cobro por turno · {nombreMes(mes)}</p>
+            <button onClick={() => setVista({ form: "recepcion" })} className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer">
+              <Plus className="w-4 h-4" /> Nueva meta de recepción
+            </button>
+          </div>
+          <div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <TarjetaKpi titulo={`Meta total · ${nombreMes(mes)}`} valor={resumenRecepcion.meta} decimales={2} prefijo="S/ " sub={`${recep.length} turno(s) con meta`} tono="ambar" icono={Target} />
               <TarjetaKpi icono={IcLogrado}
                 titulo="Logrado"
@@ -1235,9 +1275,6 @@ export const GoalsModule = () => {
                 tono="rojo"
               />
             </div>
-            <button onClick={() => setVista({ form: "recepcion" })} className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer">
-              <Plus className="w-4 h-4" /> Nueva meta de recepción
-            </button>
           </div>
           {metas ? tarjetas(de("recepcion")) : <p className="text-slate-500 text-sm">Cargando…</p>}
         </div>

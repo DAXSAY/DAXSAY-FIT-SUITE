@@ -288,7 +288,6 @@ export const ReporteFinanciero = ({ transactions }) => {
     const c = Object.keys(GRAD).find((k) => tono.includes(`bg-${k}-50`)) || "blue";
     return (
       <div className={`rd-kpi rd-levanta relative overflow-hidden rounded-xl border px-3 py-2.5 rd-aparece flex items-center gap-2.5 ${tono}`}>
-        <Icono className="absolute -right-2 -bottom-2 w-14 h-14 opacity-[0.06]" />
         <span className={`w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br ${GRAD[c]} text-white flex items-center justify-center shadow-md`}>
           <Icono className="w-[18px] h-[18px]" />
         </span>
