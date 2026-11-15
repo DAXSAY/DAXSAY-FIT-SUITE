@@ -772,8 +772,8 @@ export const MembershipsPlans = () => {
                   {esColorLibre(form.color) && (
                     <span
                       title={`Color personalizado ${form.color.toUpperCase()}`}
-                      className="w-9 h-9 rounded-full ring-4 ring-offset-2 ring-slate-400 scale-110"
-                      style={{ background: form.color }}
+                      className="rd-plan-libre w-9 h-9 rounded-full ring-4 ring-offset-2 ring-slate-400 scale-110"
+                      style={colorDePlan({ color: form.color }).estilo}
                     />
                   )}
                   {/* El «+» siempre está: para probar otro color cuando quieras */}
@@ -789,7 +789,7 @@ export const MembershipsPlans = () => {
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1.5">
                   {esColorLibre(form.color)
-                    ? `Color personalizado ${form.color.toUpperCase()}.`
+                    ? "Color personalizado: se ajusta solo a pastel en modo claro y a neón suave en modo oscuro."
                     : form.color
                       ? `Elegido: ${PALETA[form.color]?.nombre}.`
                       : `Automático por precio (${colorForm.nombre}).`}{" "}

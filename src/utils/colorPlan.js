@@ -19,18 +19,57 @@ export const PALETA = {
 // Orden de respaldo (por precio, de menor a mayor), igual que antes de poder elegirlo
 const POR_POSICION = ["plomo", "celeste", "indigo", "verde", "naranja", "rosa", "turquesa", "morado", "rojo", "negro"];
 
-// Oscurece un color #rrggbb (para el degradado del color personalizado)
-const oscurecer = (hex, f = 0.35) => {
+// ---- Color personalizado adaptado a cada modo ----
+// Modo claro: pastel (saturación baja, luz media-alta, legible con texto blanco)
+// Modo oscuro: neón medio (vivo pero sin encandilar)
+const aHsl = (hex) => {
   const n = parseInt(hex.slice(1), 16);
-  const c = (x) => Math.max(0, Math.round(x * (1 - f))).toString(16).padStart(2, "0");
-  return `#${c((n >> 16) & 255)}${c((n >> 8) & 255)}${c(n & 255)}`;
+  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+  let h = 0;
+  const sat = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+  if (d) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+  return { h, s: sat, l };
 };
+const aHex = ({ h, s, l }) => {
+  const a = s * Math.min(l, 1 - l);
+  const f = (k0) => {
+    const k = (k0 + h / 30) % 12;
+    return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+};
+const entre = (x, a, b) => Math.min(b, Math.max(a, x));
+export const tonoPastel = (hex, baja = 0) => {
+  const { h, s, l } = aHsl(hex);
+  if (s < 0.1) return aHex({ h: 215, s: 0.12, l: entre(l, 0.42, 0.55) - baja });
+  return aHex({ h, s: entre(s, 0.26, 0.46), l: entre(l, 0.58, 0.66) - baja });
+};
+export const tonoNeon = (hex, baja = 0) => {
+  const { h, s, l } = aHsl(hex);
+  if (s < 0.1) return aHex({ h: 215, s: 0.2, l: entre(l, 0.3, 0.42) - baja });
+  return aHex({ h, s: entre(s, 0.62, 0.82), l: entre(l, 0.5, 0.58) - baja });
+};
+const esOscuro = () => typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+/** Versión del color que corresponde al modo actual (claro = pastel · oscuro = neón medio) */
+export const colorDelModo = (hex) => (esColorLibre(hex) ? (esOscuro() ? tonoNeon(hex) : tonoPastel(hex)) : hex);
 export const esColorLibre = (v) => /^#[0-9a-f]{6}$/i.test(String(v || ""));
 const colorLibre = (hex) => ({
   nombre: "Personalizado",
-  hex,
-  acento: "",
-  estilo: { backgroundImage: `linear-gradient(135deg, ${hex}, ${oscurecer(hex)})` },
+  hex: colorDelModo(hex),
+  acento: "rd-plan-libre",
+  estilo: {
+    "--pc-c1": tonoPastel(hex),
+    "--pc-c2": tonoPastel(hex, 0.1),
+    "--pc-o1": tonoNeon(hex),
+    "--pc-o2": tonoNeon(hex, 0.16),
+  },
   borde: "border-slate-300",
   suave: "bg-slate-50",
   texto: "text-slate-700",

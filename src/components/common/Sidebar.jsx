@@ -85,7 +85,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         onClick={(e) => (e.ctrlKey || e.metaKey ? abrirEnVentana(tabId, "pestana") : ir(tabId))}
         onAuxClick={(e) => e.button === 1 && abrirEnVentana(tabId, "pestana")}
         {...tipProps(item.label)}
-        className={`group relative w-full flex items-center md:justify-center md:px-0 md:py-2.5 ${plegado ? "" : "lg:justify-between lg:px-2.5 lg:py-2"} justify-between gap-2 px-2.5 py-2 rounded-xl text-xs lg:text-sm transition-all text-left cursor-pointer ${
+        className={`rd-item-menu ${isActive ? "rd-item-activo" : ""} group relative w-full flex items-center md:justify-center md:px-0 md:py-2.5 ${plegado ? "" : "lg:justify-between lg:px-2.5 lg:py-2"} justify-between gap-2 px-2.5 py-2 rounded-xl text-xs lg:text-sm transition-all text-left cursor-pointer ${
           isActive
             ? "bg-gradient-to-r from-blue-500/25 to-blue-500/5 text-white font-semibold ring-1 ring-blue-400/40 shadow-[0_0_18px_-6px_rgba(38,194,205,0.7)]"
             : "text-slate-300 hover:bg-white/5 hover:text-white"
@@ -129,7 +129,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
     {movil && <button type="button" aria-label="Cerrar menú" className="fixed inset-0 z-[79] bg-slate-900/40 backdrop-blur-[2px] md:hidden" onClick={() => setMovil(false)} />}
     <aside
       style={{ "--rd-rol": colors.hex }}
-      className={`${movil ? "fixed inset-y-0 left-0 z-[80] w-[264px] flex" : "hidden md:flex"} md:w-[60px] ${plegado ? "lg:w-[60px]" : "lg:w-[212px]"} transition-[width] duration-200 rd-menu rd-menu-fijo bg-gradient-to-b from-marino-900 via-marino-950 to-[#050e1a] text-white border-r border-white/5 flex flex-col shrink-0 shadow-xl select-none relative overflow-hidden`}
+      className={`${movil ? "fixed inset-y-0 left-0 z-[80] w-[264px] flex" : "hidden md:flex"} md:w-[60px] ${plegado ? "lg:w-[60px]" : "lg:w-[212px]"} transition-[width] duration-200 rd-menu rd-menu-fijo ${plegado ? "rd-plegado" : ""} bg-gradient-to-b from-marino-900 via-marino-950 to-[#050e1a] text-white border-r border-white/5 flex flex-col shrink-0 shadow-xl select-none relative overflow-hidden`}
     >
       <div className="pointer-events-none absolute -top-20 -left-16 w-56 h-56 rounded-full bg-blue-500/10 blur-3xl" />
       <div className={`relative flex-1 min-h-0 overflow-y-auto md:overflow-y-auto p-3 md:px-2 md:py-3 ${plegado ? "" : "lg:p-4"} space-y-4`}>

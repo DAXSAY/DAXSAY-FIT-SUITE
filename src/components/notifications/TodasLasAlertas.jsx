@@ -88,10 +88,10 @@ export const TodasLasAlertas = () => {
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          [BellRing, "Alertas en total", clientes.length + productos.length, "Todo lo que hay por atender", "#0ea5b7", "from-cyan-500 to-teal-600", clientes.length + productos.length],
-          [Siren, "Urgentes", urgentes, "Vencidos y productos agotados", "#e11d48", "from-rose-500 to-red-600", clientes.length + productos.length],
-          [Users, "Clientes por atender", clientes.length, "Membresías por vencer, vencidas y deudas", "#2563eb", "from-blue-500 to-indigo-600", clientes.length + productos.length],
-          [Package, "Productos por reponer", productos.length, "Stock bajo el mínimo o agotado", "#ea580c", "from-orange-500 to-amber-500", clientes.length + productos.length],
+          [BellRing, "Alertas en total", clientes.length + productos.length, "Todo lo que hay por atender", "text-cyan-600", "from-cyan-500 to-teal-600", clientes.length + productos.length],
+          [Siren, "Urgentes", urgentes, "Vencidos y productos agotados", "text-rose-600", "from-rose-500 to-red-600", clientes.length + productos.length],
+          [Users, "Clientes por atender", clientes.length, "Membresías por vencer, vencidas y deudas", "text-blue-600", "from-blue-500 to-indigo-600", clientes.length + productos.length],
+          [Package, "Productos por reponer", productos.length, "Stock bajo el mínimo o agotado", "text-orange-600", "from-orange-500 to-amber-500", clientes.length + productos.length],
         ].map(([Icono, t, v, d, color, grad, total]) => {
           const pct = total ? Math.round((v / total) * 100) : 0;
           return (
@@ -101,12 +101,12 @@ export const TodasLasAlertas = () => {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500">{t}</span>
-                <span className="block text-3xl font-black leading-none mt-0.5" style={{ color }}>{v}</span>
+                <span className={`block text-3xl font-black leading-none mt-0.5 ${color}`}>{v}</span>
                 <span className="block text-[11px] text-slate-500 truncate mt-0.5" title={d}>{d}</span>
               </span>
               <svg viewBox="0 0 36 36" className="w-11 h-11 shrink-0 -rotate-90" aria-hidden>
                 <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="4" className="text-slate-100" />
-                <circle cx="18" cy="18" r="15" fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(pct / 100) * 94.2} 94.2`} />
+                <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" className={color} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(pct / 100) * 94.2} 94.2`} />
               </svg>
             </div>
           );
