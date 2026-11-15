@@ -1,3 +1,4 @@
+import { TarjetaKpi } from "../common/TarjetaKpi";
 // Pestaña "Todas": todas las alertas importantes en orden de prioridad,
 // separadas en Clientes (membresías y deudas) y Productos (stock).
 import React, { useMemo, useState } from "react";
@@ -92,25 +93,18 @@ export const TodasLasAlertas = () => {
           [Siren, "Urgentes", urgentes, "Vencidos y productos agotados", "text-rose-600", "from-rose-500 to-red-600", clientes.length + productos.length],
           [Users, "Clientes por atender", clientes.length, "Membresías por vencer, vencidas y deudas", "text-blue-600", "from-blue-500 to-indigo-600", clientes.length + productos.length],
           [Package, "Productos por reponer", productos.length, "Stock bajo el mínimo o agotado", "text-orange-600", "from-orange-500 to-amber-500", clientes.length + productos.length],
-        ].map(([Icono, t, v, d, color, grad, total]) => {
-          const pct = total ? Math.round((v / total) * 100) : 0;
-          return (
-            <div key={t} className="rd-levanta relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 flex items-center gap-3">
-              <span className={`relative w-14 h-14 shrink-0 rounded-2xl bg-gradient-to-br ${grad} text-white flex items-center justify-center shadow-lg ${t === "Urgentes" && v > 0 ? "animate-pulse" : ""}`}>
-                <Icono className="w-7 h-7" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500">{t}</span>
-                <span className={`block text-3xl font-black leading-none mt-0.5 ${color}`}>{v}</span>
-                <span className="block text-[11px] text-slate-500 truncate mt-0.5" title={d}>{d}</span>
-              </span>
-              <svg viewBox="0 0 36 36" className="w-11 h-11 shrink-0 -rotate-90" aria-hidden>
-                <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="4" className="text-slate-100" />
-                <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" className={color} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(pct / 100) * 94.2} 94.2`} />
-              </svg>
-            </div>
-          );
-        })}
+        ].map(([Icono, t, v, d, color, grad, total]) => (
+          <TarjetaKpi
+            key={t}
+            titulo={t}
+            valor={v}
+            sub={d}
+            icono={Icono}
+            tono={{ "text-cyan-600": "teal", "text-rose-600": "rojo", "text-blue-600": "azul", "text-orange-600": "ambar" }[color]}
+            progreso={total ? (v / total) * 100 : 0}
+            pulso={t === "Urgentes" && v > 0}
+          />
+        ))}
       </div>
 
       {/* Barra por prioridad */}

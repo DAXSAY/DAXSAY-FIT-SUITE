@@ -59,10 +59,12 @@ export const BancoFlotante = ({ exercises, destino, setDestino, dias = [], onAgr
         <button
           type="button"
           onClick={() => setDestino({ dia: Math.min(ultimoDia, Math.max(dias.length - 1, 0)) })}
-          className="rd-boton-banco fixed bottom-5 right-5 z-[60] flex items-center gap-2 pl-4 pr-5 py-3 rounded-full text-sm font-extrabold cursor-pointer"
+          className="rd-boton-banco fixed right-0 top-1/2 -translate-y-1/2 z-[60] flex flex-col items-center gap-2 px-2 py-3.5 rounded-l-2xl text-xs font-extrabold cursor-pointer"
           aria-label="Abrir banco de ejercicios"
+          title="Abrir banco de ejercicios"
         >
-          <Dumbbell className="w-5 h-5" /> {etiquetaBoton}
+          <Dumbbell className="w-4 h-4" />
+          <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>{etiquetaBoton}</span>
         </button>
       )}
       {abierto && (

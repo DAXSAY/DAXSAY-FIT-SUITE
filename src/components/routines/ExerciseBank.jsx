@@ -162,7 +162,7 @@ export const ExerciseLibrary = ({ exercises, onOpen, onNew }) => {
   const [q, setQ] = useState("");
   const [group, setGroup] = useState("all");
   const [equip, setEquip] = useState("all");
-  const [limit, setLimit] = useState(60);
+  const [limit, setLimit] = useState(96);
 
   const equipos = useMemo(
     () => Array.from(new Set(exercises.map((e) => e.equipment).filter(Boolean))).sort(),
@@ -175,7 +175,7 @@ export const ExerciseLibrary = ({ exercises, onOpen, onNew }) => {
   }, [exercises]);
   const filtered = useMemo(() => filterExercises(exercises, { q, group, equip }), [exercises, q, group, equip]);
 
-  useEffect(() => setLimit(60), [q, group, equip]);
+  useEffect(() => setLimit(96), [q, group, equip]);
 
   return (
     <div className="space-y-4">
@@ -243,26 +243,26 @@ export const ExerciseLibrary = ({ exercises, onOpen, onNew }) => {
           Cargando banco de ejercicios…
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3">
           {filtered.slice(0, limit).map((ex) => (
             <button
               key={ex.id}
               onClick={() => onOpen(ex)}
-              className="text-left bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md rounded-2xl overflow-hidden transition-all cursor-pointer group"
+              className="text-left bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md rounded-xl overflow-hidden transition-all cursor-pointer group"
             >
-              <div className="aspect-square bg-white border-b border-slate-100 p-2">
+              <div className="aspect-square bg-white border-b border-slate-100 p-1.5">
                 <ExerciseThumb ex={ex} className="w-full h-full" />
               </div>
-              <div className="p-3">
-                <span className="text-xs font-bold uppercase tracking-wide text-blue-700">
+              <div className="p-2">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-blue-700">
                   {MUSCLE_LABELS[ex.muscleGroup] || ex.muscleGroup}
                 </span>
-                <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2 mt-0.5 group-hover:text-blue-700">
+                <h3 className="text-xs font-bold text-slate-900 leading-snug line-clamp-2 mt-0.5 group-hover:text-blue-700">
                   {ex.name}
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 truncate">{ex.equipment}</p>
+                <p className="text-[11px] text-slate-500 mt-0.5 truncate">{ex.equipment}</p>
                 {ex.nameEn && ex.nameEn !== ex.name && (
-                  <p className="text-xs text-slate-400 truncate italic">{ex.nameEn}</p>
+                  <p className="text-[11px] text-slate-400 truncate italic">{ex.nameEn}</p>
                 )}
               </div>
             </button>
@@ -272,7 +272,7 @@ export const ExerciseLibrary = ({ exercises, onOpen, onNew }) => {
       {filtered.length > limit && (
         <div className="flex justify-center">
           <button
-            onClick={() => setLimit((l) => l + 60)}
+            onClick={() => setLimit((l) => l + 96)}
             className="px-6 py-3 rounded-xl bg-white border border-slate-300 text-sm font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
           >
             Mostrar más ({filtered.length - limit} restantes)

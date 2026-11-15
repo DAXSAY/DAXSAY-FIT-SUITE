@@ -3,8 +3,8 @@
 // - Botón "Programar": deja el aviso al área que corresponde (entrenador,
 //   nutrición o fisioterapia) y en las alertas generales, con código y WhatsApp.
 import { useRecordado } from "../../utils/subPestana";
-import React, { useMemo, useState } from "react";
-import { CalendarClock, Check, ClipboardCopy, Dumbbell, HeartPulse, MessageCircle, Salad, Search, UserCheck, UserRound } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { CalendarClock, Check, ClipboardCopy, Hourglass, Dumbbell, HeartPulse, MessageCircle, Salad, Search, UserCheck, UserRound } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { CodigoAlumno, coincideAlumno } from "./BuscarAlumno";
 import { enlaceWhatsApp } from "./TelWhatsApp";
@@ -52,6 +52,25 @@ export function usePendientes({ todos = false } = {}) {
       .filter((p) => p.estado === "pendiente" && tipos.includes(p.tipo) && activos.has(String(p.memberId)) && !cob[p.tipo]?.has(String(p.memberId)))
       .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
   }, [programados, currentUser?.role, members, cob, todos]);
+}
+
+// Un programado se cierra SOLO cuando el alumno ya tiene el servicio
+// (rutina asignada, dieta activa o evaluación de fisioterapia). Nadie puede
+// darle check a mano sin que se haya hecho la asignación.
+const yaCerrados = new Set();
+export function useCierreAutomatico() {
+  const { programados = [], resolverProgramado, currentUser } = useGym();
+  const cob = useCobertura();
+  const puede = ["admin", "trainer", "nutritionist", "physio", "reception"].includes(currentUser?.role);
+  useEffect(() => {
+    if (!puede || !resolverProgramado) return;
+    programados.forEach((p) => {
+      if (p.estado === "pendiente" && cob[p.tipo]?.has(String(p.memberId)) && !yaCerrados.has(p.id)) {
+        yaCerrados.add(p.id);
+        resolverProgramado(p.id);
+      }
+    });
+  }, [programados, cob, puede, resolverProgramado]);
 }
 
 const copiar = (t) => {
@@ -104,11 +123,12 @@ export const FilaProgramado = ({ p, compacta = false, onAtendido }) => {
       <button type="button" onClick={() => abrirPerfilAlumno(p.memberId)} title="Ver perfil (teléfono, datos)" className="shrink-0 w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-slate-50 cursor-pointer">
         <UserRound className="w-4 h-4" />
       </button>
-      {onAtendido && (
-        <button type="button" onClick={() => onAtendido(p.id)} title="Ya se atendió" className="shrink-0 w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer">
-          <Check className="w-4 h-4" />
-        </button>
-      )}
+      <span
+        title={`Se marca como atendido solo, cuando ${p.memberName} ya tenga ${t.servicio.replace("su ", "su ")} asignada en el sistema`}
+        className="shrink-0 h-8 px-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 flex items-center gap-1 text-[10px] font-black uppercase tracking-wide cursor-help"
+      >
+        <Hourglass className="w-3.5 h-3.5" /> {compacta ? "" : "Pendiente"}
+      </span>
     </li>
   );
 };
@@ -116,7 +136,7 @@ export const FilaProgramado = ({ p, compacta = false, onAtendido }) => {
 /** Sección para los paneles de avisos (campanita) */
 export const SeccionProgramados = ({ todos = false }) => {
   const pend = usePendientes({ todos });
-  const { resolverProgramado } = useGym();
+  useCierreAutomatico();
   if (!pend.length) return null;
   return (
     <div className="mb-3 space-y-2">
@@ -125,7 +145,7 @@ export const SeccionProgramados = ({ todos = false }) => {
       </p>
       <ul className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
         {pend.map((p) => (
-          <FilaProgramado key={p.id} p={p} compacta onAtendido={resolverProgramado} />
+          <FilaProgramado key={p.id} p={p} compacta />
         ))}
       </ul>
     </div>
@@ -135,7 +155,7 @@ export const SeccionProgramados = ({ todos = false }) => {
 /** Pestaña completa (Ver todas las alertas → Programados), por tipo */
 export const ProgramadosCompleto = () => {
   const pend = usePendientes({ todos: true });
-  const { resolverProgramado } = useGym();
+  useCierreAutomatico();
   const [q, setQ] = useState("");
   const lista = q.trim() ? pend.filter((p) => `${p.memberName} ${p.codigo}`.toLowerCase().includes(q.trim().toLowerCase())) : pend;
   return (
@@ -172,7 +192,7 @@ export const ProgramadosCompleto = () => {
               {l.length ? (
                 <ul className="space-y-1.5 max-h-[520px] overflow-y-auto pr-1">
                   {l.map((p) => (
-                    <FilaProgramado key={p.id} p={p} onAtendido={resolverProgramado} />
+                    <FilaProgramado key={p.id} p={p} />
                   ))}
                 </ul>
               ) : (

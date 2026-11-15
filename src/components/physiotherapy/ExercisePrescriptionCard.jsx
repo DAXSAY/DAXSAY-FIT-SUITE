@@ -203,12 +203,7 @@ export const ExercisePrescriptionCard = ({
             <button type="button" onClick={() => setBancoDestino({ dia: 0 })} className="px-3 py-1.5 rounded-xl border border-blue-600 bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-blue-500">
               <Plus className="w-3.5 h-3.5" /> Agregar ejercicios
             </button>
-            <button type="button" onClick={() => onChange([...exercises, nuevo()])} className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold cursor-pointer hover:bg-slate-50" title="Agregar una fila vacía para escribir el ejercicio">
-              + Fila rápida
-            </button>
-            <button type="button" onClick={() => setFormPropio(true)} className="px-3 py-1.5 rounded-xl border border-blue-300 bg-white text-blue-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-blue-50">
-              <Plus className="w-3.5 h-3.5" /> Ejercicio propio
-            </button>
+
           </div>
         </div>
       )}

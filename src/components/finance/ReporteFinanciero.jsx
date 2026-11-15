@@ -287,15 +287,15 @@ export const ReporteFinanciero = ({ transactions }) => {
   const Kpi = ({ titulo, valor, icono: Icono, tono, children }) => {
     const c = Object.keys(GRAD).find((k) => tono.includes(`bg-${k}-50`)) || "blue";
     return (
-      <div className={`rd-kpi rd-levanta relative overflow-hidden rounded-2xl border p-3.5 rd-aparece flex items-center gap-3 ${tono}`}>
-        <Icono className="absolute -right-3 -bottom-3 w-20 h-20 opacity-[0.06]" />
-        <span className={`w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-br ${GRAD[c]} text-white flex items-center justify-center shadow-lg`}>
-          <Icono className="w-6 h-6" />
+      <div className={`rd-kpi rd-levanta relative overflow-hidden rounded-xl border px-3 py-2.5 rd-aparece flex items-center gap-2.5 ${tono}`}>
+        <Icono className="absolute -right-2 -bottom-2 w-14 h-14 opacity-[0.06]" />
+        <span className={`w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br ${GRAD[c]} text-white flex items-center justify-center shadow-md`}>
+          <Icono className="w-[18px] h-[18px]" />
         </span>
         <span className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-wider opacity-80">{titulo}</p>
-          <p className="text-xl xl:text-2xl font-black mt-0.5 truncate">{valor}</p>
-          <div className="mt-0.5">{children}</div>
+          <p className="text-[10px] font-black uppercase tracking-wider opacity-80">{titulo}</p>
+          <p className="text-lg font-black leading-tight truncate">{valor}</p>
+          <div className="text-[11px]">{children}</div>
         </span>
       </div>
     );

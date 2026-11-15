@@ -3325,8 +3325,8 @@ html.dark .rd-globo-aviso { background: #2a1420; color: #fda4b4; border-color: r
 .rd-cajon-velo { animation: rd-velo-entra .25s ease; backdrop-filter: blur(3px); }
 html:not(.dark) .rd-cajon { background: linear-gradient(180deg, #fffdf9, #f8f4ec); border-color: #e7dece; }
 html.dark .rd-cajon { background: linear-gradient(180deg, #0f2238, #0a1828); border-color: rgba(64, 200, 210, .28); box-shadow: 0 0 40px -12px rgba(64, 200, 210, .35), 0 30px 60px -20px rgba(0, 0, 0, .7); }
-.rd-boton-banco { animation: rd-entra-lado .35s cubic-bezier(.2, .8, .2, 1); transition: transform .15s, box-shadow .2s; }
-.rd-boton-banco:hover { transform: translateY(-2px) scale(1.02); }
+.rd-boton-banco { animation: rd-entra-lado .35s cubic-bezier(.2, .8, .2, 1); transition: padding .15s, box-shadow .2s; }
+.rd-boton-banco:hover { padding-right: 0.75rem; }
 html:not(.dark) .rd-boton-banco { background: linear-gradient(135deg, #3f9ea3, #2f7f84); color: #fff; box-shadow: 0 12px 26px -10px rgba(47, 127, 132, .7); }
 html.dark .rd-boton-banco { background: linear-gradient(135deg, #22b8c2, #168c96); color: #04131c; box-shadow: 0 0 26px -6px rgba(64, 200, 210, .75); }
 

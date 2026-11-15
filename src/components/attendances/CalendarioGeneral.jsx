@@ -114,7 +114,7 @@ export const CalendarioGeneral = ({ onVerLista }) => {
         <TarjetaKpi titulo="Día con más gente" valor={diasConGente ? maximo : 0} sub={(() => { const k = Object.keys(conteo).sort((a, b) => conteo[b] - conteo[a])[0]; return k ? new Date(`${k}T12:00:00`).toLocaleDateString("es-PE", { weekday: "long", day: "numeric" }) : "—"; })()} icono={Flame} tono="ambar" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,500px)_1fr] gap-4 items-start">
+      <div className="space-y-3">
         {/* Calendario */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4">
           <div className="flex items-center justify-between gap-2 mb-3">
@@ -147,7 +147,7 @@ export const CalendarioGeneral = ({ onVerLista }) => {
                   onClick={() => setDia(f)}
                   disabled={futuro}
                   style={n ? { backgroundColor: `color-mix(in srgb, var(--color-${g.color}-500) ${Math.round(fuerza * 100)}%, transparent)` } : undefined}
-                  className={`relative h-11 sm:h-12 rounded-xl border text-left p-1 transition-all ${futuro ? "opacity-40 cursor-default" : "cursor-pointer hover:scale-[1.03]"} ${
+                  className={`relative h-10 rounded-lg border text-left p-1 transition-all ${futuro ? "opacity-40 cursor-default" : "cursor-pointer hover:scale-[1.03]"} ${
                     sel ? "ring-2 ring-offset-1 ring-slate-900 border-transparent" : "border-slate-200"
                   } ${!n && !futuro ? "bg-slate-50" : ""}`}
                 >
@@ -162,8 +162,11 @@ export const CalendarioGeneral = ({ onVerLista }) => {
         {/* Lista del día */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Día elegido</p>
-          <p className="text-base font-black text-slate-900 capitalize">
-            {new Date(`${dia}T12:00:00`).toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}
+          <p className="text-base font-black text-slate-900">
+            {(() => {
+              const t = new Date(`${dia}T12:00:00`).toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
+              return t.charAt(0).toUpperCase() + t.slice(1);
+            })()}
           </p>
           <p className="text-xs text-slate-500 mb-2">
             {new Set(todosDelDia.map((a) => a.userId)).size} {g.nombre.toLowerCase()}
@@ -174,8 +177,8 @@ export const CalendarioGeneral = ({ onVerLista }) => {
             <input value={filtro} onChange={(e) => setFiltro(e.target.value)} placeholder="Buscar código o nombre…" className="w-full pl-8 pr-2 py-1.5 rounded-lg border border-slate-200 text-xs" />
           </div>
           <p className="text-[11px] text-slate-400 mb-2 flex items-center gap-1"><Pencil className="w-3 h-3" /> Toca el lápiz para corregir un ingreso mal marcado.</p>
-          <div className="space-y-1.5 overflow-y-auto max-h-[380px] flex-1">
-            {delDia.length === 0 && <p className="text-sm text-slate-400 py-6 text-center">Nadie registró su ingreso este día.</p>}
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-1.5 content-start">
+            {delDia.length === 0 && <p className="sm:col-span-2 xl:col-span-3 text-sm text-slate-400 py-6 text-center">Nadie registró su ingreso este día.</p>}
             {delDia.map((a) => (
               <div key={a.id} className={`group flex items-center gap-2 p-2 rounded-xl border ${repetidos.has(a.userId) ? "bg-amber-50 border-amber-300" : "bg-slate-50 border-slate-200"}`}>
                 <span className="w-16 shrink-0 font-mono text-[11px] font-bold text-blue-700">{codigoDe(a) || "—"}</span>

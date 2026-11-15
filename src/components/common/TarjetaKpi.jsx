@@ -35,7 +35,7 @@ const TONOS = {
 };
 
 /** Anillo de avance (0-100) */
-export const Anillo = ({ pct = 0, clase = "text-cyan-600", tam = 44 }) => (
+export const Anillo = ({ pct = 0, clase = "text-cyan-600", tam = 34 }) => (
   <svg viewBox="0 0 36 36" width={tam} height={tam} className="shrink-0 -rotate-90" aria-hidden>
     <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="4" className="text-slate-100" />
     <circle
@@ -67,29 +67,29 @@ export const TarjetaKpi = ({ titulo, valor = 0, decimales = 0, prefijo = "", suf
       type={onClick ? "button" : undefined}
       onClick={onClick}
       title={title}
-      className={`rd-kpi rd-aparece rd-levanta relative overflow-hidden w-full text-left p-3.5 rounded-2xl border transition-all flex items-center gap-3 ${onClick ? "cursor-pointer" : ""} ${
+      className={`rd-kpi rd-aparece rd-levanta relative overflow-hidden w-full text-left px-3 py-2.5 rounded-xl border transition-all flex items-center gap-2.5 ${onClick ? "cursor-pointer" : ""} ${
         alerta ? "bg-rose-50 border-rose-300 hover:border-rose-400" : `${t.fondo} ${activo ? t.borde : t.hover}`
       }`}
     >
-      {I && <I className="absolute -right-3 -bottom-3 w-20 h-20 opacity-[0.06] pointer-events-none" aria-hidden />}
+      {I && <I className="absolute -right-2 -bottom-2 w-14 h-14 opacity-[0.06] pointer-events-none" aria-hidden />}
       {I && (
-        <span className={`relative w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-br ${t.grad} text-white flex items-center justify-center shadow-lg ${pulso ? "animate-pulse" : ""}`}>
-          <I className="w-6 h-6" />
+        <span className={`relative w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br ${t.grad} text-white flex items-center justify-center shadow-md ${pulso ? "animate-pulse" : ""}`}>
+          <I className="w-[18px] h-[18px]" />
         </span>
       )}
       <span className="min-w-0 flex-1">
-        <span className={`block text-[11px] font-black uppercase tracking-wider truncate ${alerta ? "text-rose-700" : "text-slate-500"}`}>{titulo}</span>
-        <span className={`block text-2xl font-black leading-tight mt-0.5 truncate ${t.texto}`}>
+        <span className={`block text-[10px] font-black uppercase tracking-wider truncate ${alerta ? "text-rose-700" : "text-slate-500"}`}>{titulo}</span>
+        <span className={`block text-lg font-black leading-tight truncate ${t.texto}`}>
           {texto != null ? texto : <NumeroAnimado valor={Number(valor) || 0} decimales={decimales} prefijo={prefijo} />}
           {sufijo}
         </span>
-        {sub && <span className="block text-[11px] font-semibold text-slate-500 truncate mt-0.5" title={typeof sub === "string" ? sub : undefined}>{sub}</span>}
+        {sub && <span className="block text-[11px] font-semibold text-slate-500 truncate" title={typeof sub === "string" ? sub : undefined}>{sub}</span>}
       </span>
       {progreso != null ? (
         <Anillo pct={progreso} clase={t.texto} />
       ) : serie ? (
         <span className="shrink-0 pl-1">
-          <MiniGrafico serie={serie} color={t.color} ancho={64} />
+          <MiniGrafico serie={serie} color={t.color} ancho={52} alto={22} />
         </span>
       ) : null}
     </Comp>

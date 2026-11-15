@@ -780,8 +780,8 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
       {/* VIEW 1: PLANS AND ASSIGNED DIETS */}
       {viewMode === "plans" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Plan Selector & Filters */}
-          <div className="lg:col-span-4 space-y-4">
+          {/* Left Column: Plan Selector & Filters (fija al bajar: sin huecos vacíos) */}
+          <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-3 self-start">
             {/* Search and Filters */}
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
               <div className="relative">
@@ -810,7 +810,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
             </div>
 
             {/* Plans List */}
-            <div className="space-y-2.5 max-h-[720px] overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-[720px] lg:max-h-[calc(100vh-9rem)] overflow-y-auto pr-1">
               {filteredPlans.length === 0 ? (
                 <div className="bg-white p-8 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
                   No se encontraron planes con los filtros aplicados.
@@ -1665,11 +1665,11 @@ export const MacroTarjetas = ({ kcal, p = 0, c = 0, g = 0 }) => {
   return (
     <div className={`grid grid-cols-1 ${kcal ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-3"} gap-2.5`}>
       {kcal != null && (
-        <div className="rd-kpi rounded-2xl border border-cyan-200 bg-cyan-50 p-3 flex items-center gap-3">
-          <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-lg shrink-0"><Flame className="w-5 h-5" /></span>
+        <div className="rd-kpi rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2.5 flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-md shrink-0"><Flame className="w-[18px] h-[18px]" /></span>
           <span className="min-w-0">
-            <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500">Calorías del día</span>
-            <span className="block text-xl font-black text-cyan-700">{kcal} <small className="text-xs font-bold">kcal</small></span>
+            <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500">Calorías del día</span>
+            <span className="block text-lg font-black leading-tight text-cyan-700">{kcal} <small className="text-xs font-bold">kcal</small></span>
             <span className="block text-[11px] text-slate-500">P {Math.round((kp / total) * 100)}% · C {Math.round((kc / total) * 100)}% · G {Math.round((kg / total) * 100)}%</span>
           </span>
         </div>
@@ -1677,19 +1677,19 @@ export const MacroTarjetas = ({ kcal, p = 0, c = 0, g = 0 }) => {
       {items.map(([t, gr, k, I, grad, txt, ayuda]) => {
         const pct = Math.round((k / total) * 100);
         return (
-          <div key={t} className="rd-kpi rounded-2xl border border-slate-200 bg-white p-3 flex items-center gap-3">
-            <span className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${grad} text-white flex items-center justify-center shadow-lg shrink-0`}><I className="w-5 h-5" /></span>
+          <div key={t} className="rd-kpi rounded-xl border border-slate-200 bg-white px-3 py-2.5 flex items-center gap-2.5">
+            <span className={`w-9 h-9 rounded-xl bg-gradient-to-br ${grad} text-white flex items-center justify-center shadow-md shrink-0`}><I className="w-[18px] h-[18px]" /></span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500">{t}</span>
-              <span className={`block text-xl font-black ${txt}`}>{gr} <small className="text-xs font-bold">g</small></span>
+              <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500">{t}</span>
+              <span className={`block text-lg font-black leading-tight ${txt}`}>{gr} <small className="text-xs font-bold">g</small></span>
               <span className="block text-[11px] text-slate-500 truncate">{k} kcal · {ayuda}</span>
             </span>
             <span className="relative shrink-0">
-              <svg viewBox="0 0 36 36" width="42" height="42" className="-rotate-90">
+              <svg viewBox="0 0 36 36" width="34" height="34" className="-rotate-90">
                 <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="4" className="text-slate-100" />
                 <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" className={txt} strokeDasharray={`${(pct / 100) * 94.2} 94.2`} />
               </svg>
-              <span className={`absolute inset-0 flex items-center justify-center text-[10px] font-black ${txt}`}>{pct}%</span>
+              <span className={`absolute inset-0 flex items-center justify-center text-[9px] font-black ${txt}`}>{pct}%</span>
             </span>
           </div>
         );

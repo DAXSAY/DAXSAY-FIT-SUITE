@@ -1326,7 +1326,7 @@ export const PhysiotherapyModule = () => {
         /* MAIN TWO-COLUMN WORKSPACE */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* COLUMNA IZQUIERDA: buscador, filtro y lista (mismo diseño que Nutrición) */}
-          <div className="lg:col-span-4 space-y-4">
+          <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-3 self-start">
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1351,7 +1351,7 @@ export const PhysiotherapyModule = () => {
               </select>
             </div>
 
-            <div className="space-y-2.5 max-h-[720px] overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-[720px] lg:max-h-[calc(100vh-9rem)] overflow-y-auto pr-1">
               {filteredMembers.length === 0 ? (
                 <div className="bg-white p-8 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
                   No hay alumnos con los filtros aplicados.
