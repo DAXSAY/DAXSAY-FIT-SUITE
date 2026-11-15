@@ -3,6 +3,7 @@
 // Todo se lee y guarda en MySQL (productos, ventas, venta_detalle,
 // movimientos_inventario) a través de /api/tienda.
 // ============================================================
+import { TarjetaKpi } from "../common/TarjetaKpi";
 import React, { useEffect, useMemo, useState } from "react";
 import { tono } from "../../utils/tonos";
 import {
@@ -429,44 +430,44 @@ export const SalesReport = ({ puedeAnular, onReimprimir, onCambio }) => {
 
       {resumen && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            {[
-              ["Total vendido", soles(resumen.total), Wallet, "text-emerald-600"],
-              ["Ventas", resumen.sales, Receipt, "text-slate-900"],
-              ["Ticket promedio", soles(resumen.avgTicket), TrendingUp, "text-blue-700"],
-              ["Ganancia estimada", soles(resumen.profit), TrendingUp, "text-emerald-700"],
-              ["Unidades vendidas", resumen.units, Boxes, "text-slate-900"],
-            ].map(([l, v, Icono, c], i) => (
-              <div key={l} className={`bg-white rounded-xl border border-gray-200 border-l-4 ${tono(i).borde} p-4`}>
-                <span className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">
-                  <Icono className={`w-3.5 h-3.5 ${tono(i).texto}`} /> {l}
-                </span>
-                <span className={`text-xl font-black ${c}`}>{v}</span>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-3">
+            <TarjetaKpi titulo="Total vendido" texto={soles(resumen.total)} sub={`${resumen.sales} venta(s)`} icono={Wallet} tono="verde" />
+            <TarjetaKpi titulo="Ventas" valor={resumen.sales} sub={resumen.voided ? `${resumen.voided} anulada(s)` : "sin anulaciones"} icono={Receipt} tono="azul" />
+            <TarjetaKpi titulo="Ticket promedio" texto={soles(resumen.avgTicket)} sub="por venta" icono={TrendingUp} tono="violeta" />
+            <TarjetaKpi titulo="Ganancia estimada" texto={soles(resumen.profit)} sub={resumen.total ? `${Math.round((resumen.profit / resumen.total) * 100)}% de margen` : "—"} icono={TrendingUp} tono="teal" progreso={resumen.total ? (resumen.profit / resumen.total) * 100 : 0} />
+            <TarjetaKpi titulo="Unidades vendidas" valor={resumen.units} sub="productos" icono={Boxes} tono="ambar" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-4 space-y-2.5">
-              <h3 className="text-xs font-black uppercase text-slate-500">Productos más vendidos</h3>
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+              <h3 className="text-xs font-black uppercase tracking-wide text-slate-600 flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center"><Boxes className="w-4 h-4" /></span>
+                Productos más vendidos
+              </h3>
               {resumen.topProducts.length === 0 && <p className="text-sm text-slate-500">Sin ventas en estas fechas.</p>}
               {resumen.topProducts.map((p, i) => (
                 <div key={p.id} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-slate-800">{p.name}</span>
+                  <div className="flex justify-between text-sm gap-2">
+                    <span className="font-semibold text-slate-800 flex items-center gap-2 min-w-0">
+                      <span className={`w-6 h-6 shrink-0 rounded-full text-[11px] font-black flex items-center justify-center ${i === 0 ? "bg-amber-400 text-white" : i === 1 ? "bg-slate-300 text-slate-800" : i === 2 ? "bg-orange-300 text-white" : "bg-slate-100 text-slate-600"}`}>{i + 1}</span>
+                      <span className="truncate">{p.name}</span>
+                    </span>
                     <span className="text-slate-600">
                       {p.units} u · <strong>{soles(p.total)}</strong> <span className="text-emerald-700">(+{soles(p.profit)})</span>
                     </span>
                   </div>
-                  <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
                     <div className={`h-full ${tono(i).barra} rounded-full`} style={{ width: `${(p.units / maxUnidades) * 100}%` }} />
                   </div>
                 </div>
               ))}
             </div>
             <div className="space-y-4">
-              <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2 text-sm">
-                <h3 className="text-xs font-black uppercase text-slate-500">Por método de pago</h3>
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-2.5 text-sm">
+                <h3 className="text-xs font-black uppercase tracking-wide text-slate-600 flex items-center gap-2">
+                  <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white flex items-center justify-center"><Wallet className="w-4 h-4" /></span>
+                  Por método de pago
+                </h3>
                 {Object.entries(METODO).map(([k, l], i) => {
                   const m = resumen.byMethod.find((x) => x.method === k);
                   return (
@@ -478,8 +479,11 @@ export const SalesReport = ({ puedeAnular, onReimprimir, onCambio }) => {
                 })}
                 {resumen.voided > 0 && <p className="text-xs text-rose-600 font-bold pt-1">{resumen.voided} venta(s) anulada(s)</p>}
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2 text-sm">
-                <h3 className="text-xs font-black uppercase text-slate-500">Inventario hoy</h3>
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-2.5 text-sm">
+                <h3 className="text-xs font-black uppercase tracking-wide text-slate-600 flex items-center gap-2">
+                  <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center"><Receipt className="w-4 h-4" /></span>
+                  Inventario hoy
+                </h3>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Valor a costo</span>
                   <strong>{soles(resumen.inventory.costValue)}</strong>

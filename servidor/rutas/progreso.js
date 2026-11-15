@@ -16,7 +16,7 @@ import { codigoAlumno } from "../codigoAlumno.js";
 
 const router = Router();
 
-const SIN_TABLA = "Falta ejecutar base_datos/24_pesos_por_serie.sql en Workbench (como root) para usar el progreso de pesos.";
+const SIN_TABLA = "Falta ejecutar base_datos/anteriores/24_pesos_por_serie.sql en Workbench (como root) para usar el progreso de pesos.";
 const DIAS_ATRAS_ALUMNO = 31; // el alumno puede corregir o completar hasta un mes atrás
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 

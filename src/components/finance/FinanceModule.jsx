@@ -1,3 +1,4 @@
+import { TarjetaKpi } from "../common/TarjetaKpi";
 import React, { useEffect, useState, useMemo } from "react";
 import {
   BadgeDollarSign,
@@ -14,6 +15,7 @@ import {
   Wrench,
   Users,
   Briefcase,
+  AlertCircle,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -544,79 +546,38 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
       {/* SECTION 1: LEDGER & OVERVIEW */}
       {activeTab === "ledger" && (
         <div className="space-y-4">
-          {/* Financial Summary Cards */}
+          {/* Indicadores (mismo diseño que el resto del sistema) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Total Incomes */}
-            <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Ingresos Totales
-                </span>
-                <div className="w-7 h-7 rounded-lg bg-green-50 text-green-700 border border-green-200 flex items-center justify-center">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-2">
-                <span className="text-2xl font-bold text-green-700">
-                  S/{" "}
-                  {metrics.totalIncome.toLocaleString("es-PE", {
-                    minimumFractionDigits: 2,
-                  })}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Membresías S/ {metrics.membershipsRevenue} • Tienda S/{" "}
-                {metrics.posSalesTotal}
-              </p>
-            </div>
-
-            {/* Total Expenses */}
-            <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Egresos / Gastos
-                </span>
-                <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 flex items-center justify-center">
-                  <TrendingDown className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-2">
-                <span className="text-2xl font-bold text-rose-700">
-                  S/{" "}
-                  {metrics.totalExpense.toLocaleString("es-PE", {
-                    minimumFractionDigits: 2,
-                  })}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Alquiler, sueldos de personal, mantenimiento y servicios
-              </p>
-            </div>
-
-            {/* Net Profit */}
-            <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Utilidad Neta
-                </span>
-                <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center">
-                  <DollarSign className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-2">
-                <span
-                  className={`text-2xl font-bold ${metrics.netProfit >= 0 ? "text-blue-700" : "text-rose-700"}`}
-                >
-                  S/{" "}
-                  {metrics.netProfit.toLocaleString("es-PE", {
-                    minimumFractionDigits: 2,
-                  })}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Margen operativo de la gestión actual
-              </p>
-            </div>
+            <TarjetaKpi
+              titulo="Ingresos totales"
+              valor={metrics.totalIncome}
+              decimales={2}
+              prefijo="S/ "
+              sub={`Membresías S/ ${Number(metrics.membershipsRevenue || 0).toFixed(2)} · Tienda S/ ${Number(metrics.posSalesTotal || 0).toFixed(2)}`}
+              icono={TrendingUp}
+              tono="verde"
+              progreso={metrics.totalIncome ? 100 : 0}
+            />
+            <TarjetaKpi
+              titulo="Egresos / gastos"
+              valor={metrics.totalExpense}
+              decimales={2}
+              prefijo="S/ "
+              sub="Alquiler, sueldos, mantenimiento y servicios"
+              icono={TrendingDown}
+              tono="rojo"
+              progreso={metrics.totalIncome ? (metrics.totalExpense / metrics.totalIncome) * 100 : 0}
+            />
+            <TarjetaKpi
+              titulo="Utilidad neta"
+              valor={metrics.netProfit}
+              decimales={2}
+              prefijo="S/ "
+              sub={`Margen ${metrics.totalIncome ? ((metrics.netProfit / metrics.totalIncome) * 100).toFixed(1) : "0.0"}% de lo que entra`}
+              icono={DollarSign}
+              tono={metrics.netProfit >= 0 ? "teal" : "ambar"}
+              progreso={metrics.totalIncome ? Math.max(0, (metrics.netProfit / metrics.totalIncome) * 100) : 0}
+            />
           </div>
 
           {/* =========================================================================
@@ -1156,65 +1117,41 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
       {/* SECTION 2: STAFF PAYROLL, SALARIES & HOURS */}
       {activeTab === "payroll" && (
         <div className="space-y-4">
-          {/* Payroll KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                Presupuesto Nómina Mes
-              </span>
-              <span className="text-xl font-extrabold text-slate-900 mt-1 block">
-                S/{" "}
-                {totalPayrollBudget.toLocaleString("es-PE", {
-                  minimumFractionDigits: 2,
-                })}
-              </span>
-              <span className="text-xs text-slate-500">
-                {payrollEntries.length} colaboradores activos
-              </span>
-            </div>
-
-            <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                Horas Totales Trabajadas
-              </span>
-              <span className="text-xl font-extrabold text-blue-700 mt-1 block">
-                {totalHoursWorkedAll} horas
-              </span>
-              <span className="text-xs text-slate-500">
-                Registradas en reloj marcador
-              </span>
-            </div>
-
-            <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                Sueldos Pagados
-              </span>
-              <span className="text-xl font-extrabold text-emerald-700 mt-1 block">
-                S/{" "}
-                {paidPayrollTotal.toLocaleString("es-PE", {
-                  minimumFractionDigits: 2,
-                })}
-              </span>
-              <span className="text-xs text-emerald-600 font-semibold">
-                Egresos registrados en caja
-              </span>
-            </div>
-
-            <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                Sueldos Pendientes
-              </span>
-              <span className="text-xl font-extrabold text-amber-700 mt-1 block">
-                S/{" "}
-                {pendingPayrollTotal.toLocaleString("es-PE", {
-                  minimumFractionDigits: 2,
-                })}
-              </span>
-              <span className="text-xs text-amber-700 font-semibold">
-                {pendingCount} colaboradores por liquidar
-              </span>
-            </div>
+          {/* Indicadores de planilla */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            <TarjetaKpi titulo="Planilla del mes" valor={totalPayrollBudget} decimales={2} prefijo="S/ " sub={`${payrollEntries.length} colaboradores`} icono={Briefcase} tono="azul" />
+            <TarjetaKpi titulo="Horas trabajadas" valor={totalHoursWorkedAll} sufijo=" h" sub="Según el reloj marcador" icono={Clock} tono="violeta" />
+            <TarjetaKpi titulo="Sueldos pagados" valor={paidPayrollTotal} decimales={2} prefijo="S/ " sub="Registrados como egreso" icono={CheckCircle2} tono="verde" progreso={totalPayrollBudget ? (paidPayrollTotal / totalPayrollBudget) * 100 : 0} />
+            <TarjetaKpi titulo="Por pagar" valor={pendingPayrollTotal} decimales={2} prefijo="S/ " sub={`${pendingCount} por liquidar`} icono={AlertCircle} tono="ambar" progreso={totalPayrollBudget ? (pendingPayrollTotal / totalPayrollBudget) * 100 : 0} />
           </div>
+
+          {/* Gráfico: sueldo y horas por colaborador */}
+          {payrollEntries.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-4">
+              <h3 className="text-xs font-black uppercase tracking-wide text-slate-600 mb-3 flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center"><BarChart3 className="w-4 h-4" /></span>
+                Sueldo neto por colaborador
+              </h3>
+              <div className="space-y-2">
+                {[...payrollEntries].sort((x, y) => y.netPay - x.netPay).map((p) => {
+                  const max = Math.max(...payrollEntries.map((e) => e.netPay || 0), 1);
+                  return (
+                    <div key={p.id} className="grid grid-cols-[minmax(0,160px)_1fr_auto] items-center gap-3 text-xs">
+                      <span className="truncate font-bold text-slate-800">{p.staffName}</span>
+                      <span className="h-3 rounded-full bg-slate-100 overflow-hidden">
+                        <span className={`block h-full rounded-full bg-gradient-to-r ${p.status === "paid" ? "from-emerald-500 to-teal-500" : "from-amber-400 to-orange-500"}`} style={{ width: `${((p.netPay || 0) / max) * 100}%` }} />
+                      </span>
+                      <span className="font-black text-slate-700 whitespace-nowrap">S/ {Number(p.netPay || 0).toFixed(2)} · {p.workedHours || 0} h</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-[11px] text-slate-500 flex gap-3">
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Pagado</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Por pagar</span>
+              </p>
+            </div>
+          )}
 
           {/* Payroll Table */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-3">
@@ -1234,7 +1171,7 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
               </div>
 
               <span className="text-xs font-bold text-blue-800 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-                Periodo: Agosto 2026
+                Periodo: {new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" })}
               </span>
             </div>
 

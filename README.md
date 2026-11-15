@@ -10,7 +10,7 @@
 - Archivo `gestion_radicalgym.env` en la raíz con la conexión a MySQL (DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET, SESION_HORAS, API_PORT). No se sube a GitHub.
 
 ## Antes de usarlo con datos reales
-1. **Base de datos:** en MySQL Workbench (como root) ejecuta las actualizaciones pendientes de `base_datos/`, entre ellas `33_limpieza_sin_uso.sql` (saca un respaldo antes) y `34_sincronizacion_y_respaldos.sql` (actualización parcial entre pantallas y copias completas).
+1. **Base de datos:** en MySQL Workbench (como root) ejecuta `base_datos/gestion_radicalgym.sql`: un solo script con todas las tablas y registros base (borra y vuelve a crear la base; saca una copia antes si ya tienes datos).
 2. **Contraseñas:** `npm run cambiar-claves` cambia el secreto de las sesiones y las contraseñas de prueba del personal. Las nuevas quedan solo en `CLAVES_NUEVAS.txt` (entrégalas y bórralo).
 3. **Copias de seguridad:** se hacen solas cada día en la carpeta `respaldos/` (últimas 30). También: `npm run respaldo` o el botón «Hacer copia ahora» en Inicio.
 4. **Entrar desde casa:** sigue `ACCESO_REMOTO.md` (Tailscale + `PERMITIR_ACCESO_RED.bat`).
@@ -23,7 +23,7 @@ npm run dev      # levanta la API (puerto 4000) y la web (http://localhost:3000)
 
 ## Estructura
 ```
-base_datos/        scripts SQL de gestion_radicalgym (ver su README)
+base_datos/        gestion_radicalgym.sql: la base completa en un solo script (ver su README)
 servidor/          API Node.js
   index.js         arranque, rutas y manejo de errores
   db.js            conexión a MySQL

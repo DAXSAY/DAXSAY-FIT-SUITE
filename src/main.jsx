@@ -5,11 +5,13 @@ import "./index.css";
 import { aplicarTema, temaGuardado } from "./utils/tema";
 import { instalarResaltadoGraficos } from "./utils/graficos";
 import { instalarControlesVentanas } from "./utils/controlesVentana";
+import { instalarTooltipGlobal } from "./utils/tooltipGlobal";
 
 // Aplica el modo claro/oscuro guardado antes de pintar (evita parpadeo)
 aplicarTema(temaGuardado());
 instalarResaltadoGraficos();
 instalarControlesVentanas();
+instalarTooltipGlobal();
 
 // Campos numéricos: al entrar se selecciona el valor (escribir lo reemplaza)
 // y se quitan los ceros a la izquierda (evita "012").

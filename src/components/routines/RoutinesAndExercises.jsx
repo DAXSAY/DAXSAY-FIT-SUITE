@@ -45,6 +45,8 @@ import {
 import { FormEjercicioPropio, TONO, TONO_NIVEL } from "./FormEjercicioPropio";
 import { RutinasAsignadas } from "./RutinasAsignadas";
 import { BancoFlotante } from "./BancoFlotante";
+import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
+import { useRecordado } from "../../utils/subPestana";
 import { GuiaSesion } from "./GuiaSesion";
 import { SaludAlumno } from "./SaludAlumno";
 export const RoutinesAndExercises = () => {
@@ -64,7 +66,7 @@ export const RoutinesAndExercises = () => {
   } = useGym();
 
   // El progreso de pesos de los alumnos ahora está en Metas & Logros
-  const [activeSubTab, setActiveSubTab] = useState("routines");
+  const [activeSubTab, setActiveSubTab] = useRecordado("rutinas", "routines");
 
   // Exercise Filters
   const [selectedMuscle, setSelectedMuscle] = useState("all");
@@ -371,53 +373,37 @@ export const RoutinesAndExercises = () => {
 
   return (
     <div className="space-y-4">
-      {/* Cabecera + menú de secciones */}
-      <div className="rd-portada rd-cabecera space-y-3">
-        <div className="min-w-0">
-          <h1 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Dumbbell className="w-4 h-4 text-blue-600" />
-            <span>Rutinas y ejercicios</span>
-          </h1>
-          <p className="text-xs text-gray-500 mt-0.5">Crea rutinas, asígnalas a tus alumnos y ajústalas a cada uno.</p>
-        </div>
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
-          {[
-            ["routines", Layers, "Rutinas", routines.length, "Todas las rutinas · por nivel y entrenador", "blue"],
-            ["asignadas", Users, "Rutinas asignadas", conRutina, "Alumnos con rutina · busca por código", "violet"],
-            ["exercises", Dumbbell, "Banco de ejercicios", allExercises.length, "Ejercicios con animación y propios", "teal"],
-            ["builder", editando ? Pencil : Plus, editando ? "Editando rutina" : "Crear rutina", null, editando ? "Continúa la edición" : "Diseña una rutina nueva", "amber"],
-          ].map(([k, Icono, l, n, d, c]) => {
-            const on = activeSubTab === k;
-            const abrir = () => {
-              const ir = () => {
-                if (k === "asignadas") setAlumnoSel("");
-                if (k === "builder" && !editando) nuevaRutina();
-                else setActiveSubTab(k);
-              };
-              if (activeSubTab === "builder" && k !== "builder") salirDelCreador(ir);
-              else ir();
-            };
-            const col = {
-              blue: on ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-blue-200 text-blue-800 hover:bg-blue-50",
-              violet: on ? "bg-violet-600 border-violet-600 text-white" : "bg-white border-violet-200 text-violet-800 hover:bg-violet-50",
-              teal: on ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-teal-200 text-teal-700 hover:bg-teal-50",
-              amber: on ? "bg-amber-600 border-amber-600 text-white" : "bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100",
-            }[c];
-            return (
-              <button key={k} type="button" onClick={abrir} className={`flex items-center gap-3 rounded-xl border-2 px-3 py-2 text-left cursor-pointer transition-colors ${col}`}>
-                <Icono className="w-5 h-5 shrink-0" />
-                <span className="flex-1 min-w-0">
-                  <span className="flex items-center gap-2 text-sm font-black">
-                    {l}
-                    {n != null && <span className={`px-1.5 rounded-full text-[11px] ${on ? "bg-white/25" : "bg-slate-100 text-slate-700"}`}>{n}</span>}
-                  </span>
-                  <span className={`block text-[11px] truncate ${on ? "opacity-90" : "text-slate-500"}`}>{d}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {(() => {
+        const cambiarSeccion = (k) => {
+          const ir = () => {
+            if (k === "asignadas") setAlumnoSel("");
+            if (k === "builder" && !editando) nuevaRutina();
+            else setActiveSubTab(k);
+          };
+          if (activeSubTab === "builder" && k !== "builder") salirDelCreador(ir);
+          else ir();
+        };
+        return (
+          <CabeceraModulo
+            icono={Dumbbell}
+            etiqueta="Entrenamiento"
+            titulo="Rutinas y ejercicios"
+            descripcion="Crea rutinas, asígnalas a tus alumnos y ajústalas a cada uno."
+            accion={
+              <AccionCabecera icono={editando ? Pencil : Plus} onClick={() => cambiarSeccion("builder")}>
+                {editando ? "Seguir editando" : "Crear rutina"}
+              </AccionCabecera>
+            }
+            activa={activeSubTab}
+            onCambiar={cambiarSeccion}
+            pestanas={[
+              { k: "routines", icono: Layers, label: "Rutinas", badge: routines.length, tono: "teal" },
+              { k: "asignadas", icono: Users, label: "Rutinas asignadas", badge: conRutina, tono: "violet" },
+              { k: "exercises", icono: Dumbbell, label: "Banco de ejercicios", badge: allExercises.length, tono: "emerald" },
+            ]}
+          />
+        );
+      })()}
 
       {/* SUBTAB 1: ROUTINES LIST */}
       {activeSubTab === "routines" && (

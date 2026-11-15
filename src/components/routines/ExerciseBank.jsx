@@ -685,6 +685,22 @@ const matchQuery = (ex, nq) => {
   return names.some((n) => n.includes(nq)) || norm(ex.target || "").includes(nq);
 };
 
+const VISUAL_GRUPO = {
+  all: { emoji: "✨", grad: "from-slate-500 to-slate-700" },
+  pecho: { emoji: "🫁", grad: "from-rose-500 to-pink-600" },
+  espalda: { emoji: "🦅", grad: "from-blue-500 to-indigo-600" },
+  hombros: { emoji: "🏔️", grad: "from-amber-500 to-orange-500" },
+  biceps: { emoji: "💪", grad: "from-violet-500 to-purple-600" },
+  triceps: { emoji: "🔱", grad: "from-fuchsia-500 to-pink-600" },
+  antebrazo: { emoji: "✊", grad: "from-stone-500 to-amber-700" },
+  cuadriceps: { emoji: "🦵", grad: "from-emerald-500 to-teal-600" },
+  isquiotibiales_gluteos: { emoji: "🍑", grad: "from-orange-500 to-red-500" },
+  pantorrillas: { emoji: "🦶", grad: "from-lime-500 to-green-600" },
+  core_abdomen: { emoji: "🎯", grad: "from-cyan-500 to-teal-600" },
+  cardio_funcional: { emoji: "❤️", grad: "from-red-500 to-rose-600" },
+  cuello: { emoji: "🧣", grad: "from-sky-500 to-blue-600" },
+};
+
 export const ExercisePicker = ({ exercises, onPick, picked = [], compacto = false, alto }) => {
   const [q, setQ] = useState("");
   const [group, setGroup] = useState("");
@@ -726,50 +742,79 @@ export const ExercisePicker = ({ exercises, onPick, picked = [], compacto = fals
           </button>
         )}
       </div>
-      <div className="flex gap-1.5 overflow-x-auto pb-1">
-        {[["all", "Todos"], ...Object.entries(MUSCLE_LABELS).filter(([k]) => counts[k])].map(([k, l]) => {
-          const on = group === k;
-          return (
-            <button
-              key={k}
-              type="button"
-              onClick={() => setGroup(on ? "" : k)}
-              className={`shrink-0 px-3 py-1.5 rounded-full border text-xs font-semibold cursor-pointer transition-colors ${
-                on ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-700 hover:border-blue-400"
-              }`}
-            >
-              {l} <span className={on ? "text-blue-100" : "text-slate-400"}>{k === "all" ? exercises.length : counts[k]}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Grupos musculares: tarjetas grandes al inicio, chips cuando ya hay resultados */}
+      {!abierto ? (
+        <div className="grid grid-cols-2 @md:grid-cols-3 @3xl:grid-cols-4 gap-2">
+          {[["all", "Todos"], ...Object.entries(MUSCLE_LABELS).filter(([k]) => counts[k])].map(([k, l], i) => {
+            const v = VISUAL_GRUPO[k] || VISUAL_GRUPO.all;
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setGroup(k)}
+                style={{ animationDelay: `${i * 30}ms` }}
+                className="rd-aparece rd-grupo-banco group relative overflow-hidden flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-2.5 text-left cursor-pointer"
+              >
+                <span className={`w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br ${v.grad} text-white text-lg flex items-center justify-center shadow-md transition-transform group-hover:scale-110`}>{v.emoji}</span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-black text-slate-900 truncate">{l}</span>
+                  <span className="block text-[11px] font-semibold text-slate-500">{k === "all" ? exercises.length : counts[k]} ejercicios</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          {[["all", "Todos"], ...Object.entries(MUSCLE_LABELS).filter(([k]) => counts[k])].map(([k, l]) => {
+            const on = group === k;
+            const v = VISUAL_GRUPO[k] || VISUAL_GRUPO.all;
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setGroup(on ? "" : k)}
+                className={`shrink-0 px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer transition-all ${
+                  on ? "bg-blue-600 border-blue-600 text-white shadow" : "bg-white border-slate-200 text-slate-700 hover:border-blue-400"
+                }`}
+              >
+                {v.emoji} {l} <span className={on ? "text-blue-100" : "text-slate-400"}>{k === "all" ? exercises.length : counts[k]}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {abierto && (
-        <div className="rounded-2xl border border-blue-200 bg-white p-3 space-y-2">
-          <p className="text-xs text-slate-500">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-slate-500">
             {results.length} ejercicio(s)
             {group && group !== "all" ? ` de ${MUSCLE_LABELS[group]}` : ""}
             {q ? ` con «${q}»` : ""} · toca para agregar (puedes agregar varios)
           </p>
           {/* Mismo formato en todo el sistema: 4 por fila (2 en celular), tarjetas del mismo tamaño */}
-          <div className={`grid grid-cols-2 @sm:grid-cols-3 @3xl:grid-cols-4 gap-2.5 overflow-y-auto pr-1 ${alto || (compacto ? "max-h-[560px]" : "max-h-[640px]")}`}>
-            {results.slice(0, limit).map((ex) => {
+          <div className={`grid grid-cols-2 @sm:grid-cols-3 @3xl:grid-cols-4 gap-3 overflow-y-auto p-0.5 pr-1 rd-scroll-suave ${alto || (compacto ? "max-h-[560px]" : "max-h-[640px]")}`}>
+            {results.slice(0, limit).map((ex, i) => {
               const n = cuenta(ex.id);
               return (
                 <button
                   type="button"
                   key={ex.id}
                   onClick={() => onPick(ex)}
-                  className={`relative flex flex-col text-left rounded-xl border p-2 cursor-pointer transition-colors h-full ${n ? "border-emerald-400 bg-emerald-50" : "bg-white border-slate-200 hover:border-blue-400 hover:bg-blue-50/40"}`}
+                  style={{ animationDelay: `${Math.min(i % 30, 12) * 25}ms` }}
+                  className={`rd-aparece rd-tarjeta-ej group relative flex flex-col text-left rounded-2xl border p-2 cursor-pointer h-full ${n ? "border-emerald-400 bg-emerald-50 ring-2 ring-emerald-300/40" : "bg-white border-slate-200"}`}
                 >
                   {n > 0 && (
-                    <span className="absolute top-1.5 right-1.5 z-10 min-w-5 h-5 px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
+                    <span className="rd-pop absolute top-2 right-2 z-10 min-w-6 h-6 px-1.5 rounded-full bg-emerald-600 text-white text-[11px] font-black flex items-center justify-center shadow">
                       ✓{n > 1 ? n : ""}
                     </span>
                   )}
-                  <ExerciseThumb ex={ex} className="w-full aspect-square rounded-lg bg-white" />
+                  <span className="block overflow-hidden rounded-xl">
+                    <ExerciseThumb ex={ex} className="w-full aspect-square rounded-xl bg-white transition-transform duration-300 group-hover:scale-105" />
+                  </span>
                   <span className="block text-xs font-bold text-slate-900 mt-1.5 line-clamp-2 leading-tight min-h-[2.5em]">{ex.name}</span>
                   <span className="block text-[11px] text-slate-500 truncate">{MUSCLE_LABELS[ex.muscleGroup] || ex.muscleGroup} · {ex.equipment}</span>
+                  <span className="rd-agregar-ej absolute bottom-2 right-2 w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-base font-black shadow-lg">+</span>
                 </button>
               );
             })}

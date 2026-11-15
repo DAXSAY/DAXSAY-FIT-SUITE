@@ -5,6 +5,7 @@
 // y para toda la semana. Cada lunes empieza una semana nueva; las
 // anteriores quedan en el cuadro para comparar lo proyectado con lo real.
 // =====================================================================
+import { Target, CalendarRange, Wallet } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, TrendingUp, Save, CalendarDays, History } from "lucide-react";
 import { api } from "../../api/cliente";
@@ -194,7 +195,7 @@ export const ProyeccionesRecepcion = () => {
 
       {/* Meta del mes y lo vendido (mismo estilo que el Dashboard general) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <TarjetaKpi
+        <TarjetaKpi icono={Target}
           titulo="Meta del mes"
           valor={d.meta?.monto || 0}
           decimales={2}
@@ -202,7 +203,7 @@ export const ProyeccionesRecepcion = () => {
           sub={d.meta ? `Del ${fechaCorta(d.meta.desde)} al ${fechaCorta(d.meta.hasta)}` : "Administración aún no la define"}
           tono="ambar"
         />
-        <TarjetaKpi
+        <TarjetaKpi icono={CalendarRange}
           titulo="Para cumplirla, esta semana"
           valor={d.meta?.sugeridoSemana || 0}
           decimales={2}
@@ -210,7 +211,7 @@ export const ProyeccionesRecepcion = () => {
           sub={d.meta ? `Unos ${soles(d.meta.sugeridoDia)} por día` : "—"}
           tono="azul"
         />
-        <TarjetaKpi
+        <TarjetaKpi icono={TrendingUp}
           titulo="Proyectado esta semana"
           valor={Number(ps?.monto ?? d.sumaDiaria.monto) || 0}
           decimales={2}
@@ -219,7 +220,7 @@ export const ProyeccionesRecepcion = () => {
           tono="violeta"
           serie={d.dias.map((x) => Number(x.proyeccion?.monto || 0))}
         />
-        <TarjetaKpi
+        <TarjetaKpi icono={Wallet}
           titulo="Vendido esta semana"
           valor={d.semanal.real.monto}
           decimales={2}

@@ -2,41 +2,18 @@
 
 Base MySQL 8 de Radical Gym. Toma el diseño de Darío (tablas en español, `idalumno` / `idempleado`, numeración desde 1000, triggers de negocio) **sin spinning**, con fisioterapia ampliada y un sistema completo de usuarios y permisos.
 
-## Instalación
+## Instalación (un solo script)
 
-**Opción rápida (Workbench):** abre `gestion_radicalgym.sql` y ejecútalo completo (⚡).
+Abre **`gestion_radicalgym.sql`** en MySQL Workbench y ejecútalo completo (⚡). Crea la base con **todas** las tablas, triggers, procedimientos, catálogos (alimentos, ejercicios, planes, mensajes), roles, permisos y los usuarios del personal.
 
-**Por partes:** ejecuta en orden `01_esquema.sql`, `02_triggers.sql`, `03_procedimientos.sql`, `04_datos_iniciales.sql`.
+> ⚠️ Borra y vuelve a crear la base. Para no perder datos, saca antes una copia desde el sistema (Inicio → «Hacer copia ahora»); la copia también es un solo archivo `.sql` con tablas y registros, y se restaura igual.
 
-> ⚠️ El script borra y vuelve a crear la base. Úsalo solo para instalar o en desarrollo.
-
-**Si la base ya está instalada y tiene datos:** ejecuta las actualizaciones en orden. Ninguna borra datos y se pueden repetir sin problema:
-
-1. `05_actualizacion_registros_y_portal.sql`: tabla `registros_app` y módulos del portal del alumno.
-2. `06_caja_turnos.sql`: caja por turnos (`turnos_caja`, columna `movimientos_caja.idturno`, trigger y módulo "Caja por Turnos" para recepción).
-3. `07_sincronizacion_tablas.sql`: copia cada registro del sistema a su tabla real (ver "Sincronización" más abajo). Después de ejecutarlo, reinicia la API: lo que ya existía se copia solo.
-4. `08_tienda_kardex.sql`: tienda con ventas reales (`ventas`, `venta_detalle`), tickets correlativos, anulaciones y kárdex (`movimientos_inventario`).
-5. `09_reportes_metas.sql`: reportes, metas y logros, deudas de alumnos (pagos a cuenta), turnos de recepción y configuración del gimnasio.
-6. `10_deudas.sql`: fecha límite para cancelar el saldo cuando el alumno no paga completo (`matriculas.fecha_limite_pago`).
-7. `11_congelamiento.sql`: congelamiento de membresías (reglas en `planes`, condiciones copiadas en `matriculas` y tabla `congelamientos`).
-8. `12_nutricion_platos_alimentos.sql`: platos de cada dieta (`dieta_platos`: los que asigne el nutricionista, con % del plato y porciones con la mano), catálogo de alimentos ampliado (133 alimentos con categoría, ícono, porción habitual) y enlace `dieta_alimentos.idalimento`.
-9. `13_codigo_alumno.sql`: código de cada alumno para marcar asistencia (`alumnos.codigo`, se muestra con las iniciales del alumno, p. ej. DF-1; correlativo por orden de registro, lo pone un trigger) y sección "Mis Asistencias" del portal del alumno.
-10. `14_alertas_administracion.sql`: tabla `alertas_administracion`. Cuando recepción cambia la fecha límite de pago de una deuda, al administrador le llega una alerta en la campanita (quién, alumno, fecha anterior → nueva, deuda).
-11. `15_indicaciones.sql`: indicaciones para el alumno (catálogo de estiramientos 3 x 30 s, movilidad y calentamiento 2 x 15, postura y cuidados; plantillas como "Rectificación postural básica"; asignaciones por alumno con historial).
-12. `16_mensajes.sql`: mensajes predeterminados por categoría (`plantillas_mensajes`): 15 por categoría (por vencer, vencidos, no vienen, renovaron, bienvenida, cumpleaños, deuda, congelamiento, constancia, exalumnos), editables y para enviar por WhatsApp.
-13. `17_nutricion_ampliada.sql`: categoría "platos", campos de azúcares, sodio, índice glucémico, etiquetas y notas en `alimentos`, y más de 130 alimentos nuevos (andinos, amazónicos, mariscos, bebidas, suplementos y platos peruanos).
-14. `18_marca_radical.sql`: el nombre del gimnasio pasa a "RADICAL" (configuración, mensajes predeterminados, reglas de aviso y el administrador de ejemplo). Respeta el nombre si ya lo cambiaste.
-15. `19_porciones_mano.sql`: medidas con la mano adicionales en cada plato de la dieta (`dieta_platos`: puños de fruta, dos dedos de queso/lácteo, puñado chico de frutos secos y puntas de dedo de aceite).
-16. `20_crm_prospectos.sql`: CRM de prospectos (`prospectos` y `prospecto_seguimientos`) y el módulo "Prospectos (CRM)" para administración y recepción.
-17. `21_seguimiento_asistencia.sql`: notas de seguimiento cuando un alumno deja de venir (motivo, si se le contactó) para el calendario de asistencias.
-18. `22_pase_con_nombre.sql`: el código del pase libre lleva el nombre del interesado (DAVID-K7Q2M); amplía `prospectos.pase_codigo` a 24 caracteres. Sin este script el sistema funciona igual, pero recorta los nombres largos a 6 letras.
-19. `23_pases_libres.sql`: historial de pases libres del CRM (`pases_libres`): pendiente, usado o no concretado con su motivo (viaje, vacaciones, no le interesa...) y la fecha para volver a llamar. Alimenta el apartado "Pases libres" y el reporte del CRM (interesados por turno, hora y día). El servidor aplica los scripts 22 y 23 solo al iniciar si faltan.
-20. `24_pesos_por_serie.sql`: progreso de pesos (`registro_peso_serie`). El alumno anota el peso y las repeticiones de cada serie de su rutina, en cualquier día; guarda una copia de lo planificado para que el historial no se pierda si el entrenador cambia la rutina. Alimenta el progreso del alumno, del entrenador y de administración. Ejecutar como root.
+La carpeta `anteriores/` guarda los scripts sueltos de antes (01 a 35) solo como referencia, por si alguna base antigua necesita una actualización puntual. Para instalar no hacen falta.
 
 ### Herramientas (no son actualizaciones)
 
-- `verificar_integridad.sql`: solo lectura. Revisa que todo lo registrado en el sistema esté sincronizado y cuadrado (registros de la app copiados a sus tablas, cobros en caja, abonos, ventas, stock contra kárdex, alumnos con código y usuario). En cada fila, "problemas = 0" es lo correcto.
-- `99_reiniciar_para_produccion.sql`: **borra todos los datos de prueba y demostración** (alumnos, matrículas, asistencias, ventas, caja, CRM...) y deja la configuración, los planes, los catálogos y los usuarios del personal. Úsalo una sola vez, antes de empezar con datos reales, y saca un respaldo antes.
+- `anteriores/verificar_integridad.sql`: solo lectura. Revisa que todo lo registrado en el sistema esté sincronizado y cuadrado (registros de la app copiados a sus tablas, cobros en caja, abonos, ventas, stock contra kárdex, alumnos con código y usuario). En cada fila, "problemas = 0" es lo correcto.
+- `anteriores/99_reiniciar_para_produccion.sql`: **borra todos los datos de prueba y demostración** (alumnos, matrículas, asistencias, ventas, caja, CRM...) y deja la configuración, los planes, los catálogos y los usuarios del personal. Úsalo una sola vez, antes de empezar con datos reales, y saca un respaldo antes.
 
 ## Usuarios de prueba
 

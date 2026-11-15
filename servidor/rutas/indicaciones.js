@@ -12,7 +12,7 @@ import { puedeVerAlumno } from "./alumnos.js";
 const router = Router();
 // Si la base de datos aún no tiene la actualización, se avisa qué script ejecutar
 const faltaTabla = (e) =>
-  e?.code === "ER_NO_SUCH_TABLE" ? new ErrorHttp(503, "Falta actualizar la base de datos: ejecuta base_datos/15_indicaciones.sql en MySQL Workbench") : e;
+  e?.code === "ER_NO_SUCH_TABLE" ? new ErrorHttp(503, "Falta actualizar la base de datos: ejecuta base_datos/anteriores/15_indicaciones.sql en MySQL Workbench") : e;
 
 export const CATEGORIAS = ["calentamiento", "movilidad", "estiramiento", "postura", "cuidado"];
 export const LUGARES = ["antes", "despues", "casa"];

@@ -1,3 +1,4 @@
+import { AccionCabecera } from "../common/CabeceraModulo";
 import React, { useState, useMemo } from "react";
 import { PanelComposicion, SiluetaMedidas, edadDe, GuiaPerimetros, BarraRango, rangos } from "./VisualMedidas";
 import {
@@ -467,33 +468,11 @@ export const MeasurementsModule = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner Header */}
-      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2.5">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm">
-              <Activity className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Medidas Antropométricas & Bioimpedancia
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                Evaluaciones periódicas, composición corporal, comparativas de
-                evolución e historial médico-deportivo.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Button */}
-        <button
-          onClick={() => handleOpenNewAssessment()}
-          className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Registrar Nueva Medición</span>
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
+          <Activity className="w-4 h-4 text-teal-600" /> Antropometría y bioimpedancia: elige un alumno para ver su evolución.
+        </p>
+        <AccionCabecera icono={Plus} onClick={() => handleOpenNewAssessment()}>Registrar nueva medición</AccionCabecera>
       </div>
 
       {/* Main Grid: Student Selector Left + History & Details Right */}

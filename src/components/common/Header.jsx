@@ -1,3 +1,4 @@
+import { BotonSolicitarPermiso } from "../attendances/SolicitarPermiso";
 import { SeccionProgramados, usePendientes } from "./Programados";
 import React, { useEffect, useState } from "react";
 import {
@@ -56,6 +57,7 @@ export const Header = ({
     attendances = [],
     staffContracts = [],
     todoElPersonal,
+    permisos = [],
   } = useGym();
   const role = getRole(currentUser.role);
   const [menuPlegado, alternarMenu] = useMenuPlegado();
@@ -99,8 +101,9 @@ export const Header = ({
   const nuevasAdmin = alertasAdmin.alertas.filter((a) => !a.seen);
   const avisosRol = useAvisos();
   const pendientesProg = usePendientes({ todos: true });
+  const permisosPend = esAdmin ? (permisos || []).filter((p) => p.estado === "pendiente") : [];
   const totalUrgentAlerts =
-    renewalAlerts.length + lowStockProducts.length + (esAdmin ? alertasAdmin.pendientes : 0) + avisosRol.avisos.length + pendientesProg.length;
+    renewalAlerts.length + lowStockProducts.length + (esAdmin ? alertasAdmin.pendientes : 0) + avisosRol.avisos.length + pendientesProg.length + permisosPend.length;
 
   // Quién coincide con lo escrito (código exacto: "2" = alumno 2, 2-COACH, 2-EXT…)
   const candidatosCheckIn = React.useMemo(
@@ -466,6 +469,33 @@ export const Header = ({
               <div className="flex-1 overflow-y-auto p-3 space-y-3 text-slate-800">
                 <SeccionAvisos {...avisosRol} setActiveTab={(tab) => { setActiveTab(tab); setShowNotifications(false); }} />
                 <SeccionProgramados todos />
+                {esAdmin && permisosPend.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-sky-700">Permisos por aprobar ({permisosPend.length})</p>
+                    {permisosPend.slice(0, 5).map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          try {
+                            sessionStorage.setItem("radical_vista_asistencias", JSON.stringify("permisos"));
+                          } catch {
+                            /* nada */
+                          }
+                          setActiveTab("attendances");
+                          setShowNotifications(false);
+                        }}
+                        className="w-full text-left rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 hover:bg-sky-100 cursor-pointer"
+                      >
+                        <span className="block text-sm font-bold text-slate-900 truncate">{p.nombre}</span>
+                        <span className="block text-[11px] text-slate-600 truncate">
+                          {p.desde}{p.hasta && p.hasta !== p.desde ? ` al ${p.hasta}` : ""} · {p.motivo}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!esAdmin && <BotonSolicitarPermiso />}
 
                 {esAdmin && nuevasAdmin.length > 0 && (
                   <div className="mb-3 space-y-2">

@@ -324,7 +324,7 @@ export const GymProvider = ({ children }) => {
       loadServerData(true);
     };
     const t = setInterval(() => {
-      if (document.visibilityState === "visible" && Date.now() - ultima >= 60000) {
+      if (document.visibilityState === "visible" && Date.now() - ultima >= 15000) {
         ultima = Date.now();
         loadServerData(true);
       }

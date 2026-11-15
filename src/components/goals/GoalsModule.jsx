@@ -7,6 +7,7 @@
 //  Nutrición / Fisioterapia: crean y evalúan objetivos de alumnos;
 //  al aprobarlos, el entrenador del alumno gana un logro.
 // ============================================================
+import { CheckCircle2 as IcLogrado, Hourglass as IcFalta } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Trophy,
@@ -1212,7 +1213,7 @@ export const GoalsModule = () => {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 flex-1 min-w-[280px]">
               <TarjetaKpi titulo={`Meta total · ${nombreMes(mes)}`} valor={resumenRecepcion.meta} decimales={2} prefijo="S/ " sub={`${recep.length} turno(s) con meta`} tono="ambar" icono={Target} />
-              <TarjetaKpi
+              <TarjetaKpi icono={IcLogrado}
                 titulo="Logrado"
                 valor={resumenRecepcion.logrado}
                 decimales={2}
@@ -1224,7 +1225,7 @@ export const GoalsModule = () => {
                   return dias.map((dia) => recep.reduce((a, m) => a + (m.progress.diario.find((x) => x.dia === dia)?.acumulado || 0), 0));
                 })()}
               />
-              <TarjetaKpi
+              <TarjetaKpi icono={IcFalta}
                 titulo="Falta"
                 valor={Math.max(0, resumenRecepcion.meta - resumenRecepcion.logrado)}
                 decimales={2}

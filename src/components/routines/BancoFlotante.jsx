@@ -59,7 +59,7 @@ export const BancoFlotante = ({ exercises, destino, setDestino, dias = [], onAgr
         <button
           type="button"
           onClick={() => setDestino({ dia: Math.min(ultimoDia, Math.max(dias.length - 1, 0)) })}
-          className="fixed bottom-5 right-5 z-[60] flex items-center gap-2 pl-4 pr-5 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-extrabold shadow-xl shadow-blue-900/30 cursor-pointer"
+          className="rd-boton-banco fixed bottom-5 right-5 z-[60] flex items-center gap-2 pl-4 pr-5 py-3 rounded-full text-sm font-extrabold cursor-pointer"
           aria-label="Abrir banco de ejercicios"
         >
           <Dumbbell className="w-5 h-5" /> {etiquetaBoton}
@@ -67,14 +67,18 @@ export const BancoFlotante = ({ exercises, destino, setDestino, dias = [], onAgr
       )}
       {abierto && (
         <div className="fixed inset-0 z-[70] flex justify-end" role="dialog" aria-label="Banco de ejercicios" data-sin-controles>
-          <div className="absolute inset-0 bg-slate-900/30" onClick={cerrar} />
-          <aside className="relative h-full w-full sm:w-[520px] bg-white border-l border-slate-200 shadow-2xl flex flex-col">
-            <header className="px-4 pt-4 pb-3 border-b border-slate-200 space-y-2.5">
+          <div className="rd-cajon-velo absolute inset-0 bg-slate-900/35" onClick={cerrar} />
+          <aside className="rd-cajon relative m-0 sm:m-3 h-full sm:h-[calc(100%-1.5rem)] w-full sm:w-[560px] rounded-none sm:rounded-3xl border shadow-2xl flex flex-col overflow-hidden">
+            <header className="px-4 pt-4 pb-3 border-b border-slate-200/70 space-y-2.5">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <Dumbbell className="w-5 h-5 text-blue-600" /> Banco de ejercicios
+                <p className="text-base font-extrabold text-slate-900 flex items-center gap-2.5">
+                  <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 text-white flex items-center justify-center shadow-md"><Dumbbell className="w-5 h-5" /></span>
+                  <span>
+                    Banco de ejercicios
+                    <span className="block text-[11px] font-semibold text-slate-500">{lista.length} ejercicios · {dias[dia]?.nombre || "Día"}</span>
+                  </span>
                 </p>
-                <button type="button" onClick={cerrar} className="w-9 h-9 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center cursor-pointer" aria-label="Cerrar banco">
+                <button type="button" onClick={cerrar} className="w-9 h-9 rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:rotate-90 transition-transform flex items-center justify-center cursor-pointer" aria-label="Cerrar banco">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -120,11 +124,11 @@ export const BancoFlotante = ({ exercises, destino, setDestino, dias = [], onAgr
               )}
             </header>
 
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 rd-scroll-suave">
               <ExercisePicker exercises={lista} onPick={elegir} picked={d.ids} alto="max-h-none" />
             </div>
 
-            <footer className="px-4 py-3 border-t border-slate-200 flex items-center justify-between gap-2">
+            <footer className="px-4 py-3 border-t border-slate-200/70 flex items-center justify-between gap-2">
               <span className="text-xs text-slate-600 truncate flex items-center gap-1">
                 {ultimo ? (
                   <>
@@ -140,7 +144,7 @@ export const BancoFlotante = ({ exercises, destino, setDestino, dias = [], onAgr
                     <Plus className="w-3.5 h-3.5" /> Ejercicio propio
                   </button>
                 )}
-                <button type="button" onClick={cerrar} className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold cursor-pointer">
+                <button type="button" onClick={cerrar} className="rd-accion-cabecera px-5 py-2 rounded-xl text-xs font-extrabold cursor-pointer">
                   Listo
                 </button>
               </div>

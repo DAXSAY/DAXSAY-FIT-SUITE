@@ -140,7 +140,7 @@ const AREA_DE = { composicion: ["nutricion"], lesion: ["fisioterapia"], general:
 const ESPECIALIDADES = ["nutricion", "fisioterapia"];
 const CARGO_DE = { entrenador: "entrenador", nutricion: "nutricionista", fisioterapia: "fisioterapeuta" };
 
-// ¿Ya se ejecutó base_datos/27_metas_especialistas.sql? (se revisa cada minuto mientras falte)
+// ¿Ya se ejecutó base_datos/anteriores/27_metas_especialistas.sql? (se revisa cada minuto mientras falte)
 const cache27 = { t: 0, v: null };
 async function hay27() {
   if (cache27.v?.especialista && cache27.v?.controles) return cache27.v;
@@ -155,7 +155,7 @@ async function hay27() {
   cache27.t = Date.now();
   return cache27.v;
 }
-const FALTA_27 = "Falta ejecutar base_datos/27_metas_especialistas.sql en MySQL Workbench (como root).";
+const FALTA_27 = "Falta ejecutar base_datos/anteriores/27_metas_especialistas.sql en MySQL Workbench (como root).";
 
 async function avance(m) {
   const inicio = String(m.fecha_inicio).slice(0, 10);
@@ -855,7 +855,7 @@ async function hayTablaProyecciones() {
   tablaProyecciones = Number(f?.n) > 0;
   return tablaProyecciones;
 }
-const SIN_TABLA_PROY = "Falta ejecutar base_datos/25_proyecciones_recepcion.sql en MySQL Workbench (como root) para guardar las proyecciones.";
+const SIN_TABLA_PROY = "Falta ejecutar base_datos/anteriores/25_proyecciones_recepcion.sql en MySQL Workbench (como root) para guardar las proyecciones.";
 
 /** Turno con el que se trabaja: el del recepcionista, o el que elige administración */
 async function turnoProyeccion(req, admin) {

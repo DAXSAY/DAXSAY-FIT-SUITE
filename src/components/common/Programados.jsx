@@ -2,6 +2,7 @@
 // - Cobertura: quién tiene y quién no (lista vacía hasta buscar o elegir un grupo)
 // - Botón "Programar": deja el aviso al área que corresponde (entrenador,
 //   nutrición o fisioterapia) y en las alertas generales, con código y WhatsApp.
+import { useRecordado } from "../../utils/subPestana";
 import React, { useMemo, useState } from "react";
 import { CalendarClock, Check, ClipboardCopy, Dumbbell, HeartPulse, MessageCircle, Salad, Search, UserCheck, UserRound } from "lucide-react";
 import { useGym } from "../../context/GymContext";
@@ -63,6 +64,7 @@ const copiar = (t) => {
 export const abrirPerfilAlumno = (id) => {
   try {
     sessionStorage.setItem("radical_abrir_alumno", String(id));
+    sessionStorage.setItem("radical_perfil_desde", "1");
   } catch {
     /* nada */
   }
@@ -225,8 +227,8 @@ export const SeguimientoServicio = ({ tipo }) => {
   const { members = [] } = useGym();
   const cob = useCobertura()[tipo];
   const t = TIPOS_PROG[tipo];
-  const [q, setQ] = useState("");
-  const [vista, setVista] = useState("");
+  const [q, setQ] = useRecordado(`seg_q_${tipo}`, "");
+  const [vista, setVista] = useRecordado(`seg_${tipo}`, "");
   const con = members.filter((m) => cob.has(String(m.id))).length;
   const etiquetaCon = tipo === "nutricion" ? "Con plan" : "Evaluados";
   const etiquetaSin = tipo === "nutricion" ? "Sin plan" : "Sin evaluación";

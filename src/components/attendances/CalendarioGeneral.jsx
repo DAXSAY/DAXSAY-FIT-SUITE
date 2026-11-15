@@ -4,6 +4,8 @@
 // Cada día muestra cuántos vinieron (más color = más gente) y al tocarlo
 // se ve la lista de ese día con su código y hora.
 // =====================================================================
+import { TarjetaKpi } from "../common/TarjetaKpi";
+import { CalendarCheck, BarChart3, Flame } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, GraduationCap, Dumbbell, Briefcase, Pencil, Search } from "lucide-react";
 import { abrirCorreccion } from "./CorregirIngreso";
@@ -104,15 +106,23 @@ export const CalendarioGeneral = ({ onVerLista }) => {
         })}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      {/* Resumen del mes */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <TarjetaKpi titulo={`Ingresos · ${MESES[m - 1]}`} valor={total} sub={g.nombre.toLowerCase()} icono={g.icono} tono="teal" />
+        <TarjetaKpi titulo="Días con asistencia" valor={diasConGente} sub={`de ${diasMes} días del mes`} icono={CalendarCheck} tono="verde" progreso={(diasConGente / diasMes) * 100} />
+        <TarjetaKpi titulo="Promedio por día" valor={diasConGente ? Math.round(total / diasConGente) : 0} sub="en los días con gente" icono={BarChart3} tono="violeta" />
+        <TarjetaKpi titulo="Día con más gente" valor={diasConGente ? maximo : 0} sub={(() => { const k = Object.keys(conteo).sort((a, b) => conteo[b] - conteo[a])[0]; return k ? new Date(`${k}T12:00:00`).toLocaleDateString("es-PE", { weekday: "long", day: "numeric" }) : "—"; })()} icono={Flame} tono="ambar" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,500px)_1fr] gap-4 items-start">
         {/* Calendario */}
-        <div className="xl:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4">
           <div className="flex items-center justify-between gap-2 mb-3">
             <button onClick={() => setMes(moverMes(mes, -1))} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer" title="Mes anterior">
               <ChevronLeft className="w-4 h-4" />
             </button>
             <div className="text-center">
-              <p className="text-lg font-black text-slate-900">{MESES[m - 1]} {y}</p>
+              <p className="text-base font-black text-slate-900">{MESES[m - 1]} {y}</p>
               <p className="text-xs text-slate-500">
                 {total} ingresos de {g.nombre.toLowerCase()} · {diasConGente} días con asistencia
               </p>
@@ -121,7 +131,7 @@ export const CalendarioGeneral = ({ onVerLista }) => {
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-          <div className="grid grid-cols-7 gap-1.5">
+          <div className="grid grid-cols-7 gap-1">
             {DIAS.map((d) => (
               <div key={d} className="text-center text-[11px] font-bold uppercase text-slate-400 pb-1">{d}</div>
             ))}
@@ -137,12 +147,12 @@ export const CalendarioGeneral = ({ onVerLista }) => {
                   onClick={() => setDia(f)}
                   disabled={futuro}
                   style={n ? { backgroundColor: `color-mix(in srgb, var(--color-${g.color}-500) ${Math.round(fuerza * 100)}%, transparent)` } : undefined}
-                  className={`relative aspect-[4/3] rounded-xl border text-left p-1.5 transition-all ${futuro ? "opacity-40 cursor-default" : "cursor-pointer hover:scale-[1.03]"} ${
+                  className={`relative h-11 sm:h-12 rounded-xl border text-left p-1 transition-all ${futuro ? "opacity-40 cursor-default" : "cursor-pointer hover:scale-[1.03]"} ${
                     sel ? "ring-2 ring-offset-1 ring-slate-900 border-transparent" : "border-slate-200"
                   } ${!n && !futuro ? "bg-slate-50" : ""}`}
                 >
-                  <span className={`text-xs font-bold ${f === hoy ? "bg-slate-900 text-white rounded px-1" : n > 0 ? "text-slate-800 rd-num-cal" : "text-slate-600"}`}>{Number(f.slice(8))}</span>
-                  {n > 0 && <span className="absolute bottom-1 right-1.5 text-base sm:text-lg font-black text-slate-900 rd-num-cal">{n}</span>}
+                  <span className={`text-[11px] font-bold ${f === hoy ? "bg-slate-900 text-white rounded px-1" : n > 0 ? "text-slate-800 rd-num-cal" : "text-slate-600"}`}>{Number(f.slice(8))}</span>
+                  {n > 0 && <span className="absolute bottom-0.5 right-1.5 text-sm font-black text-slate-900 rd-num-cal">{n}</span>}
                 </button>
               );
             })}

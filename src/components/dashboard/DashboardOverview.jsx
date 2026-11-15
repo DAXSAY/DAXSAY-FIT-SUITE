@@ -1,3 +1,5 @@
+import { api } from "../../api/cliente";
+import { TarjetaKpi } from "../common/TarjetaKpi";
 import React, { useState, useMemo } from "react";
 import {
   Users,
@@ -432,129 +434,63 @@ export const DashboardOverview = ({
         </div>
       </div>
       {userCan(currentUser, "users", "ver") && <SyncStatusPanel />}
-      {/* KPI METRIC CARDS WITH SPARKLINES */}
+      {/* Indicadores principales (mismo diseño que el resto del sistema) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* Alumnos Activos */}
-        <div
+        <TarjetaKpi
+          titulo="Alumnos activos"
+          valor={metrics.totalActiveMembers}
+          sub={`${variacionActivos >= 0 ? "+" : ""}${variacionActivos} vs mes anterior`}
+          icono={Users}
+          tono="teal"
+          serie={memberSparkline}
+          activo={chartView === "membership_growth"}
           onClick={() => setChartView("membership_growth")}
-          className={`rd-aparece rd-levanta bg-white p-4 rounded-xl border transition-all cursor-pointer group shadow-xs ${
-            chartView === "membership_growth"
-              ? "border-blue-500 ring-2 ring-blue-500/20"
-              : "border-gray-200 hover:border-blue-400"
-          }`}
-          title="Haz clic para ver gráfico de evolución de alumnos"
-        >
-          <div className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            <span>Alumnos Activos</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          </div>
-          <div className="flex items-end justify-between mt-1">
-            <div>
-              <span className="text-[clamp(1.05rem,1.6vw,1.5rem)] whitespace-nowrap font-black text-slate-900">
-                <NumeroAnimado valor={metrics.totalActiveMembers} />
-              </span>
-              <span className="block text-xs text-emerald-600 font-bold flex items-center gap-0.5 mt-0.5">
-                <ArrowUpRight className="w-3 h-3" /> {variacionActivos >= 0 ? "+" : ""}
-                {variacionActivos} vs mes anterior
-              </span>
-            </div>
-            <div className="shrink-0 pl-2 hidden xl:block">
-              {renderSparkline(memberSparkline, "var(--color-blue-500)")}
-            </div>
-          </div>
-        </div>
-
-        {/* Ingresos Totales */}
-        <div
+          title="Ver la evolución de alumnos en el gráfico"
+        />
+        <TarjetaKpi
+          titulo="Ingresos (mes)"
+          valor={metrics.totalIncome || 0}
+          decimales={2}
+          prefijo="S/ "
+          sub="Cuotas + tienda"
+          icono={TrendingUp}
+          tono="verde"
+          serie={incomeSparkline}
+          activo={chartView === "cashflow" && activeSeries.ingresos && !activeSeries.egresos}
           onClick={() => {
             setChartView("cashflow");
             setActiveSeries((s) => ({ ...s, ingresos: true, egresos: false }));
           }}
-          className={`rd-aparece rd-levanta bg-white p-4 rounded-xl border transition-all cursor-pointer group shadow-xs ${
-            chartView === "cashflow" &&
-            activeSeries.ingresos &&
-            !activeSeries.egresos
-              ? "border-emerald-500 ring-2 ring-emerald-500/20"
-              : "border-gray-200 hover:border-emerald-400"
-          }`}
-          title="Haz clic para aislar ingresos en el gráfico"
-        >
-          <div className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            <span>Ingresos (Mes)</span>
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-          </div>
-          <div className="flex items-end justify-between mt-1">
-            <div>
-              <span className="text-[clamp(1.05rem,1.6vw,1.5rem)] whitespace-nowrap font-black text-slate-900">
-                <NumeroAnimado valor={metrics.totalIncome || 0} decimales={2} prefijo="S/ " />
-              </span>
-              <span className="block text-xs text-blue-600 font-semibold mt-0.5">
-                Cuotas + Tienda
-              </span>
-            </div>
-            <div className="shrink-0 pl-2 hidden xl:block">
-              {renderSparkline(incomeSparkline, "var(--color-emerald-500)")}
-            </div>
-          </div>
-        </div>
-
-        {/* Egresos */}
-        <div
+          title="Ver solo los ingresos en el gráfico"
+        />
+        <TarjetaKpi
+          titulo="Egresos (mes)"
+          valor={metrics.totalExpense || 0}
+          decimales={2}
+          prefijo="S/ "
+          sub="Planilla + operación"
+          icono={TrendingDown}
+          tono="rojo"
+          serie={expenseSparkline}
+          activo={chartView === "cashflow" && !activeSeries.ingresos && activeSeries.egresos}
           onClick={() => {
             setChartView("cashflow");
             setActiveSeries((s) => ({ ...s, ingresos: false, egresos: true }));
           }}
-          className={`rd-aparece rd-levanta bg-white p-4 rounded-xl border transition-all cursor-pointer group shadow-xs ${
-            chartView === "cashflow" &&
-            !activeSeries.ingresos &&
-            activeSeries.egresos
-              ? "border-rose-500 ring-2 ring-rose-500/20"
-              : "border-gray-200 hover:border-rose-400"
-          }`}
-          title="Haz clic para aislar egresos en el gráfico"
-        >
-          <div className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            <span>Egresos (Mes)</span>
-            <TrendingDown className="w-3.5 h-3.5 text-rose-600" />
-          </div>
-          <div className="flex items-end justify-between mt-1">
-            <div>
-              <span className="text-[clamp(1.05rem,1.6vw,1.5rem)] whitespace-nowrap font-black text-slate-900">
-                <NumeroAnimado valor={metrics.totalExpense || 0} decimales={2} prefijo="S/ " />
-              </span>
-              <span className="block text-xs text-slate-400 font-semibold mt-0.5">
-                Nómina + Operación
-              </span>
-            </div>
-            <div className="shrink-0 pl-2 hidden xl:block">
-              {renderSparkline(expenseSparkline, "var(--color-rose-500)")}
-            </div>
-          </div>
-        </div>
-
-        {/* Vencimientos Urgentes */}
-        <div
+          title="Ver solo los egresos en el gráfico"
+        />
+        <TarjetaKpi
+          titulo="Vencen en ≤ 7 días"
+          valor={renewalAlerts.length}
+          sub="Acción inmediata"
+          icono={AlertTriangle}
+          tono="ambar"
+          alerta={renewalAlerts.length > 0}
+          pulso={renewalAlerts.length > 0}
+          serie={alertSparkline}
           onClick={() => setActiveTab("alerts")}
-          className="bg-white p-4 rounded-xl border border-rose-200 bg-rose-50/30 flex flex-col justify-between cursor-pointer hover:border-rose-400 transition-colors shadow-xs"
-        >
-          <div className="flex items-center justify-between text-xs font-semibold text-rose-700 uppercase tracking-wider">
-            <span>Vencimientos (&le; 7 días)</span>
-            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-          </div>
-          <div className="flex items-end justify-between mt-1">
-            <div>
-              <span className="text-2xl font-black text-rose-700">
-                <NumeroAnimado valor={renewalAlerts.length} />
-              </span>
-              <span className="block text-xs text-rose-600 font-bold mt-0.5">
-                Acción inmediata
-              </span>
-            </div>
-            <div className="shrink-0 pl-2 hidden xl:block">
-              {renderSparkline(alertSparkline, "var(--color-rose-600)")}
-            </div>
-          </div>
-        </div>
+          title="Ver las alertas de vencimiento"
+        />
       </div>
 
       {/* =========================================================================
@@ -1422,173 +1358,137 @@ export const DashboardOverview = ({
 
       {/* SECONDARY ROW: MEMBRESÍAS POR VENCER & RESUMEN FINANCIERO RÁPIDO */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Table: Membresías Próximas a Vencer */}
-        <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col">
-          <div className="p-3.5 px-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
-            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-tight flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-blue-600" />
-              Membresías Próximas a Vencer
+        {/* Membresías próximas a vencer: 3 a la vista, el resto se desplaza solo */}
+        <div className="bg-white rounded-2xl shadow-xs border border-slate-200 flex flex-col">
+          <div className="p-3.5 px-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-2">
+              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center"><Clock className="w-4 h-4" /></span>
+              Membresías por vencer
             </h3>
-            <button
-              onClick={() => setActiveTab("alerts")}
-              className="text-xs text-blue-600 font-semibold hover:underline cursor-pointer"
-            >
+            <button onClick={() => setActiveTab("alerts")} className="text-xs text-teal-700 font-bold hover:underline cursor-pointer">
               Ver todos ({renewalAlerts.length})
             </button>
           </div>
-
-          <div className="flex-1 overflow-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 sticky top-0 text-gray-500 border-b border-gray-100">
-                <tr>
-                  <th className="px-4 py-2 font-semibold uppercase text-xs">
-                    Alumno
-                  </th>
-                  <th className="px-4 py-2 font-semibold uppercase text-xs">
-                    Membresía
-                  </th>
-                  <th className="px-4 py-2 font-semibold uppercase text-xs">
-                    Fin
-                  </th>
-                  <th className="px-4 py-2 font-semibold uppercase text-xs text-right">
-                    Acción
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {renewalAlerts.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="px-4 py-8 text-center text-gray-400"
-                    >
-                      No hay membresías por vencer próximamente.
-                    </td>
-                  </tr>
-                ) : (
-                  renewalAlerts.slice(0, 6).map((alert) => {
-                    const memberObj = members.find(
-                      (m) => m.id === alert.memberId,
-                    );
-                    return (
-                      <tr
-                        key={alert.memberId}
-                        className="hover:bg-gray-50/80 transition-colors"
-                      >
-                        <td className="px-4 py-2.5 font-medium text-slate-800">
-                          {alert.memberName}
-                        </td>
-                        <td className="px-4 py-2.5 text-slate-600">
-                          {alert.planName}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span
-                            className={`font-semibold ${alert.isExpired ? "text-red-600" : "text-amber-600"}`}
-                          >
-                            {alert.daysLeft < 0
-                              ? `Vencido`
-                              : `${alert.daysLeft}d (${alert.endDate})`}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5 text-right">
-                          {memberObj ? (
-                            <a
-                              href={generateWhatsAppLink(memberObj)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded text-xs font-semibold text-slate-700 border border-gray-200 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-colors"
-                            >
-                              <MessageCircle className="w-3 h-3" />
-                              <span>Notificar</span>
-                            </a>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Quick POS & Cash Flow Summary */}
-        <div className="bg-white rounded-xl shadow-xs border border-gray-200 flex flex-col">
-          <div className="p-3.5 px-4 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
-            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-tight flex items-center gap-1.5">
-              <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
-              Ventas & productos estrella
-            </h3>
-            <button
-              onClick={() => setActiveTab("store")}
-              className="text-xs text-blue-600 font-semibold hover:underline cursor-pointer"
-            >
-              Ir a Tienda
-            </button>
-          </div>
-
-          <div className="p-4 flex-1 flex flex-col justify-between">
-            <div className="space-y-2">
-              <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">
-                Top Productos con Mayor Rotación
-              </span>
-              <div className="space-y-1.5">
-                {products.slice(0, 3).map((prod) => (
-                  <div
-                    key={prod.id}
-                    className="p-2 rounded-lg border border-slate-100 flex items-center justify-between hover:bg-slate-50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-2.5">
-                      <img
-                        src={
-                          prod.imageUrl ||
-                          "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=100&q=80"
-                        }
-                        alt={prod.name}
-                        className="w-8 h-8 rounded-lg object-cover border border-slate-200"
-                      />
-
-                      <div>
-                        <h5 className="text-xs font-bold text-slate-800">
-                          {prod.name}
-                        </h5>
-                        <span className="text-xs text-slate-400">
-                          {prod.brand} • Stock: {prod.stock}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-xs font-black text-emerald-700">
-                      S/ {(prod.salePrice ?? 0).toFixed(2)}
+          <ListaDesplazable
+            vacio="No hay membresías por vencer próximamente."
+            items={renewalAlerts.map((alert) => {
+              const memberObj = members.find((m) => m.id === alert.memberId);
+              return (
+                <div key={alert.memberId} className="flex items-center gap-3 px-4 h-[58px] border-b border-slate-100">
+                  <span className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${alert.isExpired ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"}`}>
+                    {alert.daysLeft < 0 ? "!" : `${alert.daysLeft}d`}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-slate-900 truncate">{alert.memberName}</span>
+                    <span className="block text-[11px] text-slate-500 truncate">
+                      {alert.planName} · {alert.daysLeft < 0 ? "vencido" : `vence ${alert.endDate}`}
                     </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-gray-100 text-center">
-              <div className="bg-emerald-50/50 px-2 py-2.5 rounded-lg border border-emerald-100">
-                <span className="block text-[11px] text-gray-500 font-semibold uppercase">
-                  Ventas de hoy
-                </span>
-                <p className="text-sm font-black text-emerald-700">
-                  S/ {(metrics.posSalesTotal || 0).toFixed(2)}
-                </p>
-              </div>
-              <div className="bg-blue-50/50 px-2 py-2.5 rounded-lg border border-blue-100">
-                <span className="block text-[11px] text-gray-500 font-semibold uppercase">
-                  Membresías del mes
-                </span>
-                <p className="text-sm font-black text-blue-700">
-                  S/ {(metrics.membershipsRevenue || 0).toFixed(2)}
-                </p>
-              </div>
-            </div>
-          </div>
+                  </span>
+                  {memberObj && (
+                    <a
+                      href={generateWhatsAppLink(memberObj)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" /> Avisar
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          />
         </div>
+
+        {/* Productos estrella en cuadritos (2 × 2) */}
+        <ProductosEstrella products={products} metrics={metrics} onIr={() => setActiveTab("store")} />
       </div>
 
+    </div>
+  );
+};
+
+
+/** Lista que muestra 3 filas y se desplaza sola hacia arriba (se detiene al pasar el mouse) */
+const ListaDesplazable = ({ items, vacio, filas = 3, alto = 58 }) => {
+  const caja = React.useRef(null);
+  const [pausa, setPausa] = React.useState(false);
+  React.useEffect(() => {
+    if (items.length <= filas || pausa) return;
+    const id = setInterval(() => {
+      const el = caja.current;
+      if (!el) return;
+      const fin = el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
+      el.scrollTo({ top: fin ? 0 : el.scrollTop + alto, behavior: "smooth" });
+    }, 2600);
+    return () => clearInterval(id);
+  }, [items.length, filas, pausa, alto]);
+  if (!items.length) return <p className="px-4 py-8 text-center text-sm text-slate-400">{vacio}</p>;
+  return (
+    <div
+      ref={caja}
+      onMouseEnter={() => setPausa(true)}
+      onMouseLeave={() => setPausa(false)}
+      className="overflow-y-auto rd-lista-desplazable"
+      style={{ maxHeight: filas * alto, scrollSnapType: "y mandatory" }}
+    >
+      {items.map((it, i) => (
+        <div key={i} style={{ scrollSnapAlign: "start" }}>
+          {it}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const ProductosEstrella = ({ products = [], metrics = {}, onIr }) => {
+  const [top, setTop] = React.useState(null);
+  React.useEffect(() => {
+    let vivo = true;
+    api("/tienda/resumen")
+      .then((r) => vivo && setTop(r.topProducts || []))
+      .catch(() => vivo && setTop([]));
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  const lista = (top && top.length ? top.map((t) => ({ ...products.find((p) => String(p.id) === String(t.id)), ...t, vendidos: t.units })) : products).slice(0, 4);
+  return (
+    <div className="bg-white rounded-2xl shadow-xs border border-slate-200 flex flex-col">
+      <div className="p-3.5 px-4 border-b border-slate-200 flex justify-between items-center">
+        <h3 className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-2">
+          <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center"><ShoppingBag className="w-4 h-4" /></span>
+          Productos estrella
+        </h3>
+        <button onClick={onIr} className="text-xs text-teal-700 font-bold hover:underline cursor-pointer">
+          Ir a la tienda
+        </button>
+      </div>
+      <div className="p-3 grid grid-cols-2 gap-2">
+        {lista.map((p, i) => (
+          <div key={p.id || i} className="rd-levanta rounded-xl border border-slate-200 p-2.5 flex items-center gap-2.5 min-w-0">
+            <span className="relative shrink-0">
+              <img src={p.imageUrl || "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=100&q=80"} alt="" className="w-11 h-11 rounded-lg object-cover border border-slate-200" />
+              <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center">{i + 1}</span>
+            </span>
+            <span className="min-w-0">
+              <span className="block text-xs font-bold text-slate-900 truncate">{p.name}</span>
+              <span className="block text-[11px] text-slate-500 truncate">{p.vendidos != null ? `${p.vendidos} vendidos` : `Stock ${p.stock ?? 0}`}</span>
+              <span className="block text-xs font-black text-emerald-700">S/ {Number(p.salePrice ?? 0).toFixed(2)}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-2 px-3 pb-3 mt-auto">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+          <span className="block text-[10px] font-black uppercase tracking-wide text-slate-500">Ventas de hoy</span>
+          <span className="text-sm font-black text-emerald-700">S/ {(metrics.posSalesTotal || 0).toFixed(2)}</span>
+        </div>
+        <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2">
+          <span className="block text-[10px] font-black uppercase tracking-wide text-slate-500">Membresías del mes</span>
+          <span className="text-sm font-black text-sky-700">S/ {(metrics.membershipsRevenue || 0).toFixed(2)}</span>
+        </div>
+      </div>
     </div>
   );
 };

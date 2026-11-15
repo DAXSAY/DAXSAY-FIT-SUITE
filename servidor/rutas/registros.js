@@ -218,7 +218,7 @@ router.post("/sincronizacion", async (req, res, next) => {
   try {
     if (!(await tienePermiso(req.usuario.idusuario, "users", "editar"))) throw new ErrorHttp(403, "Solo administración");
     if (!sincronizacionActiva()) {
-      throw new ErrorHttp(400, "Falta ejecutar base_datos/07_sincronizacion_tablas.sql y reiniciar la API");
+      throw new ErrorHttp(400, "Falta ejecutar base_datos/anteriores/07_sincronizacion_tablas.sql y reiniciar la API");
     }
     res.json(await sincronizarPendientes({ incluirErrores: true }));
   } catch (e) {
@@ -250,7 +250,10 @@ const guardarRegistro = async (req, res, next) => {
       }
     }
     const modulosPermiso = [cfg.permiso, ...(cfg.escritura || [])];
-    if (!(await tienePermiso(req.usuario.idusuario, modulosPermiso, existe ? "editar" : "crear"))) {
+    // Cualquier trabajador puede pedir su propio permiso (queda pendiente para administración)
+    const pideSuPermiso =
+      req.params.modulo === "permisos" && !existe && datos.estado === "pendiente" && String(datos.idusuarioSolicitante) === String(req.usuario.idusuario);
+    if (!pideSuPermiso && !(await tienePermiso(req.usuario.idusuario, modulosPermiso, existe ? "editar" : "crear"))) {
       throw new ErrorHttp(403, "No tienes permiso para guardar en este módulo");
     }
 

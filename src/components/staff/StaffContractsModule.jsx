@@ -1,3 +1,5 @@
+import { TarjetaKpi } from "../common/TarjetaKpi";
+import { Users as IcUsers, CalendarDays as IcCal, Clock as IcClock, Wallet as IcWallet } from "lucide-react";
 import React, { useState, useMemo } from "react";
 import {
   FileText,
@@ -338,62 +340,16 @@ export const StaffContractsModule = () => {
           </div>
         </div>
 
-        {/* HR KPI Indicators */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6 pt-4 border-t border-slate-800">
-          <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
-            <span className="text-xs text-slate-400 font-medium block">
-              Personal Activo
-            </span>
-            <span className="text-xl font-extrabold text-white">
-              {totalStaff}
-            </span>
-          </div>
+      </div>
 
-          <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
-            <span className="text-xs text-slate-400 font-medium block">
-              Contratos 1–3 meses
-            </span>
-            <span className="text-xl font-extrabold text-amber-400">
-              {count3Months}
-            </span>
-          </div>
-
-          <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
-            <span className="text-xs text-slate-400 font-medium block">
-              Contratos 6 Meses
-            </span>
-            <span className="text-xl font-extrabold text-cyan-400">
-              {count6Months}
-            </span>
-          </div>
-
-          <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
-            <span className="text-xs text-slate-400 font-medium block">
-              Contratos 1 Año
-            </span>
-            <span className="text-xl font-extrabold text-emerald-400">
-              {count1Year}
-            </span>
-          </div>
-
-          <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
-            <span className="text-xs text-slate-400 font-medium block">
-              Horas semanales
-            </span>
-            <span className="text-xl font-extrabold text-blue-300">
-              {totalWorkedHours} h
-            </span>
-          </div>
-
-          <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
-            <span className="text-xs text-slate-400 font-medium block">
-              Presupuesto Sueldos
-            </span>
-            <span className="text-xl font-extrabold text-white">
-              S/. {totalMonthlyPayroll.toLocaleString()}
-            </span>
-          </div>
-        </div>
+      {/* Indicadores del personal */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3">
+        <TarjetaKpi titulo="Personal activo" valor={totalStaff} sub="con contrato vigente" icono={IcUsers} tono="teal" />
+        <TarjetaKpi titulo="Contratos 1–3 meses" valor={count3Months} sub="corto plazo" icono={IcCal} tono="ambar" progreso={totalStaff ? (count3Months / totalStaff) * 100 : 0} />
+        <TarjetaKpi titulo="Contratos 6 meses" valor={count6Months} sub="mediano plazo" icono={IcCal} tono="azul" progreso={totalStaff ? (count6Months / totalStaff) * 100 : 0} />
+        <TarjetaKpi titulo="Contratos 1 año" valor={count1Year} sub="largo plazo" icono={IcCal} tono="verde" progreso={totalStaff ? (count1Year / totalStaff) * 100 : 0} />
+        <TarjetaKpi titulo="Horas semanales" valor={totalWorkedHours} sufijo=" h" sub="de todo el personal" icono={IcClock} tono="violeta" />
+        <TarjetaKpi titulo="Presupuesto sueldos" valor={totalMonthlyPayroll} decimales={2} prefijo="S/ " sub="al mes" icono={IcWallet} tono="rosa" />
       </div>
 
       {/* Reglas de tardanza (descuentos) */}

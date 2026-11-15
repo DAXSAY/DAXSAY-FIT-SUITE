@@ -342,11 +342,11 @@ router.get("/asistencias", async (req, res, next) => {
 });
 
 // GET /api/reportes/integridad  -> (solo administración) misma revisión que
-// base_datos/verificar_integridad.sql: sincronización, caja, stock, alumnos.
+// base_datos/anteriores/verificar_integridad.sql: sincronización, caja, stock, alumnos.
 router.get("/integridad", async (req, res, next) => {
   try {
     if (!(await tienePermiso(req.usuario.idusuario, "users", "editar"))) throw new ErrorHttp(403, "Solo administración");
-    const sql = await readFile(new URL("../../base_datos/verificar_integridad.sql", import.meta.url), "utf8");
+    const sql = await readFile(new URL("../../base_datos/anteriores/verificar_integridad.sql", import.meta.url), "utf8");
     const ini = sql.indexOf("SELECT * FROM (");
     const fin = sql.indexOf("ORDER BY comprobacion;");
     if (ini < 0 || fin < 0) throw new ErrorHttp(500, "No se encontró la consulta de verificación");

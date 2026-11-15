@@ -4,6 +4,8 @@
 // con su propio usuario, así la caja por turnos sabe quién abrió y
 // quién cerró. Las cuentas de alumnos se crean desde su ficha.
 // ============================================================
+import { TarjetaKpi } from "../common/TarjetaKpi";
+import { ShieldCheck as IcShield, User as IcUser, Dumbbell as IcDumbbell, HeartPulse as IcHeart, Apple as IcApple, KeyRound as IcKey } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ShieldCheck,
@@ -715,23 +717,20 @@ export const UsersAccessModule = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {ROLES_PERSONAL.map((r) => (
-          <button
+      <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3">
+        {ROLES_PERSONAL.map((r, i) => (
+          <TarjetaKpi
             key={r}
+            titulo={ROLES[r]?.label}
+            valor={porRol(r)}
+            sub="activos · toca para filtrar"
+            icono={[IcShield, IcUser, IcDumbbell, IcHeart, IcApple][i] || IcUser}
+            tono={["violeta", "teal", "ambar", "rojo", "verde"][i] || "azul"}
+            activo={filtroRol === r}
             onClick={() => setFiltroRol(filtroRol === r ? "todos" : r)}
-            className={`text-left bg-white rounded-2xl border p-4 cursor-pointer ${filtroRol === r ? "border-blue-500 ring-2 ring-blue-500/20" : "border-slate-200"}`}
-          >
-            <span className="text-xs font-bold text-slate-400 uppercase block">{ROLES[r]?.label}</span>
-            <span className="text-xl font-black text-slate-900">{porRol(r)}</span>
-            <span className="text-xs text-slate-500 block">activos</span>
-          </button>
+          />
         ))}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
-          <span className="text-xs font-bold text-slate-400 uppercase block">Alumnos con acceso</span>
-          <span className="text-xl font-black text-slate-900">{datos.cuentasAlumnos.activas}</span>
-          <button onClick={() => setPestana("socios")} className="text-xs text-blue-600 font-bold block cursor-pointer hover:underline">ver credenciales →</button>
-        </div>
+        <TarjetaKpi titulo="Alumnos con acceso" valor={datos.cuentasAlumnos.activas} sub="ver credenciales →" icono={IcKey} tono="azul" onClick={() => setPestana("socios")} />
       </div>
 
       <div className="flex gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 w-fit">

@@ -94,7 +94,7 @@ async function hayTablaPases() {
   }
   return !!tablaPases;
 }
-const SIN_TABLA_PASES = "Falta ejecutar base_datos/23_pases_libres.sql en MySQL Workbench para guardar el historial de pases.";
+const SIN_TABLA_PASES = "Falta ejecutar base_datos/anteriores/23_pases_libres.sql en MySQL Workbench para guardar el historial de pases.";
 
 async function anotar(cx, idprospecto, tipo, detalle, idusuario) {
   await cx.query("INSERT INTO prospecto_seguimientos (idprospecto, tipo, detalle, idusuario) VALUES (?,?,?,?)", [
@@ -613,7 +613,7 @@ router.get("/responsables", requierePermiso("crm", "ver"), async (req, res, next
 router.post("/:id(\\d+)/responsable", requierePermiso("crm", "editar"), async (req, res, next) => {
   try {
     if (req.usuario.rol !== "admin") throw new ErrorHttp(403, "Solo administración puede cambiar el responsable");
-    if (!(await columnasCrm()).responsable) throw new ErrorHttp(503, "Falta ejecutar base_datos/26_crm_responsable.sql en MySQL Workbench (como root).");
+    if (!(await columnasCrm()).responsable) throw new ErrorHttp(503, "Falta ejecutar base_datos/anteriores/26_crm_responsable.sql en MySQL Workbench (como root).");
     const p = await uno(req.params.id);
     const [u] = await consultar(
       `SELECT u.idusuario, COALESCE(NULLIF(TRIM(CONCAT(COALESCE(e.nombres, ''), ' ', COALESCE(e.apellidos, ''))), ''), u.usuario) AS nombre

@@ -1,3 +1,4 @@
+import { CreadorCampanas } from "./CreadorCampanas";
 import React, { useState } from "react";
 import {
   BellRing,
@@ -783,169 +784,8 @@ export const NotificationCenter = () => {
 
       {/* TAB 3: CLASS NOTICES & BROADCASTS */}
 
-      {/* TAB 4: SPECIAL PROMOTIONS CAMPAIGN BUILDER */}
-      {activeTab === "campaigns" && (
-        <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-xs space-y-4">
-          <div className="border-b border-gray-200 pb-3">
-            <div className="flex items-center gap-2 text-purple-600 text-xs font-bold uppercase tracking-wider mb-0.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Creador de Campañas & Promociones Especiales</span>
-            </div>
-            <h2 className="text-base font-bold text-slate-900">
-              Enviar Mensaje Promocional Masivo Multicanal
-            </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Envía ofertas especiales (Black Friday, 2x1, descuentos en tienda)
-              segmentando por estado del alumno.
-            </p>
-          </div>
-
-          <form onSubmit={handleSendCampaign} className="space-y-4 text-xs">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-2">
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Título de la Campaña *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. 🔥 20% OFF en Renovación Semestral & Suplementos"
-                  value={campTitle}
-                  onChange={(e) => setCampTitle(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600 font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Categoría
-                </label>
-                <select
-                  value={campCategory}
-                  onChange={(e) => setCampCategory(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
-                >
-                  <option value="special_promo">Promoción Especial</option>
-                  <option value="class_notice">Evento / Masterclass</option>
-                  <option value="renewal_reminder">
-                    Campaña de Reenganche
-                  </option>
-                  <option value="general_alert">Aviso General</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Audiencia Objetivo (Segmentación)
-                </label>
-                <select
-                  value={campAudience}
-                  onChange={(e) => setCampAudience(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
-                >
-                  <option value="all">
-                    Todos los Alumnos Registrados ({members.length} socios)
-                  </option>
-                  <option value="active">
-                    Sólo Socios Activos (
-                    {members.filter((m) => m.status === "active").length}{" "}
-                    socios)
-                  </option>
-                  <option value="expiring_soon">
-                    Socios Próximos a Vencer (
-                    {members.filter((m) => m.status === "expiring_soon").length}{" "}
-                    socios)
-                  </option>
-                  <option value="expired">
-                    Socios Vencidos / Inactivos (
-                    {members.filter((m) => m.status === "expired").length}{" "}
-                    socios)
-                  </option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Canales de Envío Simultáneos
-                </label>
-                <div className="flex items-center gap-2 pt-1">
-                  <label className="flex items-center gap-1.5 cursor-pointer bg-gray-50 px-2.5 py-1 rounded border border-gray-200">
-                    <input
-                      type="checkbox"
-                      checked={campChannels.includes("push")}
-                      onChange={() => handleToggleChannelInCampaign("push")}
-                      className="rounded accent-purple-600"
-                    />
-
-                    <span className="font-semibold text-purple-800">
-                      Push Web
-                    </span>
-                  </label>
-
-                  <label className="flex items-center gap-1.5 cursor-pointer bg-gray-50 px-2.5 py-1 rounded border border-gray-200">
-                    <input
-                      type="checkbox"
-                      checked={campChannels.includes("email")}
-                      onChange={() => handleToggleChannelInCampaign("email")}
-                      className="rounded accent-blue-600"
-                    />
-
-                    <span className="font-semibold text-blue-800">Email</span>
-                  </label>
-
-                  <label className="flex items-center gap-1.5 cursor-pointer bg-gray-50 px-2.5 py-1 rounded border border-gray-200">
-                    <input
-                      type="checkbox"
-                      checked={campChannels.includes("whatsapp")}
-                      onChange={() => handleToggleChannelInCampaign("whatsapp")}
-                      className="rounded accent-emerald-600"
-                    />
-
-                    <span className="font-semibold text-emerald-800">
-                      WhatsApp
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-slate-700 font-semibold">
-                  Cuerpo del Mensaje / Oferta *
-                </label>
-                <span className="text-xs text-gray-400">
-                  Usa {"{{nombre}}"} para personalizar
-                </span>
-              </div>
-              <textarea
-                rows={3}
-                required
-                value={campMessage}
-                onChange={(e) => setCampMessage(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600 font-mono text-sm"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
-              <button
-                type="submit"
-                disabled={isSendingCampaign}
-                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-md shadow-xs cursor-pointer flex items-center gap-1.5 transition-all"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>
-                  {isSendingCampaign
-                    ? "Enviando Campaña..."
-                    : "Disparar Campaña Masiva"}
-                </span>
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* TAB 4: CAMPAÑAS Y PROMOCIONES */}
+      {activeTab === "campaigns" && <CreadorCampanas members={members} sendManualCampaign={sendManualCampaign} onEnviada={() => {}} />}
 
       {/* TAB 5: AUDIT LOGS */}
       {activeTab === "logs" && (
@@ -1031,7 +871,7 @@ export const NotificationCenter = () => {
                       </td>
                       <td className="py-2.5 px-3">
                         <span className="text-xs font-semibold uppercase px-1.5 py-0.2 bg-gray-100 text-gray-700 rounded">
-                          {log.category.replace("_", " ")}
+                          {({ special_promo: "Promoción", renewal_reminder: "Renovación", reenganche: "Te extrañamos", nuevo_plan: "Nuevo plan", reto: "Reto", evaluacion: "Evaluación", tienda: "Tienda", referidos: "Referidos", cumpleanos: "Cumpleaños", general_alert: "Aviso general", class_notice: "Aviso" })[log.category] || String(log.category || "").replace(/_/g, " ")}
                         </span>
                       </td>
                       <td className="py-2.5 px-3 text-slate-800 font-medium max-w-[200px] truncate">

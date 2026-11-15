@@ -168,7 +168,7 @@ const servidor = app.listen(puerto, host, async () => {
       const hechos = await aplicarActualizaciones();
       hechos.forEach((h) => console.log(`Base actualizada: ${h}`));
     } catch (e) {
-      console.warn(`No se pudo actualizar la base (${e.code || e.message}). Ejecuta base_datos/23_pases_libres.sql en Workbench.`);
+      console.warn(`No se pudo actualizar la base (${e.code || e.message}). Ejecuta base_datos/anteriores/23_pases_libres.sql en Workbench.`);
       registrarError("actualizaciones de la base", e);
     }
     // Mantenimiento: estados de matrículas/contratos y limpieza de sesiones viejas (al iniciar y cada 6 h)
@@ -181,7 +181,7 @@ const servidor = app.listen(puerto, host, async () => {
       const r = await sincronizarPendientes();
       if (r.ok || r.error) console.log(`Sincronización con tablas: ${r.ok} copiados, ${r.error} con error`);
     } else {
-      console.warn("Falta ejecutar base_datos/07_sincronizacion_tablas.sql: los registros solo se guardan en registros_app.");
+      console.warn("Falta ejecutar base_datos/anteriores/07_sincronizacion_tablas.sql: los registros solo se guardan en registros_app.");
     }
   } catch (e) {
     console.error(`No se pudo conectar a MySQL (${e.code}). Revisa el archivo de configuración (${archivoConfiguracion})`);

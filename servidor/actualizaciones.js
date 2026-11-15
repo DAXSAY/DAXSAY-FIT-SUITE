@@ -1,5 +1,5 @@
 // Actualizaciones de la base que el servidor aplica solo al iniciar (si faltan).
-// Son las mismas de base_datos/22_pase_con_nombre.sql y 23_pases_libres.sql:
+// Son las mismas de base_datos/anteriores/22_pase_con_nombre.sql y 23_pases_libres.sql:
 // así el sistema queda al día aunque nadie ejecute el script en Workbench.
 // Todo es idempotente: si ya está aplicado, no hace nada.
 import { consultar, pool } from "./db.js";

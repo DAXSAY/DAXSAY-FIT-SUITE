@@ -1,6 +1,7 @@
 // "Rutinas asignadas": alumnos con su rutina personal, separado de las plantillas.
 // Se busca por CÓDIGO (DF-12 o 12), nombre o DNI → Enter lleva directo al alumno.
 // Aquí "Editar" cambia SOLO la rutina de ese alumno.
+import { useRecordado } from "../../utils/subPestana";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Eye, Pencil, RotateCcw, Search, UserCheck, UserPlus, Users } from "lucide-react";
 import { CodigoAlumno, coincideAlumno } from "../common/BuscarAlumno";
@@ -31,9 +32,9 @@ export const RutinasAsignadas = ({
   onRestablecer,
   onPlantilla,
 }) => {
-  const [q, setQ] = useState("");
+  const [q, setQ] = useRecordado("asig_q", "");
   const [sel, setSel] = useState(seleccionInicial || "");
-  const [vista, setVista] = useState(""); // "" (nada hasta elegir o escribir) · con · sin · todos
+  const [vista, setVista] = useRecordado("asig_vista", ""); // "" (nada hasta elegir o escribir) · con · sin · todos
   const [rIdx, setRIdx] = useState(0);
   const [dia, setDia] = useState(0);
   const [plantillaElegida, setPlantillaElegida] = useState("");

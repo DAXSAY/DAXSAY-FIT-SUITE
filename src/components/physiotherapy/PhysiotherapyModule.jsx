@@ -1,6 +1,9 @@
 import { SeguimientoServicio } from "../common/Programados";
 import { AgendaEspecialistas } from "../appointments/AgendaEspecialistas";
 import { UsersRound, CalendarDays } from "lucide-react";
+import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
+import { useRecordado } from "../../utils/subPestana";
+import { useCobertura } from "../common/Programados";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   HeartPulse,
@@ -204,6 +207,8 @@ export const PhysiotherapyModule = () => {
     staffDirectory,
     currentUser,
   } = useGym();
+  const evaluados = useCobertura().fisioterapia;
+  const sinEvaluar = members.filter((m) => !evaluados.has(String(m.id))).length;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRestrictionsOnly, setFilterRestrictionsOnly] = useState(false);
@@ -228,7 +233,7 @@ export const PhysiotherapyModule = () => {
   const [chartMetricView, setChartMetricView] = useState("both");
 
   // Main View Switcher ('fichas' or 'textual')
-  const [activeMainView, setActiveMainView] = useState("fichas");
+  const [activeMainView, setActiveMainView] = useRecordado("fisio", "fichas");
 
   // FORM STATES
   const [formMemberId, setFormMemberId] = useState("");
@@ -1273,86 +1278,21 @@ export const PhysiotherapyModule = () => {
 
   return (
     <div className="space-y-6">
-      {/* HEADER BANNER */}
-      <div className="rd-portada rd-cabecera">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <span className="text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
-              <HeartPulse className="w-4 h-4" /> Salud
-            </span>
-            <h1>Fisioterapia</h1>
-            <p className="text-sm text-slate-300 max-w-2xl">Evaluaciones por zona, evolución del dolor, ejercicios para casa y ficha en PDF.</p>
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0">
-            <button
-              onClick={() => handleOpenNewSession()}
-              className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all shadow-md flex items-center space-x-2 cursor-pointer hover:scale-105"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Nueva Evaluación Clínica</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* MAIN VIEW SWITCHER */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
-        <button
-          type="button"
-          onClick={() => setActiveMainView("fichas")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeMainView === "fichas"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-400"
-              : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <Layers className="w-4 h-4 text-cyan-300" />
-          <span>Fichas Clínicas e Historial Gráfico</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveMainView("textual")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeMainView === "textual"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-400"
-              : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <BookOpen className="w-4 h-4 text-emerald-400" />
-          <span>Evaluaciones y Alumnos Textual</span>
-          <span className="bg-emerald-500/20 text-emerald-800 border border-emerald-300 text-xs font-black px-2 py-0.5 rounded-full">
-            {physioRecords.length} Registros
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveMainView("seguimiento")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeMainView === "seguimiento"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-400"
-              : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <UsersRound className="w-4 h-4 text-violet-500" />
-          <span>Seguimiento: evaluados y sin evaluar</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveMainView("agenda")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeMainView === "agenda"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-400"
-              : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <CalendarDays className="w-4 h-4 text-amber-500" />
-          <span>Horario de atención</span>
-        </button>
-      </div>
+      <CabeceraModulo
+        icono={HeartPulse}
+        etiqueta="Salud"
+        titulo="Fisioterapia"
+        descripcion="Evaluaciones por zona, evolución del dolor, ejercicios para casa y ficha en PDF."
+        accion={<AccionCabecera icono={Plus} onClick={() => handleOpenNewSession()}>Nueva evaluación clínica</AccionCabecera>}
+        activa={activeMainView}
+        onCambiar={setActiveMainView}
+        pestanas={[
+          { k: "fichas", icono: Layers, label: "Fichas clínicas e historial", tono: "teal" },
+          { k: "textual", icono: BookOpen, label: "Evaluaciones por alumno", badge: physioRecords.length, tono: "emerald" },
+          { k: "seguimiento", icono: UsersRound, label: "Seguimiento", badge: `${sinEvaluar} sin evaluar`, tono: "violet" },
+          { k: "agenda", icono: CalendarDays, label: "Horario de atención", tono: "amber" },
+        ]}
+      />
 
       {activeMainView === "seguimiento" ? (
         <SeguimientoServicio tipo="fisioterapia" />

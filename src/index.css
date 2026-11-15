@@ -3268,3 +3268,76 @@ html:not(.dark) .rd-tip-flecha {
 /* Color personalizado de plan: pastel en claro, neón medio en oscuro */
 .rd-plan-libre { background-image: linear-gradient(135deg, var(--pc-c1), var(--pc-c2)) !important; }
 html.dark .rd-plan-libre { background-image: linear-gradient(135deg, var(--pc-o1), var(--pc-o2)) !important; }
+
+/* ===== Cabecera y pestañas comunes de módulos ===== */
+.rd-pestanas-modulo { border-top: 1px solid rgba(148, 180, 210, 0.16); scrollbar-width: thin; }
+.rd-pestana-modulo[data-tono="teal"] { --t: #2f9aa0; --tn: #4fd1d9; }
+.rd-pestana-modulo[data-tono="violet"] { --t: #8b7bc8; --tn: #a78bfa; }
+.rd-pestana-modulo[data-tono="emerald"] { --t: #4f9e7f; --tn: #34d399; }
+.rd-pestana-modulo[data-tono="amber"] { --t: #b48a4a; --tn: #fbbf5a; }
+.rd-pestana-modulo[data-tono="rose"] { --t: #bf6f7c; --tn: #fb7185; }
+.rd-pestana-modulo[data-tono="sky"] { --t: #5b8fb9; --tn: #60a5fa; }
+.rd-pestana-modulo { transition: background .18s, border-color .18s, box-shadow .2s, transform .15s; border: 1px solid; }
+.rd-pestana-modulo:hover { transform: translateY(-1px); }
+/* Claro: pastel */
+html:not(.dark) .rd-pestanas-modulo { border-top-color: rgba(60, 48, 30, 0.1); }
+html:not(.dark) .rd-pestana-modulo { background: #fbf9f4; border-color: #e7dece; color: #3e392f; box-shadow: 0 1px 2px rgba(60, 48, 30, 0.06); }
+html:not(.dark) .rd-pestana-modulo .rd-pestana-icono { background: color-mix(in srgb, var(--t) 16%, #fffdf9); color: var(--t); }
+html:not(.dark) .rd-pestana-modulo .rd-pestana-badge { background: color-mix(in srgb, var(--t) 16%, #fffdf9); color: color-mix(in srgb, var(--t) 80%, #2e2b25); }
+html:not(.dark) .rd-pestana-modulo:hover { border-color: color-mix(in srgb, var(--t) 45%, #e7dece); }
+html:not(.dark) .rd-pestana-activa { background: linear-gradient(135deg, var(--t), color-mix(in srgb, var(--t) 78%, #2e2b25)); border-color: transparent; color: #fff; box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--t) 70%, transparent); }
+html:not(.dark) .rd-pestana-activa .rd-pestana-icono, html:not(.dark) .rd-pestana-activa .rd-pestana-badge { background: rgba(255, 255, 255, 0.22); color: #fff; }
+/* Oscuro: neón medio */
+html.dark .rd-pestana-modulo { background: rgba(120, 170, 220, 0.05); border-color: rgba(140, 180, 220, 0.16); color: #cbd5e1; }
+html.dark .rd-pestana-modulo .rd-pestana-icono { background: color-mix(in srgb, var(--tn) 16%, transparent); color: var(--tn); }
+html.dark .rd-pestana-modulo .rd-pestana-badge { background: color-mix(in srgb, var(--tn) 18%, transparent); color: color-mix(in srgb, var(--tn) 85%, #e2e8f0); }
+html.dark .rd-pestana-modulo:hover { border-color: color-mix(in srgb, var(--tn) 45%, transparent); }
+html.dark .rd-pestana-activa { background: linear-gradient(135deg, color-mix(in srgb, var(--tn) 30%, transparent), color-mix(in srgb, var(--tn) 10%, transparent)); border-color: color-mix(in srgb, var(--tn) 65%, transparent); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--tn) 12%, transparent), 0 0 18px -6px var(--tn); }
+.rd-accion-cabecera { transition: transform .15s, box-shadow .2s, filter .15s; }
+.rd-accion-cabecera:hover { transform: translateY(-1px); filter: brightness(1.05); }
+html:not(.dark) .rd-accion-cabecera { background: linear-gradient(135deg, #3f9ea3, #2f7f84); color: #fff; box-shadow: 0 6px 14px -6px rgba(47, 127, 132, 0.6); }
+html.dark .rd-accion-cabecera { background: linear-gradient(135deg, #22b8c2, #168c96); color: #04131c; box-shadow: 0 0 18px -6px rgba(64, 200, 210, 0.7); }
+
+/* ===== Globo de ayuda y aviso de formulario (reemplazan al cuadro negro del navegador) ===== */
+.rd-globo { position: fixed; z-index: 9999; max-width: 280px; padding: 6px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; line-height: 1.35; pointer-events: none; opacity: 0; transform: translateY(3px) scale(.98); transition: opacity .14s, transform .14s; white-space: pre-line; }
+.rd-globo-visible { opacity: 1; transform: none; }
+html:not(.dark) .rd-globo { background: #fffdf9; color: #3e392f; border: 1px solid #e2d8c6; box-shadow: 0 8px 22px -8px rgba(60, 48, 30, 0.35); }
+html.dark .rd-globo { background: #10233a; color: #e2e8f0; border: 1px solid rgba(64, 200, 210, 0.35); box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.6), 0 0 14px -6px rgba(64, 200, 210, 0.5); }
+html:not(.dark) .rd-globo-aviso { background: #fbeff0; color: #9b4a57; border-color: #e8c3c9; }
+html.dark .rd-globo-aviso { background: #2a1420; color: #fda4b4; border-color: rgba(251, 113, 133, 0.45); }
+.rd-campo-error { outline: 2px solid rgba(232, 121, 140, 0.55) !important; outline-offset: 1px; }
+
+/* ===== Banco de ejercicios: tarjetas con vida ===== */
+.rd-tarjeta-ej { transition: transform .18s, box-shadow .2s, border-color .18s; }
+.rd-tarjeta-ej:hover { transform: translateY(-3px); box-shadow: 0 12px 24px -12px rgba(15, 40, 70, .35); border-color: color-mix(in srgb, var(--color-blue-500) 55%, transparent); }
+.rd-agregar-ej { opacity: 0; transform: scale(.6); transition: opacity .15s, transform .18s; }
+.rd-tarjeta-ej:hover .rd-agregar-ej { opacity: 1; transform: none; }
+.rd-tarjeta-ej:active { transform: scale(.97); }
+.rd-grupo-banco { transition: transform .18s, box-shadow .2s, border-color .18s; }
+.rd-grupo-banco:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(15, 40, 70, .35); border-color: color-mix(in srgb, var(--color-blue-500) 45%, transparent); }
+@keyframes rd-pop { 0% { transform: scale(.3); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.rd-pop { animation: rd-pop .32s cubic-bezier(.2, .9, .3, 1.2); }
+.rd-scroll-suave { scroll-behavior: smooth; overscroll-behavior: contain; scrollbar-width: thin; }
+/* Panel lateral del banco */
+@keyframes rd-entra-lado { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rd-velo-entra { from { opacity: 0; } to { opacity: 1; } }
+.rd-cajon { animation: rd-entra-lado .3s cubic-bezier(.2, .8, .2, 1); }
+.rd-cajon-velo { animation: rd-velo-entra .25s ease; backdrop-filter: blur(3px); }
+html:not(.dark) .rd-cajon { background: linear-gradient(180deg, #fffdf9, #f8f4ec); border-color: #e7dece; }
+html.dark .rd-cajon { background: linear-gradient(180deg, #0f2238, #0a1828); border-color: rgba(64, 200, 210, .28); box-shadow: 0 0 40px -12px rgba(64, 200, 210, .35), 0 30px 60px -20px rgba(0, 0, 0, .7); }
+.rd-boton-banco { animation: rd-entra-lado .35s cubic-bezier(.2, .8, .2, 1); transition: transform .15s, box-shadow .2s; }
+.rd-boton-banco:hover { transform: translateY(-2px) scale(1.02); }
+html:not(.dark) .rd-boton-banco { background: linear-gradient(135deg, #3f9ea3, #2f7f84); color: #fff; box-shadow: 0 12px 26px -10px rgba(47, 127, 132, .7); }
+html.dark .rd-boton-banco { background: linear-gradient(135deg, #22b8c2, #168c96); color: #04131c; box-shadow: 0 0 26px -6px rgba(64, 200, 210, .75); }
+
+/* Horario de atención */
+.rd-franja { transition: transform .12s, background-color .15s, border-color .15s, box-shadow .2s; touch-action: none; }
+.rd-franja:hover:not(:disabled) { transform: translateY(-1px); border-color: color-mix(in srgb, var(--color-emerald-500) 55%, transparent); }
+.rd-franja-on { box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--color-emerald-500) 80%, transparent); }
+.rd-dia-agenda { transition: transform .15s, box-shadow .2s, border-color .15s; }
+.rd-dia-agenda:hover { transform: translateY(-2px); }
+
+/* Ventanas de formulario: un solo tamaño en todo el sistema */
+@media (min-width: 640px) {
+  .rd-hoja-estandar { width: 100% !important; max-width: 768px !important; }
+}

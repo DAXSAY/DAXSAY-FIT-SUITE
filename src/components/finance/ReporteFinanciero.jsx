@@ -282,14 +282,24 @@ export const ReporteFinanciero = ({ transactions }) => {
     descargar(tipo === "pdf" ? await crearPDF(datos) : await crearExcel(datos));
   };
 
-  const Kpi = ({ titulo, valor, icono: Icono, tono, children }) => (
-    <div className={`relative overflow-hidden rounded-2xl border p-4 rd-aparece ${tono}`}>
-      <Icono className="absolute -right-2 -bottom-2 w-16 h-16 opacity-10" />
-      <p className="text-[11px] font-black uppercase tracking-wider opacity-80">{titulo}</p>
-      <p className="text-2xl font-black mt-0.5">{valor}</p>
-      <div className="mt-1">{children}</div>
-    </div>
-  );
+  // Indicador con el diseño común: icono grande en degradado + fondo de color suave
+  const GRAD = { emerald: "from-emerald-500 to-teal-600", rose: "from-rose-500 to-red-600", blue: "from-blue-500 to-indigo-600", amber: "from-amber-500 to-orange-500", indigo: "from-violet-500 to-indigo-600" };
+  const Kpi = ({ titulo, valor, icono: Icono, tono, children }) => {
+    const c = Object.keys(GRAD).find((k) => tono.includes(`bg-${k}-50`)) || "blue";
+    return (
+      <div className={`rd-kpi rd-levanta relative overflow-hidden rounded-2xl border p-3.5 rd-aparece flex items-center gap-3 ${tono}`}>
+        <Icono className="absolute -right-3 -bottom-3 w-20 h-20 opacity-[0.06]" />
+        <span className={`w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-br ${GRAD[c]} text-white flex items-center justify-center shadow-lg`}>
+          <Icono className="w-6 h-6" />
+        </span>
+        <span className="min-w-0">
+          <p className="text-[11px] font-black uppercase tracking-wider opacity-80">{titulo}</p>
+          <p className="text-xl xl:text-2xl font-black mt-0.5 truncate">{valor}</p>
+          <div className="mt-0.5">{children}</div>
+        </span>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">

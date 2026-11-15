@@ -4,7 +4,8 @@
 // quedan marcados como "Permiso" en el calendario del personal, con su motivo.
 // =====================================================================
 import React, { useMemo, useState } from "react";
-import { FileCheck2, Plus, X, Check, Ban, Undo2, Clock, CalendarRange, User } from "lucide-react";
+import { FileCheck2, Plus, X, Check, Ban, Undo2, Clock, CalendarRange, User, Hourglass } from "lucide-react";
+import { TarjetaKpi } from "../common/TarjetaKpi";
 import { useGym } from "../../context/GymContext";
 import { hoyISO } from "../../utils/fecha";
 import { userCan } from "../../config/roles";
@@ -107,7 +108,11 @@ export const PermisosPersonal = () => {
   };
 
   const aprobar = (p) => {
-    const c = staffContracts.find((x) => x.id === p.contratoId) || { id: p.contratoId, staffId: p.staffId, dni: p.dni };
+    // Pedido desde la campana del trabajador: se busca su contrato por DNI o nombre
+    const c =
+      staffContracts.find((x) => x.id === p.contratoId) ||
+      staffContracts.find((x) => (p.staffId && String(x.staffId) === String(p.staffId)) || (p.dni && x.dni === p.dni) || x.fullName === p.nombre) || { id: p.contratoId, staffId: p.staffId, dni: p.dni };
+    p = { ...p, contratoId: p.contratoId || c.id, staffId: p.staffId || c.staffId, dni: p.dni || c.dni, codigo: p.codigo || c.staffCode, cargo: p.cargo || c.roleTitle };
     const previos = registrosDe(attendances, c);
     const marcados = [];
     diasDelPermiso(p.desde, p.hasta).forEach((dia) => {
@@ -158,21 +163,6 @@ export const PermisosPersonal = () => {
           </h3>
           <p className="text-xs text-slate-500">Se registra la solicitud y administración la aprueba. Al aprobarla, esos días quedan como «Permiso» en la puntualidad.</p>
         </div>
-        {[
-          ["pendiente", `Pendientes · ${cuenta.pendiente}`],
-          ["aprobado", `Aprobados`],
-          ["rechazado", `Rechazados`],
-          ["todos", "Todos"],
-        ].map(([k, l]) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setFiltro(k)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold border cursor-pointer ${filtro === k ? "bg-slate-900 border-slate-900 text-white" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-          >
-            {l}
-          </button>
-        ))}
         {puedeSolicitar && (
           <button type="button" onClick={() => (setForm({ ...VACIO }), setError(""))} className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer">
             <Plus className="w-4 h-4" /> Nueva solicitud
@@ -180,19 +170,12 @@ export const PermisosPersonal = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
-          <p className="text-[11px] font-black uppercase text-amber-700">Por aprobar</p>
-          <p className="text-2xl font-black text-amber-800">{cuenta.pendiente}</p>
-        </div>
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-          <p className="text-[11px] font-black uppercase text-emerald-700">Aprobados este mes</p>
-          <p className="text-2xl font-black text-emerald-800">{cuenta.aprobadoMes}</p>
-        </div>
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3">
-          <p className="text-[11px] font-black uppercase text-rose-700">Rechazados</p>
-          <p className="text-2xl font-black text-rose-700">{cuenta.rechazado}</p>
-        </div>
+      {/* Indicadores: tocar uno filtra la lista */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <TarjetaKpi titulo="Por aprobar" valor={cuenta.pendiente} sub="toca para ver" icono={Hourglass} tono="ambar" pulso={cuenta.pendiente > 0} activo={filtro === "pendiente"} onClick={() => setFiltro("pendiente")} />
+        <TarjetaKpi titulo="Aprobados este mes" valor={cuenta.aprobadoMes} sub="ya marcados en el calendario" icono={Check} tono="verde" activo={filtro === "aprobado"} onClick={() => setFiltro("aprobado")} />
+        <TarjetaKpi titulo="Rechazados" valor={cuenta.rechazado} sub="con su motivo" icono={Ban} tono="rojo" activo={filtro === "rechazado"} onClick={() => setFiltro("rechazado")} />
+        <TarjetaKpi titulo="Todos" valor={permisos.length} sub="historial completo" icono={FileCheck2} tono="azul" activo={filtro === "todos"} onClick={() => setFiltro("todos")} />
       </div>
 
       {form && (
@@ -290,7 +273,7 @@ export const PermisosPersonal = () => {
             const T = TIPOS_PERMISO[p.tipo] || TIPOS_PERMISO.otro;
             const dias = p.porHoras ? null : diasDelPermiso(p.desde, p.hasta).length;
             return (
-              <div key={p.id} className="bg-white rounded-2xl border border-slate-200 p-4 space-y-2.5">
+              <div key={p.id} className={`rd-levanta rd-aparece bg-white rounded-2xl border border-slate-200 border-l-4 p-4 space-y-2.5 ${p.estado === "pendiente" ? "border-l-amber-500" : p.estado === "aprobado" ? "border-l-emerald-500" : p.estado === "rechazado" ? "border-l-rose-500" : "border-l-slate-300"}`}>
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-xl bg-sky-100 text-sky-800 font-black text-sm flex items-center justify-center shrink-0">{iniciales(p.nombre)}</span>
                   <div className="min-w-0 flex-1">

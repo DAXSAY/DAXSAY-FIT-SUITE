@@ -1,3 +1,5 @@
+import { Pestanas } from "../common/CabeceraModulo";
+import { useRecordado } from "../../utils/subPestana";
 import React, { useState, useMemo } from "react";
 import { PistaMarcar, TEXTO_MARCAR } from "../common/PistaMarcar";
 import {
@@ -53,7 +55,7 @@ export const AttendanceModule = () => {
   } = useGym();
 
   // Primary Tab Separation: Personal de Trabajo vs Alumnos
-  const [activeTab, setActiveTab] = useState("inicio");
+  const [activeTab, setActiveTab] = useRecordado("asistencias", "inicio");
   const permisosPendientes = permisos.filter((p) => p.estado === "pendiente").length;
 
   // Search & Filters
@@ -521,47 +523,16 @@ export const AttendanceModule = () => {
         )}
       </div>
 
-      {/* PRIMARY TAB SWITCHER: PERSONAL DE TRABAJO vs ALUMNOS */}
-      <div className="flex flex-wrap items-center gap-2 p-1 bg-slate-200/80 rounded-2xl w-full sm:w-max">
-        <button
-          onClick={() => setActiveTab("inicio")}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-            activeTab === "inicio" ? "bg-blue-600 text-white shadow-md" : "text-slate-700 hover:text-slate-900 hover:bg-slate-200"
-          }`}
-        >
-          <CalendarDays className="w-4 h-4" />
-          <span>Calendario</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("calendar")}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-            activeTab === "calendar" ? "bg-blue-600 text-white shadow-md" : "text-slate-700 hover:text-slate-900 hover:bg-slate-200"
-          }`}
-        >
-          <CalendarDays className="w-4 h-4" />
-          <span>Historial de un alumno</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("staffCalendar")}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-            activeTab === "staffCalendar" ? "bg-blue-600 text-white shadow-md" : "text-slate-700 hover:text-slate-900 hover:bg-slate-200"
-          }`}
-        >
-          <CalendarDays className="w-4 h-4" />
-          <span>Puntualidad del personal</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("permisos")}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-            activeTab === "permisos" ? "bg-blue-600 text-white shadow-md" : "text-slate-700 hover:text-slate-900 hover:bg-slate-200"
-          }`}
-        >
-          <FileCheck2 className="w-4 h-4" />
-          <span>Permisos</span>
-          {permisosPendientes > 0 && <span className="min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-[11px] font-black flex items-center justify-center">{permisosPendientes}</span>}
-        </button>
-      </div>
+      <Pestanas
+        activa={activeTab}
+        onCambiar={setActiveTab}
+        pestanas={[
+          { k: "inicio", icono: CalendarDays, label: "Calendario", tono: "teal" },
+          { k: "calendar", icono: CalendarDays, label: "Historial de un alumno", tono: "emerald" },
+          { k: "staffCalendar", icono: CalendarDays, label: "Puntualidad del personal", tono: "violet" },
+          { k: "permisos", icono: FileCheck2, label: "Permisos", badge: permisosPendientes || null, tono: "amber" },
+        ]}
+      />
 
       {/* ---------------- CALENDARIO GENERAL (primera pantalla) ---------------- */}
       {activeTab === "inicio" && (

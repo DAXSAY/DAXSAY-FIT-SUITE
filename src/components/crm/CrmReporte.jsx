@@ -271,7 +271,7 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
           <Seccion titulo="De la consulta a la matrícula" sub="Cuántos avanzan en cada paso" icono={Filter}>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {embudo.map((e) => (
-                <TarjetaKpi
+                <TarjetaKpi icono={Users}
                   key={e.clave}
                   titulo={e.nombre}
                   valor={e.total}

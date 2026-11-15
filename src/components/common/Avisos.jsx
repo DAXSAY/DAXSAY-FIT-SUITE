@@ -2,6 +2,7 @@
 //  recepción / administración: "olvidó su contraseña" -> Restablecer (queda su DNI)
 //  entrenador: alumnos que no anotan sus pesos -> Ver progreso
 //  alumno: "no olvides anotar tu progreso" -> Anotar ahora
+import { BotonSolicitarPermiso } from "../attendances/SolicitarPermiso";
 import { PanelLateral, CabeceraPanel, fechaHoyTexto } from "./PanelLateral";
 import React, { useCallback, useEffect, useState } from "react";
 import { Bell, KeyRound, X, MessageCircle } from "lucide-react";
@@ -237,6 +238,7 @@ export function CampanaAvisos({ setActiveTab }) {
         />
         <div className="flex-1 overflow-y-auto p-3 text-slate-800">
           <SeccionProgramados />
+          <BotonSolicitarPermiso />
           <ListaAvisos
             vacio={pendientes.length === 0}
             avisos={avisos}

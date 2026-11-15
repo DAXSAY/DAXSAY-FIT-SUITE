@@ -125,8 +125,8 @@ export function hacerRespaldo(motivo = "manual") {
         const sql = String(crear["SQL Original Statement"] || "").replace(/DEFINER=`[^`]+`@`[^`]+`\s*/g, "");
         if (sql) await escribir(`DROP TRIGGER IF EXISTS \`${tr.Trigger}\`$$\n${sql}$$\n\n`);
       }
-      if (omitidos) await escribir(`-- AVISO: ${omitidos} procedimiento(s) no se copiaron por permisos. Ejecuta base_datos/34_sincronizacion_y_respaldos.sql\n`);
-      ultimoAviso = omitidos ? `${omitidos} procedimientos no se copiaron (falta permiso: ejecuta base_datos/34_sincronizacion_y_respaldos.sql). Los datos sí están completos.` : null;
+      if (omitidos) await escribir(`-- AVISO: ${omitidos} procedimiento(s) no se copiaron por permisos. Ejecuta base_datos/anteriores/34_sincronizacion_y_respaldos.sql\n`);
+      ultimoAviso = omitidos ? `${omitidos} procedimientos no se copiaron (falta permiso: ejecuta base_datos/anteriores/34_sincronizacion_y_respaldos.sql). Los datos sí están completos.` : null;
       await escribir("DELIMITER ;\n\nSET FOREIGN_KEY_CHECKS = 1;\nSET UNIQUE_CHECKS = 1;\n-- Fin de la copia\n");
       await new Promise((ok, mal) => salida.end((e) => (e ? mal(e) : ok())));
       fs.renameSync(temporal, path.join(CARPETA_RESPALDOS, nombre));

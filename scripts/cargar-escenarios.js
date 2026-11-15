@@ -14,7 +14,7 @@
 //
 // Uso (sesión de ADMINISTRADOR abierta, en la consola del navegador):
 //   const m = await import("/scripts/cargar-escenarios.js"); await m.cargarEscenarios();
-// Para producción se borra todo con base_datos/99_reiniciar_para_produccion.sql
+// Para producción se borra todo con base_datos/anteriores/99_reiniciar_para_produccion.sql
 // =====================================================================
 
 const TZ = "America/Lima";

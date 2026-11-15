@@ -5,6 +5,9 @@ import {
   Search,
   User,
   Flame,
+  Drumstick,
+  Wheat,
+  Droplets,
   Droplet,
   Pill,
   Share2,
@@ -266,7 +269,7 @@ const COMMON_FOODS = [
   },
 ];
 
-export const NutritionModule = () => {
+export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
   const {
     nutritionPlans,
     members,
@@ -283,7 +286,9 @@ export const NutritionModule = () => {
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [filterObjective, setFilterObjective] = useState("all");
-  const [viewMode, setViewMode] = useState("plans");
+  const [vmLocal, setVmLocal] = useState("plans");
+  const viewMode = vista ?? vmLocal;
+  const setViewMode = onVista ?? setVmLocal;
 
   // Modal State for New/Edit Plan
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -688,9 +693,19 @@ export const NutritionModule = () => {
     window.print();
   };
 
+  // La cabecera común (Nutrición y medidas) pide abrir el formulario
+  useEffect(() => {
+    if (pedirCrear > 0) {
+      setViewMode("plans");
+      handleOpenCreateModal(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedirCrear]);
+
   return (
     <div className="space-y-6">
       {/* Top Banner & Action Header */}
+      {vista === undefined && (
       <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
@@ -760,6 +775,7 @@ export const NutritionModule = () => {
           </button>
         </div>
       </div>
+      )}
 
       {/* VIEW 1: PLANS AND ASSIGNED DIETS */}
       {viewMode === "plans" && (
@@ -932,65 +948,9 @@ export const NutritionModule = () => {
                     </div>
                   </div>
 
-                  {/* Macro Targets Visual Cards */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/60">
-                    <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                      <div className="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
-                        <span>Calorías Diarias</span>
-                        <Flame className="w-3.5 h-3.5 text-amber-400" />
-                      </div>
-                      <div className="text-xl font-black text-white">
-                        {selectedPlan.dailyCaloriesTarget}{" "}
-                        <span className="text-xs text-slate-400 font-normal">
-                          kcal
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                      <div className="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
-                        <span>Proteínas</span>
-                        <span className="text-xs text-emerald-400 font-bold">
-                          4 kcal/g
-                        </span>
-                      </div>
-                      <div className="text-xl font-black text-emerald-400">
-                        {selectedPlan.proteinsTargetGrams}{" "}
-                        <span className="text-xs text-slate-400 font-normal">
-                          g
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                      <div className="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
-                        <span>Carbohidratos</span>
-                        <span className="text-xs text-cyan-400 font-bold">
-                          4 kcal/g
-                        </span>
-                      </div>
-                      <div className="text-xl font-black text-cyan-400">
-                        {selectedPlan.carbsTargetGrams}{" "}
-                        <span className="text-xs text-slate-400 font-normal">
-                          g
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                      <div className="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
-                        <span>Grasas Saludables</span>
-                        <span className="text-xs text-rose-400 font-bold">
-                          9 kcal/g
-                        </span>
-                      </div>
-                      <div className="text-xl font-black text-rose-400">
-                        {selectedPlan.fatsTargetGrams}{" "}
-                        <span className="text-xs text-slate-400 font-normal">
-                          g
-                        </span>
-                      </div>
-                    </div>
+                  {/* Metas del día: calorías y macros con su peso en el total */}
+                  <div className="mt-6 pt-5 border-t border-slate-700/60">
+                    <MacroTarjetas kcal={selectedPlan.dailyCaloriesTarget} p={selectedPlan.proteinsTargetGrams} c={selectedPlan.carbsTargetGrams} g={selectedPlan.fatsTargetGrams} />
                   </div>
                 </div>
 
@@ -1388,43 +1348,7 @@ export const NutritionModule = () => {
                     Distribución de Macronutrientes Óptima:
                   </span>
 
-                  <div className="grid grid-cols-3 gap-2.5">
-                    <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                      <span className="text-xs font-semibold text-emerald-400">
-                        Proteínas
-                      </span>
-                      <p className="text-xl font-black text-white mt-0.5">
-                        {calculatedMetrics.proteinsGrams}g
-                      </p>
-                      <span className="text-xs text-slate-400">
-                        {calculatedMetrics.proteinsGrams * 4} kcal
-                      </span>
-                    </div>
-
-                    <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                      <span className="text-xs font-semibold text-cyan-400">
-                        Carbos
-                      </span>
-                      <p className="text-xl font-black text-white mt-0.5">
-                        {calculatedMetrics.carbsGrams}g
-                      </p>
-                      <span className="text-xs text-slate-400">
-                        {calculatedMetrics.carbsGrams * 4} kcal
-                      </span>
-                    </div>
-
-                    <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                      <span className="text-xs font-semibold text-rose-400">
-                        Grasas
-                      </span>
-                      <p className="text-xl font-black text-white mt-0.5">
-                        {calculatedMetrics.fatsGrams}g
-                      </p>
-                      <span className="text-xs text-slate-400">
-                        {calculatedMetrics.fatsGrams * 9} kcal
-                      </span>
-                    </div>
-                  </div>
+                  <MacroTarjetas p={calculatedMetrics.proteinsGrams} c={calculatedMetrics.carbsGrams} g={calculatedMetrics.fatsGrams} />
 
                   <div className="p-3 bg-blue-950/50 rounded-xl border border-blue-900/60 flex items-center justify-between text-xs">
                     <span className="text-blue-300 flex items-center space-x-1.5">
@@ -1722,6 +1646,54 @@ export const NutritionModule = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+
+/** Calorías y macros del día: icono en degradado, gramos, kcal y % del total con anillo */
+export const MacroTarjetas = ({ kcal, p = 0, c = 0, g = 0 }) => {
+  const kp = p * 4;
+  const kc = c * 4;
+  const kg = g * 9;
+  const total = kp + kc + kg || 1;
+  const items = [
+    ["Proteínas", p, kp, Drumstick, "from-emerald-500 to-teal-600", "text-emerald-600", "4 kcal por gramo"],
+    ["Carbohidratos", c, kc, Wheat, "from-amber-500 to-orange-500", "text-amber-600", "4 kcal por gramo"],
+    ["Grasas", g, kg, Droplets, "from-rose-500 to-pink-600", "text-rose-600", "9 kcal por gramo"],
+  ];
+  return (
+    <div className={`grid grid-cols-1 ${kcal ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-3"} gap-2.5`}>
+      {kcal != null && (
+        <div className="rd-kpi rounded-2xl border border-cyan-200 bg-cyan-50 p-3 flex items-center gap-3">
+          <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-lg shrink-0"><Flame className="w-5 h-5" /></span>
+          <span className="min-w-0">
+            <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500">Calorías del día</span>
+            <span className="block text-xl font-black text-cyan-700">{kcal} <small className="text-xs font-bold">kcal</small></span>
+            <span className="block text-[11px] text-slate-500">P {Math.round((kp / total) * 100)}% · C {Math.round((kc / total) * 100)}% · G {Math.round((kg / total) * 100)}%</span>
+          </span>
+        </div>
+      )}
+      {items.map(([t, gr, k, I, grad, txt, ayuda]) => {
+        const pct = Math.round((k / total) * 100);
+        return (
+          <div key={t} className="rd-kpi rounded-2xl border border-slate-200 bg-white p-3 flex items-center gap-3">
+            <span className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${grad} text-white flex items-center justify-center shadow-lg shrink-0`}><I className="w-5 h-5" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500">{t}</span>
+              <span className={`block text-xl font-black ${txt}`}>{gr} <small className="text-xs font-bold">g</small></span>
+              <span className="block text-[11px] text-slate-500 truncate">{k} kcal · {ayuda}</span>
+            </span>
+            <span className="relative shrink-0">
+              <svg viewBox="0 0 36 36" width="42" height="42" className="-rotate-90">
+                <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="4" className="text-slate-100" />
+                <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" className={txt} strokeDasharray={`${(pct / 100) * 94.2} 94.2`} />
+              </svg>
+              <span className={`absolute inset-0 flex items-center justify-center text-[10px] font-black ${txt}`}>{pct}%</span>
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 };

@@ -65,8 +65,26 @@ function MainAppContent() {
       const st = e.state;
       // Si hay una ventana abierta, «atrás» solo la cierra y te deja donde estabas
       if (hayVentanaAbierta() && cerrarVentanaSuperior()) {
-        window.history.pushState({ radical: tabActual.current }, "");
-        return;
+        // Perfil abierto desde otro apartado (ej. Ver perfil en Fisioterapia):
+        // un solo «atrás» lo cierra y regresa a donde estabas
+        let desdeOtro = false;
+        try {
+          desdeOtro = sessionStorage.getItem("radical_perfil_desde") === "1";
+          sessionStorage.removeItem("radical_perfil_desde");
+        } catch {
+          /* nada */
+        }
+        if (!desdeOtro) {
+          window.history.pushState({ radical: tabActual.current }, "");
+          return;
+        }
+      }
+      else {
+        try {
+          sessionStorage.removeItem("radical_perfil_desde");
+        } catch {
+          /* nada */
+        }
       }
       if (!st || st.raiz) {
         // Llegó al inicio del historial: se queda en el apartado principal

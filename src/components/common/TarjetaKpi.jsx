@@ -24,48 +24,74 @@ export const MiniGrafico = ({ serie = [], color = "var(--color-blue-500)", relle
 };
 
 const TONOS = {
-  teal: { color: "var(--color-blue-500)", borde: "border-blue-500 ring-2 ring-blue-500/20", hover: "hover:border-blue-400", sub: "text-blue-600" },
-  verde: { color: "var(--color-emerald-500)", borde: "border-emerald-500 ring-2 ring-emerald-500/20", hover: "hover:border-emerald-400", sub: "text-emerald-600" },
-  rojo: { color: "var(--color-rose-500)", borde: "border-rose-500 ring-2 ring-rose-500/20", hover: "hover:border-rose-400", sub: "text-rose-600" },
-  ambar: { color: "var(--color-amber-500)", borde: "border-amber-500 ring-2 ring-amber-500/20", hover: "hover:border-amber-400", sub: "text-amber-600" },
-  violeta: { color: "var(--color-violet-500)", borde: "border-violet-500 ring-2 ring-violet-500/20", hover: "hover:border-violet-400", sub: "text-violet-600" },
-  azul: { color: "var(--color-blue-500)", borde: "border-blue-500 ring-2 ring-blue-500/20", hover: "hover:border-blue-400", sub: "text-blue-600" },
+  teal: { fondo: "bg-cyan-50 border-cyan-200", color: "var(--color-cyan-500)", grad: "from-cyan-500 to-teal-600", texto: "text-cyan-600", borde: "border-cyan-500 ring-2 ring-cyan-500/20", hover: "hover:border-cyan-400", sub: "text-cyan-700" },
+  verde: { fondo: "bg-emerald-50 border-emerald-200", color: "var(--color-emerald-500)", grad: "from-emerald-500 to-teal-600", texto: "text-emerald-600", borde: "border-emerald-500 ring-2 ring-emerald-500/20", hover: "hover:border-emerald-400", sub: "text-emerald-700" },
+  rojo: { fondo: "bg-rose-50 border-rose-200", color: "var(--color-rose-500)", grad: "from-rose-500 to-red-600", texto: "text-rose-600", borde: "border-rose-500 ring-2 ring-rose-500/20", hover: "hover:border-rose-400", sub: "text-rose-700" },
+  ambar: { fondo: "bg-amber-50 border-amber-200", color: "var(--color-amber-500)", grad: "from-amber-500 to-orange-500", texto: "text-amber-600", borde: "border-amber-500 ring-2 ring-amber-500/20", hover: "hover:border-amber-400", sub: "text-amber-700" },
+  violeta: { fondo: "bg-violet-50 border-violet-200", color: "var(--color-violet-500)", grad: "from-violet-500 to-indigo-600", texto: "text-violet-600", borde: "border-violet-500 ring-2 ring-violet-500/20", hover: "hover:border-violet-400", sub: "text-violet-700" },
+  azul: { fondo: "bg-blue-50 border-blue-200", color: "var(--color-blue-500)", grad: "from-blue-500 to-indigo-600", texto: "text-blue-600", borde: "border-blue-500 ring-2 ring-blue-500/20", hover: "hover:border-blue-400", sub: "text-blue-700" },
+  rosa: { fondo: "bg-pink-50 border-pink-200", color: "var(--color-pink-500)", grad: "from-pink-500 to-fuchsia-600", texto: "text-pink-600", borde: "border-pink-500 ring-2 ring-pink-500/20", hover: "hover:border-pink-400", sub: "text-pink-700" },
+  plomo: { fondo: "bg-slate-50 border-slate-200", color: "var(--color-slate-500)", grad: "from-slate-500 to-slate-700", texto: "text-slate-700", borde: "border-slate-500 ring-2 ring-slate-500/20", hover: "hover:border-slate-400", sub: "text-slate-600" },
 };
 
+/** Anillo de avance (0-100) */
+export const Anillo = ({ pct = 0, clase = "text-cyan-600", tam = 44 }) => (
+  <svg viewBox="0 0 36 36" width={tam} height={tam} className="shrink-0 -rotate-90" aria-hidden>
+    <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="4" className="text-slate-100" />
+    <circle
+      cx="18"
+      cy="18"
+      r="15"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="4"
+      strokeLinecap="round"
+      className={`${clase} transition-[stroke-dasharray] duration-700`}
+      strokeDasharray={`${(Math.max(0, Math.min(100, pct)) / 100) * 94.2} 94.2`}
+    />
+  </svg>
+);
+
 /**
+ * Tarjeta de indicador común a todo el sistema:
+ * icono grande en degradado, número animado, línea de contexto y, a la derecha,
+ * minigráfico (serie) o anillo de avance (progreso 0-100).
  * <TarjetaKpi titulo="Nuevos" valor={12} sub="registrados hoy" serie={[1,3,2,5]} tono="teal" icono={Sparkles} />
  * alerta = estilo rojo de "Acción inmediata"; activo = resaltada (filtro elegido)
  */
-export const TarjetaKpi = ({ titulo, valor = 0, decimales = 0, prefijo = "", sufijo = "", sub, icono: I, tono = "teal", serie, activo = false, alerta = false, onClick, title }) => {
-  const t = TONOS[tono] || TONOS.teal;
+export const TarjetaKpi = ({ titulo, valor = 0, decimales = 0, prefijo = "", sufijo = "", sub, icono: I, tono = "teal", serie, progreso, activo = false, alerta = false, pulso = false, onClick, title, texto }) => {
+  const t = TONOS[alerta ? "rojo" : tono] || TONOS.teal;
   const Comp = onClick ? "button" : "div";
   return (
     <Comp
       type={onClick ? "button" : undefined}
       onClick={onClick}
       title={title}
-      className={`rd-aparece rd-levanta w-full text-left p-4 rounded-xl border transition-all shadow-xs ${onClick ? "cursor-pointer" : ""} ${
-        alerta ? "bg-rose-50/30 border-rose-200 hover:border-rose-400" : `bg-white ${activo ? t.borde : `border-gray-200 ${t.hover}`}`
+      className={`rd-kpi rd-aparece rd-levanta relative overflow-hidden w-full text-left p-3.5 rounded-2xl border transition-all flex items-center gap-3 ${onClick ? "cursor-pointer" : ""} ${
+        alerta ? "bg-rose-50 border-rose-300 hover:border-rose-400" : `${t.fondo} ${activo ? t.borde : t.hover}`
       }`}
     >
-      <div className={`flex items-center justify-between text-xs font-semibold uppercase tracking-wider ${alerta ? "text-rose-700" : "text-gray-500"}`}>
-        <span className="truncate">{titulo}</span>
-        {I ? <I className="w-3.5 h-3.5 shrink-0" style={{ color: t.color }} /> : <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: t.color }} />}
-      </div>
-      <div className="flex items-end justify-between mt-1 gap-2">
-        <div className="min-w-0">
-          <span className={`text-2xl font-black ${alerta ? "text-rose-700" : "text-slate-900"}`}>
-            <NumeroAnimado valor={Number(valor) || 0} decimales={decimales} prefijo={prefijo} />
-            {sufijo}
-          </span>
-          {sub && <span className={`block text-xs font-bold mt-0.5 truncate ${alerta ? "text-rose-600" : t.sub}`}>{sub}</span>}
-        </div>
-        {serie && (
-          <div className="shrink-0 pl-2">
-            <MiniGrafico serie={serie} color={alerta ? "var(--color-rose-600)" : t.color} />
-          </div>
-        )}
-      </div>
+      {I && <I className="absolute -right-3 -bottom-3 w-20 h-20 opacity-[0.06] pointer-events-none" aria-hidden />}
+      {I && (
+        <span className={`relative w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-br ${t.grad} text-white flex items-center justify-center shadow-lg ${pulso ? "animate-pulse" : ""}`}>
+          <I className="w-6 h-6" />
+        </span>
+      )}
+      <span className="min-w-0 flex-1">
+        <span className={`block text-[11px] font-black uppercase tracking-wider truncate ${alerta ? "text-rose-700" : "text-slate-500"}`}>{titulo}</span>
+        <span className={`block text-2xl font-black leading-tight mt-0.5 truncate ${t.texto}`}>
+          {texto != null ? texto : <NumeroAnimado valor={Number(valor) || 0} decimales={decimales} prefijo={prefijo} />}
+          {sufijo}
+        </span>
+        {sub && <span className="block text-[11px] font-semibold text-slate-500 truncate mt-0.5" title={typeof sub === "string" ? sub : undefined}>{sub}</span>}
+      </span>
+      {progreso != null ? (
+        <Anillo pct={progreso} clase={t.texto} />
+      ) : serie ? (
+        <span className="shrink-0 pl-1">
+          <MiniGrafico serie={serie} color={t.color} ancho={64} />
+        </span>
+      ) : null}
     </Comp>
   );
 };

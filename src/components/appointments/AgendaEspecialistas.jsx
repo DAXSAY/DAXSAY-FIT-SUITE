@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Clock, Check, Copy, Lock, Save, Stethoscope, Apple, RotateCcw } from "lucide-react";
+import { CalendarDays, Clock, Check, Copy, Lock, Save, Stethoscope, Apple, RotateCcw, Sunrise, Sun, Moon, MousePointerClick } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { hoyISO } from "../../utils/fecha";
 
@@ -81,6 +81,24 @@ export function AgendaEspecialistas({ servicioInicial }) {
     if (!editable) return;
     setHoras((prev) => ordenar(prev.includes(h) ? prev.filter((x) => x !== h) : [...prev, h]));
   };
+  // Arrastrar con el mouse para marcar o desmarcar varias horas seguidas
+  const arrastre = React.useRef(null);
+  useEffect(() => {
+    const fin = () => (arrastre.current = null);
+    window.addEventListener("pointerup", fin);
+    return () => window.removeEventListener("pointerup", fin);
+  }, []);
+  const empezar = (h) => {
+    if (!editable) return;
+    const marcar = !horas.includes(h);
+    arrastre.current = marcar;
+    setHoras((prev) => ordenar(marcar ? [...new Set([...prev, h])] : prev.filter((x) => x !== h)));
+  };
+  const pasar = (h) => {
+    if (arrastre.current === null || !editable) return;
+    const marcar = arrastre.current;
+    setHoras((prev) => ordenar(marcar ? [...new Set([...prev, h])] : prev.filter((x) => x !== h)));
+  };
 
   const guardar = (fechas = [fecha]) => {
     fechas.forEach((f) =>
@@ -142,6 +160,27 @@ export function AgendaEspecialistas({ servicioInicial }) {
           </div>
         </div>
 
+        {/* Resumen de las 2 semanas visibles */}
+        {(() => {
+          const regs = dias.map((d) => agendaEspecialistas.find((r) => r.id === `${servicio}-${d}`)).filter(Boolean);
+          const horasTot = regs.reduce((a, r) => a + (r.horas?.length || 0), 0);
+          const diasCon = regs.filter((r) => r.horas?.length).length;
+          return (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {[
+                ["Horas de atención", `${horasTot} h`, "text-emerald-700 bg-emerald-50 border-emerald-200"],
+                ["Días con atención", `${diasCon} de 14`, "text-sky-700 bg-sky-50 border-sky-200"],
+                ["Citas posibles", `${horasTot}`, "text-violet-700 bg-violet-50 border-violet-200"],
+              ].map(([k, v, c]) => (
+                <div key={k} className={`rounded-xl border px-3 py-2 ${c}`}>
+                  <span className="block text-[10px] font-black uppercase tracking-wide opacity-80">{k}</span>
+                  <span className="block text-lg font-black">{v}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* Días */}
         <div className="mt-4 flex items-center gap-2">
           <button type="button" disabled={semana === 0} onClick={() => setSemana((s) => s - 1)} className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-2.5 py-2 rounded-lg text-xs font-bold disabled:opacity-30 cursor-pointer">‹</button>
@@ -156,12 +195,17 @@ export function AgendaEspecialistas({ servicioInicial }) {
                   key={d}
                   type="button"
                   onClick={() => setFecha(d)}
-                  className={`rounded-xl px-1 py-2 text-center border transition cursor-pointer ${sel ? "bg-blue-600 border-blue-500 text-white shadow-md" : "border-slate-200 bg-white text-slate-700 hover:border-blue-400"}`}
+                  className={`rd-dia-agenda rounded-2xl px-1 py-2 text-center border transition cursor-pointer ${sel ? "bg-blue-600 border-blue-500 text-white shadow-lg" : "border-slate-200 bg-white text-slate-700 hover:border-blue-400"}`}
                 >
                   <span className="block text-[11px] font-bold uppercase opacity-80">{DIAS[fd.getDay()]}</span>
                   <span className="block text-lg font-extrabold leading-tight">{fd.getDate()}</span>
-                  <span className={`block text-[10px] font-bold ${sel ? "text-white/90" : n ? "text-emerald-500" : "opacity-50"}`}>
-                    {reg ? (n ? `${n} h` : "cerrado") : "—"}
+                  <span className={`block text-[10px] font-bold ${sel ? "text-white/90" : n ? "text-emerald-600" : "text-slate-400"}`}>
+                    {reg ? (n ? `${n} h` : "cerrado") : "sin horario"}
+                  </span>
+                  <span className="mt-1 mx-1 flex gap-[2px] h-1.5" aria-hidden>
+                    {FRANJAS.map((h) => (
+                      <span key={h} className={`flex-1 rounded-full ${reg?.horas?.includes(h) ? (sel ? "bg-white" : "bg-emerald-500") : sel ? "bg-white/25" : "bg-slate-200"}`} />
+                    ))}
                   </span>
                 </button>
               );
@@ -186,26 +230,55 @@ export function AgendaEspecialistas({ servicioInicial }) {
               </div>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-            {FRANJAS.map((h) => {
-              const on = horas.includes(h);
-              const i = FRANJAS.indexOf(h);
+          <div className="grid md:grid-cols-3 gap-3 select-none" onPointerLeave={() => (arrastre.current = null)}>
+            {[
+              ["Mañana", Sunrise, FRANJAS.slice(0, 6), "from-amber-400 to-orange-500"],
+              ["Tarde", Sun, FRANJAS.slice(6, 12), "from-sky-500 to-blue-600"],
+              ["Noche", Moon, FRANJAS.slice(12), "from-violet-500 to-indigo-600"],
+            ].map(([nombre, I, lista, grad]) => {
+              const n = lista.filter((h) => horas.includes(h)).length;
               return (
-                <button
-                  key={h}
-                  type="button"
-                  onClick={() => alternar(h)}
-                  disabled={!editable}
-                  aria-pressed={on}
-                  className={`relative rounded-xl px-2 py-2.5 text-xs font-extrabold border transition ${editable ? "cursor-pointer" : "cursor-default"} ${on ? "bg-emerald-600 border-emerald-500 text-white shadow" : "border-slate-200 bg-white text-slate-700 opacity-80 hover:opacity-100"}`}
-                >
-                  <Clock className="w-3 h-3 inline mr-1 -mt-0.5" />
-                  {h.replace(":00", "")}–{(FRANJAS[i + 1] || "10:00 PM").replace(":00", "")}
-                  {on && <Check className="w-3.5 h-3.5 absolute top-1 right-1" />}
-                </button>
+                <div key={nombre} className="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-600">
+                      <span className={`w-7 h-7 rounded-lg bg-gradient-to-br ${grad} text-white flex items-center justify-center`}><I className="w-4 h-4" /></span>
+                      {nombre}
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-500">{n}/{lista.length} h</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {lista.map((h) => {
+                      const on = horas.includes(h);
+                      const i = FRANJAS.indexOf(h);
+                      return (
+                        <button
+                          key={h}
+                          type="button"
+                          onPointerDown={(e) => {
+                            e.preventDefault();
+                            empezar(h);
+                          }}
+                          onPointerEnter={() => pasar(h)}
+                          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), alternar(h))}
+                          disabled={!editable}
+                          aria-pressed={on}
+                          className={`rd-franja relative rounded-xl px-2 py-2.5 text-xs font-extrabold border ${editable ? "cursor-pointer" : "cursor-default"} ${on ? "rd-franja-on bg-emerald-600 border-emerald-500 text-white" : "border-slate-200 bg-white text-slate-700"}`}
+                        >
+                          {h.replace(":00", "")}–{(FRANJAS[i + 1] || "10:00 PM").replace(":00", "")}
+                          {on && <Check className="rd-pop w-3.5 h-3.5 absolute top-1 right-1" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </div>
+          {editable && (
+            <p className="mt-2 text-[11px] text-slate-500 flex items-center gap-1">
+              <MousePointerClick className="w-3.5 h-3.5" /> Toca una hora o arrastra el mouse sobre varias para marcarlas de una vez.
+            </p>
+          )}
 
           {editable ? (
             <div className="mt-4 flex flex-wrap items-center gap-2">

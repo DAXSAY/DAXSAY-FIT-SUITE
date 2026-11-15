@@ -168,6 +168,22 @@ export function cerrarVentanaSuperior({ incluirInternas = true } = {}) {
   return false;
 }
 
+// Mismo tamaño para todas las ventanas de formulario (nuevo alimento, producto,
+// pago, permiso…): 768 px de ancho como la mayoría. Las fichas e informes más
+// anchos y las pantallas completas se dejan como están.
+function uniformar(v) {
+  if (v.dataset.rdTam) return;
+  const campo = v.querySelector("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), select, textarea");
+  if (!campo) return;
+  const hoja = tarjetaDe(v, campo);
+  if (!hoja || hoja === v) return;
+  const w = hoja.getBoundingClientRect().width;
+  if (w >= window.innerWidth * 0.85 || w > 900) return;
+  if (/\bh-full\b/.test(hoja.className)) return; // paneles laterales
+  hoja.classList.add("rd-hoja-estandar");
+  v.dataset.rdTam = "1";
+}
+
 let instalado = false;
 export function instalarControlesVentanas() {
   if (instalado || typeof document === "undefined") return;
@@ -175,7 +191,10 @@ export function instalarControlesVentanas() {
   let pendiente = false;
   const revisar = () => {
     pendiente = false;
-    ventanas().forEach(completar);
+    ventanas().forEach((v) => {
+      completar(v);
+      uniformar(v);
+    });
   };
   new MutationObserver(() => {
     if (pendiente) return;

@@ -93,9 +93,11 @@ export const SelectorAlumno = ({ alumnos = [], value, onChange, placeholder = "C
               setTexto(e.target.value);
               setAbierto(true);
             }}
-            onFocus={() => setAbierto(true)}
+            // La lista sale solo si la persona hace clic en el campo o escribe (no al recibir el foco solo)
+            onMouseDown={() => setAbierto(true)}
+            onBlur={(e) => !caja.current?.contains(e.relatedTarget) && setTimeout(() => setAbierto(false), 120)}
             onKeyDown={(e) => {
-              if (e.key === "ArrowDown") { e.preventDefault(); setMarca((i) => Math.min(i + 1, lista.length - 1)); }
+              if (e.key === "ArrowDown") { e.preventDefault(); setAbierto(true); setMarca((i) => Math.min(i + 1, lista.length - 1)); }
               if (e.key === "ArrowUp") { e.preventDefault(); setMarca((i) => Math.max(i - 1, 0)); }
               if (e.key === "Enter") { e.preventDefault(); if (lista[marca]) elegir(lista[marca]); }
               if (e.key === "Escape") setAbierto(false);

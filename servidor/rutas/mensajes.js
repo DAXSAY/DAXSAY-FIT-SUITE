@@ -13,7 +13,7 @@ import { hoyLima } from "../congelamiento.js";
 const router = Router();
 // Si la base de datos aún no tiene la actualización, se avisa qué script ejecutar
 const faltaTabla = (e) =>
-  e?.code === "ER_NO_SUCH_TABLE" ? new ErrorHttp(503, "Falta actualizar la base de datos: ejecuta base_datos/16_mensajes.sql en MySQL Workbench") : e;
+  e?.code === "ER_NO_SUCH_TABLE" ? new ErrorHttp(503, "Falta actualizar la base de datos: ejecuta base_datos/anteriores/16_mensajes.sql en MySQL Workbench") : e;
 
 export const CATEGORIAS = ["por_vencer", "vencidos", "no_vienen", "renovaron", "bienvenida", "cumpleanos", "deuda", "congelamiento", "constancia", "exalumnos"];
 

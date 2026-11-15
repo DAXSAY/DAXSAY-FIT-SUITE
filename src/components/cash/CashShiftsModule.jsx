@@ -4,6 +4,8 @@
 // (POS, matrículas, renovaciones) y al terminar cuenta el efectivo y
 // cierra. El siguiente turno ve lo que dejó el anterior y continúa.
 // ============================================================
+import { TarjetaKpi, Anillo } from "../common/TarjetaKpi";
+import { Wallet as CjWallet, Coins as CjCoins, TrendingDown as CjDown, Vault as CjVault, ShoppingBag as CjBag, UserPlus as CjUser, Scale as CjScale, Receipt as CjReceipt, Target as CjTarget } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Vault,
@@ -107,22 +109,20 @@ const PantallaCompleta = ({ titulo, subtitulo, onVolver, children, acciones }) =
   </div>
 );
 
-const Kpi = ({ label, value, tone = "slate", hint, big }) => {
-  const tonos = {
-    slate: "text-slate-900",
-    green: "text-emerald-600",
-    red: "text-rose-600",
-    blue: "text-blue-700",
-    amber: "text-amber-600",
-    purple: "text-purple-700",
-  };
-  return (
-    <div className={`bg-white rounded-2xl border border-slate-200 p-4 shadow-xs ${big ? "ring-2 ring-blue-500/30" : ""}`}>
-      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{label}</span>
-      <span className={`${big ? "text-2xl" : "text-xl"} font-black ${tonos[tone]} block mt-1`}>{value}</span>
-      {hint && <span className="text-xs text-slate-500 block mt-0.5">{hint}</span>}
-    </div>
-  );
+// Indicador de caja con el diseño común (icono grande, fondo de color suave)
+const ICONO_KPI = [
+  [/abrir/i, CjWallet],
+  [/cobros|cobrado/i, CjCoins],
+  [/gastos/i, CjDown],
+  [/debe haber|esperado|contado/i, CjVault],
+  [/ventas/i, CjBag],
+  [/matr/i, CjUser],
+  [/diferencia/i, CjScale],
+];
+const Kpi = ({ label, value, tone = "slate", hint, big, icono }) => {
+  const I = icono || ICONO_KPI.find(([re]) => re.test(label))?.[1] || CjReceipt;
+  const tono = { slate: "plomo", green: "verde", red: "rojo", blue: "teal", amber: "ambar", purple: "violeta" }[tone] || "plomo";
+  return <TarjetaKpi titulo={label} texto={value} sub={hint} icono={I} tono={tono} activo={big} />;
 };
 
 const Diferencia = ({ valor, texto = "" }) => {
@@ -188,11 +188,11 @@ const TablaMovimientos = ({ movimientos }) =>
 
 // Resumen por método de pago
 const ResumenMetodos = ({ resumen }) => (
-  <div className="grid grid-cols-2 gap-3">
+  <div className="grid grid-cols-2 gap-3 rd-metodos-caja">
     {Object.entries(METODOS).filter(([k, m]) => !m.antiguo || (resumen.ingresos[k] || 0) + (resumen.egresos[k] || 0) > 0).map(([k, { label, icon: Icono }]) => (
       <div key={k} className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
-          <Icono className="w-5 h-5" />
+        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${k === "efectivo" ? "from-emerald-500 to-teal-600" : k === "yape" || k === "yape_plin" ? "from-violet-500 to-fuchsia-600" : k === "tarjeta" ? "from-amber-500 to-orange-500" : "from-blue-500 to-indigo-600"} text-white flex items-center justify-center shadow-lg`}>
+          <Icono className="w-6 h-6" />
         </div>
         <div>
           <span className="text-xs font-bold text-slate-400 uppercase block">{label}</span>
@@ -796,10 +796,17 @@ const MetaDelTurno = ({ turnoId }) => {
       {metas.map((m) => {
         const p = m.progress;
         return (
-          <div key={m.id} className="bg-white rounded-2xl border border-amber-200 p-4 space-y-2">
-            <div className="flex justify-between items-baseline">
-              <span className="text-xs font-black uppercase text-amber-700">Meta del mes · {m.name}</span>
-              <span className="text-sm font-black text-blue-700">{p.porcentaje}%</span>
+          <div key={m.id} className="rd-levanta rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-2.5">
+            <div className="flex items-center gap-3">
+              <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-lg"><CjTarget className="w-6 h-6" /></span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-[11px] font-black uppercase tracking-wide text-amber-700">Meta del mes</span>
+                <span className="block text-sm font-black text-slate-900 truncate">{m.name}</span>
+              </span>
+              <span className="relative">
+                <Anillo pct={p.porcentaje} clase={p.cumplida ? "text-emerald-600" : "text-amber-600"} tam={48} />
+                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-slate-800">{p.porcentaje}%</span>
+              </span>
             </div>
             <div className="h-3 rounded-full bg-slate-100 overflow-hidden">
               <div className={`h-full rounded-full ${p.cumplida ? "bg-emerald-500" : "bg-amber-500"}`} style={{ width: `${p.porcentaje}%` }} />
@@ -964,10 +971,11 @@ export const CashShiftsModule = () => {
       {/* Estado actual */}
       {abierto ? (
         <>
-          <div className="bg-white rounded-2xl border-2 border-emerald-300 p-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="rd-caja-abierta relative overflow-hidden rounded-2xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-white to-teal-50 p-5 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                <LockOpen className="w-6 h-6" />
+              <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg">
+                <LockOpen className="w-7 h-7" />
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 ring-2 ring-white animate-ping" />
               </div>
               <div>
                 <span className="text-xs font-black uppercase text-emerald-600">Caja abierta {mio ? "· tu turno" : ""}</span>
