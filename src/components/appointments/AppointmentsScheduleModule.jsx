@@ -56,12 +56,13 @@ const construirSemana = (offset = 0) => {
 const fechaLarga = (iso) => {
   if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("es-PE", {
+  const t = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("es-PE", {
     weekday: "long",
     day: "numeric",
     month: "long",
     timeZone: "UTC",
   });
+  return t.charAt(0).toUpperCase() + t.slice(1); // "Lunes, 16 de noviembre"
 };
 
 export const AppointmentsScheduleModule = () => {
@@ -1445,7 +1446,7 @@ export const AppointmentsScheduleModule = () => {
                         className="text-sm p-3 rounded-xl border border-slate-300 bg-white"
                       />
                     </div>
-                    <span className="text-sm text-slate-500 pb-3 capitalize">{fechaLarga(formDate)}</span>
+                    <span className="text-sm text-slate-500 pb-3">{fechaLarga(formDate)}</span>
                   </div>
                   {formService && horasDelDia(formService, formDate).length === 0 && (
                     <div className="mb-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
@@ -1541,7 +1542,7 @@ export const AppointmentsScheduleModule = () => {
                   >
                     <span className="text-xs font-bold uppercase tracking-widest text-white">Resumen</span>
                     <p className="text-3xl font-black mt-1">{formSlot}</p>
-                    <p className="text-sm capitalize">{fechaLarga(formDate)}</p>
+                    <p className="text-sm">{fechaLarga(formDate)}</p>
                   </div>
                   <dl className="p-5 space-y-3 text-sm">
                     {[

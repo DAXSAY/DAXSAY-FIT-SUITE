@@ -43,6 +43,8 @@ SELECT * FROM (
   UNION ALL
   SELECT '07 Contratos sin su fila en contratos',
          (SELECT COUNT(*) FROM registros_app r WHERE r.modulo = 'contratos' AND r.sync_estado = 'ok'
+             -- los profesionales externos no tienen contrato en la tabla (a propósito)
+             AND NOT (JSON_UNQUOTE(JSON_EXTRACT(r.datos, '$.external')) <=> 'true')
              AND NOT EXISTS (SELECT 1 FROM contratos t WHERE t.idregistro_app = r.idregistro))
   UNION ALL
   SELECT '08 Planilla sin su fila en planilla',

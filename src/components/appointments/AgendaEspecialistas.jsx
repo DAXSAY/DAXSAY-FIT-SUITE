@@ -259,6 +259,7 @@ export function AgendaEspecialistas({ servicioInicial }) {
                             empezar(h);
                           }}
                           onPointerEnter={() => pasar(h)}
+                          onClick={(e) => e.detail === 0 && alternar(h)}
                           onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), alternar(h))}
                           disabled={!editable}
                           aria-pressed={on}
@@ -318,7 +319,7 @@ export function AgendaEspecialistas({ servicioInicial }) {
               const fd = aFecha(r.fecha);
               return (
                 <button key={r.id} type="button" onClick={() => setFecha(r.fecha)} className="text-left rounded-xl border border-slate-200 bg-white text-slate-700 px-3 py-2 hover:border-blue-400 cursor-pointer">
-                  <span className="block text-xs font-extrabold capitalize">{DIAS_LARGO[fd.getDay()]} {fd.getDate()} {MESES[fd.getMonth()]}</span>
+                  <span className="block text-xs font-extrabold">{DIAS_LARGO[fd.getDay()][0].toUpperCase() + DIAS_LARGO[fd.getDay()].slice(1)} {fd.getDate()} {MESES[fd.getMonth()]}</span>
                   <span className="block text-[11px] opacity-75">{rango(ordenar(r.horas))}</span>
                 </button>
               );

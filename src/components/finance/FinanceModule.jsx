@@ -57,13 +57,26 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
     deleteTransaction,
     correctTransaction,
     metrics,
-    payrollEntries,
+    payrollEntries: planillaTodas = [],
     payStaffSalary,
     staffContracts,
     attendances,
   } = useGym();
 
   const [activeTab, setActiveTab] = useState("ledger");
+  // Planilla por mes: los indicadores y la tabla muestran solo el mes elegido
+  const mesTexto = (d = new Date()) => {
+    const t = d.toLocaleDateString("es-PE", { month: "long", year: "numeric", timeZone: "America/Lima" }).replace(" de ", " ");
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
+  const normMes = (m) => String(m || "").toLowerCase().replace(/\s+de\s+/, " ").trim();
+  const [mesPlanilla, setMesPlanilla] = useState(() => mesTexto());
+  const mesesPlanilla = useMemo(() => {
+    const vistos = new Map([[normMes(mesTexto()), mesTexto()]]);
+    planillaTodas.forEach((p) => p.month && !vistos.has(normMes(p.month)) && vistos.set(normMes(p.month), p.month));
+    return [...vistos.values()];
+  }, [planillaTodas]);
+  const payrollEntries = useMemo(() => planillaTodas.filter((p) => normMes(p.month) === normMes(mesPlanilla)), [planillaTodas, mesPlanilla]);
   const [corrigiendo, setCorrigiendo] = useState(null);
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -1170,9 +1183,16 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                 </p>
               </div>
 
-              <span className="text-xs font-bold text-blue-800 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-                Periodo: {new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" })}
-              </span>
+              <label className="text-xs font-bold text-blue-800 bg-blue-50 pl-3 pr-1 py-0.5 rounded-full border border-blue-200 flex items-center gap-1.5">
+                Periodo:
+                <select value={mesPlanilla} onChange={(e) => setMesPlanilla(e.target.value)} className="bg-transparent font-bold text-blue-800 focus:outline-none cursor-pointer py-0.5">
+                  {mesesPlanilla.map((m) => (
+                    <option key={m} value={m}>
+                      {m} ({planillaTodas.filter((p) => normMes(p.month) === normMes(m)).length})
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
 
             <div className="overflow-x-auto">
@@ -1190,6 +1210,13 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
+                  {payrollEntries.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="py-8 text-center text-sm text-slate-500">
+                        No hay planilla registrada para {mesPlanilla}. Elige otro periodo arriba.
+                      </td>
+                    </tr>
+                  )}
                   {payrollEntries.map((item) => {
                     const contract = staffContracts.find(
                       (c) => c.id === item.contractId,
