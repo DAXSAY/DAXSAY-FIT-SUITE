@@ -179,7 +179,7 @@ const Barras = ({ datos, valor = "valor", nombre = "nombre", formato, alto = 220
       <BarChart data={datos} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey={nombre} tick={{ fontSize: 11 }} interval={0} angle={datos.length > 6 ? -25 : 0} textAnchor={datos.length > 6 ? "end" : "middle"} height={datos.length > 6 ? 60 : 30} />
-        <YAxis tick={{ fontSize: 11 }} />
+        <YAxis tick={{ fontSize: 11 }} width={formato ? 70 : 44} tickFormatter={formato ? (v) => { const t = String(formato(v)); return Math.abs(v) >= 1000 && /^S\//.test(t) ? `S/${(v / 1000).toFixed(v % 1000 ? 1 : 0)}k` : t; } : undefined} />
         <Tooltip formatter={(v) => [formato ? formato(v) : v, "Total"]} cursor={{ radius: 8 }} />
         <Bar isAnimationActive={false} dataKey={valor} radius={[6, 6, 0, 0]} maxBarSize={56}>
           {datos.map((_, i) => (

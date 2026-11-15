@@ -94,7 +94,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         <div className="flex items-center gap-2.5 min-w-0">
           {isActive && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-blue-400" />}
           <Icon
-            className={`w-4 h-4 md:w-[22px] md:h-[22px] ${plegado ? "" : "lg:w-4 lg:h-4"} shrink-0 ${isActive ? "text-blue-300" : "text-slate-400"}`}
+            className={`w-4 h-4 md:w-5 md:h-5 ${plegado ? "" : "lg:w-4 lg:h-4"} shrink-0 ${isActive ? "text-blue-300" : "text-slate-400"}`}
           />
           <span className={`truncate text-xs ${ocultar}`}>{item.label}</span>
         </div>

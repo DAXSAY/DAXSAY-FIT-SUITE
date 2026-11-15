@@ -117,17 +117,30 @@ export const RutinasAsignadas = ({
       {/* Barra horizontal: buscador + contadores + lista de alumnos */}
       <div className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2.5">
         <div className="flex flex-wrap items-stretch gap-2">
+        {/* Mismo estilo que el campo "Marcar asistencia" */}
         <div className="relative flex-1 min-w-[260px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             ref={buscador}
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={buscarEnter}
-            placeholder="Código del alumno (DF-12 o 12), nombre o DNI · Enter"
-            className="w-full h-full pl-9 pr-3 py-2.5 bg-white border-2 border-blue-300 rounded-xl text-sm font-semibold focus:outline-none focus:border-blue-600"
+            aria-label="Buscar alumno por código, nombre o DNI"
+            className="rd-campo-checkin w-full h-full pl-9 pr-24 py-2.5 rounded-xl text-sm font-semibold focus:outline-none transition-all"
           />
+          {!q && (
+            <span className="absolute left-9 right-24 top-1/2 -translate-y-1/2 pointer-events-none text-sm text-slate-400 truncate">
+              Buscar alumno: <b className="font-semibold">código (DF-1 o 1), nombre o DNI</b>
+            </span>
+          )}
+          <UserCheck className="rd-icono-checkin w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <button
+            type="button"
+            onClick={() => buscarEnter({ key: "Enter", preventDefault() {} })}
+            className="rd-boton-marcar absolute right-1 top-1 bottom-1 px-3 text-white text-xs font-black rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+          >
+            <Search className="w-3.5 h-3.5" /> Ver
+          </button>
         </div>
         <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto">
           {[
@@ -142,7 +155,7 @@ export const RutinasAsignadas = ({
               blue: on ? "bg-blue-600 border-blue-600 text-white" : "bg-blue-50 border-blue-200 text-blue-800",
             }[c];
             return (
-              <button key={k} type="button" onClick={() => setVista(k)} className={`rounded-xl border px-4 py-1.5 text-center cursor-pointer min-w-[6.5rem] ${col}`}>
+              <button key={k} type="button" onClick={() => { setVista(k); setSel(""); }} className={`rounded-xl border px-4 py-1.5 text-center cursor-pointer min-w-[6.5rem] ${col}`}>
                 <span className="block text-xl font-black leading-none">{n}</span>
                 <span className="block text-[11px] font-bold mt-0.5">{l}</span>
               </button>
@@ -150,43 +163,60 @@ export const RutinasAsignadas = ({
           })}
         </div>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1.5 -mx-1 px-1 snap-x">
-          {lista.length === 0 && <p className="text-sm text-slate-500 py-3 px-2">Ningún alumno con «{q}».</p>}
-          {lista.map((m) => {
-            const rs = porAlumno.get(String(m.id)) || [];
-            const on = String(m.id) === String(sel);
-            return (
-              <button
-                key={m.id}
-                ref={on ? filaSel : null}
-                type="button"
-                onClick={() => ir(m)}
-                className={`snap-start shrink-0 w-56 text-left rounded-xl border px-2.5 py-2 cursor-pointer transition-colors ${on ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 hover:border-blue-300"}`}
-              >
-                <span className="flex items-center gap-2">
-                  <span className={on ? "" : ""}>
+        {alumno && (
+          <button type="button" onClick={() => setSel("")} className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-bold cursor-pointer hover:bg-slate-50">
+            ← Volver a la lista ({lista.length})
+          </button>
+        )}
+      </div>
+
+      {/* Lista de alumnos (hasta elegir uno) */}
+      {!alumno && (
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="hidden md:grid grid-cols-[110px_minmax(0,1.3fr)_minmax(0,1.5fr)_150px] gap-3 px-4 py-2 bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500">
+            <span>Código</span>
+            <span>Alumno</span>
+            <span>Rutina</span>
+            <span>Estado</span>
+          </div>
+          {lista.length === 0 && <p className="text-sm text-slate-500 py-6 text-center">Ningún alumno con «{q}».</p>}
+          <div className="divide-y divide-slate-100 max-h-[calc(100vh-20rem)] overflow-y-auto">
+            {lista.map((m) => {
+              const rs = porAlumno.get(String(m.id)) || [];
+              const pers = rs.some((r) => r.personalizada);
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => ir(m)}
+                  className="w-full grid md:grid-cols-[110px_minmax(0,1.3fr)_minmax(0,1.5fr)_150px] gap-1 md:gap-3 items-center px-4 py-2.5 text-left cursor-pointer hover:bg-blue-50/60 transition-colors"
+                >
+                  <span>
                     <CodigoAlumno m={m} />
                   </span>
-                  <span className={`flex-1 min-w-0 truncate text-sm font-bold ${on ? "text-white" : "text-slate-900"}`}>{m.fullName}</span>
-                </span>
-                <span className={`block mt-0.5 text-[11px] truncate ${on ? "text-blue-100" : "text-slate-500"}`}>
-                  {rs.length ? rs.map((r) => `${String(r.title || "").replace(/\s*·\s*[^·]+$/, "")}${r.personalizada ? " ✎" : ""}`).join(" · ") : <b className={on ? "" : "text-rose-600"}>⚠ Sin rutina</b>}
-                </span>
-              </button>
-            );
-          })}
+                  <span className="text-sm font-bold text-slate-900 truncate">{m.fullName}</span>
+                  <span className="text-xs text-slate-600 truncate">
+                    {rs.length ? rs.map((r) => String(r.title || "").replace(/\s*·\s*[^·]+$/, "")).join(" · ") : "—"}
+                  </span>
+                  <span>
+                    {rs.length ? (
+                      <span className={`px-2 py-0.5 rounded-full border text-[11px] font-bold ${pers ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-emerald-50 border-emerald-200 text-emerald-800"}`}>
+                        {pers ? "✎ Personalizada" : "✓ Con rutina"}
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full border text-[11px] font-bold bg-rose-50 border-rose-200 text-rose-800">⚠ Sin rutina</span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Detalle del alumno */}
       <section className="min-w-0">
-        {!alumno ? (
-          <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center">
-            <UserCheck className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <p className="font-bold text-slate-800">Escribe el código del alumno y presiona Enter</p>
-            <p className="text-sm text-slate-500">o elígelo de la lista. Aquí verás y editarás solo su rutina.</p>
-          </div>
-        ) : (
+        {!alumno ? null : (
           <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">

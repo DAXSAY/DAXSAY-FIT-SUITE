@@ -236,7 +236,13 @@ export const RoutinesAndExercises = () => {
     const exObj = typeof exerciseOrId === "object" ? exerciseOrId : allExercises.find((e) => e.id === exerciseOrId);
     if (!exObj) return;
 
-    const nuevo = {
+    const nuevo = ejercicioNuevo(exObj);
+    // Actualización inmutable (evita que se agregue dos veces)
+    setRoutineDays((prev) =>
+      prev.map((d, i) => (i === dayIndex ? { ...d, exercises: [...d.exercises, nuevo] } : d)),
+    );
+  };
+  const ejercicioNuevo = (exObj) => ({
       exerciseId: exObj.id,
       exerciseName: exObj.name,
       muscleGroup: exObj.muscleGroup,
@@ -249,12 +255,18 @@ export const RoutinesAndExercises = () => {
       gifUrl: exObj.gifUrl,
       thumbnailUrl: exObj.thumbnailUrl,
       steps: exObj.steps || [],
-    };
-    // Actualización inmutable (evita que se agregue dos veces)
+  });
+  // Agrega un ejercicio del banco justo debajo y lo une al mismo grupo (biserie, circuito…)
+  const agregarCompanero = (dayIndex, exIndex, exObj) =>
     setRoutineDays((prev) =>
-      prev.map((d, i) => (i === dayIndex ? { ...d, exercises: [...d.exercises, nuevo] } : d)),
+      prev.map((d, i) => {
+        if (i !== dayIndex) return d;
+        const lista = [...d.exercises];
+        lista.splice(exIndex + 1, 0, ejercicioNuevo(exObj));
+        return { ...d, exercises: alternarCompanero(lista, exIndex, exIndex + 1) };
+      }),
     );
-  };
+  const [bancoAbierto, setBancoAbierto] = useState(true);
 
   // Remove exercise from day in builder
   const handleRemoveExerciseFromDay = (dayIndex, exIndex) => {
@@ -346,7 +358,11 @@ export const RoutinesAndExercises = () => {
             ["builder", editando ? Pencil : Plus, editando ? "Editando rutina" : "Crear rutina", null, editando ? "Continúa la edición" : "Diseña una rutina nueva", "amber"],
           ].map(([k, Icono, l, n, d, c]) => {
             const on = activeSubTab === k;
-            const abrir = () => (k === "builder" && !editando ? nuevaRutina() : setActiveSubTab(k));
+            const abrir = () => {
+              if (k === "asignadas") setAlumnoSel("");
+              if (k === "builder" && !editando) nuevaRutina();
+              else setActiveSubTab(k);
+            };
             const col = {
               blue: on ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-blue-200 text-blue-800 hover:bg-blue-50",
               violet: on ? "bg-violet-600 border-violet-600 text-white" : "bg-white border-violet-200 text-violet-800 hover:bg-violet-50",
@@ -815,9 +831,18 @@ export const RoutinesAndExercises = () => {
                     </div>
 
                     {/* Pantalla partida 50/50: ejercicios del día | banco (arriba/abajo en celular) */}
-                    <div className="grid lg:grid-cols-2 gap-3 items-start">
+                    <div className={`grid gap-3 items-start ${bancoAbierto ? "lg:grid-cols-2" : "grid-cols-1"}`}>
                     <div className="space-y-2 min-w-0">
-                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Ejercicios de este día ({day.exercises.length})</p>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Ejercicios de este día ({day.exercises.length})</p>
+                        <button
+                          type="button"
+                          onClick={() => setBancoAbierto((v) => !v)}
+                          className={`px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer flex items-center gap-1.5 ${bancoAbierto ? "bg-white border-slate-300 text-slate-700 hover:bg-slate-50" : "bg-blue-600 border-blue-600 text-white"}`}
+                        >
+                          <Dumbbell className="w-3.5 h-3.5" /> {bancoAbierto ? "Ocultar banco (más espacio)" : "Abrir banco de ejercicios"}
+                        </button>
+                      </div>
                       {day.exercises.length === 0 ? (
                         <p className="text-xs text-gray-500 italic py-6 text-center border border-dashed border-gray-300 rounded-xl bg-white">
                           Toca ejercicios en el banco de la derecha para agregarlos. Luego ajusta series, descanso y el sistema
@@ -872,6 +897,8 @@ export const RoutinesAndExercises = () => {
                                       .map((x, k) => ({ i: k, nombre: x.exerciseName, enGrupo: !!grupo && x.metodo?.grupo === grupo }))
                                       .filter((x) => x.i !== exIdx)}
                                     onCompanero={(k) => setLista((l) => alternarCompanero(l, exIdx, k))}
+                                    renderBanco={(onPick) => <ExercisePicker exercises={allExercises} onPick={onPick} picked={(day.exercises || []).map((e) => e.exerciseId)} alto="max-h-[420px]" />}
+                                    onAgregarCompanero={(exObj) => agregarCompanero(dIdx, exIdx, exObj)}
                                   />
                                 </div>
                                 <div className="mt-2 space-y-2">
@@ -901,7 +928,8 @@ export const RoutinesAndExercises = () => {
                         })()
                       )}
                     </div>
-                    <div className="min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto rounded-2xl border border-blue-200 bg-blue-50/40 p-3 space-y-1.5">
+                    {bancoAbierto && (
+                    <div className="min-w-0 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto rounded-2xl border border-blue-200 bg-blue-50/40 p-3 space-y-1.5">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-[11px] font-black uppercase tracking-wider text-blue-700 flex items-center gap-1.5">
                           <Dumbbell className="w-3.5 h-3.5" /> Banco de ejercicios ({allExercises.length}) · toca para agregar
@@ -921,8 +949,10 @@ export const RoutinesAndExercises = () => {
                         exercises={allExercises}
                         onPick={(ex) => handleAddExerciseToDay(dIdx, ex)}
                         picked={(day.exercises || []).map((e) => e.exerciseId)}
+                        alto="max-h-[calc(100vh-14rem)]"
                       />
                     </div>
+                    )}
                     </div>
                   </div>
                 ))}

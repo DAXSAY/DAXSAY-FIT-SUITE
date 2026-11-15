@@ -15,6 +15,11 @@ import {
 } from "../../utils/progreso";
 import { exportarExcelProgreso, exportarPdfProgreso } from "./exportarProgreso";
 import GraficosProgreso from "./GraficosProgreso";
+import { filasRegistro, InsigniaMetodo } from "../routines/SistemasEntrenamiento";
+
+// Casillas que anota el alumno según el sistema del ejercicio (rest-pause, drop set, HIIT…)
+const UNIDAD = { reps: "reps", seg: "seg", rondas: "rondas", min: "min", saltos: "saltos" };
+const plantillaDe = (ex) => filasRegistro({ series: ex.series, reps: ex.reps, metodo: ex.metodo }).filas;
 
 const Chip = ({ t, children }) => {
   const e = ESTILO_TENDENCIA[t] || ESTILO_TENDENCIA.nuevo;
@@ -86,7 +91,7 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
     const nuevo = {};
     for (const ex of diaPlan.ejercicios) {
       const hecho = resumen.sesiones.find((s) => s.fecha === fecha && s.clave === ex.clave);
-      const n = Math.max(ex.series, hecho?.series.length || 0);
+      const n = Math.max(plantillaDe(ex).length, hecho?.series.length || 0);
       nuevo[ex.clave] = Array.from({ length: n }, (_, i) => {
         const x = hecho?.series.find((y) => y.serie === i + 1);
         return { peso: x ? String(x.peso) : "", reps: x?.reps != null ? String(x.reps) : "" };
@@ -123,7 +128,12 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
         grupo: ex.grupo,
         seriesPlan: ex.series,
         repsPlan: ex.reps,
-        series: (valores[ex.clave] || []).map((s) => ({ peso: s.peso === "" ? "" : s.peso, reps: s.reps === "" ? "" : Number(s.reps) })),
+        series: (valores[ex.clave] || []).map((s, i) => {
+          const f = plantillaDe(ex)[i];
+          // Sin carga (segundos, rondas, minutos, saltos): el peso se guarda en 0
+          const peso = f && !f.kg ? (s.reps === "" ? "" : 0) : s.peso === "" ? "" : s.peso;
+          return { peso, reps: s.reps === "" ? "" : Number(s.reps) };
+        }),
       }));
       const r = await api(`/progreso/${datos.alumno.id}/sesion`, { method: "PUT", body: { fecha, dia: diaPlan.nombre, ejercicios } });
       setAviso({ ok: true, texto: r.series ? `Guardado: ${r.series} series del ${fechaBonita(fecha)}.` : "Se borró lo anotado de ese día." });
@@ -144,8 +154,8 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
       </div>
     );
 
-  const anotadas = Object.values(valores).flat().filter((s) => s.peso !== "").length;
-  const totalPlan = diaPlan?.ejercicios.reduce((t, e) => t + e.series, 0) || 0;
+  const anotadas = Object.values(valores).flat().filter((s) => s.peso !== "" || s.reps !== "").length;
+  const totalPlan = diaPlan?.ejercicios.reduce((t, e) => t + plantillaDe(e).length, 0) || 0;
 
   return (
     <div className="space-y-4">
@@ -219,6 +229,12 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
                   Indicado: <b className="text-slate-800">{ex.series} series × {ex.reps || "—"} reps</b>
                   {ex.notas ? ` · ${ex.notas}` : ""}
                 </p>
+                {ex.metodo && (
+                  <div className="mt-1.5 space-y-1">
+                    <InsigniaMetodo metodo={ex.metodo} etiqueta={ex.metodo.grupo || ""} />
+                    <p className="text-[11px] text-emerald-700 font-semibold">✍️ Anota {filasRegistro({ series: ex.series, reps: ex.reps, metodo: ex.metodo }).anota}.</p>
+                  </div>
+                )}
               </div>
               {t && <Chip t={t}>{ESTILO_TENDENCIA[t].texto} vs. la vez pasada</Chip>}
             </div>
@@ -233,13 +249,19 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
               </div>
             )}
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-              {filas.map((s, i) => (
-                <div key={i} className={`rounded-xl border p-2.5 ${s.peso !== "" ? "border-emerald-300 bg-emerald-50/40" : "border-slate-200"}`}>
+              {filas.map((s, i) => {
+                const pl = plantillaDe(ex)[i];
+                const conKg = !pl || pl.kg;
+                const unidad = UNIDAD[pl?.campo] || "reps";
+                return (
+                <div key={i} className={`rounded-xl border p-2.5 ${s.peso !== "" || (!conKg && s.reps !== "") ? "border-emerald-300 bg-emerald-50/40" : "border-slate-200"}`}>
                   <p className="text-[11px] font-bold text-slate-500 uppercase mb-1">
-                    Serie {i + 1}
-                    {i >= ex.series && <span className="text-amber-600"> · extra</span>}
+                    {pl ? pl.etiqueta : `Serie ${i + 1}`}
+                    {!pl && <span className="text-amber-600"> · extra</span>}
+                    {pl?.objetivo && <span className="normal-case font-semibold text-slate-400"> · meta {pl.objetivo}</span>}
                   </p>
                   <div className="flex items-center gap-1.5">
+                    {conKg && (<>
                     <input
                       inputMode="decimal"
                       value={s.peso}
@@ -249,20 +271,23 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
                       aria-label={`${ex.nombre} serie ${i + 1} peso en kg`}
                     />
                     <span className="text-xs text-slate-400 font-bold">×</span>
+                    </>)}
                     <input
                       inputMode="numeric"
                       value={s.reps}
                       onChange={(e) => cambiar(ex.clave, i, "reps", e.target.value.replace(/\D/g, "").slice(0, 3))}
-                      placeholder={String(repsBase(ex.reps) ?? "reps")}
-                      className="w-16 px-2 py-2 rounded-lg border border-slate-300 text-base font-bold text-slate-900 text-center"
+                      placeholder={conKg ? String(repsBase(pl?.objetivo || ex.reps) ?? "reps") : unidad}
+                      className={`${conKg ? "w-16" : "w-full"} px-2 py-2 rounded-lg border border-slate-300 text-base font-bold text-slate-900 text-center`}
                       aria-label={`${ex.nombre} serie ${i + 1} repeticiones`}
                     />
+                    {!conKg && <span className="text-xs text-slate-500 font-bold">{unidad}</span>}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
             <div className="mt-2 flex gap-3 text-xs">
-              {filas.length < 20 && (
+              {filas.length < 40 && (
                 <button
                   onClick={() => setValores((p) => ({ ...p, [ex.clave]: [...p[ex.clave], { peso: "", reps: "" }] }))}
                   className="font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
@@ -270,7 +295,7 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
                   + Serie extra
                 </button>
               )}
-              {filas.length > ex.series && (
+              {filas.length > plantillaDe(ex).length && (
                 <button
                   onClick={() => setValores((p) => ({ ...p, [ex.clave]: p[ex.clave].slice(0, -1) }))}
                   className="font-bold text-rose-600 hover:text-rose-800 cursor-pointer"

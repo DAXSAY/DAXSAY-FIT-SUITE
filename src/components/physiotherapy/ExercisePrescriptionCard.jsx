@@ -105,6 +105,7 @@ export const ExercisePrescriptionCard = ({
   );
   const [cambiarImagenDe, setCambiarImagenDe] = useState(null);
   const [formPropio, setFormPropio] = useState(false);
+  const [bancoAbierto, setBancoAbierto] = useState(true);
 
   const actualizar = (i, campo, valor) => {
     if (readOnly) return;
@@ -189,14 +190,17 @@ export const ExercisePrescriptionCard = ({
       </div>
 
       {/* Pantalla partida: a la izquierda lo elegido, a la derecha el banco */}
-      <div className={readOnly ? "" : "grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"}>
+      <div className={readOnly || !bancoAbierto ? "" : "grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"}>
       <div className="space-y-3 min-w-0">
       {!readOnly && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-black uppercase tracking-wider text-slate-500">
             Ejercicios elegidos <span className="ml-1 px-1.5 rounded-md bg-blue-100 text-blue-800">{exercises.length}</span>
           </p>
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button type="button" onClick={() => setBancoAbierto((v) => !v)} className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${bancoAbierto ? "bg-white border-slate-300 text-slate-700" : "bg-blue-600 border-blue-600 text-white"}`}>
+              {bancoAbierto ? "Ocultar banco" : "Abrir banco"}
+            </button>
             <button type="button" onClick={() => onChange([...exercises, nuevo()])} className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold cursor-pointer hover:bg-slate-50" title="Agregar una fila vacía para escribir el ejercicio">
               + Fila rápida
             </button>
@@ -260,6 +264,12 @@ export const ExercisePrescriptionCard = ({
                     .map((x, k) => ({ i: k, nombre: x.name || "Ejercicio", enGrupo: !!ex.metodo?.grupo && x.metodo?.grupo === ex.metodo.grupo }))
                     .filter((x) => x.i !== i)}
                   onCompanero={(k) => !readOnly && onChange(alternarCompanero(exercises, i, k))}
+                  renderBanco={readOnly ? undefined : (onPick) => <ExercisePicker exercises={banco} onPick={onPick} picked={exercises.map((e) => e.bankId).filter(Boolean)} alto="max-h-[420px]" />}
+                  onAgregarCompanero={(ex) => {
+                    const lista = [...exercises];
+                    lista.splice(i + 1, 0, nuevo({ name: ex.name, imageUrl: ex.gifUrl || ex.thumbnailUrl || "", targetZone: MUSCLE_LABELS[ex.muscleGroup] || ex.muscleGroup || "", bankId: ex.id }));
+                    onChange(alternarCompanero(lista, i, i + 1));
+                  }}
                 />
                 <details className="rounded-lg border border-slate-200 bg-slate-50/60 group">
                   <summary className="px-2.5 py-1.5 text-[11px] font-bold text-slate-600 cursor-pointer select-none">
@@ -314,8 +324,8 @@ export const ExercisePrescriptionCard = ({
       )}
       </div>
 
-      {!readOnly && (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
+      {!readOnly && bancoAbierto && (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
           <p className="text-[11px] font-black uppercase tracking-wider text-blue-700 mb-1.5 flex items-center gap-1.5">
             <Dumbbell className="w-3.5 h-3.5" /> Banco de ejercicios ({banco.length}) · toca uno para agregarlo a la izquierda
           </p>

@@ -310,30 +310,148 @@ const CLAVES_ZONA = {
   cuello: "Movimientos lentos y cortos; nunca con dolor.",
   cardio_funcional: "Mantén la técnica aunque te canses; baja el ritmo antes que perder la postura.",
 };
-// Guía de dosificación por objetivo: [clave, ícono, objetivo, series, reps/tiempo, descanso, intensidad, tempo]
-const DOSIS = [
-  ["fuerza", "💪", "Fuerza máxima", "3-5", "3-6 reps", "2-3 min", "80-90% 1RM · RIR 1-2", "controlado"],
-  ["hipertrofia", "🏋️", "Hipertrofia", "3-4", "8-12 reps", "60-90 s", "65-80% 1RM · RIR 1-3", "2-0-1"],
-  ["resistencia", "🔋", "Resistencia muscular", "2-3", "15-25 reps", "30-45 s", "50-65% 1RM", "fluido"],
-  ["potencia", "⚡", "Potencia", "3-5", "3-5 explosivas", "2-3 min", "30-60% 1RM · máxima velocidad", "subida explosiva"],
-  ["pliometria", "🦘", "Pliometría", "3-4", "5-10 saltos", "90-120 s", "Peso corporal · calidad > cantidad", "contacto corto"],
-  ["acondicionamiento", "🌱", "Acondicionamiento / principiante", "2-3", "10-15 reps", "60-90 s", "RPE 5-6 · técnica primero", "3-0-2"],
-  ["perdida_grasa", "🔥", "Pérdida de grasa / circuito", "3-4 vueltas", "12-15 reps o 40 s", "15-30 s entre ejercicios", "RPE 7-8", "constante"],
-  ["tonificacion", "✨", "Tonificación", "3", "12-15 reps", "45-60 s", "60-70% 1RM", "2-1-2"],
-  ["movilidad", "🧘", "Movilidad / flexibilidad", "2-3", "30-45 s o 8-10 lentas", "15-30 s", "Sin dolor · tensión suave", "lento"],
-  ["rehabilitacion", "🩺", "Rehabilitación / readaptación", "2-3", "10-15 reps", "60 s", "Dolor ≤ 3/10 · según fisioterapia", "3-1-3"],
-  ["adulto_mayor", "👵", "Adulto mayor / salud", "2", "10-12 reps", "90 s", "RPE 4-6", "lento y estable"],
-];
-// Qué objetivos encajan mejor con el ejercicio (se resaltan)
-const objetivosSugeridos = (ex) => {
-  const n = `${ex.name} ${ex.nameEn || ""}`.toLowerCase();
-  if (/estiramiento|stretch|yoga|pose|movilidad/.test(n)) return ["movilidad", "rehabilitacion", "adulto_mayor"];
-  if (/salto|jump|plyo|pliom|lanzamiento|throw|slam|swing|sprint/.test(n)) return ["potencia", "pliometria"];
-  if (ex.muscleGroup === "cardio_funcional" || /caminata|bicicleta|el[ií]ptica|treadmill|escaladora|burpee/.test(n)) return ["perdida_grasa", "resistencia", "acondicionamiento"];
-  if (/peso corporal|banda|fitball|bosu/i.test(ex.equipment || "")) return ["acondicionamiento", "resistencia", "tonificacion", "rehabilitacion"];
-  if (/barra|smith|prensa|m[aá]quina/i.test(ex.equipment || "")) return ["fuerza", "hipertrofia", "potencia"];
-  return ["hipertrofia", "tonificacion", "resistencia"];
+// =====================================================================
+// Dosificación por TIPO de ejercicio (guía indicativa, no fija pesos)
+// Cada fila: [ícono, objetivo, series, reps/tiempo, descanso, intensidad, tempo]
+// Las 2 primeras de cada tipo son las "recomendadas".
+// =====================================================================
+const TIPOS_EJ = {
+  compuesto: {
+    nombre: "Compuesto (varias articulaciones)",
+    filas: [
+      ["💪", "Fuerza", "3-5", "3-6 reps", "2-3 min", "RIR 1-2 · pesado", "controlado"],
+      ["🏋️", "Hipertrofia", "3-4", "6-10 reps", "90-120 s", "RIR 1-3", "2-0-1"],
+      ["🔋", "Resistencia muscular", "2-3", "12-15 reps", "60 s", "RIR 3-4", "fluido"],
+      ["🌱", "Acondicionamiento / principiante", "2-3", "10-12 reps", "90 s", "RPE 5-6 · técnica primero", "3-0-2"],
+      ["🩺", "Readaptación", "2-3", "8-12 reps", "90 s", "Sin dolor · según fisioterapia", "3-1-3"],
+    ],
+  },
+  olimpico: {
+    nombre: "Olímpico / balístico (explosivo)",
+    filas: [
+      ["⚡", "Potencia", "3-5", "2-5 reps", "2-3 min", "Máxima velocidad · técnica perfecta", "explosivo"],
+      ["💪", "Fuerza", "3-5", "2-4 reps", "2-3 min", "RIR 2", "explosivo"],
+      ["🔥", "Acondicionamiento metabólico", "3-5", "8-12 reps", "60 s", "RPE 7", "constante"],
+      ["🌱", "Aprendizaje técnico", "3-4", "3-5 reps", "90 s", "Ligero · solo técnica", "por fases"],
+    ],
+  },
+  peso_corporal: {
+    nombre: "Peso corporal o bandas (multiarticular)",
+    filas: [
+      ["🏋️", "Hipertrofia", "3-4", "8-15 reps", "60-90 s", "Hasta 2 reps antes del fallo", "2-0-1"],
+      ["🔋", "Resistencia muscular", "2-4", "máximas - 2 reps", "45-60 s", "RPE 7-8", "fluido"],
+      ["🌱", "Acondicionamiento / principiante", "2-3", "6-10 reps", "90 s", "Variante asistida o más fácil", "3-0-2"],
+      ["💪", "Fuerza (con lastre o variante difícil)", "3-5", "4-8 reps", "2 min", "RIR 1-2", "controlado"],
+      ["✨", "Tonificación", "3", "12-15 reps", "45 s", "RPE 6-7", "2-1-2"],
+    ],
+  },
+  aislamiento: {
+    nombre: "Aislamiento (un solo músculo)",
+    filas: [
+      ["🏋️", "Hipertrofia", "3-4", "10-15 reps", "60-90 s", "RIR 1-2", "2-1-2"],
+      ["✨", "Tonificación", "3", "12-15 reps", "45-60 s", "RIR 2-3", "2-1-2"],
+      ["🔋", "Resistencia muscular", "2-3", "15-20 reps", "30-45 s", "RIR 3", "fluido"],
+      ["🌱", "Acondicionamiento / principiante", "2-3", "12-15 reps", "60 s", "Carga ligera · técnica", "3-0-2"],
+      ["🩺", "Readaptación", "2-3", "12-15 reps", "60 s", "Sin dolor · según fisioterapia", "3-1-3"],
+    ],
+  },
+  pantorrilla: {
+    nombre: "Pantorrillas / tobillo",
+    filas: [
+      ["🏋️", "Hipertrofia", "3-4", "12-20 reps", "45-60 s", "RIR 1-2 · pausa arriba", "2-1-2"],
+      ["🔋", "Resistencia", "2-3", "20-30 reps", "30 s", "RIR 3", "fluido"],
+      ["🩺", "Readaptación (tendón de Aquiles)", "3", "15 reps lentas", "60 s", "Dolor ≤ 3/10", "3-0-3"],
+      ["🌱", "Acondicionamiento", "2-3", "15 reps", "45 s", "Sin carga o ligera", "2-1-2"],
+    ],
+  },
+  core: {
+    nombre: "Core dinámico",
+    filas: [
+      ["🔋", "Resistencia del core", "2-3", "15-25 reps", "30-45 s", "Sin dolor lumbar", "controlado"],
+      ["🌱", "Acondicionamiento", "2-3", "10-15 reps", "45 s", "RPE 5-6", "lento"],
+      ["🏋️", "Fortalecimiento (con carga)", "3", "8-15 reps", "60 s", "RIR 2", "2-1-2"],
+      ["🩺", "Control motor / readaptación", "2-3", "8-12 reps", "45 s", "Respiración y columna neutra", "lento"],
+    ],
+  },
+  core_iso: {
+    nombre: "Core isométrico (estabilidad)",
+    filas: [
+      ["🧱", "Estabilidad", "3-4", "20-45 s", "30-45 s", "Postura perfecta", "sostenido"],
+      ["🔋", "Resistencia", "2-3", "45-60 s", "45 s", "RPE 6-7", "sostenido"],
+      ["🌱", "Principiante", "3", "10-20 s", "30 s", "Variante de rodillas si hace falta", "sostenido"],
+      ["🩺", "Readaptación lumbar", "3-5", "10-15 s", "20-30 s", "Sin dolor · respira", "sostenido"],
+    ],
+  },
+  estiramiento: {
+    nombre: "Estiramiento / movilidad",
+    filas: [
+      ["🧘", "Flexibilidad", "2-4", "30-45 s", "15-30 s", "Tensión suave, sin dolor", "sostenido"],
+      ["🌀", "Movilidad articular", "2-3", "8-10 lentas o 20-30 s", "15 s", "Rango cómodo", "lento"],
+      ["🛌", "Vuelta a la calma", "1-2", "20-30 s", "—", "Relajado", "sostenido"],
+      ["🩺", "Readaptación", "2-3", "30 s", "20 s", "Según fisioterapia", "sostenido"],
+    ],
+  },
+  pliometria: {
+    nombre: "Pliometría (saltos)",
+    filas: [
+      ["🦘", "Pliometría", "3-5", "5-8 saltos", "90-120 s", "Calidad > cantidad · aterrizaje suave", "contacto corto"],
+      ["⚡", "Potencia", "3-4", "3-5 saltos máximos", "2 min", "Máxima altura / distancia", "explosivo"],
+      ["🔥", "Acondicionamiento metabólico", "3-4", "20-30 s", "30-45 s", "RPE 7", "constante"],
+      ["🌱", "Iniciación", "2-3", "5 saltos bajos", "90 s", "Primero aprender a aterrizar", "controlado"],
+    ],
+  },
+  lanzamiento: {
+    nombre: "Lanzamientos (balón medicinal)",
+    filas: [
+      ["⚡", "Potencia", "3-5", "4-6 lanzamientos", "90-120 s", "Máxima intención", "explosivo"],
+      ["🔥", "Metabólico / circuito", "3-4", "10-15 o 30 s", "30 s", "RPE 7-8", "constante"],
+      ["🌱", "Acondicionamiento", "2-3", "8-10", "60 s", "Balón ligero", "controlado"],
+    ],
+  },
+  cardio: {
+    nombre: "Cardio / resistencia aeróbica",
+    filas: [
+      ["❤️", "Cardio continuo (zona 2)", "1", "20-40 min", "—", "RPE 4-6 · puede conversar", "constante"],
+      ["⏱️", "Intervalos", "6-10", "30-60 s rápido", "60-90 s suave", "RPE 8 / 3", "intervalos"],
+      ["🔥", "HIIT", "8-10", "20-30 s", "10-30 s", "RPE 9", "máximo"],
+      ["🌡️", "Calentamiento", "1", "5-10 min", "—", "RPE 3-4", "suave"],
+      ["👵", "Adulto mayor / salud", "1", "15-20 min", "—", "Ritmo cómodo", "constante"],
+    ],
+  },
+  cuello: {
+    nombre: "Cuello",
+    filas: [
+      ["🩺", "Readaptación / postura", "2-3", "8-12 reps", "45 s", "Sin dolor · sin carga", "lento"],
+      ["🔋", "Resistencia ligera", "2", "12-15 reps", "45 s", "Carga mínima", "lento"],
+      ["🌀", "Movilidad", "2", "5-8 por lado", "15 s", "Rango cómodo", "lento"],
+    ],
+  },
 };
+const ES = (re, t) => re.test(t);
+export function tipoDeEjercicio(ex) {
+  const n = `${ex.name || ""} ${ex.nameEn || ""}`.toLowerCase();
+  const eq = String(ex.equipment || "").toLowerCase();
+  const g = ex.muscleGroup;
+  if (ES(/estiramiento|stretch|yoga|pose\b|movilidad|mobility|rotación de cuello|circunducci/, n)) return "estiramiento";
+  if (g === "cuello") return "cuello";
+  if (ES(/lanzamiento|throw(?! down)|slam|pase de pecho|chest pass|chest push/, n)) return "lanzamiento";
+  if (ES(/salto|jump|plyo|pliom|bound|hop\b|skip|burpee/, n)) return "pliometria";
+  if (ES(/bicicleta|el[ií]ptica|treadmill|cinta|escaladora|stepmill|skierg|ergómetro|ergometro|correr|carrera|run\b|jog|rowing machine/, n) || /bicicleta|elíptica|escaladora|skierg|ergómetro/.test(eq)) return "cardio";
+  if (ES(/farmer|paseo|caminata con/, n)) return "compuesto";
+  if (ES(/cargada|clean|arranque|snatch|jerk|envión|thruster|swing|push press/, n)) return "olimpico";
+  if (g === "pantorrillas" || ES(/talón|talones|calf|pantorrill/, n)) return "pantorrilla";
+  if (g === "core_abdomen" || ES(/oblicu|crunch|abdominal|plancha|plank/, n)) {
+    return ES(/plancha|plank|hold|isom|hollow|l-sit|v-sit|sostenid|dead bug|bird dog|pallof|en pared/, n) ? "core_iso" : "core";
+  }
+  if (g === "cardio_funcional") return "cardio";
+  const aislado =
+    ["biceps", "triceps", "antebrazo"].includes(g) ||
+    ES(/curl|extensión de tr|extension|elevación lateral|elevación frontal|lateral raise|front raise|apertura|fly|flye|patada|kickback|cruce|crossover|pec deck|encogimiento|shrug|abducción|aducción|face pull|pájaro|reverse fly|pullover|elevación de piernas|muñeca|wrist/, n);
+  if (aislado) return "aislamiento";
+  if (/peso corporal|asistido|con lastre|banda|el[aá]stic|fitball|bosu|trx|suspensi/.test(eq)) return "peso_corporal";
+  return "compuesto";
+}
+export const dosificacionDe = (ex) => TIPOS_EJ[tipoDeEjercicio(ex)];
 
 export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
   const [ex, setEx] = useState(inicial);
@@ -346,7 +464,7 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
     return [...objetivo, ...mismos.filter((x) => !objetivo.includes(x))].slice(0, 6);
   }, [banco, ex]);
   if (!ex) return null;
-  const sugeridos = objetivosSugeridos(ex);
+  const dosis = dosificacionDe(ex);
   const claves = [
     "Exhala al hacer fuerza e inhala al volver.",
     "Controla la bajada (2-3 s) y usa el rango completo sin dolor.",
@@ -421,19 +539,7 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
                 </div>
               </div>
             )}
-  <div className="bg-white rounded-2xl border border-slate-200 p-4">
-                <h3 className="text-sm font-extrabold text-slate-900 mb-2 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Claves de técnica y seguridad
-                </h3>
-                <ul className="space-y-1.5">
-                  {claves.map((c, i) => (
-                    <li key={i} className="flex gap-2 text-sm text-slate-700">
-                      <span className="text-emerald-600 font-black">✓</span>
-                      <span>{c}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+  
           </div>
           <div className="lg:col-span-3 space-y-4">
             <div className="bg-white rounded-2xl border border-slate-200 p-5">
@@ -451,6 +557,19 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
                 ))}
               </ol>
             </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-4">
+                <h3 className="text-sm font-extrabold text-slate-900 mb-2 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Claves de técnica y seguridad
+                </h3>
+                <ul className="space-y-1.5">
+                  {claves.map((c, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-700">
+                      <span className="text-emerald-600 font-black">✓</span>
+                      <span>{c}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             {ex.tips && (
               <div className="bg-amber-50 rounded-2xl border border-amber-200 p-4 text-sm text-amber-900 flex gap-2">
                 <Info className="w-5 h-5 shrink-0" />
@@ -464,7 +583,9 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
               <h3 className="text-sm font-extrabold text-slate-900 mb-1 flex items-center gap-2">
                 <Gauge className="w-4 h-4 text-violet-600" /> Cómo dosificarlo según el objetivo
               </h3>
-              <p className="text-[11px] text-slate-500 mb-2">Resaltados: los objetivos que mejor encajan con este ejercicio.</p>
+              <p className="text-[11px] text-slate-500 mb-2">
+                Tipo de ejercicio: <b className="text-slate-700">{dosis.nombre}</b> · guía indicativa (el peso lo elige y anota el alumno). Resaltados: lo más recomendado.
+              </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
@@ -478,10 +599,10 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {DOSIS.map(([k, ic, o, se, re, de, inten, tempo]) => {
-                      const on = sugeridos.includes(k);
+                    {dosis.filas.map(([ic, o, se, re, de, inten, tempo], k) => {
+                      const on = k < 2;
                       return (
-                        <tr key={k} className={`border-t border-slate-100 ${on ? "bg-violet-50" : ""}`}>
+                        <tr key={o} className={`border-t border-slate-100 ${on ? "bg-violet-50" : ""}`}>
                           <td className={`py-1.5 pr-2 font-bold whitespace-nowrap ${on ? "text-violet-800" : "text-slate-800"}`}>
                             {ic} {o} {on && <span className="ml-1 px-1.5 rounded-full bg-violet-600 text-white text-[9px]">recomendado</span>}
                           </td>
@@ -531,7 +652,7 @@ const matchQuery = (ex, nq) => {
   return names.some((n) => n.includes(nq)) || norm(ex.target || "").includes(nq);
 };
 
-export const ExercisePicker = ({ exercises, onPick, picked = [], compacto = false }) => {
+export const ExercisePicker = ({ exercises, onPick, picked = [], compacto = false, alto }) => {
   const [q, setQ] = useState("");
   const [group, setGroup] = useState("");
   const [limit, setLimit] = useState(30);
@@ -598,7 +719,7 @@ export const ExercisePicker = ({ exercises, onPick, picked = [], compacto = fals
             {q ? ` con «${q}»` : ""} · toca para agregar (puedes agregar varios)
           </p>
           {/* Mismo formato en todo el sistema: 4 por fila (2 en celular), tarjetas del mismo tamaño */}
-          <div className={`grid grid-cols-2 @sm:grid-cols-3 @3xl:grid-cols-4 gap-2.5 overflow-y-auto pr-1 ${compacto ? "max-h-[560px]" : "max-h-[640px]"}`}>
+          <div className={`grid grid-cols-2 @sm:grid-cols-3 @3xl:grid-cols-4 gap-2.5 overflow-y-auto pr-1 ${alto || (compacto ? "max-h-[560px]" : "max-h-[640px]")}`}>
             {results.slice(0, limit).map((ex) => {
               const n = cuenta(ex.id);
               return (

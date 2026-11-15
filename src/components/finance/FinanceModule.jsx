@@ -728,7 +728,8 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                         fontSize={11}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(v) => `S/${v}`}
+                        width={66}
+                        tickFormatter={(v) => (Math.abs(v) >= 1000 ? `S/${(v / 1000).toFixed(v % 1000 ? 1 : 0)}k` : `S/${v}`)}
                       />
                       <Tooltip
                         contentStyle={{
@@ -841,7 +842,8 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                         fontSize={11}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(v) => `S/${v}`}
+                        width={66}
+                        tickFormatter={(v) => (Math.abs(v) >= 1000 ? `S/${(v / 1000).toFixed(v % 1000 ? 1 : 0)}k` : `S/${v}`)}
                       />
                       <Tooltip
                         contentStyle={{

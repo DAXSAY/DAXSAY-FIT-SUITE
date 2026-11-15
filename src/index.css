@@ -3238,3 +3238,4 @@ html:not(.dark) .rd-tip-flecha {
   background: #ffffff;
   border-color: #9fd6cf;
 }
+.recharts-tooltip-wrapper { z-index: 40 !important; }

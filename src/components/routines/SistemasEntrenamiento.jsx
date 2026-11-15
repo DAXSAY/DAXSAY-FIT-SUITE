@@ -72,7 +72,6 @@ export const SISTEMAS = {
     nombre: "Rest-pause", icono: "⏸️", familia: "intensidad",
     desc: "Una serie casi al fallo, pausa corta (10-20 s) y mini-series con el mismo peso.",
     p: [
-      ["peso", "Peso", "n", "", "kg"],
       ["reps1", "Reps de la 1.ª serie", "t", "8", ""],
       ["pausa", "Pausa", "n", 15, "s"],
       ["mini", "Mini-series", "n", 2, ""],
@@ -83,27 +82,25 @@ export const SISTEMAS = {
     nombre: "Drop set", icono: "⬇️", familia: "intensidad",
     desc: "Al llegar al fallo se baja el peso y se sigue sin descanso.",
     p: [
-      ["peso", "Peso inicial", "n", "", "kg"],
       ["bajadas", "Bajadas", "n", 2, ""],
       ["porcentaje", "Cuánto bajar", "n", 20, "%"],
-      ["pesoMin", "Peso mínimo", "n", "", "kg"],
       ["repsMin", "Reps con el peso mínimo", "t", "al fallo", ""],
     ],
   },
   piramide_asc: {
     nombre: "Pirámide ascendente", icono: "📈", familia: "intensidad",
     desc: "Cada serie sube el peso y baja las repeticiones.",
-    p: [["secuencia", "Reps por serie", "t", "12-10-8-6", ""], ["pesos", "Pesos por serie", "t", "", "kg"]],
+    p: [["secuencia", "Reps por serie", "t", "12-10-8-6", ""]],
   },
   piramide_desc: {
     nombre: "Pirámide descendente", icono: "📉", familia: "intensidad",
     desc: "Se empieza pesado con pocas reps y cada serie baja el peso y sube las reps.",
-    p: [["secuencia", "Reps por serie", "t", "6-8-10-12", ""], ["pesos", "Pesos por serie", "t", "", "kg"]],
+    p: [["secuencia", "Reps por serie", "t", "6-8-10-12", ""]],
   },
   cluster: {
     nombre: "Cluster", icono: "🧩", familia: "intensidad",
     desc: "La serie se parte en bloques cortos con micro-pausas para mover más peso.",
-    p: [["repsBloque", "Reps por bloque", "n", 3, ""], ["bloques", "Bloques", "n", 4, ""], ["pausa", "Micro-pausa", "n", 20, "s"], ["peso", "Peso", "n", "", "kg"]],
+    p: [["repsBloque", "Reps por bloque", "n", 3, ""], ["bloques", "Bloques", "n", 4, ""], ["pausa", "Micro-pausa", "n", 20, "s"]],
   },
   parciales: {
     nombre: "21s / parciales", icono: "✂️", familia: "intensidad",
@@ -113,7 +110,7 @@ export const SISTEMAS = {
   negativas: {
     nombre: "Negativas (excéntricas)", icono: "🐢", familia: "control",
     desc: "Se enfatiza la bajada lenta; la subida puede ser con ayuda.",
-    p: [["excentrica", "Bajada", "n", 4, "s"], ["ayuda", "Subida", "t", "con ayuda del compañero", ""], ["peso", "Peso", "n", "", "kg"]],
+    p: [["excentrica", "Bajada", "n", 4, "s"], ["ayuda", "Subida", "t", "con ayuda del compañero", ""]],
   },
   positivas: {
     nombre: "Positivas (concéntricas)", icono: "🚀", familia: "control",
@@ -158,7 +155,7 @@ export const SISTEMAS = {
   halterofilia: {
     nombre: "Halterofilia (% 1RM)", icono: "🏅", familia: "potencia",
     desc: "Carga según el máximo (1RM): fases explosivas, recepción y control excéntrico.",
-    p: [["pct", "% del 1RM", "n", 75, "%"], ["rm", "1RM del alumno", "n", "", "kg"], ["fase", "Fase / complejo", "t", "tirón + recepción", ""]],
+    p: [["pct", "% del 1RM", "n", 75, "%"], ["fase", "Fase / complejo", "t", "tirón + recepción", ""]],
   },
   velocidad: {
     nombre: "Potencia / velocidad", icono: "💨", familia: "potencia",
@@ -195,7 +192,7 @@ export const SISTEMAS = {
   forzadas: {
     nombre: "Repeticiones forzadas", icono: "🤝", familia: "intensidad",
     desc: "Al llegar al fallo, el compañero ayuda lo justo para 2-3 repeticiones más.",
-    p: [["extra", "Reps forzadas", "t", "2-3", ""], ["peso", "Peso", "n", "", "kg"]],
+    p: [["extra", "Reps forzadas", "t", "2-3", ""]],
   },
   myo_reps: {
     nombre: "Myo-reps", icono: "🔂", familia: "intensidad",
@@ -221,17 +218,17 @@ export const SISTEMAS = {
   cinco_por_cinco: {
     nombre: "5 × 5", icono: "🖐️", familia: "fuerza",
     desc: "5 series de 5 reps con el mismo peso pesado; descanso largo.",
-    p: [["pct", "Carga", "n", 80, "% 1RM"], ["peso", "Peso", "n", "", "kg"], ["descansoLargo", "Descanso", "n", 180, "s"]],
+    p: [["pct", "Carga", "n", 80, "% 1RM"], ["descansoLargo", "Descanso", "n", 180, "s"]],
   },
   gvt: {
     nombre: "Volumen alemán 10 × 10", icono: "🇩🇪", familia: "fuerza",
     desc: "10 series de 10 reps con ~60% del 1RM y 60-90 s de descanso.",
-    p: [["pct", "Carga", "n", 60, "% 1RM"], ["peso", "Peso", "n", "", "kg"]],
+    p: [["pct", "Carga", "n", 60, "% 1RM"]],
   },
   ondulante: {
     nombre: "Ondulante / oleadas", icono: "🌊", familia: "fuerza",
     desc: "Oleadas de repeticiones decrecientes y cargas crecientes (ej. 3-2-1, 3-2-1).",
-    p: [["ola", "Oleada", "t", "3-2-1", "reps"], ["olas", "Oleadas", "n", 2, ""], ["pesos", "Pesos", "t", "", "kg"]],
+    p: [["ola", "Oleada", "t", "3-2-1", "reps"], ["olas", "Oleadas", "n", 2, ""]],
   },
   rpe_top: {
     nombre: "Top set + back-off", icono: "🔝", familia: "fuerza",
@@ -241,12 +238,12 @@ export const SISTEMAS = {
   doble_progresion: {
     nombre: "Doble progresión", icono: "📶", familia: "fuerza",
     desc: "Se suben reps dentro del rango; al llegar al tope se sube el peso y se vuelve al mínimo.",
-    p: [["rango", "Rango de reps", "t", "8-12", ""], ["subir", "Subir peso", "t", "+2.5 kg", ""]],
+    p: [["rango", "Rango de reps", "t", "8-12", ""], ["subir", "Al llegar al tope", "t", "subir un poco el peso", ""]],
   },
   resistencia_variable: {
     nombre: "Bandas / cadenas", icono: "⛓️", familia: "fuerza",
     desc: "Resistencia que aumenta al subir (bandas elásticas o cadenas sobre la barra).",
-    p: [["accesorio", "Accesorio", "t", "banda media", ""], ["peso", "Peso de la barra", "n", "", "kg"]],
+    p: [["accesorio", "Accesorio", "t", "banda media", ""]],
   },
   // ---------- Control (más) ----------
   pausa_reps: {
@@ -315,7 +312,7 @@ export const SISTEMAS = {
   balistico: {
     nombre: "Balístico / lanzamientos", icono: "🏐", familia: "potencia",
     desc: "Lanzar o soltar la carga (balón medicinal, kettlebell swing) a máxima potencia.",
-    p: [["reps", "Lanzamientos", "n", 6, ""], ["carga", "Carga", "t", "balón 4 kg", ""]],
+    p: [["reps", "Lanzamientos", "n", 6, ""], ["carga", "Carga", "t", "balón ligero o medio", ""]],
   },
   sprint: {
     nombre: "Sprints / aceleraciones", icono: "🏃", familia: "potencia",
@@ -416,6 +413,8 @@ export function resumenMetodo(m) {
   const s = SISTEMAS[m.tipo];
   if (!s) return "";
   const p = { ...Object.fromEntries(s.p.map(([k, , , d]) => [k, d])), ...(m.params || {}) };
+  // El peso lo anota el alumno: no se fija en la rutina
+  ["peso", "pesoMin", "pesos", "rm"].forEach((k) => delete p[k]);
   const partes = [];
   switch (m.tipo) {
     case "superserie":
@@ -645,7 +644,10 @@ export const ConfigEjercicio = ({
   readOnly = false,
   placeholderEsfuerzo = "RIR 1-2",
   familiaInicial = "base",
+  renderBanco, // (onPick) => elemento con el banco de ejercicios
+  onAgregarCompanero, // (ejercicioDelBanco) => agrega y combina
 }) => {
+  const [verBanco, setVerBanco] = useState(false);
   const metodo = ex.metodo;
   const sis = SISTEMAS[metodo?.tipo || "normal"];
   const [abierto, setAbierto] = useState(false);
@@ -834,23 +836,25 @@ export const ConfigEjercicio = ({
                     ))}
                   </div>
                 )}
+                <p className="text-[11px] rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-1">
+                  ✍️ El alumno anotará en su portal: <b>{filasRegistro({ series: ex[campos.series], reps: ex[campos.reps], metodo }).anota}</b>. El peso no se fija aquí.
+                </p>
                 {sis.agrupa && (
                   <div className="space-y-1">
                     <p className="text-[11px] font-bold text-slate-500">
                       Combinar con ({enGrupo + 1}/{maxG > minG ? `${minG}-${maxG}` : minG} ejercicios){" "}
                       {enGrupo + 1 < minG && <span className="text-rose-600">· elige {minG - enGrupo - 1} más</span>}
                     </p>
-                    {companeros.length === 0 ? (
-                      <p className="text-xs text-slate-500 italic">Agrega más ejercicios a este día para combinarlos.</p>
-                    ) : (
-                      <div className="flex flex-wrap gap-1">
+                    {companeros.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-48 overflow-y-auto pr-1">
                         {companeros.map((x) => (
                           <button
                             key={x.i}
                             type="button"
                             disabled={!x.enGrupo && enGrupo + 1 >= maxG}
                             onClick={() => onCompanero?.(x.i)}
-                            className={`px-2 py-1 rounded-lg border text-[11px] font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${x.enGrupo ? c.on : "bg-white border-slate-200 text-slate-700 hover:border-slate-400"}`}
+                            title={x.nombre}
+                            className={`min-w-0 px-2 py-1 rounded-lg border text-[11px] font-bold text-left truncate cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${x.enGrupo ? c.on : "bg-white border-slate-200 text-slate-700 hover:border-slate-400"}`}
                           >
                             {x.enGrupo ? "✓ " : "+ "}
                             {x.i + 1}. {x.nombre}
@@ -858,6 +862,21 @@ export const ConfigEjercicio = ({
                         ))}
                       </div>
                     )}
+                    {renderBanco && onAgregarCompanero && enGrupo + 1 < maxG && (
+                      <div className="rounded-lg border border-dashed border-slate-300 bg-white">
+                        <button type="button" onClick={() => setVerBanco((v) => !v)} className={`w-full px-2.5 py-1.5 text-left text-xs font-bold cursor-pointer ${c.texto}`}>
+                          {verBanco ? "▾ Ocultar banco" : "＋ Agregar un ejercicio nuevo del banco para combinar (ej. músculo antagonista)"}
+                        </button>
+                        {verBanco && (
+                          <div className="p-2 pt-0">
+                            {renderBanco((ejercicio) => {
+                              onAgregarCompanero(ejercicio);
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {companeros.length === 0 && !renderBanco && <p className="text-xs text-slate-500 italic">Agrega más ejercicios a este día para combinarlos.</p>}
                   </div>
                 )}
               </div>
@@ -868,3 +887,150 @@ export const ConfigEjercicio = ({
     </div>
   );
 };
+
+// ---------------------------------------------------------------------
+// Qué anota el ALUMNO según el sistema (lo usa "Anotar mis pesos")
+// Cada fila = una casilla: { etiqueta, objetivo, campo: "reps"|"seg"|"rondas"|"min"|"saltos", kg: bool }
+// ---------------------------------------------------------------------
+const numero = (v, d) => {
+  const n = parseInt(String(v ?? "").replace(/[^0-9]/g, ""), 10);
+  return Number.isFinite(n) && n > 0 ? n : d;
+};
+const lista = (t) =>
+  String(t || "")
+    .split(/[-+,/]/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+
+export function filasRegistro({ series = 3, reps = "", metodo } = {}) {
+  const tipo = metodo?.tipo || "normal";
+  const s = SISTEMAS[tipo] || SISTEMAS.normal;
+  const p = { ...Object.fromEntries((s.p || []).map(([k, , , d]) => [k, d])), ...(metodo?.params || {}) };
+  const n = Math.min(Math.max(numero(series, 3), 1), 12);
+  const filas = [];
+  const add = (etiqueta, objetivo = reps, campo = "reps", kg = true) => filas.push({ etiqueta, objetivo: String(objetivo ?? ""), campo, kg });
+  const porSerie = (fn) => {
+    for (let i = 1; i <= n; i++) fn(i);
+  };
+  let anota = "peso (kg) y repeticiones de cada serie";
+  switch (tipo) {
+    case "rest_pause":
+      porSerie((i) => {
+        add(`S${i} · principal`, p.reps1);
+        const minis = lista(p.repsMini);
+        for (let m = 1; m <= numero(p.mini, 2); m++) add(`S${i} · mini ${m}`, minis[m - 1] || minis[minis.length - 1] || "");
+      });
+      anota = "el peso y las reps de la serie principal y de cada mini-serie (mismo peso)";
+      break;
+    case "drop_set":
+      porSerie((i) => {
+        add(`S${i} · inicial`, reps);
+        for (let b = 1; b <= numero(p.bajadas, 2); b++) add(`S${i} · bajada ${b}`, b === numero(p.bajadas, 2) ? p.repsMin : "al fallo");
+      });
+      anota = "el peso y las reps de la serie inicial y de cada bajada";
+      break;
+    case "cluster":
+      porSerie((i) => {
+        for (let b = 1; b <= numero(p.bloques, 4); b++) add(`S${i} · bloque ${b}`, p.repsBloque);
+      });
+      anota = "el peso y las reps de cada bloque";
+      break;
+    case "myo_reps":
+      porSerie((i) => {
+        add(`S${i} · activación`, p.activacion);
+        for (let m = 1; m <= numero(p.mini, 4); m++) add(`S${i} · mini ${m}`, p.repsMini);
+      });
+      anota = "el peso y las reps de la serie de activación y de cada mini-serie";
+      break;
+    case "piramide_asc":
+    case "piramide_desc":
+      lista(p.secuencia).forEach((r, i) => add(`Serie ${i + 1}`, r));
+      anota = "el peso de cada escalón de la pirámide y las reps logradas";
+      break;
+    case "ondulante":
+      for (let o = 1; o <= numero(p.olas, 2); o++) lista(p.ola).forEach((r, i) => add(`Ola ${o} · ${i + 1}`, r));
+      anota = "el peso y las reps de cada paso de la oleada";
+      break;
+    case "cinco_por_cinco":
+      for (let i = 1; i <= 5; i++) add(`Serie ${i}`, 5);
+      break;
+    case "gvt":
+      for (let i = 1; i <= 10; i++) add(`Serie ${i}`, 10);
+      break;
+    case "rpe_top":
+      add("Serie principal", lista(p.top)[0] || reps);
+      for (let i = 1; i <= 3; i++) add(`Ligera ${i}`, reps);
+      anota = "el peso de la serie principal y de las series ligeras";
+      break;
+    case "bfr":
+      lista(p.esquema).forEach((r, i) => add(`Serie ${i + 1}`, r));
+      break;
+    case "circuito":
+    case "serie_gigante":
+      for (let v = 1; v <= Math.min(numero(p.rondas, 3), 10); v++) add(`Vuelta ${v}`, reps);
+      anota = "el peso y las reps de este ejercicio en cada vuelta";
+      break;
+    case "isometrico":
+    case "iso_analgesico":
+    case "iso_maximo":
+    case "estiramiento":
+    case "propiocepcion":
+    case "activacion":
+    case "tut":
+      porSerie((i) => add(`Serie ${i}`, p.segundos || reps, "seg", tipo === "iso_analgesico" || tipo === "tut"));
+      anota = "los segundos que logró mantener en cada serie";
+      break;
+    case "pliometria":
+      porSerie((i) => add(`Serie ${i}`, p.contactos, "saltos", false));
+      anota = "los saltos que hizo bien en cada serie";
+      break;
+    case "movilidad":
+    case "fnp":
+    case "respiracion":
+      porSerie((i) => add(`Serie ${i}`, p.reps || p.ciclos || reps, "reps", false));
+      anota = "las repeticiones o ciclos que hizo";
+      break;
+    case "hiit":
+    case "tabata":
+      add("Rondas completas", p.rondas, "rondas", false);
+      anota = "cuántas rondas completó";
+      break;
+    case "emom":
+      add("Minutos completos", p.minutos, "min", false);
+      anota = "cuántos minutos completó";
+      break;
+    case "amrap":
+      add("Rondas logradas", "", "rondas", false);
+      anota = "cuántas rondas logró en el tiempo";
+      break;
+    case "for_time":
+    case "chipper":
+      add("Tiempo total", p.limite || "", "min", false);
+      anota = "el tiempo que tardó";
+      break;
+    case "death_by":
+      add("Último minuto completo", "", "min", false);
+      anota = "hasta qué minuto llegó";
+      break;
+    case "escalera":
+      add("Peldaño alcanzado", "", "reps", false);
+      anota = "hasta qué peldaño llegó";
+      break;
+    case "intervalos_dist":
+    case "sprint":
+      add("Tramos completos", p.tramos, "rondas", false);
+      anota = "cuántos tramos completó";
+      break;
+    case "continuo":
+    case "fartlek":
+    case "noruego_4x4":
+    case "progresivo":
+      add("Minutos", p.minutos || p.bloques, "min", false);
+      anota = "los minutos que hizo";
+      break;
+    default:
+      porSerie((i) => add(`Serie ${i}`, reps));
+      if (SISTEMAS[tipo]?.agrupa) anota = "el peso y las reps de cada serie (alternando con su pareja del grupo)";
+  }
+  return { filas: filas.slice(0, 40), anota };
+}

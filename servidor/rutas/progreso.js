@@ -93,6 +93,8 @@ export function planDe(rutina) {
         reps: String(e.reps || ""),
         descanso: Number(e.restSeconds) || 0,
         notas: e.notes || "",
+        // Sistema de entrenamiento (rest-pause, drop set, HIIT…): define qué casillas anota el alumno
+        metodo: e.metodo && e.metodo.tipo ? { tipo: e.metodo.tipo, params: e.metodo.params || {}, grupo: e.metodo.grupo || "", resumen: e.metodo.resumen || "" } : null,
         };
       }),
       };
@@ -267,14 +269,17 @@ router.put("/:idalumno/sesion", async (req, res, next) => {
       const nombre = txt(p?.nombre || ex.nombre, 150);
       if (!nombre) throw new ErrorHttp(400, "Ejercicio sin nombre");
       const series = Array.isArray(ex.series) ? ex.series : [];
-      if (series.length > 20) throw new ErrorHttp(400, `${nombre}: máximo 20 series`);
+      if (series.length > 40) throw new ErrorHttp(400, `${nombre}: máximo 40 casillas`);
       series.forEach((s, i) => {
-        const vacio = s?.peso === "" || s?.peso === null || s?.peso === undefined;
-        if (vacio) return;
+        const sinPeso = s?.peso === "" || s?.peso === null || s?.peso === undefined;
+        const sinReps = s?.reps === "" || s?.reps === null || s?.reps === undefined;
+        if (sinPeso && sinReps) return;
+        // Sistemas sin carga (segundos, rondas, minutos, saltos): se guarda peso 0
+        if (sinPeso) s = { ...s, peso: 0 };
         const peso = Number(String(s.peso).replace(",", "."));
         if (!Number.isFinite(peso) || peso < 0 || peso > 999.99) throw new ErrorHttp(400, `${nombre}, serie ${i + 1}: peso inválido (0 a 999 kg)`);
         let reps = s.reps === "" || s.reps === null || s.reps === undefined ? null : Number(s.reps);
-        if (reps !== null && (!Number.isInteger(reps) || reps < 0 || reps > 200)) {
+        if (reps !== null && (!Number.isInteger(reps) || reps < 0 || reps > 127)) {
           throw new ErrorHttp(400, `${nombre}, serie ${i + 1}: repeticiones inválidas`);
         }
         filas.push([
