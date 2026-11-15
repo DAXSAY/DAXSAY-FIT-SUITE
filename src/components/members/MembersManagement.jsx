@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Users,
   Search,
@@ -67,6 +67,25 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [trainerFilter, setTrainerFilter] = useState("all");
   const [selectedMember, setSelectedMember] = useState(null);
+  // Abrir la ficha de un alumno pedida desde otra pantalla (ej. "Ver perfil" en Programados)
+  useEffect(() => {
+    const abrir = (id) => {
+      const m = members.find((x) => String(x.id) === String(id));
+      if (m) setSelectedMember(m);
+    };
+    try {
+      const id = sessionStorage.getItem("radical_abrir_alumno");
+      if (id) {
+        sessionStorage.removeItem("radical_abrir_alumno");
+        abrir(id);
+      }
+    } catch {
+      /* nada */
+    }
+    const alPedir = (e) => abrir(e.detail);
+    window.addEventListener("radical:abrir-alumno", alPedir);
+    return () => window.removeEventListener("radical:abrir-alumno", alPedir);
+  }, [members]);
   // Modals inside component
   const [renewingMember, setRenewingMember] = useState(null);
   const [selectedPlanId, setSelectedPlanId] = useState("");

@@ -8,6 +8,7 @@ import { ExerciseThumb, MUSCLE_LABELS } from "./ExerciseBank";
 import { InsigniaMetodo, InsigniaTipoDia, etiquetasGrupo } from "./SistemasEntrenamiento";
 import { textoNivelRutina, textoObjetivoRutina } from "../../utils/rutinas";
 import { SaludAlumno } from "./SaludAlumno";
+import { BotonProgramar } from "../common/Programados";
 import { TONO, TONO_NIVEL } from "./FormEjercicioPropio";
 
 const sinT = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -32,7 +33,7 @@ export const RutinasAsignadas = ({
 }) => {
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(seleccionInicial || "");
-  const [vista, setVista] = useState("con"); // con · sin · todos
+  const [vista, setVista] = useState(""); // "" (nada hasta elegir o escribir) · con · sin · todos
   const [rIdx, setRIdx] = useState(0);
   const [dia, setDia] = useState(0);
   const [plantillaElegida, setPlantillaElegida] = useState("");
@@ -68,7 +69,7 @@ export const RutinasAsignadas = ({
   }, [routines, members]);
 
   const lista = useMemo(() => {
-    let l = members.filter((m) => (vista === "todos" ? true : vista === "con" ? porAlumno.has(String(m.id)) : !porAlumno.has(String(m.id))));
+    let l = members.filter((m) => (vista === "todos" || !vista ? true : vista === "con" ? porAlumno.has(String(m.id)) : !porAlumno.has(String(m.id))));
     if (q.trim()) l = l.filter((m) => coincideAlumno(m, q)).sort((a, b) => puntaje(a, q) - puntaje(b, q));
     else l = [...l].sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0));
     return l;
@@ -155,7 +156,7 @@ export const RutinasAsignadas = ({
               blue: on ? "bg-blue-600 border-blue-600 text-white" : "bg-blue-50 border-blue-200 text-blue-800",
             }[c];
             return (
-              <button key={k} type="button" onClick={() => { setVista(k); setSel(""); }} className={`rounded-xl border px-4 py-1.5 text-center cursor-pointer min-w-[6.5rem] ${col}`}>
+              <button key={k} type="button" onClick={() => { setVista(vista === k ? "" : k); setSel(""); }} className={`rounded-xl border px-4 py-1.5 text-center cursor-pointer min-w-[6.5rem] ${col}`}>
                 <span className="block text-xl font-black leading-none">{n}</span>
                 <span className="block text-[11px] font-bold mt-0.5">{l}</span>
               </button>
@@ -171,25 +172,28 @@ export const RutinasAsignadas = ({
       </div>
 
       {/* Lista de alumnos (hasta elegir uno) */}
-      {!alumno && (
+      {!alumno && (vista || q.trim()) && (
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          <div className="hidden md:grid grid-cols-[110px_minmax(0,1.3fr)_minmax(0,1.5fr)_150px] gap-3 px-4 py-2 bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500">
+          <div className="hidden md:grid grid-cols-[110px_minmax(0,1.3fr)_minmax(0,1.5fr)_140px_170px] gap-3 px-4 py-2 bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500">
             <span>Código</span>
             <span>Alumno</span>
             <span>Rutina</span>
             <span>Estado</span>
+            <span>Acción</span>
           </div>
-          {lista.length === 0 && <p className="text-sm text-slate-500 py-6 text-center">Ningún alumno con «{q}».</p>}
+          {lista.length === 0 && <p className="text-sm text-slate-500 py-6 text-center">{q.trim() ? `Ningún alumno con «${q}».` : "No hay alumnos en este grupo."}</p>}
           <div className="divide-y divide-slate-100 max-h-[calc(100vh-20rem)] overflow-y-auto">
             {lista.map((m) => {
               const rs = porAlumno.get(String(m.id)) || [];
               const pers = rs.some((r) => r.personalizada);
               return (
-                <button
+                <div
                   key={m.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => ir(m)}
-                  className="w-full grid md:grid-cols-[110px_minmax(0,1.3fr)_minmax(0,1.5fr)_150px] gap-1 md:gap-3 items-center px-4 py-2.5 text-left cursor-pointer hover:bg-blue-50/60 transition-colors"
+                  onKeyDown={(e) => e.key === "Enter" && ir(m)}
+                  className="w-full grid md:grid-cols-[110px_minmax(0,1.3fr)_minmax(0,1.5fr)_140px_170px] gap-1 md:gap-3 items-center px-4 py-2.5 text-left cursor-pointer hover:bg-blue-50/60 transition-colors"
                 >
                   <span>
                     <CodigoAlumno m={m} />
@@ -207,7 +211,14 @@ export const RutinasAsignadas = ({
                       <span className="px-2 py-0.5 rounded-full border text-[11px] font-bold bg-rose-50 border-rose-200 text-rose-800">⚠ Sin rutina</span>
                     )}
                   </span>
-                </button>
+                  <span onClick={(e) => e.stopPropagation()}>
+                    {rs.length ? (
+                      <span className="text-[11px] font-semibold text-slate-400">Ver rutina →</span>
+                    ) : (
+                      <BotonProgramar tipo="rutina" member={m} />
+                    )}
+                  </span>
+                </div>
               );
             })}
           </div>

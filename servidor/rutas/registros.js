@@ -40,6 +40,10 @@ const MODULOS = {
   fisioterapia:        { permiso: "physiotherapy", lectura: ["dashboard"], alumno: "memberId", portal: true },
   plantillas_fisioterapia: { permiso: "physiotherapy", lectura: [] },
   permisos:            { permiso: "attendances",   lectura: ["staff", "dashboard"], escritura: ["staff"] },
+  // Horario de atención de fisioterapia y nutrición (lo editan admin, fisio y nutri; recepción lo ve)
+  agenda_especialistas: { permiso: "physiotherapy", lectura: ["appointments", "dashboard", "routines", "members"], escritura: ["nutrition"] },
+  // Alumnos "por programar" (falta rutina, nutrición o fisioterapia): aviso para el área que corresponde
+  programados:         { permiso: "members",       lectura: ["dashboard", "alerts", "appointments", "routines", "nutrition", "physiotherapy"], escritura: ["routines", "nutrition", "physiotherapy", "appointments", "alerts"] },
   citas:               { permiso: "appointments",  lectura: ["dashboard", "physiotherapy", "nutrition"], alumno: "memberId", portal: true },
 };
 
@@ -130,6 +134,9 @@ router.get("/", async (req, res, next) => {
         );
         extra.forEach((f) => salida.rutinas.registros.push(parsear(f)));
       }
+      // Horario de atención de fisioterapia y nutrición: el alumno lo ve para reservar
+      const agenda = await consultar("SELECT datos FROM registros_app WHERE modulo = 'agenda_especialistas'");
+      salida.agenda_especialistas = { registros: agenda.map(parsear), editar: false };
       return res.json(salida);
     }
 

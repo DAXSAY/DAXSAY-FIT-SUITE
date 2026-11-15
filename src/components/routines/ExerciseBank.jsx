@@ -418,6 +418,24 @@ const TIPOS_EJ = {
       ["👵", "Adulto mayor / salud", "1", "15-20 min", "—", "Ritmo cómodo", "constante"],
     ],
   },
+  acarreo: {
+    nombre: "Acarreo / paseo con carga",
+    filas: [
+      ["💪", "Fuerza de agarre y tronco", "3-5", "20-30 m", "2 min", "Carga pesada · postura erguida", "paso corto"],
+      ["🔋", "Resistencia", "2-4", "40-60 m o 45-60 s", "60-90 s", "RPE 7", "constante"],
+      ["🔥", "Acondicionamiento / circuito", "3-4", "30-40 s", "30-45 s", "RPE 7-8", "constante"],
+      ["🌱", "Principiante", "2-3", "20 m", "90 s", "Carga ligera · hombros abajo", "controlado"],
+    ],
+  },
+  isometrico: {
+    nombre: "Isométrico (mantener la posición)",
+    filas: [
+      ["🧱", "Fuerza isométrica", "3-5", "10-20 s", "60-90 s", "Posición perfecta", "sostenido"],
+      ["🔋", "Resistencia", "2-3", "30-45 s", "45-60 s", "RPE 7", "sostenido"],
+      ["🌱", "Progresión (variante fácil)", "3-5", "5-10 s", "60 s", "Recogido o con apoyo", "sostenido"],
+      ["🩺", "Readaptación", "3-5", "15-30 s", "30-45 s", "Dolor ≤ 3/10", "sostenido"],
+    ],
+  },
   cuello: {
     nombre: "Cuello",
     filas: [
@@ -435,18 +453,33 @@ export function tipoDeEjercicio(ex) {
   if (ES(/estiramiento|stretch|yoga|pose\b|movilidad|mobility|rotación de cuello|circunducci/, n)) return "estiramiento";
   if (g === "cuello") return "cuello";
   if (ES(/lanzamiento|throw(?! down)|slam|pase de pecho|chest pass|chest push/, n)) return "lanzamiento";
-  if (ES(/salto|jump|plyo|pliom|bound|hop\b|skip|burpee/, n)) return "pliometria";
-  if (ES(/bicicleta|el[ií]ptica|treadmill|cinta|escaladora|stepmill|skierg|ergómetro|ergometro|correr|carrera|run\b|jog|rowing machine/, n) || /bicicleta|elíptica|escaladora|skierg|ergómetro/.test(eq)) return "cardio";
-  if (ES(/farmer|paseo|caminata con/, n)) return "compuesto";
-  if (ES(/cargada|clean|arranque|snatch|jerk|envión|thruster|swing|push press/, n)) return "olimpico";
+  if (ES(/salto|jump|plyo|pliom|bound|\bhops?\b|skip|burpee/, n)) return "pliometria";
+  if (ES(/bicicleta|el[ií]ptica|treadmill|cinta|escaladora|stepmill|skierg|ski ergometer|ergómetro|ergometro|hands bike|stationary bike|battling ropes|battle rope|cuerdas de batalla|correr|carrera|run\b|jog|rowing machine|mountain climber|escalador/, n) || /bicicleta|elíptica|escaladora|skierg|ergómetro/.test(eq)) return "cardio";
+  // Acarreos: se dosifican por distancia o tiempo, no por repeticiones
+  if (ES(/farmer|carry|paseo|caminata con|suitcase|yoke/, n)) return "acarreo";
+  // Olímpicos y balísticos (sin confundir "agarre de cargada" o "con balanceo")
+  const sinFalsos = (/with swing/.test(n) ? n.replace(/swing/g, "") : n).replace(/clean[- ]grip|\(clean grip\)/g, "");
+  if (ES(/cargada|\bclean\b|arranque|snatch|jerk|envión|dos tiempos|thruster|push press|kettlebell swing|swing de glúteos|^swing|swing 360/, sinFalsos)) return "olimpico";
+  // Isométricos de calistenia y de pared (no son del core solamente)
+  if (ES(/planche(?! push)|front lever(?! reps)|back lever|maltese|\bflag\b|isometric|isométric|wall sit|sentadilla en pared/, n)) return "isometrico";
   if (g === "pantorrillas" || ES(/talón|talones|calf|pantorrill/, n)) return "pantorrilla";
-  if (g === "core_abdomen" || ES(/oblicu|crunch|abdominal|plancha|plank/, n)) {
+  if (g === "core_abdomen" || ES(/oblicu|crunch|abdominal|plancha|plank|flutter kick/, n)) {
     return ES(/plancha|plank|hold|isom|hollow|l-sit|v-sit|sostenid|dead bug|bird dog|pallof|en pared/, n) ? "core_iso" : "core";
   }
   if (g === "cardio_funcional") return "cardio";
+  // Ejercicios combinados (curl + sentadilla, zancada + extensión, curl + press…) mueven varias articulaciones
+  if (ES(/curl.*\b(press|squat|lunge)\b|\b(lunge|squat)\b.*(curl|extension|press)|to press|and press|curl lunge|curl squat/, n)) return "compuesto";
+  if (ES(/\brow\b|\bremo\b/, n)) return /peso corporal|banda|el[aá]stic|trx|suspensi/.test(eq) ? "peso_corporal" : "compuesto";
+  // Brazos: press cerrado, fondos, flexiones y dominadas son multiarticulares
+  const brazoCompuesto =
+    ["biceps", "triceps", "antebrazo"].includes(g) &&
+    ES(/bench press|press de banca|floor press|pin press|close[- ]grip press|hammer press|reverse-grip press|\bdips?\b|fondos|push-?up|flexión de brazos|pull-?up|chin-?up|dominada|pulldown|jalón/, n) &&
+    !ES(/french|tate|skull|elbow press|pushdown|curl/, n);
+  if (!brazoCompuesto && ES(/push-?up|pull-?up|chin-?up|\bdips?\b|fondos de pectorales|dominada/, n) && !ES(/curl/, n)) return "peso_corporal";
+  if (brazoCompuesto) return /peso corporal|asistido|banda|el[aá]stic|fitball|trx|suspensi/.test(eq) || ES(/push-?up|pull-?up|chin-?up|\bdips?\b|fondos/, n) ? "peso_corporal" : "compuesto";
   const aislado =
     ["biceps", "triceps", "antebrazo"].includes(g) ||
-    ES(/curl|extensión de tr|extension|elevación lateral|elevación frontal|lateral raise|front raise|apertura|fly|flye|patada|kickback|cruce|crossover|pec deck|encogimiento|shrug|abducción|aducción|face pull|pájaro|reverse fly|pullover|elevación de piernas|muñeca|wrist/, n);
+    ES(/curl|extensión de tr|extension|elevación lateral|elevación frontal|elevación de deltoides|elevación de serrato|elevación de espalda alta|lateral raise|front raise|rear delt raise|shoulder raise|[ytw]-raise|\braise\b|rotación de deltoides|rotación de glúteos|external rotation|internal rotation|shoulder rotation|hip (internal|external) rotation|apertura|fly|flye|patada|kickback|cruce|crossover|pec deck|encogimiento|shrug|abducción|aducción|abduct|adduct|face pull|pájaro|reverse fly|pullover|elevación de piernas|muñeca|wrist|pushdown|femoral|deltoid rear|rear delt(?! row)|iron cross|around (the )?world/, n);
   if (aislado) return "aislamiento";
   if (/peso corporal|asistido|con lastre|banda|el[aá]stic|fitball|bosu|trx|suspensi/.test(eq)) return "peso_corporal";
   return "compuesto";

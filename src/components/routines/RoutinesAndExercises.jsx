@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { BarraVolver } from "../common/BarraVolver";
 import {
   Dumbbell,
+  Save,
   Plus,
   Layers,
   Sparkles,
@@ -43,6 +44,8 @@ import {
 } from "./SistemasEntrenamiento";
 import { FormEjercicioPropio, TONO, TONO_NIVEL } from "./FormEjercicioPropio";
 import { RutinasAsignadas } from "./RutinasAsignadas";
+import { BancoFlotante } from "./BancoFlotante";
+import { GuiaSesion } from "./GuiaSesion";
 import { SaludAlumno } from "./SaludAlumno";
 export const RoutinesAndExercises = () => {
   const {
@@ -173,6 +176,32 @@ export const RoutinesAndExercises = () => {
     setEditando(null);
     setIncluirPersonalizadas(false);
   };
+  // ---- Cambios sin guardar en el creador ----
+  const estadoCreador = JSON.stringify({ routineTitle, routineDesc, routineLevel, routineObjective, routineTrainerId, routineTargetMemberId, routineDays });
+  const fotoCreador = useRef(null);
+  useEffect(() => {
+    if (activeSubTab === "builder") {
+      if (fotoCreador.current === null) fotoCreador.current = estadoCreador;
+    } else fotoCreador.current = null;
+  }, [activeSubTab, estadoCreador]);
+  const creadorSucio = activeSubTab === "builder" && fotoCreador.current !== null && fotoCreador.current !== estadoCreador;
+  const [salidaPendiente, setSalidaPendiente] = useState(null);
+  const salirDelCreador = (ir) => {
+    if (creadorSucio) return setSalidaPendiente(() => ir);
+    if (editando) limpiarCreador();
+    setBancoDestino(null);
+    ir();
+  };
+  useEffect(() => {
+    if (!creadorSucio) return;
+    const aviso = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", aviso);
+    return () => window.removeEventListener("beforeunload", aviso);
+  }, [creadorSucio]);
+
   const nuevaRutina = () => {
     limpiarCreador();
     setActiveSubTab("builder");
@@ -266,7 +295,8 @@ export const RoutinesAndExercises = () => {
         return { ...d, exercises: alternarCompanero(lista, exIndex, exIndex + 1) };
       }),
     );
-  const [bancoAbierto, setBancoAbierto] = useState(true);
+  // Banco flotante: null = cerrado · { dia, combinarCon? }
+  const [bancoDestino, setBancoDestino] = useState(null);
 
   // Remove exercise from day in builder
   const handleRemoveExerciseFromDay = (dayIndex, exIndex) => {
@@ -359,9 +389,13 @@ export const RoutinesAndExercises = () => {
           ].map(([k, Icono, l, n, d, c]) => {
             const on = activeSubTab === k;
             const abrir = () => {
-              if (k === "asignadas") setAlumnoSel("");
-              if (k === "builder" && !editando) nuevaRutina();
-              else setActiveSubTab(k);
+              const ir = () => {
+                if (k === "asignadas") setAlumnoSel("");
+                if (k === "builder" && !editando) nuevaRutina();
+                else setActiveSubTab(k);
+              };
+              if (activeSubTab === "builder" && k !== "builder") salirDelCreador(ir);
+              else ir();
             };
             const col = {
               blue: on ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-blue-200 text-blue-800 hover:bg-blue-50",
@@ -621,10 +655,74 @@ export const RoutinesAndExercises = () => {
       )}
 
       {/* SUBTAB 3: ROUTINE BUILDER WIZARD */}
+      {salidaPendiente && (
+        <div className="fixed inset-0 z-[80] bg-slate-900/50 flex items-center justify-center p-4" role="dialog" aria-label="Cambios sin guardar" data-sin-controles>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md p-5 space-y-4">
+            <div className="flex items-start gap-3">
+              <span className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                <Save className="w-5 h-5" />
+              </span>
+              <div>
+                <p className="text-base font-extrabold text-slate-900">¿Guardar los cambios?</p>
+                <p className="text-sm text-slate-600 mt-0.5">
+                  {editando ? "Modificaste esta rutina y aún no la guardas." : "Tienes una rutina a medio crear sin guardar."} Si sales ahora, se pierden.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              <button type="button" onClick={() => setSalidaPendiente(null)} className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-bold cursor-pointer hover:bg-slate-50">
+                Seguir editando
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const ir = salidaPendiente;
+                  setSalidaPendiente(null);
+                  fotoCreador.current = null;
+                  limpiarCreador();
+                  setBancoDestino(null);
+                  ir();
+                }}
+                className="px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-bold cursor-pointer hover:bg-rose-100"
+              >
+                Descartar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSalidaPendiente(null);
+                  setBancoDestino(null);
+                  handleSaveRoutine({ preventDefault() {} });
+                }}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-extrabold cursor-pointer"
+              >
+                Guardar cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeSubTab === "builder" && (
+        <BancoFlotante
+          exercises={allExercises}
+          destino={bancoDestino}
+          setDestino={setBancoDestino}
+          dias={routineDays.map((d) => ({ nombre: d.dayName, tipo: d.tipo, ids: (d.exercises || []).map((e) => e.exerciseId) }))}
+          onAgregar={(dia, ex) => handleAddExerciseToDay(dia, ex)}
+          onCombinar={(dia, idx, ex) => agregarCompanero(dia, idx, ex)}
+          onPropio={(dia) => {
+            setBancoDestino(null);
+            setPropioParaDia(dia);
+            setIsNewExerciseOpen(true);
+          }}
+        />
+      )}
+
       {activeSubTab === "builder" && (
         <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-xs space-y-5 text-slate-800">
           <BarraVolver
-            onVolver={() => setActiveSubTab("routines")}
+            onVolver={() => salirDelCreador(() => setActiveSubTab("routines"))}
             className="border-b border-gray-200 pb-3"
             titulo={
               <>
@@ -830,23 +928,36 @@ export const RoutinesAndExercises = () => {
                       />
                     </div>
 
-                    {/* Pantalla partida 50/50: ejercicios del día | banco (arriba/abajo en celular) */}
-                    <div className={`grid gap-3 items-start ${bancoAbierto ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+                    {day.tipo && (
+                      <GuiaSesion
+                        tipo={day.tipo}
+                        nEjercicios={day.exercises.length}
+                        onAplicar={(patch) =>
+                          setRoutineDays((prev) =>
+                            prev.map((d, i) =>
+                              i === dIdx ? { ...d, exercises: d.exercises.map((x) => (x.metodo ? { ...x, restSeconds: patch.restSeconds, rir: patch.rir } : { ...x, ...patch })) } : d,
+                            ),
+                          )
+                        }
+                      />
+                    )}
+
+                    <div className="grid gap-3 items-start grid-cols-1">
                     <div className="space-y-2 min-w-0">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Ejercicios de este día ({day.exercises.length})</p>
                         <button
                           type="button"
-                          onClick={() => setBancoAbierto((v) => !v)}
-                          className={`px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer flex items-center gap-1.5 ${bancoAbierto ? "bg-white border-slate-300 text-slate-700 hover:bg-slate-50" : "bg-blue-600 border-blue-600 text-white"}`}
+                          onClick={() => setBancoDestino({ dia: dIdx })}
+                          className="px-3 py-1.5 rounded-xl border border-blue-600 bg-blue-600 text-white text-xs font-bold cursor-pointer flex items-center gap-1.5 hover:bg-blue-500"
                         >
-                          <Dumbbell className="w-3.5 h-3.5" /> {bancoAbierto ? "Ocultar banco (más espacio)" : "Abrir banco de ejercicios"}
+                          <Plus className="w-3.5 h-3.5" /> Agregar ejercicios
                         </button>
                       </div>
                       {day.exercises.length === 0 ? (
                         <p className="text-xs text-gray-500 italic py-6 text-center border border-dashed border-gray-300 rounded-xl bg-white">
-                          Toca ejercicios en el banco de la derecha para agregarlos. Luego ajusta series, descanso y el sistema
-                          (biserie, rest-pause, tempo, HIIT…).
+                          Toca «Agregar ejercicios» o el botón azul de la esquina para abrir el banco. Luego ajusta series,
+                          descanso y el sistema (biserie, rest-pause, tempo, HIIT…).
                         </p>
                       ) : (
                         (() => {
@@ -897,8 +1008,7 @@ export const RoutinesAndExercises = () => {
                                       .map((x, k) => ({ i: k, nombre: x.exerciseName, enGrupo: !!grupo && x.metodo?.grupo === grupo }))
                                       .filter((x) => x.i !== exIdx)}
                                     onCompanero={(k) => setLista((l) => alternarCompanero(l, exIdx, k))}
-                                    renderBanco={(onPick) => <ExercisePicker exercises={allExercises} onPick={onPick} picked={(day.exercises || []).map((e) => e.exerciseId)} alto="max-h-[420px]" />}
-                                    onAgregarCompanero={(exObj) => agregarCompanero(dIdx, exIdx, exObj)}
+                                    onElegirDelBanco={() => setBancoDestino({ dia: dIdx, combinarCon: { idx: exIdx, nombre: ex.exerciseName, etiqueta: etiquetas[exIdx] } })}
                                   />
                                 </div>
                                 <div className="mt-2 space-y-2">
@@ -928,31 +1038,6 @@ export const RoutinesAndExercises = () => {
                         })()
                       )}
                     </div>
-                    {bancoAbierto && (
-                    <div className="min-w-0 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto rounded-2xl border border-blue-200 bg-blue-50/40 p-3 space-y-1.5">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-[11px] font-black uppercase tracking-wider text-blue-700 flex items-center gap-1.5">
-                          <Dumbbell className="w-3.5 h-3.5" /> Banco de ejercicios ({allExercises.length}) · toca para agregar
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPropioParaDia(dIdx);
-                            setIsNewExerciseOpen(true);
-                          }}
-                          className="px-3 py-1.5 rounded-xl border border-blue-300 bg-white text-blue-700 text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-blue-50"
-                        >
-                          <Plus className="w-3.5 h-3.5" /> Ejercicio propio
-                        </button>
-                      </div>
-                      <ExercisePicker
-                        exercises={allExercises}
-                        onPick={(ex) => handleAddExerciseToDay(dIdx, ex)}
-                        picked={(day.exercises || []).map((e) => e.exerciseId)}
-                        alto="max-h-[calc(100vh-14rem)]"
-                      />
-                    </div>
-                    )}
                     </div>
                   </div>
                 ))}
@@ -965,8 +1050,10 @@ export const RoutinesAndExercises = () => {
                 type="button"
                 onClick={() => {
                   const t = editando?.modo === "alumno" ? "asignadas" : "routines";
-                  if (editando) limpiarCreador();
-                  setActiveSubTab(t);
+                  salirDelCreador(() => {
+                    limpiarCreador();
+                    setActiveSubTab(t);
+                  });
                 }}
                 className="px-3.5 py-1.5 text-gray-500 hover:text-slate-800 text-xs font-semibold cursor-pointer"
               >

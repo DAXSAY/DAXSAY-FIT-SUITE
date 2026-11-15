@@ -1,6 +1,7 @@
 // Ejercicios terapéuticos de la sesión (fisioterapia)
 // Cada ejercicio con su imagen: del banco de ejercicios (animación), subida desde la PC/celular
 // o pegando un enlace. La imagen se puede copiar (enlace) o descargar. El alumno lo ve en su portal.
+import { BancoFlotante } from "../routines/BancoFlotante";
 import React, { useMemo, useRef, useState } from "react";
 import { Check, Copy, Download, Dumbbell, ImagePlus, Link2, Plus, Trash2, Upload, X } from "lucide-react";
 import { ExercisePicker, useExerciseBank, MUSCLE_LABELS } from "../routines/ExerciseBank";
@@ -105,7 +106,7 @@ export const ExercisePrescriptionCard = ({
   );
   const [cambiarImagenDe, setCambiarImagenDe] = useState(null);
   const [formPropio, setFormPropio] = useState(false);
-  const [bancoAbierto, setBancoAbierto] = useState(true);
+  const [bancoDestino, setBancoDestino] = useState(null);
 
   const actualizar = (i, campo, valor) => {
     if (readOnly) return;
@@ -137,6 +138,7 @@ export const ExercisePrescriptionCard = ({
     if (cambiarImagenDe != null) {
       actualizar(cambiarImagenDe, "imageUrl", ex.gifUrl || ex.thumbnailUrl || "");
       setCambiarImagenDe(null);
+      setBancoDestino(null);
       return;
     }
     onChange([
@@ -190,7 +192,7 @@ export const ExercisePrescriptionCard = ({
       </div>
 
       {/* Pantalla partida: a la izquierda lo elegido, a la derecha el banco */}
-      <div className={readOnly || !bancoAbierto ? "" : "grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"}>
+      <div>
       <div className="space-y-3 min-w-0">
       {!readOnly && (
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -198,8 +200,8 @@ export const ExercisePrescriptionCard = ({
             Ejercicios elegidos <span className="ml-1 px-1.5 rounded-md bg-blue-100 text-blue-800">{exercises.length}</span>
           </p>
           <div className="flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => setBancoAbierto((v) => !v)} className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${bancoAbierto ? "bg-white border-slate-300 text-slate-700" : "bg-blue-600 border-blue-600 text-white"}`}>
-              {bancoAbierto ? "Ocultar banco" : "Abrir banco"}
+            <button type="button" onClick={() => setBancoDestino({ dia: 0 })} className="px-3 py-1.5 rounded-xl border border-blue-600 bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-blue-500">
+              <Plus className="w-3.5 h-3.5" /> Agregar ejercicios
             </button>
             <button type="button" onClick={() => onChange([...exercises, nuevo()])} className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold cursor-pointer hover:bg-slate-50" title="Agregar una fila vacía para escribir el ejercicio">
               + Fila rápida
@@ -230,7 +232,7 @@ export const ExercisePrescriptionCard = ({
                   )}
                 </div>
                 {!readOnly && (
-                  <button type="button" onClick={() => setCambiarImagenDe(i)} className="w-20 text-[10px] font-semibold text-blue-700 hover:underline cursor-pointer leading-tight">
+                  <button type="button" onClick={() => { setCambiarImagenDe(i); setBancoDestino({ dia: 0 }); }} className="w-20 text-[10px] font-semibold text-blue-700 hover:underline cursor-pointer leading-tight">
                     Cambiar imagen
                   </button>
                 )}
@@ -264,12 +266,7 @@ export const ExercisePrescriptionCard = ({
                     .map((x, k) => ({ i: k, nombre: x.name || "Ejercicio", enGrupo: !!ex.metodo?.grupo && x.metodo?.grupo === ex.metodo.grupo }))
                     .filter((x) => x.i !== i)}
                   onCompanero={(k) => !readOnly && onChange(alternarCompanero(exercises, i, k))}
-                  renderBanco={readOnly ? undefined : (onPick) => <ExercisePicker exercises={banco} onPick={onPick} picked={exercises.map((e) => e.bankId).filter(Boolean)} alto="max-h-[420px]" />}
-                  onAgregarCompanero={(ex) => {
-                    const lista = [...exercises];
-                    lista.splice(i + 1, 0, nuevo({ name: ex.name, imageUrl: ex.gifUrl || ex.thumbnailUrl || "", targetZone: MUSCLE_LABELS[ex.muscleGroup] || ex.muscleGroup || "", bankId: ex.id }));
-                    onChange(alternarCompanero(lista, i, i + 1));
-                  }}
+                  onElegirDelBanco={readOnly ? undefined : () => setBancoDestino({ dia: 0, combinarCon: { idx: i, nombre: ex.name || "Ejercicio", etiqueta: etiquetas[i] } })}
                 />
                 <details className="rounded-lg border border-slate-200 bg-slate-50/60 group">
                   <summary className="px-2.5 py-1.5 text-[11px] font-bold text-slate-600 cursor-pointer select-none">
@@ -324,19 +321,25 @@ export const ExercisePrescriptionCard = ({
       )}
       </div>
 
-      {!readOnly && bancoAbierto && (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
-          <p className="text-[11px] font-black uppercase tracking-wider text-blue-700 mb-1.5 flex items-center gap-1.5">
-            <Dumbbell className="w-3.5 h-3.5" /> Banco de ejercicios ({banco.length}) · toca uno para agregarlo a la izquierda
-          </p>
-          {cambiarImagenDe != null && (
-            <p className="text-xs font-semibold text-blue-800 mb-2 rounded-lg bg-white border border-blue-200 px-2 py-1.5">
-              Elige la imagen para «{exercises[cambiarImagenDe]?.name || "ejercicio"}»
-              <button type="button" onClick={() => setCambiarImagenDe(null)} className="ml-2 underline cursor-pointer">cancelar</button>
-            </p>
-          )}
-          <ExercisePicker exercises={banco} onPick={agregarDelBanco} picked={exercises.map((e) => e.bankId).filter(Boolean)} />
-        </div>
+      {!readOnly && (
+        <BancoFlotante
+          exercises={banco}
+          destino={bancoDestino}
+          setDestino={setBancoDestino}
+          dias={[{ nombre: "Plan", tipo: "", ids: exercises.map((e) => e.bankId).filter(Boolean) }]}
+          aviso={cambiarImagenDe != null ? `Elige la imagen para «${exercises[cambiarImagenDe]?.name || "ejercicio"}». Se reemplaza al tocarla.` : ""}
+          onCerrar={() => setCambiarImagenDe(null)}
+          onAgregar={(_, ex) => agregarDelBanco(ex)}
+          onCombinar={(_, idx, ex) => {
+            const lista = [...exercises];
+            lista.splice(idx + 1, 0, nuevo({ name: ex.name, imageUrl: ex.gifUrl || ex.thumbnailUrl || "", targetZone: MUSCLE_LABELS[ex.muscleGroup] || ex.muscleGroup || "", bankId: ex.id }));
+            onChange(alternarCompanero(lista, idx, idx + 1));
+          }}
+          onPropio={() => {
+            setBancoDestino(null);
+            setFormPropio(true);
+          }}
+        />
       )}
       </div>
 

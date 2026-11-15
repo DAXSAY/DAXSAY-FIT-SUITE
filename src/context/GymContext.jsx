@@ -136,6 +136,8 @@ export const GymProvider = ({ children }) => {
   const [payrollEntries, setPayrollEntries, cargarPlanilla, reiniciarPlanilla] = useColeccion("planilla");
   // Solicitudes de permiso del personal (quién pide, quién aprueba)
   const [permisos, setPermisos, cargarPermisos, reiniciarPermisos] = useColeccion("permisos");
+  const [agendaEspecialistas, setAgendaEspecialistas, cargarAgenda, reiniciarAgenda] = useColeccion("agenda_especialistas");
+  const [programados, setProgramados, cargarProgramados, reiniciarProgramados] = useColeccion("programados");
 
   // Rutina asignada a cada alumno: { idAlumno: idRutina }
   const routineAssignments = useMemo(
@@ -168,6 +170,8 @@ export const GymProvider = ({ children }) => {
     citas: [cargarCitas, reiniciarCitas, STORAGE_KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS],
     planilla: [cargarPlanilla, reiniciarPlanilla, STORAGE_KEYS.PAYROLL_ENTRIES, INITIAL_PAYROLL_ENTRIES],
     permisos: [cargarPermisos, reiniciarPermisos, "radicalgym_permisos", []],
+    agenda_especialistas: [cargarAgenda, reiniciarAgenda, "radicalgym_agenda_especialistas", []],
+    programados: [cargarProgramados, reiniciarProgramados, "radicalgym_programados", []],
   };
   // Setters para la migración desde el navegador
   const SETTERS = {
@@ -186,6 +190,8 @@ export const GymProvider = ({ children }) => {
     citas: setAppointments,
     planilla: setPayrollEntries,
     permisos: setPermisos,
+    agenda_especialistas: setAgendaEspecialistas,
+    programados: setProgramados,
   };
 
   // =================================================================
@@ -1586,6 +1592,33 @@ export const GymProvider = ({ children }) => {
         addProfesionalExterno,
         permisos,
         misContratos,
+        agendaEspecialistas,
+        // Horario de un servicio ("fisioterapia" | "nutricion") para una fecha
+        guardarAgenda: (reg) => setAgendaEspecialistas((prev) => (prev.some((x) => x.id === reg.id) ? prev.map((x) => (x.id === reg.id ? reg : x)) : [...prev, reg])),
+        programados,
+        // Alumno "por programar": rutina, nutrición o fisioterapia (aviso al área)
+        programarAlumno: (tipo, m, nota = "") => {
+          const id = `prog-${tipo}-${m.id}`;
+          const reg = {
+            id,
+            tipo,
+            memberId: String(m.id),
+            memberName: m.fullName,
+            codigo: m.codeLabel || "",
+            telefono: m.phone || "",
+            nota,
+            estado: "pendiente",
+            fecha: new Date().toLocaleString("sv-SE", { timeZone: "America/Lima" }),
+            por: currentUser?.fullName || "",
+            porRol: currentUser?.role || "",
+          };
+          setProgramados((prev) => [reg, ...prev.filter((x) => x.id !== id)]);
+          return reg;
+        },
+        resolverProgramado: (id) =>
+          setProgramados((prev) =>
+            prev.map((x) => (x.id === id ? { ...x, estado: "atendido", atendidoEn: new Date().toLocaleString("sv-SE", { timeZone: "America/Lima" }), atendidoPor: currentUser?.fullName || "" } : x)),
+          ),
         guardarPermiso: (p) => setPermisos((prev) => (prev.some((x) => x.id === p.id) ? prev.map((x) => (x.id === p.id ? p : x)) : [p, ...prev])),
         physioRecords,
         physioTemplates,

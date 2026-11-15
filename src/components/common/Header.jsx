@@ -1,3 +1,4 @@
+import { SeccionProgramados, usePendientes } from "./Programados";
 import React, { useEffect, useState } from "react";
 import {
   CreditCard,
@@ -97,8 +98,9 @@ export const Header = ({
   const alertasAdmin = useAlertasAdmin(esAdmin, 10);
   const nuevasAdmin = alertasAdmin.alertas.filter((a) => !a.seen);
   const avisosRol = useAvisos();
+  const pendientesProg = usePendientes({ todos: true });
   const totalUrgentAlerts =
-    renewalAlerts.length + lowStockProducts.length + (esAdmin ? alertasAdmin.pendientes : 0) + avisosRol.avisos.length;
+    renewalAlerts.length + lowStockProducts.length + (esAdmin ? alertasAdmin.pendientes : 0) + avisosRol.avisos.length + pendientesProg.length;
 
   // Quién coincide con lo escrito (código exacto: "2" = alumno 2, 2-COACH, 2-EXT…)
   const candidatosCheckIn = React.useMemo(
@@ -463,6 +465,7 @@ export const Header = ({
               />
               <div className="flex-1 overflow-y-auto p-3 space-y-3 text-slate-800">
                 <SeccionAvisos {...avisosRol} setActiveTab={(tab) => { setActiveTab(tab); setShowNotifications(false); }} />
+                <SeccionProgramados todos />
 
                 {esAdmin && nuevasAdmin.length > 0 && (
                   <div className="mb-3 space-y-2">

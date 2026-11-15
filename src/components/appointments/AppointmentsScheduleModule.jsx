@@ -21,6 +21,7 @@ const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 
 import { SelectorAlumno, coincideAlumno } from "../common/BuscarAlumno";
+import { AgendaEspecialistas, useHorasAtencion, FRANJAS } from "./AgendaEspecialistas";
 const HOURS = [
   "07:00 AM",
   "08:00 AM",
@@ -74,6 +75,17 @@ export const AppointmentsScheduleModule = () => {
     staffDirectory,
     currentUser,
   } = useGym();
+  const horasAtencion = useHorasAtencion();
+  // ¿El especialista atiende a esa hora? null = día sin configurar (se permite todo)
+  const atiende = (srv, fecha, hora) => {
+    const lista = (srv === "all" || !srv ? ["physiotherapy", "nutrition"] : [srv]).map((x) => horasAtencion(x, fecha));
+    if (lista.some((l) => l === null)) return true;
+    return lista.some((l) => l.includes(hora));
+  };
+  const horasDelDia = (srv, fecha) => {
+    const l = horasAtencion(srv, fecha);
+    return l === null ? HOURS : [...l].sort((a, b) => FRANJAS.indexOf(a) - FRANJAS.indexOf(b));
+  };
 
   // Mode: Staff/Specialist Schedule vs Member/User Portal View
   const [viewMode, setViewMode] = useState("admin_calendar");
@@ -434,6 +446,14 @@ export const AppointmentsScheduleModule = () => {
 
           {/* Action buttons & View Switcher */}
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setViewMode(viewMode === "horario" ? "admin_calendar" : "horario")}
+              className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm shadow-md transition-all cursor-pointer ${viewMode === "horario" ? "bg-amber-500 text-white" : "bg-slate-800 hover:bg-slate-700 text-white border border-slate-600"}`}
+            >
+              <Clock className="w-4 h-4" />
+              <span>{viewMode === "horario" ? "Volver a la agenda" : "Horario de atención"}</span>
+            </button>
             {/* La reserva del alumno se hace desde su propio portal (Mis citas) */}
             <button
               onClick={() => {
@@ -531,6 +551,8 @@ export const AppointmentsScheduleModule = () => {
           </button>
         </div>
       )}
+
+      {viewMode === "horario" && <AgendaEspecialistas />}
 
       {/* ----------------- VIEW 1: GOOGLE CALENDAR STYLE SCHEDULE ----------------- */}
       {viewMode === "admin_calendar" && (
@@ -707,6 +729,20 @@ export const AppointmentsScheduleModule = () => {
                           cellApts.length === 0 ||
                           (hasFalta &&
                             cellApts.every((a) => a.status === "falta"));
+
+                        const srvCal = serviceFilter !== "all" ? serviceFilter : currentUser?.role === "physio" ? "physiotherapy" : currentUser?.role === "nutritionist" ? "nutrition" : "all";
+                        if (cellApts.length === 0 && !atiende(srvCal, day.date, hour)) {
+                          return (
+                            <div
+                              key={`${day.key}-${hour}`}
+                              title="El especialista no atiende a esta hora"
+                              className="p-1 border-r border-slate-100 last:border-r-0 select-none flex items-center justify-center text-[11px] font-semibold text-slate-400"
+                              style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(148,163,184,.12) 0 6px, transparent 6px 12px)" }}
+                            >
+                              No atiende
+                            </div>
+                          );
+                        }
 
                         // Filter condition
                         if (onlyAvailableFilter && !isSlotFree) {
@@ -1237,7 +1273,10 @@ export const AppointmentsScheduleModule = () => {
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {HOURS.map((hour) => {
+                {horasDelDia(portalSelectedService, portalSelectedDate).length === 0 && (
+                  <p className="col-span-full text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-2.5">Ese día no hay atención. Elige otra fecha.</p>
+                )}
+                {horasDelDia(portalSelectedService, portalSelectedDate).map((hour) => {
                   const apts = getAppointmentsForCell(portalSelectedDate, hour);
                   const isTaken =
                     apts.length > 0 && apts.some((a) => a.status !== "falta");
@@ -1408,8 +1447,13 @@ export const AppointmentsScheduleModule = () => {
                     </div>
                     <span className="text-sm text-slate-500 pb-3 capitalize">{fechaLarga(formDate)}</span>
                   </div>
+                  {formService && horasDelDia(formService, formDate).length === 0 && (
+                    <div className="mb-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
+                      Ese día el especialista no atiende. Elija otra fecha.
+                    </div>
+                  )}
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {HOURS.map((h) => {
+                    {(formService ? horasDelDia(formService, formDate) : HOURS).map((h) => {
                       const ocupadas = appointments.filter(
                         (a) =>
                           a.date === formDate &&
@@ -1517,7 +1561,7 @@ export const AppointmentsScheduleModule = () => {
                 </div>
                 <button
                   type="submit"
-                  disabled={!!detectedFormConflict || !formService}
+                  disabled={!!detectedFormConflict || !formService || !horasDelDia(formService, formDate).includes(formSlot)}
                   className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-extrabold shadow-md cursor-pointer flex items-center justify-center gap-2"
                 >
                   <CheckCircle2 className="w-5 h-5" /> Confirmar cita

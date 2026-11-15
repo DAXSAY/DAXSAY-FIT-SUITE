@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Utensils, Activity, Sparkles } from "lucide-react";
+import { Utensils, Activity, Sparkles, Users, CalendarDays } from "lucide-react";
+import { SeguimientoServicio, useCobertura } from "../common/Programados";
+import { AgendaEspecialistas } from "../appointments/AgendaEspecialistas";
 import { NutritionModule } from "../nutrition/NutritionModule";
 import { MeasurementsModule } from "../measurements/MeasurementsModule";
 import { useGym } from "../../context/GymContext";
@@ -9,6 +11,8 @@ export const NutritionMeasurementsModule = () => {
   const { nutritionPlans, bodyAssessments, members } = useGym();
 
   const totalDietPlans = nutritionPlans.length;
+  const conPlan = useCobertura().nutricion;
+  const sinPlan = members.filter((m) => !conPlan.has(String(m.id))).length;
   const totalAssessments = bodyAssessments.length;
   const evaluatedStudentsCount = new Set(bodyAssessments.map((a) => a.memberId))
     .size;
@@ -91,6 +95,33 @@ export const NutritionMeasurementsModule = () => {
               {totalAssessments}
             </span>
           </button>
+
+          <button
+            onClick={() => setSubTab("seguimiento")}
+            className={`flex items-center space-x-2.5 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all shadow-sm cursor-pointer ${
+              subTab === "seguimiento"
+                ? "bg-violet-600 text-white shadow-violet-900/30"
+                : "bg-slate-800/90 text-slate-300 hover:bg-slate-750 hover:text-white border border-slate-700/50"
+            }`}
+          >
+            <Users className="w-4 h-4 text-violet-300" />
+            <span>Seguimiento: con y sin plan</span>
+            <span className="ml-1.5 px-2 py-0.5 text-xs font-bold rounded-full bg-violet-950 text-violet-300 border border-violet-700/50">
+              {sinPlan} sin plan
+            </span>
+          </button>
+
+          <button
+            onClick={() => setSubTab("agenda")}
+            className={`flex items-center space-x-2.5 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all shadow-sm cursor-pointer ${
+              subTab === "agenda"
+                ? "bg-amber-600 text-white shadow-amber-900/30"
+                : "bg-slate-800/90 text-slate-300 hover:bg-slate-750 hover:text-white border border-slate-700/50"
+            }`}
+          >
+            <CalendarDays className="w-4 h-4 text-amber-300" />
+            <span>Horario de atención</span>
+          </button>
         </div>
       </div>
 
@@ -101,6 +132,9 @@ export const NutritionMeasurementsModule = () => {
             <NutritionModule />
           </div>
         )}
+
+        {subTab === "seguimiento" && <SeguimientoServicio tipo="nutricion" />}
+        {subTab === "agenda" && <AgendaEspecialistas servicioInicial="nutricion" />}
 
         {subTab === "measurements_bio" && (
           <div>

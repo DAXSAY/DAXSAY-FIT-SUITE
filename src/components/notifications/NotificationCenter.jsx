@@ -16,6 +16,8 @@ import {
   Check,
   RefreshCw,
   MessageCircle,
+  Snowflake,
+  CalendarClock,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { TelWhatsApp } from "../common/TelWhatsApp";
@@ -26,6 +28,7 @@ import { hoyISO } from "../../utils/fecha";
 import { PanelAlertasAdmin } from "../alerts/AlertasAdmin";
 import { MensajesCategorias } from "./MensajesCategorias";
 import { TodasLasAlertas } from "./TodasLasAlertas";
+import { ProgramadosCompleto, usePendientes } from "../common/Programados";
 
 // Color y emoji de cada tipo de regla
 const ESTILOS_REGLA = {
@@ -76,6 +79,7 @@ export const NotificationCenter = () => {
   } = useGym();
 
   const [activeTab, setActiveTab] = useState("todas");
+  const pendientesProg = usePendientes({ todos: true });
   const [verCongelados, setVerCongelados] = useState(false);
   // Las reglas automáticas solo las configura quien puede editar avisos (admin)
   const puedeEditarReglas = userCan(currentUser, "alerts", "editar");
@@ -381,8 +385,87 @@ export const NotificationCenter = () => {
         </div>
       </div>
 
-      {currentUser?.role === "admin" && <PanelAlertasAdmin />}
-      {congelados.length > 0 && (
+      {/* Tabs Navigation */}
+      <div className="flex items-center gap-1.5 bg-white border border-slate-200 p-1.5 rounded-2xl overflow-x-auto shadow-sm">
+        <button
+          onClick={() => setActiveTab("todas")}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === "todas"
+              ? "bg-gradient-to-r from-rose-600 to-orange-500 text-white shadow-md [&_svg]:text-white"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          }`}
+        >
+          <BellRing className="w-3.5 h-3.5 text-rose-600" />
+          <span>Todas las alertas</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("programados")}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === "programados"
+              ? "bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-md [&_svg]:text-white"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          }`}
+        >
+          <CalendarClock className="w-3.5 h-3.5 text-violet-600" />
+          <span>Programados</span>
+          {pendientesProg.length > 0 && <span className="px-1.5 rounded-full bg-violet-100 text-violet-800 text-[10px] font-black">{pendientesProg.length}</span>}
+        </button>
+
+        <button
+          onClick={() => setActiveTab("congelados")}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === "congelados"
+              ? "bg-gradient-to-r from-sky-600 to-cyan-500 text-white shadow-md [&_svg]:text-white"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          }`}
+        >
+          <Snowflake className="w-3.5 h-3.5 text-sky-600" />
+          <span>Congelados</span>
+          {congelados.length > 0 && <span className="px-1.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-black">{congelados.length}</span>}
+        </button>
+
+        <button
+          onClick={() => setActiveTab("mensajes")}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === "mensajes"
+              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md [&_svg]:text-white"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          }`}
+        >
+          <MessageCircle className="w-3.5 h-3.5 text-green-600" />
+          <span>Mensajes por categoría</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("campaigns")}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === "campaigns"
+              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md [&_svg]:text-white"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          }`}
+        >
+          <Send className="w-3.5 h-3.5 text-purple-600" />
+          <span>Promociones</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("logs")}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === "logs"
+              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md [&_svg]:text-white"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5 text-slate-600" />
+          <span>Historial de envíos ({notificationLogs.length})</span>
+        </button>
+      </div>
+
+      {activeTab === "congelados" && (
+        congelados.length === 0 ? (
+          <p className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-sm text-slate-500">❄️ No hay congelamientos en curso ni programados.</p>
+        ) : (
         <div className="bg-sky-50 border border-sky-200 p-4 rounded-2xl">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
             <p className="text-xs font-black uppercase tracking-wider text-sky-800 flex items-center gap-2">
@@ -423,72 +506,11 @@ export const NotificationCenter = () => {
             })}
           </div>
         </div>
-      )}
-      {/* Tabs Navigation */}
-      <div className="flex items-center gap-1.5 bg-white border border-slate-200 p-1.5 rounded-2xl overflow-x-auto shadow-sm">
-        <button
-          onClick={() => setActiveTab("todas")}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
-            activeTab === "todas"
-              ? "bg-gradient-to-r from-rose-600 to-orange-500 text-white shadow-md [&_svg]:text-white"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <BellRing className="w-3.5 h-3.5 text-rose-600" />
-          <span>Todas las alertas</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("mensajes")}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
-            activeTab === "mensajes"
-              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md [&_svg]:text-white"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <MessageCircle className="w-3.5 h-3.5 text-green-600" />
-          <span>Mensajes por categoría</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("classes")}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
-            activeTab === "classes"
-              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md [&_svg]:text-white"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Avisos de clases ({classes.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("campaigns")}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
-            activeTab === "campaigns"
-              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md [&_svg]:text-white"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <Send className="w-3.5 h-3.5 text-purple-600" />
-          <span>Promociones</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("logs")}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shrink-0 ${
-            activeTab === "logs"
-              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md [&_svg]:text-white"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <Clock className="w-3.5 h-3.5 text-slate-600" />
-          <span>Historial de envíos ({notificationLogs.length})</span>
-        </button>
-      </div>
-
+      ))}
+      {activeTab === "todas" && currentUser?.role === "admin" && <PanelAlertasAdmin />}
       {/* TAB 1: AUTOMATIC NOTIFICATION RULES CONFIGURATION (ADMIN) */}
       {activeTab === "todas" && <TodasLasAlertas />}
+      {activeTab === "programados" && <ProgramadosCompleto />}
       {activeTab === "mensajes" && <MensajesCategorias />}
 
       {activeTab === "rules" && (
@@ -760,91 +782,6 @@ export const NotificationCenter = () => {
       )}
 
       {/* TAB 3: CLASS NOTICES & BROADCASTS */}
-      {activeTab === "classes" && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-gray-200 shadow-xs">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-emerald-600" />
-                <span>Horarios de Clases Grupales & Avisos a Alumnos</span>
-              </h2>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Envía recordatorios automáticos de clases, cambios de sala o
-                anuncios especiales a los alumnos.
-              </p>
-            </div>
-
-            <button
-              onClick={() => setIsNewClassModalOpen(true)}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Añadir Clase / Aviso</span>
-            </button>
-          </div>
-
-          {/* Classes Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {classes.map((cls) => (
-              <div
-                key={cls.id}
-                className="bg-white border border-gray-200 hover:border-gray-300 rounded-xl p-4 shadow-xs flex flex-col justify-between transition-all"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
-                      {cls.room}
-                    </span>
-                    <span className="text-xs text-gray-500 font-mono">
-                      Inscritos: {cls.registeredCount}/{cls.capacity}
-                    </span>
-                  </div>
-
-                  <h3 className="text-sm font-bold text-slate-900 mb-0.5">
-                    {cls.name}
-                  </h3>
-                  <p className="text-xs text-blue-700 font-semibold mb-2">
-                    Coach: {cls.instructorName}
-                  </p>
-
-                  <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100 text-xs space-y-1">
-                    <div className="flex items-center gap-1.5 text-slate-700">
-                      <Clock className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{cls.schedule}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-700">
-                      <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                      <span>Fecha: {cls.date}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-3.5 pt-2.5 border-t border-gray-100 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => handleBroadcastClassNotice(cls)}
-                    className="flex-1 py-1.5 px-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Notificar Alumnos</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      if (confirm(`¿Eliminar aviso de clase "${cls.name}"?`)) {
-                        deleteClassNotice(cls.id);
-                      }
-                    }}
-                    className="p-1.5 text-gray-400 hover:text-rose-600 rounded cursor-pointer"
-                    title="Eliminar clase"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* TAB 4: SPECIAL PROMOTIONS CAMPAIGN BUILDER */}
       {activeTab === "campaigns" && (
@@ -1272,117 +1209,6 @@ export const NotificationCenter = () => {
         </div>
       )}
 
-      {/* New Class Notice Modal */}
-      {isNewClassModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
-          <div className="w-full max-w-3xl mx-auto min-h-full sm:px-8 sm:py-8 bg-white p-5 text-slate-800">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-              <h3 className="text-sm font-bold text-slate-900">
-                Añadir Clase / Aviso Especial
-              </h3>
-              <button
-                onClick={() => setIsNewClassModalOpen(false)}
-                className="text-gray-400 hover:text-gray-700 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleCreateClass}
-              className="space-y-3 my-3 text-xs"
-            >
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Nombre de la Clase *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. HIIT Funcional Nocturno"
-                  value={newClassName}
-                  onChange={(e) => setNewClassName(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Instructor / Coach *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. Carlos Vega"
-                  value={newClassInstructor}
-                  onChange={(e) => setNewClassInstructor(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Horario & Días *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. Martes y Jueves 19:00 - 20:00"
-                  value={newClassSchedule}
-                  onChange={(e) => setNewClassSchedule(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">
-                    Sala / Espacio
-                  </label>
-                  <input
-                    type="text"
-                    value={newClassRoom}
-                    onChange={(e) => setNewClassRoom(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">
-                    Capacidad Máxima
-                  </label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="100"
-                    value={newClassCapacity}
-                    onChange={(e) =>
-                      setNewClassCapacity(Number(e.target.value))
-                    }
-                    className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setIsNewClassModalOpen(false)}
-                  className="px-3 py-1.5 text-gray-500 hover:text-slate-800 cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-md shadow-xs cursor-pointer"
-                >
-                  Guardar Clase
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* View Full Log Message Modal */}
       {viewingLogMessage && (

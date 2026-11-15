@@ -1,7 +1,7 @@
 // Pestaña "Todas": todas las alertas importantes en orden de prioridad,
 // separadas en Clientes (membresías y deudas) y Productos (stock).
 import React, { useMemo, useState } from "react";
-import { AlertTriangle, Users, Package, MessageCircle, Search } from "lucide-react";
+import { AlertTriangle, Users, Package, MessageCircle, Search, BellRing, Siren } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { enlaceWhatsApp } from "../common/TelWhatsApp";
 import { hoyISO } from "../../utils/fecha";
@@ -88,17 +88,48 @@ export const TodasLasAlertas = () => {
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          ["Alertas en total", clientes.length + productos.length, "text-slate-900", "border-slate-200"],
-          ["Urgentes", urgentes, "text-rose-700", "border-rose-200"],
-          ["De clientes", clientes.length, "text-blue-700", "border-blue-200"],
-          ["De productos", productos.length, "text-orange-700", "border-orange-200"],
-        ].map(([t, v, c, b]) => (
-          <div key={t} className={`rounded-2xl border ${b} bg-white px-4 py-3`}>
-            <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500">{t}</span>
-            <span className={`block text-2xl font-black ${c}`}>{v}</span>
-          </div>
-        ))}
+          [BellRing, "Alertas en total", clientes.length + productos.length, "Todo lo que hay por atender", "#0ea5b7", "from-cyan-500 to-teal-600", clientes.length + productos.length],
+          [Siren, "Urgentes", urgentes, "Vencidos y productos agotados", "#e11d48", "from-rose-500 to-red-600", clientes.length + productos.length],
+          [Users, "Clientes por atender", clientes.length, "Membresías por vencer, vencidas y deudas", "#2563eb", "from-blue-500 to-indigo-600", clientes.length + productos.length],
+          [Package, "Productos por reponer", productos.length, "Stock bajo el mínimo o agotado", "#ea580c", "from-orange-500 to-amber-500", clientes.length + productos.length],
+        ].map(([Icono, t, v, d, color, grad, total]) => {
+          const pct = total ? Math.round((v / total) * 100) : 0;
+          return (
+            <div key={t} className="rd-levanta relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 flex items-center gap-3">
+              <span className={`relative w-14 h-14 shrink-0 rounded-2xl bg-gradient-to-br ${grad} text-white flex items-center justify-center shadow-lg ${t === "Urgentes" && v > 0 ? "animate-pulse" : ""}`}>
+                <Icono className="w-7 h-7" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500">{t}</span>
+                <span className="block text-3xl font-black leading-none mt-0.5" style={{ color }}>{v}</span>
+                <span className="block text-[11px] text-slate-500 truncate mt-0.5" title={d}>{d}</span>
+              </span>
+              <svg viewBox="0 0 36 36" className="w-11 h-11 shrink-0 -rotate-90" aria-hidden>
+                <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="4" className="text-slate-100" />
+                <circle cx="18" cy="18" r="15" fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(pct / 100) * 94.2} 94.2`} />
+              </svg>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Barra por prioridad */}
+      {clientes.length + productos.length > 0 && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-3">
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1.5">
+            <span>Por prioridad</span>
+            <span>
+              🔴 {cuenta([...clientes, ...productos], "critica")} urgentes · 🟠 {cuenta([...clientes, ...productos], "alta")} altas · 🟡 {cuenta([...clientes, ...productos], "media")} medias
+            </span>
+          </div>
+          <div className="flex h-3 rounded-full overflow-hidden bg-slate-100">
+            {[["critica", "bg-rose-500"], ["alta", "bg-orange-500"], ["media", "bg-amber-400"]].map(([p, c]) => {
+              const n = cuenta([...clientes, ...productos], p);
+              return n ? <div key={p} className={c} style={{ width: `${(n / (clientes.length + productos.length)) * 100}%` }} title={`${n} ${PRIORIDAD[p].etiqueta}`} /> : null;
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="relative max-w-md">
         <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />

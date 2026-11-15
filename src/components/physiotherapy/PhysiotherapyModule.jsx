@@ -1,3 +1,6 @@
+import { SeguimientoServicio } from "../common/Programados";
+import { AgendaEspecialistas } from "../appointments/AgendaEspecialistas";
+import { UsersRound, CalendarDays } from "lucide-react";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   HeartPulse,
@@ -1323,9 +1326,39 @@ export const PhysiotherapyModule = () => {
             {physioRecords.length} Registros
           </span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMainView("seguimiento")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap ${
+            activeMainView === "seguimiento"
+              ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-400"
+              : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <UsersRound className="w-4 h-4 text-violet-500" />
+          <span>Seguimiento: evaluados y sin evaluar</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMainView("agenda")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap ${
+            activeMainView === "agenda"
+              ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-400"
+              : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <CalendarDays className="w-4 h-4 text-amber-500" />
+          <span>Horario de atención</span>
+        </button>
       </div>
 
-      {activeMainView === "textual" ? (
+      {activeMainView === "seguimiento" ? (
+        <SeguimientoServicio tipo="fisioterapia" />
+      ) : activeMainView === "agenda" ? (
+        <AgendaEspecialistas servicioInicial="fisioterapia" />
+      ) : activeMainView === "textual" ? (
         <PhysioTextualRecordsView
           records={physioRecords}
           members={members}

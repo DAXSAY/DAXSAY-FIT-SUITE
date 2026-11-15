@@ -8,6 +8,7 @@ import { Bell, KeyRound, X, MessageCircle } from "lucide-react";
 import { api } from "../../api/cliente";
 import { useGym } from "../../context/GymContext";
 import { enlaceWhatsApp } from "./TelWhatsApp";
+import { SeccionProgramados, usePendientes } from "./Programados";
 
 const claveOcultos = (id) => `radical_avisos_ocultos_${id || "x"}`;
 const leerOcultos = (id) => {
@@ -206,6 +207,8 @@ export function CampanaAvisos({ setActiveTab }) {
   const { avisos, cargar, ocultar } = useAvisos();
   const { ejecutar, hecho, cerrarHecho } = useAccionAviso(setActiveTab, cargar);
   const [abierto, setAbierto] = useState(false);
+  const pendientes = usePendientes();
+  const total = avisos.length + pendientes.length;
 
   return (
     <div className="relative">
@@ -215,9 +218,9 @@ export function CampanaAvisos({ setActiveTab }) {
         title="Avisos"
       >
         <Bell className="w-4 h-4" />
-        {avisos.length > 0 && (
+        {total > 0 && (
           <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-red-600 text-white text-xs font-extrabold flex items-center justify-center animate-pulse">
-            {avisos.length}
+            {total}
           </span>
         )}
       </button>
@@ -225,15 +228,17 @@ export function CampanaAvisos({ setActiveTab }) {
         <CabeceraPanel
           etiqueta="Tus avisos"
           fecha={fechaHoyTexto()}
-          numero={avisos.length}
-          textoNumero={avisos.length === 1 ? "aviso pendiente" : "avisos pendientes"}
+          numero={total}
+          textoNumero={total === 1 ? "aviso pendiente" : "avisos pendientes"}
           brillo="bg-sky-500/30"
           brillo2="bg-violet-600/25"
           colorEtiqueta="text-sky-300"
           onCerrar={() => setAbierto(false)}
         />
         <div className="flex-1 overflow-y-auto p-3 text-slate-800">
+          <SeccionProgramados />
           <ListaAvisos
+            vacio={pendientes.length === 0}
             avisos={avisos}
             onOcultar={ocultar}
             onAccion={(a) => {

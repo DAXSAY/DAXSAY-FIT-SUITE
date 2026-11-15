@@ -644,10 +644,8 @@ export const ConfigEjercicio = ({
   readOnly = false,
   placeholderEsfuerzo = "RIR 1-2",
   familiaInicial = "base",
-  renderBanco, // (onPick) => elemento con el banco de ejercicios
-  onAgregarCompanero, // (ejercicioDelBanco) => agrega y combina
+  onElegirDelBanco, // abre el banco flotante en modo "combinar con este ejercicio"
 }) => {
-  const [verBanco, setVerBanco] = useState(false);
   const metodo = ex.metodo;
   const sis = SISTEMAS[metodo?.tipo || "normal"];
   const [abierto, setAbierto] = useState(false);
@@ -862,21 +860,16 @@ export const ConfigEjercicio = ({
                         ))}
                       </div>
                     )}
-                    {renderBanco && onAgregarCompanero && enGrupo + 1 < maxG && (
-                      <div className="rounded-lg border border-dashed border-slate-300 bg-white">
-                        <button type="button" onClick={() => setVerBanco((v) => !v)} className={`w-full px-2.5 py-1.5 text-left text-xs font-bold cursor-pointer ${c.texto}`}>
-                          {verBanco ? "▾ Ocultar banco" : "＋ Agregar un ejercicio nuevo del banco para combinar (ej. músculo antagonista)"}
-                        </button>
-                        {verBanco && (
-                          <div className="p-2 pt-0">
-                            {renderBanco((ejercicio) => {
-                              onAgregarCompanero(ejercicio);
-                            })}
-                          </div>
-                        )}
-                      </div>
+                    {onElegirDelBanco && enGrupo + 1 < maxG && (
+                      <button
+                        type="button"
+                        onClick={onElegirDelBanco}
+                        className={`w-full px-3 py-2 rounded-lg border border-dashed border-slate-300 bg-white text-left text-xs font-bold cursor-pointer hover:border-slate-400 flex items-center gap-1.5 ${c.texto}`}
+                      >
+                        ＋ Elegir del banco un ejercicio para combinar (ej. músculo antagonista)
+                      </button>
                     )}
-                    {companeros.length === 0 && !renderBanco && <p className="text-xs text-slate-500 italic">Agrega más ejercicios a este día para combinarlos.</p>}
+                    {companeros.length === 0 && !onElegirDelBanco && <p className="text-xs text-slate-500 italic">Agrega más ejercicios a este día para combinarlos.</p>}
                   </div>
                 )}
               </div>

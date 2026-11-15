@@ -53,6 +53,13 @@ function MainAppContent() {
     window.scrollTo({ top: 0 });
   }, []);
 
+  // Cualquier pantalla puede pedir ir a otro apartado (ej. abrir la ficha de un alumno)
+  useEffect(() => {
+    const ir = (e) => e.detail && setActiveTab(e.detail);
+    window.addEventListener("radical:ir-modulo", ir);
+    return () => window.removeEventListener("radical:ir-modulo", ir);
+  }, [setActiveTab]);
+
   useEffect(() => {
     const alVolver = (e) => {
       const st = e.state;
