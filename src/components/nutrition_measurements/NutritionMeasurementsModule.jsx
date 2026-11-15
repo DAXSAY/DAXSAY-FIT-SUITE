@@ -9,7 +9,7 @@ import { MeasurementsModule } from "../measurements/MeasurementsModule";
 import { useGym } from "../../context/GymContext";
 
 export const NutritionMeasurementsModule = () => {
-  const [subTab, setSubTab] = useRecordado("nutricion", "plans");
+  const [subTab, setSubTab] = useRecordado("nutricion", "plans", ["agenda"]);
   const [pedirCrear, setPedirCrear] = useState(0);
   const { nutritionPlans, bodyAssessments, members } = useGym();
 
@@ -48,7 +48,7 @@ export const NutritionMeasurementsModule = () => {
         )}
 
         {subTab === "seguimiento" && <SeguimientoServicio tipo="nutricion" />}
-        {subTab === "agenda" && <AgendaEspecialistas servicioInicial="nutricion" />}
+        {subTab === "agenda" && <AgendaEspecialistas servicioInicial="nutricion" fijo />}
 
         {subTab === "measurements_bio" && (
           <div>

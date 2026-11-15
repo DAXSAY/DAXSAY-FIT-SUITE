@@ -52,7 +52,7 @@ export function useHorasAtencion() {
   };
 }
 
-export function AgendaEspecialistas({ servicioInicial }) {
+export function AgendaEspecialistas({ servicioInicial, fijo = false }) {
   const { currentUser, agendaEspecialistas = [], guardarAgenda } = useGym();
   const rol = currentUser?.role;
   const puedeEditar = (s) => rol === "admin" || SERVICIOS[s]?.rol === rol;
@@ -75,7 +75,7 @@ export function AgendaEspecialistas({ servicioInicial }) {
 
   const editable = puedeEditar(servicio);
   const cambios = horas.join("|") !== guardadas.join("|");
-  const dias = Array.from({ length: 14 }, (_, i) => sumarDias(hoyISO(), semana * 14 + i));
+  const dias = Array.from({ length: 7 }, (_, i) => sumarDias(hoyISO(), semana * 7 + i));
 
   const alternar = (h) => {
     if (!editable) return;
@@ -131,58 +131,48 @@ export function AgendaEspecialistas({ servicioInicial }) {
 
   return (
     <div className="rd-agenda-esp space-y-4">
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm text-slate-800 p-4 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className={`w-10 h-10 rounded-xl flex items-center justify-center ${servicio === "nutricion" ? "bg-amber-500/15 text-amber-500" : "bg-emerald-500/15 text-emerald-500"}`}>
-              <Icono className="w-5 h-5" />
-            </span>
-            <div>
-              <h3 className="text-base font-extrabold text-slate-900">Horario de atención · {S.nombre}</h3>
-              <p className="text-xs opacity-70">
-                {editable
-                  ? "Elige un día y marca las horas en que atiendes. Al confirmar, recepción solo podrá agendar en esas horas."
-                  : "Horas en que el especialista atiende. Solo se puede agendar dentro de ellas."}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-1.5 rounded-xl p-1 bg-slate-100">
-            {Object.entries(SERVICIOS).map(([k, v]) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setServicio(k)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition ${servicio === k ? "bg-blue-600 text-white shadow" : "text-slate-600 hover:text-slate-900"}`}
-              >
-                {v.nombre}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Resumen de las 2 semanas visibles */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm text-slate-800 p-3 sm:p-4">
         {(() => {
           const regs = dias.map((d) => agendaEspecialistas.find((r) => r.id === `${servicio}-${d}`)).filter(Boolean);
-          const horasTot = regs.reduce((a, r) => a + (r.horas?.length || 0), 0);
+          const horasTot = regs.reduce((a2, r) => a2 + (r.horas?.length || 0), 0);
           const diasCon = regs.filter((r) => r.horas?.length).length;
           return (
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {[
-                ["Horas de atención", `${horasTot} h`, "text-emerald-700 bg-emerald-50 border-emerald-200"],
-                ["Días con atención", `${diasCon} de 14`, "text-sky-700 bg-sky-50 border-sky-200"],
-                ["Citas posibles", `${horasTot}`, "text-violet-700 bg-violet-50 border-violet-200"],
-              ].map(([k, v, c]) => (
-                <div key={k} className={`rounded-xl border px-3 py-2 ${c}`}>
-                  <span className="block text-[10px] font-black uppercase tracking-wide opacity-80">{k}</span>
-                  <span className="block text-lg font-black">{v}</span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center ${servicio === "nutricion" ? "bg-amber-500/15 text-amber-500" : "bg-emerald-500/15 text-emerald-500"}`}>
+                  <Icono className="w-4 h-4" />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-extrabold text-slate-900 leading-tight">Horario de atención · {S.nombre}</h3>
+                  <p className="text-[11px] text-slate-500 truncate">
+                    {editable ? "Toca o arrastra sobre las horas y confirma. Recepción solo agenda en ellas." : "Solo se puede agendar dentro de estas horas."}
+                  </p>
                 </div>
-              ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="px-2 py-1 rounded-lg border text-[11px] font-bold text-emerald-700 bg-emerald-50 border-emerald-200">{horasTot} h esta semana</span>
+                <span className="px-2 py-1 rounded-lg border text-[11px] font-bold text-sky-700 bg-sky-50 border-sky-200">{diasCon} de 7 días</span>
+                {!fijo && (
+                  <div className="flex gap-1 rounded-lg p-0.5 bg-slate-100">
+                    {Object.entries(SERVICIOS).map(([k, v]) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setServicio(k)}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer transition ${servicio === k ? "bg-blue-600 text-white shadow" : "text-slate-600 hover:text-slate-900"}`}
+                      >
+                        {v.nombre}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           );
         })()}
 
         {/* Días */}
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-3 flex items-center gap-1.5">
           <button type="button" disabled={semana === 0} onClick={() => setSemana((s) => s - 1)} className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-2.5 py-2 rounded-lg text-xs font-bold disabled:opacity-30 cursor-pointer">‹</button>
           <div className="grid grid-cols-7 gap-1.5 flex-1">
             {dias.map((d) => {
@@ -195,14 +185,14 @@ export function AgendaEspecialistas({ servicioInicial }) {
                   key={d}
                   type="button"
                   onClick={() => setFecha(d)}
-                  className={`rd-dia-agenda rounded-2xl px-1 py-2 text-center border transition cursor-pointer ${sel ? "bg-blue-600 border-blue-500 text-white shadow-lg" : "border-slate-200 bg-white text-slate-700 hover:border-blue-400"}`}
+                  className={`rd-dia-agenda rounded-xl px-1 py-1.5 text-center border transition cursor-pointer ${sel ? "bg-blue-600 border-blue-500 text-white shadow-lg" : "border-slate-200 bg-white text-slate-700 hover:border-blue-400"}`}
                 >
                   <span className="block text-[11px] font-bold uppercase opacity-80">{DIAS[fd.getDay()]}</span>
-                  <span className="block text-lg font-extrabold leading-tight">{fd.getDate()}</span>
+                  <span className="block text-base font-extrabold leading-tight">{fd.getDate()}</span>
                   <span className={`block text-[10px] font-bold ${sel ? "text-white/90" : n ? "text-emerald-600" : "text-slate-400"}`}>
                     {reg ? (n ? `${n} h` : "cerrado") : "sin horario"}
                   </span>
-                  <span className="mt-1 mx-1 flex gap-[2px] h-1.5" aria-hidden>
+                  <span className="mt-1 mx-1 flex gap-[2px] h-1" aria-hidden>
                     {FRANJAS.map((h) => (
                       <span key={h} className={`flex-1 rounded-full ${reg?.horas?.includes(h) ? (sel ? "bg-white" : "bg-emerald-500") : sel ? "bg-white/25" : "bg-slate-200"}`} />
                     ))}
@@ -211,13 +201,13 @@ export function AgendaEspecialistas({ servicioInicial }) {
               );
             })}
           </div>
-          <button type="button" disabled={semana >= 3} onClick={() => setSemana((s) => s + 1)} className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-2.5 py-2 rounded-lg text-xs font-bold disabled:opacity-30 cursor-pointer">›</button>
+          <button type="button" disabled={semana >= 7} onClick={() => setSemana((s) => s + 1)} className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-2.5 py-2 rounded-lg text-xs font-bold disabled:opacity-30 cursor-pointer">›</button>
         </div>
 
         {/* Franjas */}
-        <div className="mt-4">
+        <div className="mt-3">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <p className="text-sm font-extrabold">
+            <p className="text-xs font-extrabold">
               {DIAS_LARGO[f.getDay()][0].toUpperCase() + DIAS_LARGO[f.getDay()].slice(1)} {f.getDate()} de {MESES[f.getMonth()]}
               <span className="ml-2 text-xs font-semibold opacity-70 normal-case">
                 {horas.length ? rango(horas) : registro ? "Día cerrado" : "Sin horario configurado (se puede agendar a cualquier hora)"}
@@ -230,7 +220,7 @@ export function AgendaEspecialistas({ servicioInicial }) {
               </div>
             )}
           </div>
-          <div className="grid md:grid-cols-3 gap-3 select-none" onPointerLeave={() => (arrastre.current = null)}>
+          <div className="grid md:grid-cols-3 gap-2 select-none" onPointerLeave={() => (arrastre.current = null)}>
             {[
               ["Mañana", Sunrise, FRANJAS.slice(0, 6), "from-amber-400 to-orange-500"],
               ["Tarde", Sun, FRANJAS.slice(6, 12), "from-sky-500 to-blue-600"],
@@ -238,15 +228,15 @@ export function AgendaEspecialistas({ servicioInicial }) {
             ].map(([nombre, I, lista, grad]) => {
               const n = lista.filter((h) => horas.includes(h)).length;
               return (
-                <div key={nombre} className="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-600">
-                      <span className={`w-7 h-7 rounded-lg bg-gradient-to-br ${grad} text-white flex items-center justify-center`}><I className="w-4 h-4" /></span>
+                <div key={nombre} className="rounded-xl border border-slate-200 bg-slate-50 p-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slate-600">
+                      <span className={`w-5 h-5 rounded-md bg-gradient-to-br ${grad} text-white flex items-center justify-center`}><I className="w-3 h-3" /></span>
                       {nombre}
                     </span>
                     <span className="text-[11px] font-bold text-slate-500">{n}/{lista.length} h</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-3 gap-1">
                     {lista.map((h) => {
                       const on = horas.includes(h);
                       const i = FRANJAS.indexOf(h);
@@ -263,10 +253,10 @@ export function AgendaEspecialistas({ servicioInicial }) {
                           onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), alternar(h))}
                           disabled={!editable}
                           aria-pressed={on}
-                          className={`rd-franja relative rounded-xl px-2 py-2.5 text-xs font-extrabold border ${editable ? "cursor-pointer" : "cursor-default"} ${on ? "rd-franja-on bg-emerald-600 border-emerald-500 text-white" : "border-slate-200 bg-white text-slate-700"}`}
+                          className={`rd-franja relative rounded-lg px-1 py-1.5 text-[11px] font-extrabold border whitespace-nowrap ${editable ? "cursor-pointer" : "cursor-default"} ${on ? "rd-franja-on bg-emerald-600 border-emerald-500 text-white" : "border-slate-200 bg-white text-slate-700"}`}
                         >
-                          {h.replace(":00", "")}–{(FRANJAS[i + 1] || "10:00 PM").replace(":00", "")}
-                          {on && <Check className="rd-pop w-3.5 h-3.5 absolute top-1 right-1" />}
+                          {h.replace(":00 ", "").replace(/^0/, "")}–{(FRANJAS[i + 1] || "10:00 PM").replace(":00 ", "").replace(/^0/, "")}
+                          {on && <Check className="rd-pop w-3 h-3 absolute top-0.5 right-0.5" />}
                         </button>
                       );
                     })}
@@ -275,26 +265,20 @@ export function AgendaEspecialistas({ servicioInicial }) {
               );
             })}
           </div>
-          {editable && (
-            <p className="mt-2 text-[11px] text-slate-500 flex items-center gap-1">
-              <MousePointerClick className="w-3.5 h-3.5" /> Toca una hora o arrastra el mouse sobre varias para marcarlas de una vez.
-            </p>
-          )}
-
           {editable ? (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => guardar()}
                 disabled={!cambios && !!registro}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-xs font-extrabold shadow cursor-pointer"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-xs font-extrabold shadow cursor-pointer"
               >
                 <Save className="w-4 h-4" /> Confirmar horario del día
               </button>
               <button
                 type="button"
                 onClick={repetir}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-extrabold cursor-pointer"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-extrabold cursor-pointer"
               >
                 <Copy className="w-4 h-4" /> Repetir 4 {DIAS_LARGO[f.getDay()]}s seguidos
               </button>
@@ -307,18 +291,18 @@ export function AgendaEspecialistas({ servicioInicial }) {
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm text-slate-800 p-4">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm text-slate-800 p-3">
         <p className="text-xs font-extrabold uppercase tracking-wide opacity-70 mb-2 flex items-center gap-1.5">
           <CalendarDays className="w-3.5 h-3.5" /> Próximos días con atención · {S.nombre}
         </p>
         {proximos.length === 0 ? (
           <p className="text-xs opacity-60">Aún no hay días confirmados.</p>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {proximos.map((r) => {
               const fd = aFecha(r.fecha);
               return (
-                <button key={r.id} type="button" onClick={() => setFecha(r.fecha)} className="text-left rounded-xl border border-slate-200 bg-white text-slate-700 px-3 py-2 hover:border-blue-400 cursor-pointer">
+                <button key={r.id} type="button" onClick={() => setFecha(r.fecha)} className="text-left rounded-lg border border-slate-200 bg-white text-slate-700 px-2.5 py-1.5 hover:border-blue-400 cursor-pointer">
                   <span className="block text-xs font-extrabold">{DIAS_LARGO[fd.getDay()][0].toUpperCase() + DIAS_LARGO[fd.getDay()].slice(1)} {fd.getDate()} {MESES[fd.getMonth()]}</span>
                   <span className="block text-[11px] opacity-75">{rango(ordenar(r.horas))}</span>
                 </button>

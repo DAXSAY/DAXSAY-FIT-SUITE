@@ -247,7 +247,10 @@ export const SeguimientoServicio = ({ tipo }) => {
         <div className="relative flex-1 min-w-[260px]">
           <input
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => {
+              setQ(e.target.value);
+              if (e.target.value.trim() && vista) setVista("");
+            }}
             aria-label="Buscar alumno por código, nombre o DNI"
             className="rd-campo-checkin w-full h-full pl-9 pr-3 py-2.5 rounded-xl text-sm font-semibold focus:outline-none transition-all"
           />
@@ -271,7 +274,12 @@ export const SeguimientoServicio = ({ tipo }) => {
               blue: on ? "bg-blue-600 border-blue-600 text-white" : "bg-blue-50 border-blue-200 text-blue-800",
             }[col];
             return (
-              <button key={k} type="button" onClick={() => setVista(on ? "" : k)} className={`rounded-xl border px-4 py-1.5 text-center cursor-pointer min-w-[6.5rem] ${cls}`}>
+              <button key={k} type="button" onClick={() => {
+                const nueva = on && !q.trim() ? "" : k;
+                setQ("");
+                setVista(nueva);
+                if (nueva) setTimeout(() => document.getElementById(`rd-lista-seg-${tipo}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+              }} className={`rounded-xl border px-4 py-1.5 text-center cursor-pointer min-w-[6.5rem] ${cls}`}>
                 <span className="block text-xl font-black leading-none">{n}</span>
                 <span className="block text-[11px] font-bold mt-0.5">{l}</span>
               </button>
@@ -281,7 +289,7 @@ export const SeguimientoServicio = ({ tipo }) => {
       </div>
 
       {(q.trim() || vista) && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div id={`rd-lista-seg-${tipo}`} className="bg-white rounded-2xl border border-slate-200 overflow-hidden scroll-mt-20">
           <div className="hidden md:grid grid-cols-[110px_minmax(0,1.4fr)_150px_minmax(0,1fr)] gap-3 px-4 py-2 bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500">
             <span>Código</span>
             <span>Alumno</span>

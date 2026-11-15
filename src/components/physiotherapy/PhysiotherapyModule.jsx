@@ -211,7 +211,7 @@ export const PhysiotherapyModule = () => {
   const sinEvaluar = members.filter((m) => !evaluados.has(String(m.id))).length;
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterRestrictionsOnly, setFilterRestrictionsOnly] = useState(false);
+  const [filtroFisio, setFiltroFisio] = useState("todos"); // todos · lesiones · con_sesiones · sin_eval · dolor_alto
   const [selectedMemberId, setSelectedMemberId] = useState(null);
   // Modals state
   const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false);
@@ -233,7 +233,7 @@ export const PhysiotherapyModule = () => {
   const [chartMetricView, setChartMetricView] = useState("both");
 
   // Main View Switcher ('fichas' or 'textual')
-  const [activeMainView, setActiveMainView] = useRecordado("fisio", "fichas");
+  const [activeMainView, setActiveMainView] = useRecordado("fisio", "fichas", ["agenda"]);
 
   // FORM STATES
   const [formMemberId, setFormMemberId] = useState("");
@@ -370,16 +370,32 @@ export const PhysiotherapyModule = () => {
   }, [staffContracts, staffDirectory, currentUser]);
 
   // Filtered members for sidebar
+  // Última sesión de cada alumno (para la tarjeta de la lista)
+  const ultimaSesion = useMemo(() => {
+    const m = new Map();
+    physioRecords.forEach((r) => {
+      const a = m.get(r.memberId);
+      if (!a || String(r.date || "") > String(a.date || "")) m.set(r.memberId, r);
+    });
+    return m;
+  }, [physioRecords]);
+  const sesionesDe = useMemo(() => {
+    const m = new Map();
+    physioRecords.forEach((r) => m.set(r.memberId, (m.get(r.memberId) || 0) + 1));
+    return m;
+  }, [physioRecords]);
+  const conLesion = (m) => !!(m.medicalNotes && m.medicalNotes.trim());
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
-      const matchSearch = coincideAlumno(m, searchTerm);
-      const hasRestrictions =
-        m.medicalNotes && m.medicalNotes.trim().length > 0;
-      if (filterRestrictionsOnly && !hasRestrictions) return false;
-
-      return matchSearch;
+      if (!coincideAlumno(m, searchTerm)) return false;
+      const ult = ultimaSesion.get(m.id);
+      if (filtroFisio === "lesiones") return conLesion(m);
+      if (filtroFisio === "con_sesiones") return !!ult;
+      if (filtroFisio === "sin_eval") return !ult;
+      if (filtroFisio === "dolor_alto") return Number(ult?.painLevelEVA) >= 6;
+      return true;
     });
-  }, [members, searchTerm, filterRestrictionsOnly]);
+  }, [members, searchTerm, filtroFisio, ultimaSesion]);
 
   // Selected member object
   const selectedMember = useMemo(() => {
@@ -1297,7 +1313,7 @@ export const PhysiotherapyModule = () => {
       {activeMainView === "seguimiento" ? (
         <SeguimientoServicio tipo="fisioterapia" />
       ) : activeMainView === "agenda" ? (
-        <AgendaEspecialistas servicioInicial="fisioterapia" />
+        <AgendaEspecialistas servicioInicial="fisioterapia" fijo />
       ) : activeMainView === "textual" ? (
         <PhysioTextualRecordsView
           records={physioRecords}
@@ -1309,131 +1325,79 @@ export const PhysiotherapyModule = () => {
       ) : (
         /* MAIN TWO-COLUMN WORKSPACE */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT COLUMN: CLIENT LIST & MEDICAL RESTRICTIONS (4 cols) */}
+          {/* COLUMNA IZQUIERDA: buscador, filtro y lista (mismo diseño que Nutrición) */}
           <div className="lg:col-span-4 space-y-4">
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <User className="w-4 h-4 text-blue-600" />
-                  <span>Alumnos & Pacientes ({filteredMembers.length})</span>
-                </h3>
-              </div>
-
-              {/* Search Input */}
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Código (12 o DR-12), nombre, DNI o teléfono..."
+                  placeholder="Código del alumno (12 o DR-12), nombre o DNI..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
-              {/* Filter Toggle: Restrictions only */}
-              <button
-                type="button"
-                onClick={() =>
-                  setFilterRestrictionsOnly(!filterRestrictionsOnly)
-                }
-                className={`w-full py-1.5 px-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors border cursor-pointer ${
-                  filterRestrictionsOnly
-                    ? "bg-amber-50 text-amber-900 border-amber-300"
-                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                }`}
+              <select
+                value={filtroFisio}
+                onChange={(e) => setFiltroFisio(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-hidden"
               >
-                <span className="flex items-center gap-1.5 text-xs">
-                  <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Con Lesiones / Restricciones</span>
-                </span>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                    filterRestrictionsOnly
-                      ? "bg-amber-200 text-amber-900"
-                      : "bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  {
-                    members.filter(
-                      (m) => m.medicalNotes && m.medicalNotes.trim().length > 0,
-                    ).length
-                  }
-                </span>
-              </button>
+                <option value="todos">🩺 Todos los alumnos ({members.length})</option>
+                <option value="lesiones">⚠️ Con lesiones o restricciones ({members.filter(conLesion).length})</option>
+                <option value="con_sesiones">📋 Con evaluación ({members.filter((m) => ultimaSesion.has(m.id)).length})</option>
+                <option value="sin_eval">⭕ Sin evaluación ({members.filter((m) => !ultimaSesion.has(m.id)).length})</option>
+                <option value="dolor_alto">🔥 Dolor alto, EVA 6 o más ({members.filter((m) => Number(ultimaSesion.get(m.id)?.painLevelEVA) >= 6).length})</option>
+              </select>
+            </div>
 
-              {/* Students List */}
-              <div className="space-y-1.5 max-h-[520px] overflow-y-auto pr-1">
-                {filteredMembers.map((member) => {
+            <div className="space-y-2.5 max-h-[720px] overflow-y-auto pr-1">
+              {filteredMembers.length === 0 ? (
+                <div className="bg-white p-8 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
+                  No hay alumnos con los filtros aplicados.
+                </div>
+              ) : (
+                filteredMembers.map((member) => {
                   const isSelected = selectedMember?.id === member.id;
-                  const hasRestrictions =
-                    member.medicalNotes &&
-                    member.medicalNotes.trim().length > 0;
-                  const sessionCount = physioRecords.filter(
-                    (r) => r.memberId === member.id,
-                  ).length;
-
+                  const ult = ultimaSesion.get(member.id);
+                  const n = sesionesDe.get(member.id) || 0;
+                  const eva = Number(ult?.painLevelEVA);
+                  const chip = ult
+                    ? { t: `🩺 ${ult.consultationReason || (ult.affectedZones || []).join(", ") || "Evaluado"}`, c: "bg-cyan-50 text-cyan-800 border-cyan-200" }
+                    : conLesion(member)
+                      ? { t: "⚠️ Lesión declarada · sin evaluar", c: "bg-amber-50 text-amber-800 border-amber-200" }
+                      : { t: "⭕ Sin evaluación", c: "bg-slate-50 text-slate-600 border-slate-200" };
                   return (
                     <div
                       key={member.id}
                       onClick={() => setSelectedMemberId(member.id)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-blue-50/80 border-blue-500 shadow-xs ring-1 ring-blue-500/30"
-                          : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50"
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                        isSelected ? "bg-blue-50/50 border-blue-500 shadow-xs ring-1 ring-blue-500" : "bg-white border-slate-200 hover:border-slate-300"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center space-x-2.5 min-w-0">
-                          {member.photoUrl ? (
-                            <img
-                              src={member.photoUrl}
-                              alt={member.fullName}
-                              className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-200"
-                            />
-                          ) : (
-                            <div className="w-9 h-9 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center shrink-0 text-xs">
-                              {member.fullName.charAt(0)}
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <h4 className="text-xs font-bold text-slate-900 truncate flex items-center gap-1.5">
-                              <CodigoAlumno m={member} className="shrink-0" />
-                              <span className="truncate">{member.fullName}</span>
-                            </h4>
-                            <p className="text-xs text-slate-500">
-                              DNI: {member.dni} • {member.planName}
-                            </p>
-                          </div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className={`inline-block max-w-full truncate px-2 py-0.5 rounded-md text-xs font-bold border mb-1.5 ${chip.c}`}>{chip.t}</span>
+                          <h3 className="font-bold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-1">{member.fullName}</h3>
                         </div>
-
-                        <div className="flex flex-col items-end shrink-0 gap-1">
-                          {sessionCount > 0 ? (
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200">
-                              {sessionCount}{" "}
-                              {sessionCount === 1 ? "sesión" : "sesiones"}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-slate-400">
-                              Sin historial
-                            </span>
-                          )}
-                        </div>
+                        {ult && Number.isFinite(eva) ? (
+                          <span className={`shrink-0 text-xs font-black px-2 py-1 rounded-md ${eva >= 6 ? "bg-rose-50 text-rose-700" : eva >= 4 ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>EVA {eva}/10</span>
+                        ) : (
+                          <span className="shrink-0 text-xs font-black text-slate-500 bg-slate-100 px-2 py-1 rounded-md">—</span>
+                        )}
                       </div>
-
-                      {/* Medical Restriction Warning Flag */}
-                      {hasRestrictions && (
-                        <div className="mt-2 text-xs font-medium text-amber-800 bg-amber-50/90 border border-amber-200/80 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                          <span className="truncate">
-                            {member.medicalNotes}
-                          </span>
+                      <div className="mt-2.5 flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
+                        <div className="flex items-center space-x-1 truncate">
+                          <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <CodigoAlumno m={member} className="shrink-0" />
+                          <span className="truncate">DNI {member.dni}</span>
                         </div>
-                      )}
+                        <span className="shrink-0 text-xs text-slate-400">{n ? `${n} ${n === 1 ? "sesión" : "sesiones"}` : "sin sesiones"}</span>
+                      </div>
                     </div>
                   );
-                })}
-              </div>
+                })
+              )}
             </div>
           </div>
 
