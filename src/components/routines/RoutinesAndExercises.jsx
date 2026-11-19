@@ -45,6 +45,7 @@ import {
 import { FormEjercicioPropio, TONO, TONO_NIVEL } from "./FormEjercicioPropio";
 import { RutinasAsignadas } from "./RutinasAsignadas";
 import { BancoFlotante } from "./BancoFlotante";
+import { SinSeleccion } from "../common/CabeceraModulo";
 import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
 import { useRecordado } from "../../utils/subPestana";
 import { GuiaSesion } from "./GuiaSesion";
@@ -66,7 +67,7 @@ export const RoutinesAndExercises = () => {
   } = useGym();
 
   // El progreso de pesos de los alumnos ahora está en Metas & Logros
-  const [activeSubTab, setActiveSubTab] = useRecordado("rutinas", "routines");
+  const [activeSubTab, setActiveSubTab] = useRecordado("rutinas", "");
 
   // Exercise Filters
   const [selectedMuscle, setSelectedMuscle] = useState("all");
@@ -406,6 +407,8 @@ export const RoutinesAndExercises = () => {
       })()}
 
       {/* SUBTAB 1: ROUTINES LIST */}
+      {!activeSubTab && <SinSeleccion texto="Elige Rutinas, Rutinas asignadas o Banco de ejercicios, o toca «Crear rutina»." />}
+
       {activeSubTab === "routines" && (
         <div className="space-y-4">
           {routines.length === 0 && (

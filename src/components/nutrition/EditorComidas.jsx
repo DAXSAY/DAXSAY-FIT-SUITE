@@ -2,7 +2,7 @@
 // (los macros se recalculan con los gramos) o alimentos escritos a mano.
 import React, { useState } from "react";
 import { Plus, Trash2, BookOpen, PenLine, ChevronUp, ChevronDown } from "lucide-react";
-import { SelectorAlimentos, CATEGORIAS } from "./CatalogoAlimentos";
+import { SelectorAlimentos, CATEGORIAS, IconoCategoria } from "./CatalogoAlimentos";
 
 const r1 = (n) => Math.round(Number(n || 0) * 10) / 10;
 
@@ -131,7 +131,7 @@ export const EditorComidas = ({ meals, setMeals, metas, indices, soloTotales = f
       <>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h4 className="font-extrabold text-sm text-slate-900">{soloTotales ? "📊 Alimentos del día vs. metas" : "🍴 Comidas y alimentos"}</h4>
+          <h4 className="font-extrabold text-sm text-slate-900">{soloTotales ? "Alimentos del día vs. metas" : "🍴 Comidas y alimentos"}</h4>
           <p className="text-xs text-slate-500">
             {soloTotales ? "Suma de los alimentos de todos los platos. Los alimentos se agregan dentro de cada plato." : "Elige del catálogo y ajusta los gramos: calorías y macros se calculan solos."}
           </p>
@@ -211,7 +211,7 @@ export const EditorComidas = ({ meals, setMeals, metas, indices, soloTotales = f
               const c = CATEGORIAS[it.category];
               return (
                 <div key={it.id} className="flex flex-wrap sm:flex-nowrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-2.5 py-2">
-                  <span className="text-xl w-8 text-center shrink-0">{it.emoji || c?.emoji || "🍽️"}</span>
+                  <IconoCategoria categoria={it.category} tam="sm" />
                   {libre ? (
                     <input
                       value={it.name}

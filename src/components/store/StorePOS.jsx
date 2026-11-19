@@ -11,6 +11,8 @@ import {
   Image as ImageIcon,
   Camera,
   X,
+  Package as PackageIcon,
+  BarChart3 as BarChartIcon,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { TelWhatsApp } from "../common/TelWhatsApp";
@@ -447,31 +449,31 @@ export const StorePOS = ({ onAbrirCaja }) => {
           <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200">
             <button
               onClick={() => setActiveTab("pos")}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                 activeTab === "pos"
                   ? "bg-blue-600 text-white shadow-xs"
                   : "text-gray-600 hover:text-slate-900"
               }`}
             >
-              🛒 Terminal POS
+              <ShoppingBag className="w-3.5 h-3.5" /> Productos
             </button>
             <button
               onClick={() => setActiveTab("inventory")}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                 activeTab === "inventory"
                   ? "bg-blue-600 text-white shadow-xs"
                   : "text-gray-600 hover:text-slate-900"
               }`}
             >
-              📦 Inventario & Stock ({products.length})
+              <PackageIcon className="w-3.5 h-3.5" /> Inventario & Stock ({products.length})
             </button>
             <button
               onClick={() => setActiveTab("sales")}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                 activeTab === "sales" ? "bg-blue-600 text-white shadow-xs" : "text-gray-600 hover:text-slate-900"
               }`}
             >
-              📊 Ventas & Reportes
+              <BarChartIcon className="w-3.5 h-3.5" /> Ventas & Reportes
             </button>
           </div>
 
@@ -1492,77 +1494,73 @@ export const StorePOS = ({ onAbrirCaja }) => {
               <BotonVolver onClick={cerrarTicket} />
               <BotonCerrar onClick={cerrarTicket} />
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_250px] gap-5 items-start">
+            {/* El ticket, como papel */}
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 p-5">
             <div className="text-center pb-3 border-b border-dashed border-gray-200">
-              <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center mb-1.5">
-                <Check className="w-5 h-5" />
+              <div className="w-11 h-11 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center mb-1.5">
+                <Check className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-bold text-slate-900">
-                RADICAL
-              </h3>
-              <p className="text-xs text-gray-500">
-                Ticket de venta (uso interno)
-              </p>
-              <p className="text-xs font-mono text-blue-700 font-bold mt-0.5">
-                {lastReceipt.receiptNumber}
-              </p>
+              <h3 className="text-base font-black text-slate-900 tracking-wide">RADICAL</h3>
+              <p className="text-xs text-gray-500">Ticket de venta (uso interno)</p>
+              <p className="text-sm font-mono text-blue-700 font-bold mt-0.5">{lastReceipt.receiptNumber}</p>
             </div>
 
-            <div className="my-3.5 space-y-2 text-xs">
-              <div className="flex justify-between text-gray-500 text-xs">
-                <span>Fecha: {lastReceipt.dateTime ? String(lastReceipt.dateTime).slice(0, 16) : lastReceipt.date}</span>
-                <span className="uppercase font-semibold text-slate-700">
-                  {lastReceipt.paymentMethod}
-                </span>
+            <div className="my-4 space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                <span className="text-gray-500">Fecha</span>
+                <span className="text-right font-semibold text-slate-800">{lastReceipt.dateTime ? String(lastReceipt.dateTime).slice(0, 16).replace("T", " ") : lastReceipt.date}</span>
+                <span className="text-gray-500">Pago</span>
+                <span className="text-right uppercase font-bold text-slate-800">{lastReceipt.paymentMethod}</span>
+                <span className="text-gray-500">Cliente</span>
+                <span className="text-right font-bold text-slate-900 truncate">{lastReceipt.relatedMemberName || "Cliente Mostrador"}</span>
+                {lastReceipt.seller && (
+                  <>
+                    <span className="text-gray-500">Atendió</span>
+                    <span className="text-right font-bold text-slate-900 truncate">{lastReceipt.seller}</span>
+                  </>
+                )}
               </div>
-
-              <div className="text-xs text-gray-600">
-                <p>
-                  Cliente:{" "}
-                  <span className="font-bold text-slate-900">
-                    {lastReceipt.relatedMemberName || "Cliente Mostrador"}
-                  </span>
-                </p>
-                {lastReceipt.seller && <p>Atendió: <span className="font-bold text-slate-900">{lastReceipt.seller}</span></p>}
-                {lastReceipt.voided && <p className="font-black text-rose-600">VENTA ANULADA</p>}
-              </div>
+              {lastReceipt.voided && <p className="text-center font-black text-rose-600">VENTA ANULADA</p>}
 
               {/* Items */}
-              <div className="border-t border-b border-dashed border-gray-200 py-2 space-y-1">
+              <div className="border-t border-b border-dashed border-gray-200 py-2.5 space-y-1.5">
                 {lastReceipt.items?.map((it, idx) => (
-                  <div key={idx} className="flex justify-between text-xs">
-                    <span className="text-slate-700 truncate max-w-[170px]">
-                      {it.quantity}x {it.productName}
+                  <div key={idx} className="flex justify-between gap-3 text-sm">
+                    <span className="text-slate-700 min-w-0">
+                      <b className="font-mono">{it.quantity}×</b> {it.productName}
                     </span>
-                    <span className="font-mono font-semibold text-slate-900">
-                      S/ {(it.total || 0).toFixed(2)}
-                    </span>
+                    <span className="font-mono font-semibold text-slate-900 whitespace-nowrap">S/ {(it.total || 0).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="flex justify-between items-center text-sm pt-1">
-                <span className="font-bold text-slate-700">TOTAL PAGADO:</span>
-                <span className="font-bold text-emerald-700 text-base font-mono">
-                  S/ {(lastReceipt.amount || 0).toFixed(2)}
-                </span>
+              <div className="flex justify-between items-center pt-1">
+                <span className="font-bold text-slate-700">TOTAL PAGADO</span>
+                <span className="font-black text-emerald-700 text-xl font-mono">S/ {(lastReceipt.amount || 0).toFixed(2)}</span>
               </div>
             </div>
+            </div>
 
-            <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
+            {/* Acciones */}
+            <div className="space-y-2 print:hidden">
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Total</p>
+              <p className="text-3xl font-black text-emerald-700 font-mono leading-none">S/ {(lastReceipt.amount || 0).toFixed(2)}</p>
+              <p className="text-xs text-slate-500 pb-2">{lastReceipt.items?.reduce((n, it) => n + Number(it.quantity || 0), 0) || 0} producto(s)</p>
               <button
                 onClick={() => window.print()}
-                className="flex-1 py-1.5 bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-md text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer"
+                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Printer className="w-3.5 h-3.5" />
-                Imprimir
+                <Printer className="w-4 h-4" /> Imprimir
               </button>
-              <BotonesDescarga compacto nombre={`Boleta_${lastReceipt?.id || ""}`} />
+              <BotonesDescarga nombre={`Boleta_${lastReceipt?.id || ""}`} className="w-full [&>button]:flex-1 [&>button]:justify-center" />
               <button
                 onClick={cerrarTicket}
-                className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold shadow-xs cursor-pointer"
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-black shadow-xs cursor-pointer"
               >
                 Aceptar
               </button>
+            </div>
             </div>
 
             {/* ¿Se cobró mal? Corregir o anular */}
@@ -1574,10 +1572,10 @@ export const StorePOS = ({ onAbrirCaja }) => {
                     {puedeEliminar ? (
                       <>
                         <button type="button" onClick={() => setAccionTicket("corregir")} className="px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-bold cursor-pointer">
-                          ✏️ Corregir venta
+                          <Edit3 className="inline w-3.5 h-3.5 -mt-0.5" /> Corregir venta
                         </button>
                         <button type="button" onClick={() => setAccionTicket("anular")} className="px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-bold cursor-pointer">
-                          ✕ Anular venta
+                          <X className="inline w-3.5 h-3.5 -mt-0.5" /> Anular venta
                         </button>
                       </>
                     ) : (

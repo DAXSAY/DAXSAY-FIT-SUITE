@@ -11,7 +11,6 @@ import {
   Dumbbell,
   Utensils,
   HeartPulse,
-  Calculator,
   LayoutGrid,
   Table2,
   TrendingUp,
@@ -219,8 +218,6 @@ export const MembershipsPlans = () => {
   const [seleccion, setSeleccion] = useState(null);
   const [editando, setEditando] = useState(null); // null | "nuevo" | plan
   const [form, setForm] = useState(VACIO);
-  const [simPlan, setSimPlan] = useState("");
-  const [simDescuento, setSimDescuento] = useState(0);
 
   const ordenados = useMemo(() => [...plans].sort((a, b) => a.price - b.price), [plans]);
 
@@ -275,7 +272,6 @@ export const MembershipsPlans = () => {
     setEditando(null);
   };
 
-  const simulado = ordenados.find((p) => p.id === simPlan) || ordenados[0];
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
   // Esc cierra el editor de plan; mientras está abierto, la página de atrás no se desplaza
@@ -541,48 +537,6 @@ export const MembershipsPlans = () => {
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Calculadora */}
-      {ordenados.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
-          <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2 mb-4">
-            <Calculator className="w-5 h-5 text-blue-600" /> Calculadora para recepción
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <label className="block md:col-span-2">
-              <span className="block text-sm font-bold text-slate-700 mb-1.5">Plan</span>
-              <select
-                value={simulado?.id || ""}
-                onChange={(e) => setSimPlan(e.target.value)}
-                className="w-full p-3 rounded-xl border border-slate-300 text-sm"
-              >
-                {ordenados.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} · {soles(p.price)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="block text-sm font-bold text-slate-700 mb-1.5">Descuento (S/)</span>
-              <input
-                type="number"
-                min="0"
-                value={simDescuento}
-                onChange={(e) => setSimDescuento(Number(e.target.value))}
-                className="w-full p-3 rounded-xl border border-slate-300 text-sm"
-              />
-            </label>
-            <div className="rounded-2xl bg-slate-900 text-white p-4">
-              <span className="block text-xs text-slate-400">Total a cobrar</span>
-              <span className="text-2xl font-black">{soles(Math.max(0, (simulado?.price || 0) - simDescuento))}</span>
-              <span className="block text-xs text-slate-400 mt-1 flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5" /> Vence en {duracionTexto(simulado?.durationDays)}
-              </span>
-            </div>
-          </div>
         </div>
       )}
 

@@ -4,23 +4,36 @@
 // CENAN/INS 2017 y USDA). El nutricionista puede agregar los suyos.
 // =====================================================================
 import React, { useMemo, useState } from "react";
-import { Search, X, Plus, Pencil, EyeOff, Check } from "lucide-react";
+import { Search, X, Plus, Pencil, EyeOff, Check, Drumstick, Milk, Wheat, Carrot, Bean, LeafyGreen, Apple, Nut, CupSoda, Pill, Soup, Utensils, Lightbulb } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { userCan } from "../../config/roles";
 
 export const CATEGORIAS = {
-  proteinas: { nombre: "Proteínas", emoji: "🍗", chip: "bg-rose-50 text-rose-700 border-rose-200", activo: "bg-rose-600 text-white border-rose-600", barra: "#e11d48" },
-  lacteos: { nombre: "Lácteos", emoji: "🥛", chip: "bg-sky-50 text-sky-700 border-sky-200", activo: "bg-sky-600 text-white border-sky-600", barra: "#0284c7" },
-  cereales: { nombre: "Cereales", emoji: "🍚", chip: "bg-amber-50 text-amber-700 border-amber-200", activo: "bg-amber-500 text-white border-amber-500", barra: "#f59e0b" },
-  tuberculos: { nombre: "Tubérculos", emoji: "🥔", chip: "bg-orange-50 text-orange-700 border-orange-200", activo: "bg-orange-500 text-white border-orange-500", barra: "#f97316" },
-  legumbres: { nombre: "Menestras", emoji: "🫘", chip: "bg-yellow-50 text-yellow-800 border-yellow-200", activo: "bg-yellow-600 text-white border-yellow-600", barra: "#ca8a04" },
-  verduras: { nombre: "Verduras", emoji: "🥦", chip: "bg-emerald-50 text-emerald-700 border-emerald-200", activo: "bg-emerald-600 text-white border-emerald-600", barra: "#16a34a" },
-  frutas: { nombre: "Frutas", emoji: "🍎", chip: "bg-pink-50 text-pink-700 border-pink-200", activo: "bg-pink-500 text-white border-pink-500", barra: "#ec4899" },
-  grasas: { nombre: "Grasas", emoji: "🥑", chip: "bg-lime-50 text-lime-800 border-lime-200", activo: "bg-lime-600 text-white border-lime-600", barra: "#65a30d" },
-  bebidas: { nombre: "Bebidas", emoji: "🥤", chip: "bg-cyan-50 text-cyan-700 border-cyan-200", activo: "bg-cyan-600 text-white border-cyan-600", barra: "#0891b2" },
-  suplementos: { nombre: "Suplementos", emoji: "💪", chip: "bg-violet-50 text-violet-700 border-violet-200", activo: "bg-violet-600 text-white border-violet-600", barra: "#7c3aed" },
-  platos: { nombre: "Platos", emoji: "🍲", chip: "bg-red-50 text-red-700 border-red-200", activo: "bg-red-600 text-white border-red-600", barra: "#dc2626" },
-  otros: { nombre: "Otros", emoji: "🍯", chip: "bg-slate-50 text-slate-700 border-slate-200", activo: "bg-slate-700 text-white border-slate-700", barra: "#64748b" },
+  proteinas: { icono: Drumstick, nombre: "Proteínas", emoji: "🍗", chip: "bg-rose-50 text-rose-700 border-rose-200", activo: "bg-rose-600 text-white border-rose-600", barra: "#e11d48" },
+  lacteos: { icono: Milk, nombre: "Lácteos", emoji: "🥛", chip: "bg-sky-50 text-sky-700 border-sky-200", activo: "bg-sky-600 text-white border-sky-600", barra: "#0284c7" },
+  cereales: { icono: Wheat, nombre: "Cereales", emoji: "🍚", chip: "bg-amber-50 text-amber-700 border-amber-200", activo: "bg-amber-500 text-white border-amber-500", barra: "#f59e0b" },
+  tuberculos: { icono: Carrot, nombre: "Tubérculos", emoji: "🥔", chip: "bg-orange-50 text-orange-700 border-orange-200", activo: "bg-orange-500 text-white border-orange-500", barra: "#f97316" },
+  legumbres: { icono: Bean, nombre: "Menestras", emoji: "🫘", chip: "bg-yellow-50 text-yellow-800 border-yellow-200", activo: "bg-yellow-600 text-white border-yellow-600", barra: "#ca8a04" },
+  verduras: { icono: LeafyGreen, nombre: "Verduras", emoji: "🥦", chip: "bg-emerald-50 text-emerald-700 border-emerald-200", activo: "bg-emerald-600 text-white border-emerald-600", barra: "#16a34a" },
+  frutas: { icono: Apple, nombre: "Frutas", emoji: "🍎", chip: "bg-pink-50 text-pink-700 border-pink-200", activo: "bg-pink-500 text-white border-pink-500", barra: "#ec4899" },
+  grasas: { icono: Nut, nombre: "Grasas", emoji: "🥑", chip: "bg-lime-50 text-lime-800 border-lime-200", activo: "bg-lime-600 text-white border-lime-600", barra: "#65a30d" },
+  bebidas: { icono: CupSoda, nombre: "Bebidas", emoji: "🥤", chip: "bg-cyan-50 text-cyan-700 border-cyan-200", activo: "bg-cyan-600 text-white border-cyan-600", barra: "#0891b2" },
+  suplementos: { icono: Pill, nombre: "Suplementos", emoji: "💪", chip: "bg-violet-50 text-violet-700 border-violet-200", activo: "bg-violet-600 text-white border-violet-600", barra: "#7c3aed" },
+  platos: { icono: Soup, nombre: "Platos", emoji: "🍲", chip: "bg-red-50 text-red-700 border-red-200", activo: "bg-red-600 text-white border-red-600", barra: "#dc2626" },
+  otros: { icono: Utensils, nombre: "Otros", emoji: "🍯", chip: "bg-slate-50 text-slate-700 border-slate-200", activo: "bg-slate-700 text-white border-slate-700", barra: "#64748b" },
+};
+
+/** Ícono de línea en un círculo con el color de la categoría (sin emojis) */
+export const IconoCategoria = ({ categoria, tam = "md" }) => {
+  const c = CATEGORIAS[categoria] || CATEGORIAS.otros;
+  const I = c.icono;
+  const caja = tam === "sm" ? "w-5 h-5" : tam === "lg" ? "w-12 h-12" : "w-10 h-10";
+  const ic = tam === "sm" ? "w-3 h-3" : tam === "lg" ? "w-6 h-6" : "w-5 h-5";
+  return (
+    <span className={`${caja} shrink-0 rounded-full flex items-center justify-center`} style={{ background: `${c.barra}1f`, color: c.barra, boxShadow: `inset 0 0 0 1px ${c.barra}40` }}>
+      <I className={ic} strokeWidth={1.9} />
+    </span>
+  );
 };
 
 const r1 = (n) => Math.round(n * 10) / 10;
@@ -75,7 +88,7 @@ export const TarjetaAlimento = ({ f, onClick, accion }) => {
       } ${f.active === false ? "opacity-50" : ""}`}
     >
       <div className="flex items-start gap-2.5">
-        <span className="text-3xl leading-none shrink-0 w-11 h-11 rounded-xl flex items-center justify-center shadow-sm" style={{ background: `${cat.barra}22` }}>{f.emoji || cat.emoji}</span>
+        <IconoCategoria categoria={f.category} />
         <div className="min-w-0">
           <p className="text-sm font-bold text-slate-900 leading-tight">{f.name}</p>
           <p className="text-[11px] text-slate-500 truncate">{f.portionText || `${f.portionGrams} g`}</p>
@@ -100,7 +113,7 @@ export const TarjetaAlimento = ({ f, onClick, accion }) => {
           ))}
         </div>
       )}
-      {f.notes && <p className="text-[10px] text-slate-500 leading-tight line-clamp-2" title={f.notes}>💡 {f.notes}</p>}
+      {f.notes && <p className="text-[10px] text-slate-500 leading-tight line-clamp-2" title={f.notes}><Lightbulb className="inline w-3 h-3 -mt-0.5 text-amber-500" /> {f.notes}</p>}
       {f.custom && <span className="absolute top-2 right-2 text-[9px] font-black uppercase bg-violet-100 text-violet-700 rounded px-1.5 py-0.5">Propio</span>}
       {accion}
     </div>
@@ -123,10 +136,10 @@ const Categorias = ({ valor, onChange, conteo }) => (
           key={k}
           type="button"
           onClick={() => onChange(k)}
-          className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer ${valor === k ? c.activo : `${c.chip} hover:brightness-95`}`}
+          className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer ${valor === k ? c.activo : `${c.chip} hover:brightness-95`}`}
         >
-          {c.emoji} {c.nombre}
-          {conteo && <span className="opacity-70"> {conteo[k]}</span>}
+          <c.icono className="w-3.5 h-3.5" strokeWidth={2} /> {c.nombre}
+          {conteo && <span className="ml-0.5 px-1.5 rounded-full bg-black/5 text-[10px] tabular-nums">{conteo[k]}</span>}
         </button>
       ),
     )}
@@ -162,8 +175,8 @@ export const SelectorAlimentos = ({ comida, onAgregar, onCerrar }) => {
     setElegido(null);
   };
   return (
-    <div className="fixed inset-0 z-[70] bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onCerrar}>
-      <div className="bg-slate-50 w-full sm:max-w-4xl max-h-[92vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+    <div className="rd-velo fixed inset-0 z-[70] bg-slate-900/40 backdrop-blur-sm" onClick={onCerrar}>
+      <div className="rd-hoja bg-slate-50 w-full flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="p-4 sm:p-5 bg-white border-b border-slate-200 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -209,7 +222,7 @@ export const SelectorAlimentos = ({ comida, onAgregar, onCerrar }) => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
               {lista.map((f) => (
                 <TarjetaAlimento key={f.id} f={f} onClick={() => elegir(f)} />
               ))}
@@ -219,7 +232,7 @@ export const SelectorAlimentos = ({ comida, onAgregar, onCerrar }) => {
         {creando && <FormularioAlimento inicial={creando} onCerrar={() => setCreando(null)} onGuardado={(f) => f && elegir(f)} />}
         {elegido && (
           <div className="p-4 bg-white border-t border-slate-200 flex flex-wrap items-center gap-3">
-            <span className="text-3xl">{elegido.emoji}</span>
+            <IconoCategoria categoria={elegido.category} tam="lg" />
             <div className="flex-1 min-w-[160px]">
               <p className="font-bold text-slate-900">{elegido.name}</p>
               <p className="text-xs text-slate-500">{elegido.portionText}</p>
@@ -378,10 +391,7 @@ export const FormularioAlimento = ({ inicial, onCerrar, onGuardado }) => {
               </button>
             </div>
             <div className="flex gap-3">
-              <label className="w-20">
-                <span className="block text-xs font-bold text-slate-600 mb-1">Ícono</span>
-                <input value={form.emoji} onChange={set("emoji")} maxLength={4} placeholder={CATEGORIAS[form.category].emoji} className="w-full p-2.5 rounded-xl border border-slate-300 text-2xl text-center" />
-              </label>
+              <span className="self-end pb-0.5"><IconoCategoria categoria={form.category} tam="lg" /></span>
               <label className="flex-1">
                 <span className="block text-xs font-bold text-slate-600 mb-1">Nombre *</span>
                 <input required value={form.name} onChange={set("name")} placeholder="Ej. Ceviche de pescado" className="w-full p-2.5 rounded-xl border border-slate-300 text-sm" />
@@ -395,9 +405,9 @@ export const FormularioAlimento = ({ inicial, onCerrar, onGuardado }) => {
                     key={k}
                     type="button"
                     onClick={() => setForm((f) => ({ ...f, category: k }))}
-                    className={`px-2.5 py-1 rounded-full text-xs font-bold border cursor-pointer ${form.category === k ? c.activo : c.chip}`}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border cursor-pointer ${form.category === k ? c.activo : c.chip}`}
                   >
-                    {c.emoji} {c.nombre}
+                    <c.icono className="w-3.5 h-3.5" /> {c.nombre}
                   </button>
                 ))}
               </div>

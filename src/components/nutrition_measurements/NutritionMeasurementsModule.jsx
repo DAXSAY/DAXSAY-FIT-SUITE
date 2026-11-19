@@ -5,11 +5,12 @@ import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
 import { SeguimientoServicio, useCobertura } from "../common/Programados";
 import { AgendaEspecialistas } from "../appointments/AgendaEspecialistas";
 import { NutritionModule } from "../nutrition/NutritionModule";
-import { MeasurementsModule } from "../measurements/MeasurementsModule";
+import { DietasYMedidas } from "./DietasYMedidas";
+import { CabeceraModulo as _C, SinSeleccion } from "../common/CabeceraModulo";
 import { useGym } from "../../context/GymContext";
 
 export const NutritionMeasurementsModule = () => {
-  const [subTab, setSubTab] = useRecordado("nutricion", "plans", ["agenda"]);
+  const [subTab, setSubTab] = useRecordado("nutricion", "", ["agenda"]);
   const [pedirCrear, setPedirCrear] = useState(0);
   const { nutritionPlans, bodyAssessments, members } = useGym();
 
@@ -26,35 +27,24 @@ export const NutritionMeasurementsModule = () => {
         icono={Sparkles}
         etiqueta="Salud"
         titulo="Nutrición y medidas"
-        descripcion="Planes de alimentación, macros y evaluaciones corporales del alumno."
-        accion={<AccionCabecera icono={Plus} onClick={() => { setSubTab("plans"); setPedirCrear((n) => n + 1); }}>Crear / asignar dieta</AccionCabecera>}
+        descripcion="Medidas del alumno y su plan de alimentación, en un solo lugar."
+        accion={<AccionCabecera icono={Plus} onClick={() => { setSubTab("dym"); setPedirCrear((n) => n + 1); }}>Crear / asignar dieta</AccionCabecera>}
         activa={subTab}
         onCambiar={setSubTab}
         pestanas={[
-          { k: "plans", icono: Utensils, label: "Planes y dietas", badge: totalDietPlans, tono: "emerald" },
-          { k: "calculator", icono: Calculator, label: "Calculadora TDEE", tono: "sky" },
-          { k: "guide", icono: Hand, label: "Porciones y platos", tono: "amber" },
-          { k: "foods", icono: Apple, label: "Catálogo de alimentos", tono: "rose" },
-          { k: "measurements_bio", icono: Activity, label: "Evaluación corporal", badge: totalAssessments, tono: "teal" },
+          { k: "dym", icono: Utensils, label: "Dietas y medidas", badge: totalDietPlans, tono: "emerald" },
           { k: "seguimiento", icono: Users, label: "Seguimiento", badge: `${sinPlan} sin plan`, tono: "violet" },
+          { k: "guide", icono: Hand, label: "Porciones y platos", tono: "amber" },
           { k: "agenda", icono: CalendarDays, label: "Horario de atención", tono: "amber" },
         ]}
       />
 
-      {/* Embedded Sub-views */}
       <div className="transition-opacity duration-200">
-        {["plans", "calculator", "guide", "foods"].includes(subTab) && (
-          <NutritionModule vista={subTab} onVista={setSubTab} pedirCrear={pedirCrear} />
-        )}
-
+        {!subTab && <SinSeleccion texto="Elige Dietas y medidas, Seguimiento, Porciones y platos u Horario de atención." />}
+        {subTab === "dym" && <DietasYMedidas pedirCrear={pedirCrear} />}
+        {subTab === "guide" && <NutritionModule vista="guide" onVista={setSubTab} />}
         {subTab === "seguimiento" && <SeguimientoServicio tipo="nutricion" />}
         {subTab === "agenda" && <AgendaEspecialistas servicioInicial="nutricion" fijo />}
-
-        {subTab === "measurements_bio" && (
-          <div>
-            <MeasurementsModule />
-          </div>
-        )}
       </div>
     </div>
   );

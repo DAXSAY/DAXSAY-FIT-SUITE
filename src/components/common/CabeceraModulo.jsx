@@ -56,3 +56,13 @@ export const Pestanas = ({ pestanas, activa, onCambiar, className = "" }) => (
     })}
   </nav>
 );
+
+/** Pantalla vacía al entrar a un módulo: nada preseleccionado hasta que la persona elija */
+export const SinSeleccion = ({ texto = "Elige una opción del menú de arriba para empezar." }) => (
+  <div className="rd-aparece rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-14 text-center">
+    <svg viewBox="0 0 24 24" className="w-9 h-9 mx-auto text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 19V5M5 12l7-7 7 7" />
+    </svg>
+    <p className="mt-2 text-sm font-bold text-slate-600">{texto}</p>
+  </div>
+);

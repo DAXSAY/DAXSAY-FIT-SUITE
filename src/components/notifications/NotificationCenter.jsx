@@ -1,3 +1,4 @@
+import { Cake as NCake, Sparkles as NSparkles, AlarmClock as NAlarmClock, TriangleAlert as NTriangleAlert, CalendarClock as NCalendarClock, Ban as NBan, Gift as NGift, Bell as NBell } from "lucide-react";
 import { CreadorCampanas } from "./CreadorCampanas";
 import React, { useState } from "react";
 import {
@@ -33,18 +34,18 @@ import { ProgramadosCompleto, usePendientes } from "../common/Programados";
 
 // Color y emoji de cada tipo de regla
 const ESTILOS_REGLA = {
-  fidelizacion: { emoji: "🎂", barra: "from-pink-500 to-orange-400", icono: "bg-pink-50 text-pink-600", chip: "bg-pink-100 text-pink-700" },
-  especial: { emoji: "✨", barra: "from-violet-500 to-fuchsia-500", icono: "bg-violet-50 text-violet-600", chip: "bg-violet-100 text-violet-700" },
-  clases: { emoji: "⏰", barra: "from-emerald-500 to-teal-400", icono: "bg-emerald-50 text-emerald-600", chip: "bg-emerald-100 text-emerald-700" },
-  critico: { emoji: "⚠️", barra: "from-rose-500 to-amber-400", icono: "bg-rose-50 text-rose-600", chip: "bg-rose-100 text-rose-700" },
-  preventivo: { emoji: "📅", barra: "from-amber-400 to-yellow-300", icono: "bg-amber-50 text-amber-600", chip: "bg-amber-100 text-amber-800" },
-  vencido: { emoji: "⛔", barra: "from-rose-600 to-rose-400", icono: "bg-rose-50 text-rose-600", chip: "bg-rose-100 text-rose-700" },
-  promocion: { emoji: "🎁", barra: "from-orange-500 to-amber-400", icono: "bg-orange-50 text-orange-600", chip: "bg-orange-100 text-orange-700" },
+  fidelizacion: { emoji: "🎂", Ico: NCake, barra: "from-pink-500 to-orange-400", icono: "bg-pink-50 text-pink-600", chip: "bg-pink-100 text-pink-700" },
+  especial: { emoji: "✨", Ico: NSparkles, barra: "from-violet-500 to-fuchsia-500", icono: "bg-violet-50 text-violet-600", chip: "bg-violet-100 text-violet-700" },
+  clases: { emoji: "⏰", Ico: NAlarmClock, barra: "from-emerald-500 to-teal-400", icono: "bg-emerald-50 text-emerald-600", chip: "bg-emerald-100 text-emerald-700" },
+  critico: { emoji: "⚠️", Ico: NTriangleAlert, barra: "from-rose-500 to-amber-400", icono: "bg-rose-50 text-rose-600", chip: "bg-rose-100 text-rose-700" },
+  preventivo: { emoji: "📅", Ico: NCalendarClock, barra: "from-amber-400 to-yellow-300", icono: "bg-amber-50 text-amber-600", chip: "bg-amber-100 text-amber-800" },
+  vencido: { emoji: "⛔", Ico: NBan, barra: "from-rose-600 to-rose-400", icono: "bg-rose-50 text-rose-600", chip: "bg-rose-100 text-rose-700" },
+  promocion: { emoji: "🎁", Ico: NGift, barra: "from-orange-500 to-amber-400", icono: "bg-orange-50 text-orange-600", chip: "bg-orange-100 text-orange-700" },
 };
 const estiloRegla = (tag) => {
   const k = String(tag || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const clave = Object.keys(ESTILOS_REGLA).find((x) => k.includes(x)) || (k.includes("renov") ? "critico" : k.includes("promo") ? "promocion" : "");
-  return ESTILOS_REGLA[clave] || { emoji: "🔔", barra: "from-blue-500 to-cyan-400", icono: "bg-blue-50 text-blue-600", chip: "bg-blue-100 text-blue-700" };
+  return ESTILOS_REGLA[clave] || { emoji: "🔔", Ico: NBell, barra: "from-blue-500 to-cyan-400", icono: "bg-blue-50 text-blue-600", chip: "bg-blue-100 text-blue-700" };
 };
 // Resalta {{variables}} como etiquetas de color
 const conVariables = (texto) =>
@@ -549,7 +550,7 @@ export const NotificationCenter = () => {
                   <div className={`h-1.5 bg-gradient-to-r ${tono.barra}`} />
                   <div className="p-4 flex-1 flex flex-col gap-3">
                     <div className="flex items-start gap-3">
-                      <span className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 ${tono.icono}`}>{tono.emoji}</span>
+                      <span className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${tono.icono}`}><tono.Ico className="w-5 h-5" strokeWidth={1.9} /></span>
                       <div className="min-w-0 flex-1">
                         <span className={`inline-block text-[10px] font-black uppercase tracking-[0.14em] px-2 py-0.5 rounded-full ${tono.chip}`}>{rule.badgeTag}</span>
                         <h3 className="text-base font-extrabold text-slate-900 leading-snug mt-1">{rule.name}</h3>

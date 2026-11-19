@@ -269,7 +269,9 @@ const COMMON_FOODS = [
   },
 ];
 
-export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
+// Pedidos de "Crear / asignar dieta" ya atendidos (sobrevive a que la vista se vuelva a montar)
+let pedidoAtendido = 0;
+export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "" } = {}) => {
   const {
     nutritionPlans,
     members,
@@ -281,9 +283,8 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
     deleteNutritionPlan,
     bodyAssessments = [],
   } = useGym();
-  const [selectedPlanId, setSelectedPlanId] = useState(
-    nutritionPlans[0]?.id || "",
-  );
+  // Nada preseleccionado: el plan se ve solo cuando se elige un alumno
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterObjective, setFilterObjective] = useState("all");
   const [vmLocal, setVmLocal] = useState("plans");
@@ -349,10 +350,13 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
 
   // Selected Plan Object
   const selectedPlan = useMemo(() => {
-    return (
-      nutritionPlans.find((p) => p.id === selectedPlanId) || nutritionPlans[0]
-    );
-  }, [nutritionPlans, selectedPlanId]);
+    if (alumnoFijo) {
+      // El plan vigente del alumno elegido (el más reciente)
+      const suyos = nutritionPlans.filter((p) => String(p.targetStudentId) === String(alumnoFijo));
+      return suyos.sort((a, b) => String(b.createdDate || "").localeCompare(String(a.createdDate || "")))[0];
+    }
+    return nutritionPlans.find((p) => p.id === selectedPlanId);
+  }, [nutritionPlans, selectedPlanId, alumnoFijo]);
 
   // Filtered Plans
   const filteredPlans = useMemo(() => {
@@ -695,9 +699,10 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
 
   // La cabecera común (Nutrición y medidas) pide abrir el formulario
   useEffect(() => {
-    if (pedirCrear > 0) {
-      setViewMode("plans");
+    if (pedirCrear > pedidoAtendido) {
+      pedidoAtendido = pedirCrear;
       handleOpenCreateModal(false);
+      if (alumnoFijo) setFormStudentId(alumnoFijo);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedirCrear]);
@@ -781,6 +786,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
       {viewMode === "plans" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Plan Selector & Filters (fija al bajar: sin huecos vacíos) */}
+          {!alumnoFijo && (
           <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-3 self-start">
             {/* Search and Filters */}
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
@@ -868,8 +874,9 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
             </div>
           </div>
 
+          )}
           {/* Right Column: Selected Plan Detailed Blueprint */}
-          <div className="lg:col-span-8">
+          <div className={alumnoFijo ? "lg:col-span-12" : "lg:col-span-8"}>
             {selectedPlan ? (
               <div data-descargar className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
                 {/* Plan Header */}
@@ -961,7 +968,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
                     const platos = platosDePlan(selectedPlan, sexoAlumno(selectedPlan.targetStudentId));
                     return (
                       <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4">
-                        <h3 className="font-extrabold text-sm sm:text-base text-slate-900 mb-3">🍽️ Platos asignados ({platos.length})</h3>
+                        <h3 className="font-extrabold text-sm sm:text-base text-slate-900 mb-3">Platos asignados ({platos.length})</h3>
                         {platos.length ? (
                           <VistaPlatos
                             plates={platos}
@@ -976,7 +983,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
                   {/* Meals Header */}
                   <div className="flex items-center justify-between">
                     <h3 className="font-extrabold text-sm sm:text-base text-slate-900 flex items-center space-x-2">
-                      <span>🍽️ Cronograma de Comidas Diarias</span>
+                      <span>Cronograma de Comidas Diarias</span>
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                         {selectedPlan.meals.length} tiempos
                       </span>
@@ -1108,9 +1115,25 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
                 </div>
               </div>
             ) : (
+              alumnoFijo ? (
+                <div className="bg-white p-10 rounded-2xl border border-dashed border-slate-300 text-center">
+                  <p className="text-sm font-bold text-slate-600">Este alumno aún no tiene un plan de alimentación.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleOpenCreateModal(false);
+                      setFormStudentId(alumnoFijo);
+                    }}
+                    className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-black cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" /> Crear plan de alimentación
+                  </button>
+                </div>
+              ) : (
               <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center text-slate-400">
                 Selecciona un plan nutricional a la izquierda o crea uno nuevo.
               </div>
+              )
             )}
           </div>
         </div>
@@ -1128,7 +1151,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0 } = {}) => {
             <GuiaPorciones />
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="font-extrabold text-slate-900 mb-3">🍽️ Modelos de plato</h3>
+            <h3 className="font-extrabold text-slate-900 mb-3">Modelos de plato</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               {Object.entries(MODELOS_PLATO).map(([k, m]) => (
                 <div key={k} className="rounded-xl border border-slate-200 p-3">

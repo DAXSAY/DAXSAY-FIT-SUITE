@@ -4,9 +4,17 @@ import { useEffect, useState } from "react";
 // con «atrás» (botón, teclado o gesto del mouse) se ve lo mismo que antes.
 // noRecordar: valores que no se recuerdan (p. ej. "agenda": al entrar al módulo
 // se ve la pantalla principal y el horario solo al tocar su pestaña).
+// Solo se recupera lo recordado cuando se llega con «atrás»; al entrar desde
+// el menú todo empieza vacío (nada preseleccionado).
+let restaurar = false;
+export const marcarNavegacion = (volviendo) => {
+  restaurar = !!volviendo;
+};
+
 export function useRecordado(clave, inicial, noRecordar = []) {
   const k = `radical_vista_${clave}`;
   const [valor, setValor] = useState(() => {
+    if (!restaurar) return inicial;
     try {
       const v = sessionStorage.getItem(k);
       const x = v === null ? inicial : JSON.parse(v);

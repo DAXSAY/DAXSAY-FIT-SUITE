@@ -783,42 +783,40 @@ const DetalleTurno = ({ id, onVolver }) => {
 // ------------------------------------------------------------
 // Meta del mes del turno (recepción) — resumen
 // ------------------------------------------------------------
+// Meta de cobro SOLO del turno de quien está en caja (o del usuario de recepción):
+// una tarjeta pequeña al costado de la caja
 const MetaDelTurno = ({ turnoId }) => {
   const [metas, setMetas] = useState([]);
   useEffect(() => {
     api(`/metas/metas?mes=${hoyISO().slice(0, 7)}`)
-      .then((m) => setMetas(m.filter((x) => x.type === "recepcion" && (!turnoId || x.receptionShiftId === turnoId))))
+      .then((m) => setMetas(m.filter((x) => x.type === "recepcion")))
       .catch(() => setMetas([]));
   }, [turnoId]);
-  if (!metas.length) return null;
+  // Con caja abierta: la meta de ese turno. Sin caja: solo si la persona tiene un único turno (recepción)
+  const m = turnoId ? metas.find((x) => x.receptionShiftId === turnoId) : metas.length === 1 ? metas[0] : null;
+  if (!m) return null;
+  const p = m.progress;
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-      {metas.map((m) => {
-        const p = m.progress;
-        return (
-          <div key={m.id} className="rd-levanta rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-2.5">
-            <div className="flex items-center gap-3">
-              <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-lg"><CjTarget className="w-6 h-6" /></span>
-              <span className="flex-1 min-w-0">
-                <span className="block text-[11px] font-black uppercase tracking-wide text-amber-700">Meta del mes</span>
-                <span className="block text-sm font-black text-slate-900 truncate">{m.name}</span>
-              </span>
-              <span className="relative">
-                <Anillo pct={p.porcentaje} clase={p.cumplida ? "text-emerald-600" : "text-amber-600"} tam={48} />
-                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-slate-800">{p.porcentaje}%</span>
-              </span>
-            </div>
-            <div className="h-3 rounded-full bg-slate-100 overflow-hidden">
-              <div className={`h-full rounded-full ${p.cumplida ? "bg-emerald-500" : "bg-amber-500"}`} style={{ width: `${p.porcentaje}%` }} />
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <div><span className="text-slate-400 font-bold block">FALTA EN EL MES</span><strong className="text-rose-600 text-sm">{soles(p.faltante)}</strong></div>
-              <div><span className="text-slate-400 font-bold block">POR DÍA ({p.diasRestantes} días)</span><strong className="text-sm">{soles(p.necesarioPorDia)}</strong></div>
-              <div><span className="text-slate-400 font-bold block">HOY</span><strong className="text-emerald-600 text-sm">{soles(p.hoy)}</strong></div>
-            </div>
-          </div>
-        );
-      })}
+    <div className="rd-levanta lg:w-80 shrink-0 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 space-y-2">
+      <div className="flex items-center gap-2.5">
+        <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center shadow"><CjTarget className="w-5 h-5" /></span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-[11px] font-black uppercase tracking-wide text-amber-700">Meta de tu turno · mes</span>
+          <span className="block text-sm font-black text-slate-900 truncate">{m.name}</span>
+        </span>
+        <span className="relative">
+          <Anillo pct={p.porcentaje} clase={p.cumplida ? "text-emerald-600" : "text-amber-600"} tam={40} />
+          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-slate-800">{p.porcentaje}%</span>
+        </span>
+      </div>
+      <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+        <div className={`h-full rounded-full ${p.cumplida ? "bg-emerald-500" : "bg-amber-500"}`} style={{ width: `${p.porcentaje}%` }} />
+      </div>
+      <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+        <div><span className="text-slate-400 font-bold block">Falta</span><strong className="text-rose-600 text-xs">{soles(p.faltante)}</strong></div>
+        <div><span className="text-slate-400 font-bold block">Por día</span><strong className="text-xs">{soles(p.necesarioPorDia)}</strong></div>
+        <div><span className="text-slate-400 font-bold block">Hoy</span><strong className="text-emerald-600 text-xs">{soles(p.hoy)}</strong></div>
+      </div>
     </div>
   );
 };
@@ -907,7 +905,7 @@ export const CashShiftsModule = () => {
             <span className="text-xs font-black uppercase tracking-widest text-blue-300 flex items-center gap-1.5">
               <Vault className="w-4 h-4" /> Caja
             </span>
-            <h1 className="text-2xl font-black mt-1">Caja por turnos</h1>
+            <h1 className="text-2xl font-black mt-1">Arqueo de caja</h1>
             <p className="text-sm text-slate-300 max-w-2xl">
               Cada recepcionista abre y cierra su caja. Las ventas y matrículas se suman solas al turno abierto.
             </p>
@@ -966,12 +964,11 @@ export const CashShiftsModule = () => {
         </div>
       )}
 
-      <MetaDelTurno turnoId={abierto?.receptionShiftId || null} />
-
       {/* Estado actual */}
       {abierto ? (
         <>
-          <div className="rd-caja-abierta relative overflow-hidden rounded-2xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-white to-teal-50 p-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-col lg:flex-row gap-3">
+          <div className="rd-caja-abierta flex-1 min-w-0 relative overflow-hidden rounded-2xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-white to-teal-50 p-5 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg">
                 <LockOpen className="w-7 h-7" />
@@ -992,6 +989,8 @@ export const CashShiftsModule = () => {
                 así cada uno responde por su dinero.
               </p>
             )}
+          </div>
+          <MetaDelTurno turnoId={abierto.receptionShiftId || null} />
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1021,7 +1020,8 @@ export const CashShiftsModule = () => {
           </div>
         </>
       ) : (
-        <div className="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row gap-3">
+        <div className="flex-1 min-w-0 bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center">
               <Lock className="w-6 h-6" />
@@ -1047,6 +1047,8 @@ export const CashShiftsModule = () => {
               <LockOpen className="w-5 h-5" /> Abrir mi caja
             </button>
           )}
+        </div>
+        <MetaDelTurno turnoId={null} />
         </div>
       )}
 

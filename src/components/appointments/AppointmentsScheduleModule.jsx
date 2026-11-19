@@ -620,9 +620,11 @@ export const AppointmentsScheduleModule = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* LEFT / CENTER: GOOGLE CALENDAR GRID (7 COLUMNS) */}
             <div className="lg:col-span-12 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              {/* Encabezado y horas dentro del mismo contenedor con scroll: columnas siempre alineadas */}
+              <div className="max-h-[560px] overflow-y-auto rd-agenda-semana">
               {/* Calendar Days Header */}
-              <div className="grid grid-cols-8 bg-slate-900 text-white border-b border-slate-800 text-center text-xs font-bold sticky top-0 z-10">
-                <div className="p-3 bg-slate-950 text-slate-400 border-r border-slate-800 flex items-center justify-center">
+              <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] bg-slate-900 text-white border-b border-slate-800 text-center text-xs font-bold sticky top-0 z-10">
+                <div className="p-2 bg-slate-950 text-slate-400 border-r border-slate-800 flex items-center justify-center">
                   <Clock className="w-4 h-4" />
                 </div>
                 {DAYS_OF_WEEK.map((day) => {
@@ -634,7 +636,7 @@ export const AppointmentsScheduleModule = () => {
                         setSelectedDay(day.key);
                         setSelectedDate(day.date);
                       }}
-                      className={`p-2.5 transition-colors text-left flex flex-col items-center justify-center cursor-pointer border-r border-slate-800 last:border-r-0 ${
+                      className={`px-1 py-1.5 transition-colors text-center flex flex-col items-center justify-center cursor-pointer border-r border-slate-800 last:border-r-0 ${
                         isDaySelected
                           ? "bg-blue-600 text-white"
                           : "hover:bg-slate-800 text-slate-300"
@@ -654,12 +656,12 @@ export const AppointmentsScheduleModule = () => {
               </div>
 
               {/* Time Slots Rows */}
-              <div className="divide-y divide-slate-100 max-h-[640px] overflow-y-auto">
+              <div className="divide-y divide-slate-100">
                 {HOURS.map((hour) => {
                   return (
                     <div
                       key={hour}
-                      className="grid grid-cols-8 min-h-[64px] group"
+                      className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] min-h-[44px] group"
                     >
                       {/* Left time label */}
                       <div className="p-2 bg-slate-50 border-r border-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center text-center select-none">
@@ -729,7 +731,7 @@ export const AppointmentsScheduleModule = () => {
                               day.date < hoyISO() ? (
                                 <div className="h-full" />
                               ) : (
-                                <div className="h-full flex items-center justify-center py-2">
+                                <div className="h-full flex items-center justify-center py-0.5">
                                   <span className="w-8 h-8 rounded-full border-2 border-dashed border-slate-300 text-slate-400 flex items-center justify-center hover:border-blue-500 hover:text-white hover:bg-blue-600 transition-all">
                                     <Plus className="w-4 h-4" />
                                   </span>
@@ -780,6 +782,7 @@ export const AppointmentsScheduleModule = () => {
                     </div>
                   );
                 })}
+              </div>
               </div>
             </div>
 

@@ -3,6 +3,7 @@
 // Filtra alumnos, matrículas, ingresos, asistencias y metas; lo que
 // queda en pantalla se exporta a Excel/PDF o se envía por WhatsApp.
 // ============================================================
+import { SinSeleccion } from "../common/CabeceraModulo";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   FileBarChart,
@@ -130,22 +131,8 @@ const Chip = ({ activo, onClick, children, tono }) => {
 };
 
 // Fila de atajos: igual en todos los reportes
-const ORDEN_TONOS = ["blue", "emerald", "amber", "rose", "violet", "sky", "orange", "pink", "indigo", "fuchsia"];
-const Atajos = ({ children }) => {
-  let n = 0;
-  const chips = React.Children.toArray(children).map((c) => {
-    if (!React.isValidElement(c) || c.props.tono) return c;
-    return React.cloneElement(c, { tono: ORDEN_TONOS[n++ % ORDEN_TONOS.length] });
-  });
-  return (
-    <div className="flex flex-wrap items-center gap-1.5 pb-3 border-b border-dashed border-slate-200">
-      <span className="text-[11px] font-black text-blue-700 uppercase tracking-wider mr-1 flex items-center gap-1">
-        <Filter className="w-3.5 h-3.5" /> Atajos
-      </span>
-      {chips}
-    </div>
-  );
-};
+// Los atajos se retiraron: los filtros de cada reporte bastan
+const Atajos = () => null;
 
 // Grupo de filtros con cabecera de color
 const COLOR_GRUPO = {
@@ -1611,7 +1598,7 @@ const ReporteCongelamientos = () => {
 };
 
 export const ReportsModule = () => {
-  const [tab, setTab] = useState("alumnos");
+  const [tab, setTab] = useState("");
   const [clave, setClave] = useState(0);
   const tabs = [
     ["alumnos", "Alumnos", Users, "from-blue-600 to-blue-500", "text-blue-600"],
@@ -1656,6 +1643,7 @@ export const ReportsModule = () => {
         </span>
       </div>
       <div key={`${tab}-${clave}`}>
+        {!tab && <SinSeleccion texto="Elige un reporte de la lista de arriba para verlo." />}
         {tab === "alumnos" && <ReporteAlumnos />}
         {tab === "matriculas" && <ReporteMatriculas />}
         {tab === "ingresos" && <ReporteIngresos />}

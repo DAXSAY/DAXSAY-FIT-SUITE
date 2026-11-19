@@ -1,5 +1,5 @@
 import { AccionCabecera } from "../common/CabeceraModulo";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { PanelComposicion, SiluetaMedidas, edadDe, GuiaPerimetros, BarraRango, rangos } from "./VisualMedidas";
 import {
   Activity,
@@ -79,7 +79,7 @@ const Resultado = ({ titulo, valor, detalle, color }) => (
   </div>
 );
 
-export const MeasurementsModule = () => {
+export const MeasurementsModule = ({ alumnoFijo = "" } = {}) => {
   const {
     members,
     trainers,
@@ -91,9 +91,10 @@ export const MeasurementsModule = () => {
   } = useGym();
 
   // Active Member Selection
-  const [selectedMemberId, setSelectedMemberId] = useState(
-    members[0]?.id || "",
-  );
+  const [selectedMemberId, setSelectedMemberId] = useState(alumnoFijo || "");
+  useEffect(() => {
+    if (alumnoFijo) setSelectedMemberId(alumnoFijo);
+  }, [alumnoFijo]);
   const [searchMemberQuery, setSearchMemberQuery] = useState("");
   const [selectedAssessmentId, setSelectedAssessmentId] = useState(null);
   const [chartMetricFilter, setChartMetricFilter] = useState("all");
@@ -142,7 +143,7 @@ export const MeasurementsModule = () => {
 
   // Current Selected Member
   const selectedMember = useMemo(() => {
-    return members.find((m) => m.id === selectedMemberId) || members[0];
+    return members.find((m) => String(m.id) === String(selectedMemberId));
   }, [members, selectedMemberId]);
 
   // Current Member in Form
@@ -468,16 +469,26 @@ export const MeasurementsModule = () => {
 
   return (
     <div className="space-y-6">
+      {alumnoFijo ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-teal-600" /> Medidas del alumno: peso, perímetros y bioimpedancia. Cada control queda en su historial.
+          </p>
+          <AccionCabecera icono={Plus} onClick={() => handleOpenNewAssessment(alumnoFijo)}>Nueva evaluación / control</AccionCabecera>
+        </div>
+      ) : (
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
           <Activity className="w-4 h-4 text-teal-600" /> Antropometría y bioimpedancia: elige un alumno para ver su evolución.
         </p>
         <AccionCabecera icono={Plus} onClick={() => handleOpenNewAssessment()}>Registrar nueva medición</AccionCabecera>
       </div>
+      )}
 
       {/* Main Grid: Student Selector Left + History & Details Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Student Selector */}
+        {!alumnoFijo && (
         <div className="lg:col-span-4 space-y-4">
           <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
             <label className="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
@@ -544,8 +555,9 @@ export const MeasurementsModule = () => {
           </div>
         </div>
 
+        )}
         {/* Right Column: Historical Analysis, Chart & Detailed Sheet */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className={`${alumnoFijo ? "lg:col-span-12" : "lg:col-span-8"} space-y-6`}>
           {selectedMember ? (
             <>
               {/* Member Summary Card with Historical Deltas */}

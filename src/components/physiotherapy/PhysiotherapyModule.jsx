@@ -1,6 +1,7 @@
+import { SinSeleccion } from "../common/CabeceraModulo";
 import { SeguimientoServicio } from "../common/Programados";
 import { AgendaEspecialistas } from "../appointments/AgendaEspecialistas";
-import { UsersRound, CalendarDays } from "lucide-react";
+import { UsersRound, CalendarDays, AlertTriangle as FiAlerta, ClipboardCheck as FiFicha, CircleDashed as FiSinEval, Flame as FiDolor } from "lucide-react";
 import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
 import { useRecordado } from "../../utils/subPestana";
 import { useCobertura } from "../common/Programados";
@@ -193,6 +194,14 @@ const DEFAULT_FUNCTIONAL_TESTS = [
   { testName: "Test de Mulder (neuroma de Morton)", joint: "Dedos del pie / Hallux", result: "no_evaluado" },
 ];
 
+const CHIP_FISIO = {
+  slate: ["bg-slate-700 border-slate-700", "text-slate-500"],
+  amber: ["bg-amber-600 border-amber-600", "text-amber-600"],
+  teal: ["bg-teal-600 border-teal-600", "text-teal-600"],
+  sky: ["bg-sky-600 border-sky-600", "text-sky-600"],
+  rose: ["bg-rose-600 border-rose-600", "text-rose-600"],
+};
+
 export const PhysiotherapyModule = () => {
   const {
     members,
@@ -211,7 +220,7 @@ export const PhysiotherapyModule = () => {
   const sinEvaluar = members.filter((m) => !evaluados.has(String(m.id))).length;
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [filtroFisio, setFiltroFisio] = useState("todos"); // todos · lesiones · con_sesiones · sin_eval · dolor_alto
+  const [filtroFisio, setFiltroFisio] = useState(""); // todos · lesiones · con_sesiones · sin_eval · dolor_alto
   const [selectedMemberId, setSelectedMemberId] = useState(null);
   // Modals state
   const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false);
@@ -233,7 +242,7 @@ export const PhysiotherapyModule = () => {
   const [chartMetricView, setChartMetricView] = useState("both");
 
   // Main View Switcher ('fichas' or 'textual')
-  const [activeMainView, setActiveMainView] = useRecordado("fisio", "fichas", ["agenda"]);
+  const [activeMainView, setActiveMainView] = useRecordado("fisio", "", ["agenda"]);
 
   // FORM STATES
   const [formMemberId, setFormMemberId] = useState("");
@@ -387,6 +396,7 @@ export const PhysiotherapyModule = () => {
   const conLesion = (m) => !!(m.medicalNotes && m.medicalNotes.trim());
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
+      if (!searchTerm.trim() && !filtroFisio) return false; // nada cargado hasta buscar o filtrar
       if (!coincideAlumno(m, searchTerm)) return false;
       const ult = ultimaSesion.get(m.id);
       if (filtroFisio === "lesiones") return conLesion(m);
@@ -399,14 +409,8 @@ export const PhysiotherapyModule = () => {
 
   // Selected member object
   const selectedMember = useMemo(() => {
-    if (!selectedMemberId && filteredMembers.length > 0) {
-      return filteredMembers[0];
-    }
-    return (
-      members.find((m) => m.id === selectedMemberId) ||
-      filteredMembers[0] ||
-      null
-    );
+    // Nada preseleccionado: solo el alumno que se elija
+    return members.find((m) => m.id === selectedMemberId) || null;
   }, [selectedMemberId, filteredMembers, members]);
 
   // Sessions for active member sorted by date/time desc
@@ -1310,7 +1314,9 @@ export const PhysiotherapyModule = () => {
         ]}
       />
 
-      {activeMainView === "seguimiento" ? (
+      {!activeMainView ? (
+        <SinSeleccion texto="Elige Fichas clínicas, Evaluaciones por alumno, Seguimiento u Horario de atención." />
+      ) : activeMainView === "seguimiento" ? (
         <SeguimientoServicio tipo="fisioterapia" />
       ) : activeMainView === "agenda" ? (
         <AgendaEspecialistas servicioInicial="fisioterapia" fijo />
@@ -1338,23 +1344,37 @@ export const PhysiotherapyModule = () => {
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <select
-                value={filtroFisio}
-                onChange={(e) => setFiltroFisio(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-hidden"
-              >
-                <option value="todos">🩺 Todos los alumnos ({members.length})</option>
-                <option value="lesiones">⚠️ Con lesiones o restricciones ({members.filter(conLesion).length})</option>
-                <option value="con_sesiones">📋 Con evaluación ({members.filter((m) => ultimaSesion.has(m.id)).length})</option>
-                <option value="sin_eval">⭕ Sin evaluación ({members.filter((m) => !ultimaSesion.has(m.id)).length})</option>
-                <option value="dolor_alto">🔥 Dolor alto, EVA 6 o más ({members.filter((m) => Number(ultimaSesion.get(m.id)?.painLevelEVA) >= 6).length})</option>
-              </select>
+              {/* Filtros como chips con íconos de línea */}
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  ["todos", UsersRound, "Todos", members.length, "slate"],
+                  ["lesiones", FiAlerta, "Con lesión", members.filter(conLesion).length, "amber"],
+                  ["con_sesiones", FiFicha, "Evaluados", members.filter((m) => ultimaSesion.has(m.id)).length, "teal"],
+                  ["sin_eval", FiSinEval, "Sin evaluación", members.filter((m) => !ultimaSesion.has(m.id)).length, "sky"],
+                  ["dolor_alto", FiDolor, "Dolor alto (EVA 6+)", members.filter((m) => Number(ultimaSesion.get(m.id)?.painLevelEVA) >= 6).length, "rose"],
+                ].map(([k, I, t, n, tono]) => {
+                  const on = filtroFisio === k;
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => setFiltroFisio(on ? "" : k)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold cursor-pointer transition-all ${
+                        on ? `${CHIP_FISIO[tono][0]} text-white shadow-sm` : "bg-white border-slate-200 text-slate-700 hover:border-slate-400"
+                      }`}
+                    >
+                      <I className={`w-3.5 h-3.5 ${on ? "" : CHIP_FISIO[tono][1]}`} /> {t}
+                      <span className={`px-1.5 rounded-full text-[10px] tabular-nums ${on ? "bg-white/25" : "bg-slate-100 text-slate-500"}`}>{n}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="space-y-2.5 max-h-[720px] lg:max-h-[calc(100vh-9rem)] overflow-y-auto pr-1">
               {filteredMembers.length === 0 ? (
                 <div className="bg-white p-8 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
-                  No hay alumnos con los filtros aplicados.
+                  {searchTerm.trim() || filtroFisio ? "No hay alumnos con los filtros aplicados." : "Escribe un código, nombre o DNI, o elige un filtro para ver alumnos."}
                 </div>
               ) : (
                 filteredMembers.map((member) => {

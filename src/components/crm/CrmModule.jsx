@@ -5,6 +5,7 @@
 // antes, se puede dar un pase libre con código y cerrar el caso como
 // "Matriculado" o "De baja" (por ejemplo, si no contesta).
 // =====================================================================
+import { SinSeleccion } from "../common/CabeceraModulo";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Contact,
@@ -717,7 +718,7 @@ export const CrmModule = () => {
   const [form, setForm] = useState(null); // {} nuevo | prospecto
   const [abierto, setAbierto] = useState(null);
   const [paseNuevo, setPaseNuevo] = useState(null);
-  const [vista, setVista] = useState("interesados");
+  const [vista, setVista] = useState("");
   const [modo, setModo] = useState(() => {
     try {
       return localStorage.getItem("radical_crm_modo") || "tablero";
@@ -940,6 +941,7 @@ export const CrmModule = () => {
         ))}
       </div>
 
+      {!vista && <SinSeleccion texto="Elige Interesados, Pases libres, Registro o Reporte para empezar." />}
       {vista === "pases" && (
         <PanelPases
           gym={gym}

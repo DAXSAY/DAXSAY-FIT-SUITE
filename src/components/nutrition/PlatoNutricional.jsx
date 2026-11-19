@@ -612,7 +612,7 @@ export const EditorPlatos = ({ value, onChange, sexo, metas, comidas = [], setCo
     <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-3 sm:p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-extrabold text-emerald-900">🍽️ Comidas del día</p>
+          <p className="text-sm font-extrabold text-emerald-900">Comidas del día</p>
           <p className="text-xs text-slate-500">Cada comida es un plato. Tócalo para programar su distribución, porciones y alimentos.</p>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -682,8 +682,8 @@ export const EditorPlatos = ({ value, onChange, sexo, metas, comidas = [], setCo
             </label>
             <div className="inline-flex p-1 rounded-xl bg-slate-100 gap-1">
               {[
-                ["distribucion", "🥧 Distribución y porciones"],
-                ["alimentos", `🥗 Alimentos${idxComida >= 0 && comidas[idxComida].items?.length ? ` (${comidas[idxComida].items.length})` : ""}`],
+                ["distribucion", "Distribución y porciones"],
+                ["alimentos", `Alimentos${idxComida >= 0 && comidas[idxComida].items?.length ? ` (${comidas[idxComida].items.length})` : ""}`],
               ].map(([k, l]) => (
                 <button key={k} type="button" onClick={() => setPestana(k)} className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${pestana === k ? "bg-white shadow text-emerald-800" : "text-slate-600"}`}>
                   {l}

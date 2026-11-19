@@ -1,4 +1,4 @@
-// Caja por turnos: apertura, movimientos del turno, arqueo y cierre.
+// Arqueo de caja: apertura, movimientos del turno, arqueo y cierre.
 // Solo hay una caja física, por eso solo puede haber UN turno abierto.
 // Los ingresos/egresos (ventas POS, matrículas, gastos) se asocian solos al
 // turno abierto mediante el trigger trg_movimientos_caja_turno.
@@ -75,7 +75,7 @@ function aTurno(t, res) {
     openingCash: Number(t.monto_apertura),
     openingDifference: r2(Number(t.monto_apertura) - Number(t.monto_recibido)),
     openingNote: t.obs_apertura || "",
-    receptionShiftId: t.idturno_recepcion ? String(t.idturno_recepcion) : null,
+    receptionShiftId: t.idturno_recepcion || t.turno_usuario ? String(t.idturno_recepcion || t.turno_usuario) : null,
     closedBy: t.nombre_cierre || null,
     closedAt: t.fecha_cierre || null,
     // Mientras está abierto, el esperado se calcula en vivo
@@ -120,9 +120,9 @@ async function movimientosDe(idturno) {
 // GET /api/turnos-caja/actual  -> turno abierto + último cerrado
 router.get("/actual", requierePermiso(["cash", "finance"], "ver"), async (req, res, next) => {
   try {
-    const [abierto] = await consultar("SELECT * FROM turnos_caja WHERE estado = 'abierto' LIMIT 1");
+    const [abierto] = await consultar("SELECT *, (SELECT u.idturno_recepcion FROM usuarios u WHERE u.idusuario = turnos_caja.idusuario_apertura) AS turno_usuario FROM turnos_caja WHERE estado = 'abierto' LIMIT 1");
     const [ultimo] = await consultar(
-      "SELECT * FROM turnos_caja WHERE estado = 'cerrado' ORDER BY idturno DESC LIMIT 1",
+      "SELECT *, (SELECT u.idturno_recepcion FROM usuarios u WHERE u.idusuario = turnos_caja.idusuario_apertura) AS turno_usuario FROM turnos_caja WHERE estado = 'cerrado' ORDER BY idturno DESC LIMIT 1",
     );
     res.json({
       open: await turnoCompleto(abierto),
@@ -147,7 +147,7 @@ router.get("/", requierePermiso(["cash", "finance"], "ver"), async (req, res, ne
     const desde = fecha(req.query.desde);
     const hasta = fecha(req.query.hasta);
     const filas = await consultar(
-      `SELECT * FROM turnos_caja
+      `SELECT *, (SELECT u.idturno_recepcion FROM usuarios u WHERE u.idusuario = turnos_caja.idusuario_apertura) AS turno_usuario FROM turnos_caja
         WHERE fecha_apertura >= IFNULL(?, CURDATE() - INTERVAL 30 DAY)
           AND fecha_apertura <  IFNULL(? + INTERVAL 1 DAY, NOW() + INTERVAL 1 DAY)
         ORDER BY fecha_apertura DESC LIMIT 300`,
@@ -162,7 +162,7 @@ router.get("/", requierePermiso(["cash", "finance"], "ver"), async (req, res, ne
 // GET /api/turnos-caja/:id  -> detalle con movimientos
 router.get("/:id(\\d+)", requierePermiso(["cash", "finance"], "ver"), async (req, res, next) => {
   try {
-    const [t] = await consultar("SELECT * FROM turnos_caja WHERE idturno = ?", [req.params.id]);
+    const [t] = await consultar("SELECT *, (SELECT u.idturno_recepcion FROM usuarios u WHERE u.idusuario = turnos_caja.idusuario_apertura) AS turno_usuario FROM turnos_caja WHERE idturno = ?", [req.params.id]);
     if (!t) throw new ErrorHttp(404, "Turno no encontrado");
     res.json({ ...(await turnoCompleto(t)), movements: await movimientosDe(t.idturno) });
   } catch (e) {
@@ -207,7 +207,7 @@ router.post("/abrir", requierePermiso("cash", "crear"), async (req, res, next) =
       ],
     );
     await cx.commit();
-    const [t] = await consultar("SELECT * FROM turnos_caja WHERE idturno = ?", [r.insertId]);
+    const [t] = await consultar("SELECT *, (SELECT u.idturno_recepcion FROM usuarios u WHERE u.idusuario = turnos_caja.idusuario_apertura) AS turno_usuario FROM turnos_caja WHERE idturno = ?", [r.insertId]);
     res.status(201).json(await turnoCompleto(t));
   } catch (e) {
     await cx.rollback().catch(() => {});
@@ -266,7 +266,7 @@ router.post("/:id(\\d+)/cerrar", requierePermiso("cash", "editar"), async (req, 
     const obs = String(d.observacion || "").trim().slice(0, 300) || null;
 
     await cx.beginTransaction();
-    const [[t]] = await cx.query("SELECT * FROM turnos_caja WHERE idturno = ? FOR UPDATE", [req.params.id]);
+    const [[t]] = await cx.query("SELECT *, (SELECT u.idturno_recepcion FROM usuarios u WHERE u.idusuario = turnos_caja.idusuario_apertura) AS turno_usuario FROM turnos_caja WHERE idturno = ? FOR UPDATE", [req.params.id]);
     if (!t) throw new ErrorHttp(404, "Turno no encontrado");
     if (t.estado !== "abierto") throw new ErrorHttp(400, "Este turno ya fue cerrado");
 
@@ -304,7 +304,7 @@ router.post("/:id(\\d+)/cerrar", requierePermiso("cash", "editar"), async (req, 
       ],
     );
     await cx.commit();
-    const [cerrado] = await consultar("SELECT * FROM turnos_caja WHERE idturno = ?", [t.idturno]);
+    const [cerrado] = await consultar("SELECT *, (SELECT u.idturno_recepcion FROM usuarios u WHERE u.idusuario = turnos_caja.idusuario_apertura) AS turno_usuario FROM turnos_caja WHERE idturno = ?", [t.idturno]);
     res.json(await turnoCompleto(cerrado));
   } catch (e) {
     await cx.rollback().catch(() => {});

@@ -1,3 +1,5 @@
+import { colorDePlan } from "../../utils/colorPlan";
+import { Check, Snowflake } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { X, UserPlus, CreditCard, IdCard, Dumbbell } from "lucide-react";
 import { useGym } from "../../context/GymContext";
@@ -36,9 +38,8 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
   const [notes, setNotes] = useState("");
   const [objective, setObjective] = useState("hipertrofia");
 
-  const [selectedPlanId, setSelectedPlanId] = useState(
-    plans[1]?.id || plans[0]?.id || "",
-  );
+  // Ningún plan elegido de antemano: recepción lo elige
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const [startDate, setStartDate] = useState(todayStr);
   const [assignedTrainerId, setAssignedTrainerId] = useState("");
   const [assignedRoutineId, setAssignedRoutineId] = useState("");
@@ -74,11 +75,11 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
   }, [isOpen, inicial?.prospectId, dni, phone]);
 
   // Los planes llegan desde la base de datos: elegir uno por defecto al cargar
+  // Si el plan elegido se da de baja o cambia en Planes y tarifas, se suelta
   useEffect(() => {
-    if (!plans.find((p) => p.id === selectedPlanId) && plans.length > 0) {
-      setSelectedPlanId((plans.find((p) => p.popular) || plans[0]).id);
-    }
-  }, [plans]);
+    if (selectedPlanId && !plans.find((p) => p.id === selectedPlanId)) setSelectedPlanId("");
+  }, [plans, selectedPlanId]);
+  const planesOrdenados = [...plans].filter((p) => !p.archived).sort((a, b) => a.price - b.price);
 
   if (!isOpen) return null;
 
@@ -107,7 +108,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
 
     const pagaAlgo = amountPaid === "" ? currentPlan.price > 0 : Number(amountPaid) > 0;
     if (bloqueaCaja && pagaAlgo) {
-      setErrorForm("Abre tu caja (Caja por turnos) antes de cobrar la matrícula.");
+      setErrorForm("Abre tu caja (Arqueo de caja) antes de cobrar la matrícula.");
       return;
     }
     const debeSaldo = amountPaid !== "" && Number(amountPaid) < currentPlan.price - 0.004;
@@ -150,7 +151,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
     // Formulario limpio para la siguiente matrícula (no arrastra datos del alumno anterior)
     setDni(""); setFullName(""); setPhone("+51"); setEmail(""); setGender("M"); setBirthDate(""); setAddress("");
     setAmountPaid(""); setDebtDueDate(""); setErrorForm(""); setEmergencyName(""); setEmergencyPhone(""); setEmergencyRel("Familiar");
-    setMedicalNotes(""); setNotes(""); setObjective("hipertrofia"); setSelectedPlanId(plans[1]?.id || plans[0]?.id || "");
+    setMedicalNotes(""); setNotes(""); setObjective("hipertrofia"); setSelectedPlanId("");
     setStartDate(todayStr); setAssignedTrainerId(""); setAssignedRoutineId(""); setPaymentMethod("efectivo");
 
     confetti({
@@ -452,33 +453,43 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
             </span>
 
             {/* Plans choice */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2.5">
-              {plans.map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => setSelectedPlanId(p.id)}
-                  className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
-                    selectedPlanId === p.id
-                      ? "bg-blue-50/70 border-blue-600 ring-1 ring-blue-600"
-                      : "bg-gray-50 border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <p className="font-bold text-slate-900 text-xs">{p.name}</p>
-                  <p className="text-xs text-gray-500">
-                    {p.durationDays} días
-                  </p>
-                  <p className="text-blue-700 font-bold font-mono text-xs mt-0.5">
-                    S/ {p.price}
-                  </p>
-                  <p className={`text-[10px] font-bold mt-0.5 ${p.freezeDays ? "text-sky-700" : "text-gray-400"}`}>
-                    ❄️ {p.freezeDays ? `${p.freezeDays} días congelamiento` : "Sin congelamiento"}
-                  </p>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-2.5">
+              {planesOrdenados.length === 0 && (
+                <p className="col-span-full text-xs text-slate-500 py-3 text-center">Aún no hay planes. Créalos en Planes y tarifas.</p>
+              )}
+              {planesOrdenados.map((p, i) => {
+                const c = colorDePlan(p, i);
+                const sel = selectedPlanId === p.id;
+                return (
+                  <button
+                    type="button"
+                    key={p.id}
+                    onClick={() => setSelectedPlanId(p.id)}
+                    className={`relative text-left overflow-hidden rounded-xl border bg-white cursor-pointer transition-all ${sel ? "border-transparent ring-2 ring-offset-1 ring-slate-500 shadow-md" : "border-slate-200 hover:border-slate-300 hover:shadow-sm"}`}
+                  >
+                    <span className={`block h-1.5 bg-gradient-to-r ${c.acento}`} style={c.estilo} />
+                    <span className="block p-2.5">
+                      <span className="flex items-start justify-between gap-1.5">
+                        <span className="font-extrabold text-slate-900 text-xs leading-tight">{p.name}</span>
+                        {sel && (
+                          <span className={`shrink-0 w-4 h-4 rounded-full bg-gradient-to-br ${c.acento} text-white flex items-center justify-center`} style={c.estilo}>
+                            <Check className="w-3 h-3" />
+                          </span>
+                        )}
+                      </span>
+                      <span className="block text-[11px] text-slate-500 mt-0.5">{p.durationDays} días</span>
+                      <span className="block font-black font-mono text-sm mt-0.5" style={{ color: c.hex }}>S/ {Number(p.price).toFixed(2)}</span>
+                      <span className={`mt-1 inline-flex items-center gap-1 text-[10px] font-bold ${p.freezeDays ? "text-sky-700" : "text-slate-400"}`}>
+                        <Snowflake className="w-3 h-3" /> {p.freezeDays ? `${p.freezeDays} días de congelamiento` : "Sin congelamiento"}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             {currentPlan && (
               <p className={`text-xs mb-2.5 px-2.5 py-1.5 rounded-md border ${currentPlan.freezeDays ? "bg-sky-50 text-sky-800 border-sky-200" : "bg-gray-50 text-gray-500 border-gray-200"}`}>
-                ❄️ {currentPlan.freezeRules || "Sin congelamiento"}
+                {currentPlan.freezeRules || "Sin congelamiento"}
                 {currentPlan.freezeDays ? " · todo o nada; caduca al vencer la membresía." : "."}
               </p>
             )}
@@ -602,7 +613,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
           {cajaCerrada && (
             <p className={`text-xs font-bold rounded-lg px-3 py-2 border ${bloqueaCaja ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
               {bloqueaCaja
-                ? "🔒 La caja está cerrada: ábrela en Caja por turnos para cobrar esta matrícula."
+                ? "🔒 La caja está cerrada: ábrela en Arqueo de caja para cobrar esta matrícula."
                 : "⚠️ Nadie tiene la caja abierta: este cobro quedará fuera de un turno de caja."}
             </p>
           )}

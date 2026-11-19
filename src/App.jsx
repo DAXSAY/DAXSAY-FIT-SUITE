@@ -1,3 +1,4 @@
+import { marcarNavegacion } from "./utils/subPestana";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { GymProvider, useGym } from "./context/GymContext";
 import { Header } from "./components/common/Header";
@@ -48,6 +49,7 @@ function MainAppContent() {
   const setActiveTab = useCallback((tab) => {
     if (!tab || tab === tabActual.current) return;
     tabActual.current = tab;
+    marcarNavegacion(false);
     window.history.pushState({ radical: tab }, "");
     setTabInterno(tab);
     window.scrollTo({ top: 0 });
@@ -94,6 +96,7 @@ function MainAppContent() {
         return;
       }
       if (st.radical) {
+        marcarNavegacion(true);
         tabActual.current = st.radical;
         setTabInterno(st.radical);
       }

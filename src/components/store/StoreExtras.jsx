@@ -430,7 +430,7 @@ export const SalesReport = ({ puedeAnular, onReimprimir, onCambio }) => {
 
       {resumen && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <TarjetaKpi titulo="Total vendido" texto={soles(resumen.total)} sub={`${resumen.sales} venta(s)`} icono={Wallet} tono="verde" />
             <TarjetaKpi titulo="Ventas" valor={resumen.sales} sub={resumen.voided ? `${resumen.voided} anulada(s)` : "sin anulaciones"} icono={Receipt} tono="azul" />
             <TarjetaKpi titulo="Ticket promedio" texto={soles(resumen.avgTicket)} sub="por venta" icono={TrendingUp} tono="violeta" />

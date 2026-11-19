@@ -37,7 +37,7 @@ export const MODULES = {
   appointments: { label: "Horarios y citas", code: "HC", icon: Calendar },
   attendances: { label: "Asistencias", code: "AS", icon: UserCheck },
   store: { label: "Ventas", code: "SL", icon: Store },
-  cash: { label: "Caja por turnos", code: "CJ", icon: Vault },
+  cash: { label: "Arqueo de caja", code: "CJ", icon: Vault },
   users: { label: "Usuarios", code: "US", icon: ShieldCheck },
   reports: { label: "Reportes", code: "RP", icon: FileBarChart },
   goals: { label: "Metas y logros", code: "MT", icon: Trophy },

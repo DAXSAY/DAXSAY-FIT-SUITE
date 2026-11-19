@@ -3393,3 +3393,9 @@ html.dark .rd-cal-sel { background: linear-gradient(135deg, #22b8c2, #168c96) !i
 html.dark .rd-cal-pie { border-top: 1px solid rgba(148, 180, 210, .15); }
 html.dark .rd-cal-pie-btn { background: rgba(120, 170, 220, .08); color: #94a3b8; }
 html.dark .rd-cal-pie-hoy { background: rgba(64, 200, 210, .16); color: #6fdde3; }
+
+/* Caja abierta: degradado neón en oscuro (sin blanco) */
+html.dark .rd-caja-abierta {
+  background: linear-gradient(90deg, rgba(16, 72, 70, 0.55), rgba(15, 32, 54, 0.9) 55%, rgba(30, 90, 100, 0.45)) !important;
+  border-color: rgba(64, 200, 170, 0.45) !important;
+}

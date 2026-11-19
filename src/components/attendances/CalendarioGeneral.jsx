@@ -37,10 +37,10 @@ const BOTON = {
 export const CalendarioGeneral = ({ onVerLista }) => {
   const { attendances = [], members = [], staffContracts = [] } = useGym();
   const hoy = hoyISO();
-  const [grupo, setGrupo] = useState("alumnos");
+  const [grupo, setGrupo] = useState(""); // nada cargado hasta elegir de quién
   const [mes, setMes] = useState(hoy.slice(0, 7));
   const [dia, setDia] = useState(hoy);
-  const g = GRUPOS.find((x) => x.id === grupo);
+  const g = GRUPOS.find((x) => x.id === grupo) || { nombre: "registros", icono: CalendarCheck, color: "slate" };
 
   // Una sola entrada por persona y día
   const delMes = useMemo(() => {
@@ -160,6 +160,11 @@ export const CalendarioGeneral = ({ onVerLista }) => {
         </div>
 
         {/* Lista del día */}
+        {!grupo ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center">
+            <p className="text-sm font-bold text-slate-600">Elige arriba Alumnos / Socios, Entrenadores o Personal de trabajo para ver sus ingresos.</p>
+          </div>
+        ) : (
         <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Día elegido</p>
           <p className="text-base font-black text-slate-900">
@@ -200,6 +205,7 @@ export const CalendarioGeneral = ({ onVerLista }) => {
           </div>
 
         </div>
+        )}
       </div>
     </div>
   );
