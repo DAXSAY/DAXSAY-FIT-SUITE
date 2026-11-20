@@ -21,20 +21,12 @@ import { useGym } from "../../context/GymContext";
 import { hoyISO } from "../../utils/fecha";
 
 import { SelectorAlumno, coincideAlumno } from "../common/BuscarAlumno";
-import { AgendaEspecialistas, useHorasAtencion, FRANJAS } from "./AgendaEspecialistas";
-const HOURS = [
-  "07:00 AM",
-  "08:00 AM",
-  "09:00 AM",
-  "10:00 AM",
-  "11:00 AM",
-  "12:00 PM",
-  "03:00 PM",
-  "04:00 PM",
-  "05:00 PM",
-  "06:00 PM",
-  "07:00 PM",
-];
+import { AgendaEspecialistas, useHorasAtencion } from "./AgendaEspecialistas";
+import { aMin, deMin, turnos, rangoCita, seCruzan, horaDeMin } from "../../utils/horario";
+// Horas que la agenda muestra siempre (7 AM a 7 PM); se suman las que abran
+// fisioterapia o nutrición fuera de ese rango (por ejemplo 6 AM o 9 PM).
+const HORAS_BASE = Array.from({ length: 13 }, (_, i) => deMin((7 + i) * 60));
+const DURACION_LIBRE = 45; // días sin horario configurado: citas de 45 min cada hora
 
 const NOMBRES_DIA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -77,15 +69,32 @@ export const AppointmentsScheduleModule = () => {
     currentUser,
   } = useGym();
   const horasAtencion = useHorasAtencion();
-  // ¿El especialista atiende a esa hora? null = día sin configurar (se permite todo)
+  const serviciosDe = (srv) => (srv === "all" || !srv ? ["physiotherapy", "nutrition"] : [srv]);
+  // ¿El especialista atiende en esa hora (algún bloque de 15 min dentro)? null = día sin configurar (se permite todo)
   const atiende = (srv, fecha, hora) => {
-    const lista = (srv === "all" || !srv ? ["physiotherapy", "nutrition"] : [srv]).map((x) => horasAtencion(x, fecha));
+    const lista = serviciosDe(srv).map((x) => horasAtencion(x, fecha));
     if (lista.some((l) => l === null)) return true;
-    return lista.some((l) => l.includes(hora));
+    const h = aMin(hora);
+    return lista.some((l) => l.bloques.some((b) => aMin(b) >= h && aMin(b) < h + 60));
   };
+  // Duración de cada cita ese día (la que eligió el especialista)
+  const duracionDe = (srv, fecha) => horasAtencion(srv, fecha)?.duracion || DURACION_LIBRE;
+  // Turnos que se pueden agendar ese día: inicio de cada cita
   const horasDelDia = (srv, fecha) => {
     const l = horasAtencion(srv, fecha);
-    return l === null ? HOURS : [...l].sort((a, b) => FRANJAS.indexOf(a) - FRANJAS.indexOf(b));
+    if (l === null) return [...HORAS_BASE, ...extrasDe(fecha)].filter((h, i, a) => a.indexOf(h) === i).sort((x, y) => aMin(x) - aMin(y));
+    return turnos(l.bloques, l.duracion).map((t) => t.inicio);
+  };
+  // Horas fuera del rango base que abrió algún especialista ese día
+  const extrasDe = (fecha) => {
+    const out = new Set();
+    ["physiotherapy", "nutrition"].forEach((x) => horasAtencion(x, fecha)?.bloques.forEach((b) => out.add(horaDeMin(aMin(b)))));
+    return [...out];
+  };
+  // Citas que ocupan un turno (las faltas y canceladas lo liberan)
+  const ocupanTurno = (srv, fecha, inicio) => {
+    const r = { ini: aMin(inicio), fin: aMin(inicio) + duracionDe(srv, fecha) };
+    return appointments.filter((a) => a.date === fecha && a.serviceType === srv && a.status !== "falta" && a.status !== "cancelled" && seCruzan(rangoCita(a), r));
   };
 
   // Mode: Staff/Specialist Schedule vs Member/User Portal View
@@ -94,6 +103,18 @@ export const AppointmentsScheduleModule = () => {
   // Calendar Selection State
   const [weekOffset, setWeekOffset] = useState(0);
   const DAYS_OF_WEEK = useMemo(() => construirSemana(weekOffset), [weekOffset]);
+  // Filas de la agenda: 7 AM–7 PM más cualquier hora que abran los especialistas o que tenga citas
+  const HOURS = (() => {
+    const set = new Set(HORAS_BASE);
+    DAYS_OF_WEEK.forEach((d) => {
+      extrasDe(d.date).forEach((h) => set.add(h));
+      appointments.filter((a) => a.date === d.date).forEach((a) => {
+        const r = rangoCita(a);
+        if (r) set.add(horaDeMin(r.ini));
+      });
+    });
+    return [...set].sort((a, b) => aMin(a) - aMin(b));
+  })();
   const [selectedDate, setSelectedDate] = useState(hoyISO());
   const selectedDay = DAYS_OF_WEEK.find((d) => d.date === selectedDate)?.key || "";
   const setSelectedDay = () => {};
@@ -156,9 +177,13 @@ export const AppointmentsScheduleModule = () => {
   const openBooking = (date, hour, service) => {
     // Sin tipo preseleccionado: solo fisioterapia o nutrición abren en su propio servicio
     const srv = service || (currentUser?.role === "physio" ? "physiotherapy" : currentUser?.role === "nutritionist" ? "nutrition" : "");
+    const d = date || selectedDate;
+    const h = hour || selectedHour;
     setFormService(srv);
-    setFormDate(date || selectedDate);
-    setFormSlot(hour || selectedHour);
+    setFormDate(d);
+    // Primer turno libre dentro de esa hora (si el especialista abrió turnos de 15, 20… min)
+    const enHora = srv ? horasDelDia(srv, d).filter((t) => aMin(t) >= aMin(h) && aMin(t) < aMin(h) + 60) : [];
+    setFormSlot(enHora.find((t) => !ocupanTurno(srv, d, t).length) || enHora[0] || h);
     setFormReason("");
     setFormNotes("");
     setFormStaffName(srv ? specialistsFor(srv)[0] || "" : "");
@@ -183,10 +208,16 @@ export const AppointmentsScheduleModule = () => {
   };
 
   // Check if an appointment matches a day and hour
+  // ¿La cita empieza dentro de esa hora? (las citas pueden empezar a las 6:15, 6:20…)
+  const enLaHora = (a, hour) => {
+    const r = rangoCita(a);
+    const h = aMin(hour);
+    return !!r && r.ini >= h && r.ini < h + 60;
+  };
   const getAppointmentsForCell = (date, hour) => {
     return appointments.filter((a) => {
       const matchesDate = a.date === date;
-      const matchesHour = a.timeSlot.includes(hour.split(" ")[0]);
+      const matchesHour = enLaHora(a, hour);
       const matchesService =
         serviceFilter === "all" || a.serviceType === serviceFilter;
       return matchesDate && matchesHour && matchesService;
@@ -197,7 +228,7 @@ export const AppointmentsScheduleModule = () => {
   const currentSlotAppointments = useMemo(() => {
     return appointments.filter((a) => {
       const matchesDate = a.date === selectedDate;
-      const matchesHour = a.timeSlot.includes(selectedHour.split(" ")[0]);
+      const matchesHour = enLaHora(a, selectedHour);
       const matchesService =
         serviceFilter === "all" || a.serviceType === serviceFilter;
       const matchesSearch =
@@ -211,24 +242,24 @@ export const AppointmentsScheduleModule = () => {
   }, [appointments, selectedDate, selectedHour, serviceFilter, searchTerm]);
 
   // Conflict Detection function
-  const checkScheduleConflict = (memberId, date, hour, excludeAptId) => {
-    const overlapping = appointments.find(
+  const checkScheduleConflict = (memberId, date, hour, excludeAptId, srv = formService) => {
+    const r = { ini: aMin(hour), fin: aMin(hour) + duracionDe(srv, date) };
+    return appointments.find(
       (a) =>
         a.id !== excludeAptId &&
         a.memberId === memberId &&
         a.date === date &&
-        a.timeSlot.includes(hour.split(" ")[0]) &&
+        seCruzan(rangoCita(a), r) &&
         a.status !== "falta" &&
         a.status !== "cancelled",
     );
-    return overlapping;
   };
 
   // Check conflicts live when modal inputs change
   const detectedFormConflict = useMemo(() => {
     if (!formMemberId || !formDate || !formSlot) return null;
     return checkScheduleConflict(formMemberId, formDate, formSlot);
-  }, [formMemberId, formDate, formSlot, appointments]);
+  }, [formMemberId, formDate, formSlot, formService, appointments]);
 
   // Handle booking creation with strict conflict validation & alert
   const handleCreateBooking = (e) => {
@@ -249,9 +280,14 @@ export const AppointmentsScheduleModule = () => {
       return;
     }
 
+    if (ocupanTurno(formService, formDate, formSlot).length) {
+      setConflictWarning("Ese turno ya está tomado por otra cita. Elige otro.");
+      return;
+    }
     setConflictWarning(null);
 
-    const slotFull = `${formSlot} - ${formSlot.replace("00", "45")}`;
+    const dur = duracionDe(formService, formDate);
+    const slotFull = `${formSlot} - ${deMin(aMin(formSlot) + dur)}`;
 
     addAppointment({
       serviceType: formService,
@@ -263,7 +299,7 @@ export const AppointmentsScheduleModule = () => {
       staffName: formStaffName,
       date: formDate,
       timeSlot: slotFull,
-      durationMinutes: 45,
+      durationMinutes: dur,
       status: "por_atender",
       reason:
         formReason.trim() ||
@@ -362,7 +398,8 @@ export const AppointmentsScheduleModule = () => {
       ) || members[0];
     const specialist = specialistsFor(portalSelectedService)[0] || "Por asignar";
 
-    const slotFull = `${portalSelectedSlot} - ${portalSelectedSlot.replace("00", "45")}`;
+    const durP = duracionDe(portalSelectedService, portalSelectedDate);
+    const slotFull = `${portalSelectedSlot} - ${deMin(aMin(portalSelectedSlot) + durP)}`;
 
     addAppointment({
       serviceType: portalSelectedService,
@@ -374,7 +411,7 @@ export const AppointmentsScheduleModule = () => {
       staffName: specialist,
       date: portalSelectedDate,
       timeSlot: slotFull,
-      durationMinutes: 45,
+      durationMinutes: durP,
       status: "por_atender",
       reason: portalReason,
       roomOrDesk:
@@ -1161,7 +1198,7 @@ export const AppointmentsScheduleModule = () => {
                     onChange={(e) => setPortalSelectedSlot(e.target.value)}
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-cyan-500"
                   >
-                    {HOURS.map((h) => (
+                    {horasDelDia(portalSelectedService, portalSelectedDate).map((h) => (
                       <option key={h} value={h}>
                         {h}
                       </option>
@@ -1225,9 +1262,7 @@ export const AppointmentsScheduleModule = () => {
                   <p className="col-span-full text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-2.5">Ese día no hay atención. Elige otra fecha.</p>
                 )}
                 {horasDelDia(portalSelectedService, portalSelectedDate).map((hour) => {
-                  const apts = getAppointmentsForCell(portalSelectedDate, hour);
-                  const isTaken =
-                    apts.length > 0 && apts.some((a) => a.status !== "falta");
+                  const isTaken = ocupanTurno(portalSelectedService, portalSelectedDate, hour).length > 0;
                   const isSelected = portalSelectedSlot === hour;
 
                   return (
@@ -1257,7 +1292,7 @@ export const AppointmentsScheduleModule = () => {
                   📌 Reglas de Atención al Alumno:
                 </div>
                 <div>
-                  • Las citas tienen una duración de 45 minutos efectivos.
+                  • Cada cita dura {duracionDe(portalSelectedService, portalSelectedDate)} minutos.
                 </div>
                 <div>
                   • En caso de no asistir y marcarse falta, el turno queda
@@ -1401,31 +1436,27 @@ export const AppointmentsScheduleModule = () => {
                     </div>
                   )}
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {(formService ? horasDelDia(formService, formDate) : HOURS).map((h) => {
-                      const ocupadas = appointments.filter(
-                        (a) =>
-                          a.date === formDate &&
-                          a.timeSlot.includes(h.split(" ")[0]) &&
-                          a.serviceType === formService &&
-                          a.status !== "falta",
-                      ).length;
+                    {(formService ? horasDelDia(formService, formDate) : HORAS_BASE).map((h) => {
+                      const ocupadas = formService ? ocupanTurno(formService, formDate, h).length : 0;
                       const sel = formSlot === h;
+                      const fin = deMin(aMin(h) + (formService ? duracionDe(formService, formDate) : DURACION_LIBRE));
                       return (
                         <button
                           type="button"
                           key={h}
+                          disabled={!!ocupadas}
                           onClick={() => setFormSlot(h)}
-                          className={`py-3 rounded-xl border-2 text-sm font-bold cursor-pointer transition-all ${
+                          className={`py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${
                             sel
-                              ? "bg-blue-600 border-blue-600 text-white shadow"
+                              ? "bg-blue-600 border-blue-600 text-white shadow cursor-pointer"
                               : ocupadas
-                                ? "bg-amber-50 border-amber-200 text-amber-800"
-                                : "bg-white border-slate-200 text-slate-700 hover:border-blue-400"
+                                ? "bg-slate-100 border-slate-200 text-slate-400 line-through cursor-not-allowed"
+                                : "bg-white border-slate-200 text-slate-700 hover:border-blue-400 cursor-pointer"
                           }`}
                         >
                           {h}
-                          <span className={`block text-xs font-semibold ${sel ? "text-white/80" : "text-slate-500"}`}>
-                            {ocupadas ? `${ocupadas} agendada(s)` : "Libre"}
+                          <span className={`block text-[11px] font-semibold ${sel ? "text-white/80" : "text-slate-500"}`}>
+                            {ocupadas ? "Ocupado" : `hasta ${fin}`}
                           </span>
                         </button>
                       );
@@ -1489,6 +1520,7 @@ export const AppointmentsScheduleModule = () => {
                   >
                     <span className="text-xs font-bold uppercase tracking-widest text-white">Resumen</span>
                     <p className="text-3xl font-black mt-1">{formSlot}</p>
+                    <p className="text-sm font-bold text-white/85">hasta {deMin(aMin(formSlot) + (formService ? duracionDe(formService, formDate) : DURACION_LIBRE))}</p>
                     <p className="text-sm">{fechaLarga(formDate)}</p>
                   </div>
                   <dl className="p-5 space-y-3 text-sm">
@@ -1497,7 +1529,7 @@ export const AppointmentsScheduleModule = () => {
                       ["Alumno", members.find((m) => m.id === formMemberId)?.fullName || "—"],
                       ["Especialista", formStaffName || "—"],
                       ["Lugar", formRoom],
-                      ["Duración", "45 minutos"],
+                      ["Duración", `${formService ? duracionDe(formService, formDate) : DURACION_LIBRE} minutos`],
                       ["Motivo", formReason || "—"],
                     ].map(([k, v]) => (
                       <div key={k} className="flex justify-between gap-3">

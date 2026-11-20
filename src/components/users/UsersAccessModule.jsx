@@ -5,7 +5,7 @@
 // quién cerró. Las cuentas de alumnos se crean desde su ficha.
 // ============================================================
 import { TarjetaKpi } from "../common/TarjetaKpi";
-import { ShieldCheck as IcShield, User as IcUser, Dumbbell as IcDumbbell, HeartPulse as IcHeart, Apple as IcApple, KeyRound as IcKey } from "lucide-react";
+import { ShieldCheck as IcShield, User as IcUser, Dumbbell as IcDumbbell, HeartPulse as IcHeart, Apple as IcApple, KeyRound as IcKey, Building2 as IcBuilding, Phone as IcPhone, Clock as IcClock, Users as IcUsers, Plus as IcPlus, Info as IcInfo } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ShieldCheck,
@@ -301,6 +301,20 @@ const FormUsuario = ({ usuario, onVolver, onGuardado, esUnoMismo }) => {
 // ------------------------------------------------------------
 // Configuración del gimnasio
 // ------------------------------------------------------------
+// Bloque con título para la configuración (fuera del formulario para no perder el foco al escribir)
+const Seccion = ({ icono: I, titulo, sub, children }) => (
+  <section className="bg-white rounded-2xl border border-slate-200 p-5">
+    <div className="flex items-center gap-2.5 mb-4">
+      <span className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"><I className="w-4 h-4" /></span>
+      <div>
+        <h3 className="text-sm font-black text-slate-900">{titulo}</h3>
+        <p className="text-xs text-slate-500">{sub}</p>
+      </div>
+    </div>
+    {children}
+  </section>
+);
+
 const ConfiguracionGimnasio = () => {
   const { gymConfig, saveGymConfig } = useGym();
   const [f, setF] = useState({
@@ -325,26 +339,65 @@ const ConfiguracionGimnasio = () => {
     }
   };
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const completos = ["gym_nombre", "gym_ruc", "gym_direccion", "gym_whatsapp", "admin_whatsapp"].filter((k) => String(f[k] || "").trim()).length;
   return (
-    <form onSubmit={guardar} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 max-w-3xl">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <label className="block"><span className="text-sm font-bold text-slate-700">Nombre del gimnasio</span><input value={f.gym_nombre} onChange={set("gym_nombre")} className={campo} /></label>
-        <label className="block"><span className="text-sm font-bold text-slate-700">RUC</span><input value={f.gym_ruc} onChange={set("gym_ruc")} className={campo} /></label>
-        <label className="block sm:col-span-2"><span className="text-sm font-bold text-slate-700">Dirección</span><input value={f.gym_direccion} onChange={set("gym_direccion")} className={campo} /></label>
-        <label className="block">
-          <span className="text-sm font-bold text-slate-700">WhatsApp de recepción</span>
-          <input value={f.gym_whatsapp} onChange={set("gym_whatsapp")} placeholder="9XX XXX XXX" className={campo} />
-          <span className="text-xs text-slate-500">Los alumnos escriben aquí desde su portal.</span>
-        </label>
-        <label className="block">
-          <span className="text-sm font-bold text-slate-700">WhatsApp del administrador / dueño</span>
-          <input value={f.admin_whatsapp} onChange={set("admin_whatsapp")} placeholder="9XX XXX XXX" className={campo} />
-          <span className="text-xs text-slate-500">A este número se envían los reportes.</span>
-        </label>
+    <form onSubmit={guardar} className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div className="xl:col-span-2 space-y-4">
+        <Seccion icono={IcBuilding} titulo="Datos del gimnasio" sub="Salen en tickets, reportes y documentos en PDF.">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label className="block"><span className="text-sm font-bold text-slate-700">Nombre del gimnasio</span><input value={f.gym_nombre} onChange={set("gym_nombre")} className={campo} /></label>
+            <label className="block"><span className="text-sm font-bold text-slate-700">RUC</span><input value={f.gym_ruc} onChange={set("gym_ruc")} inputMode="numeric" placeholder="11 dígitos" className={campo} /></label>
+            <label className="block sm:col-span-2"><span className="text-sm font-bold text-slate-700">Dirección</span><input value={f.gym_direccion} onChange={set("gym_direccion")} placeholder="Av. ..., distrito, ciudad" className={campo} /></label>
+          </div>
+        </Seccion>
+        <Seccion icono={IcPhone} titulo="WhatsApp" sub="Números a los que escriben los alumnos y llegan los reportes.">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">WhatsApp de recepción</span>
+              <input value={f.gym_whatsapp} onChange={set("gym_whatsapp")} placeholder="9XX XXX XXX" inputMode="tel" className={campo} />
+              <span className="text-xs text-slate-500">Los alumnos escriben aquí desde su portal.</span>
+            </label>
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">WhatsApp del administrador / dueño</span>
+              <input value={f.admin_whatsapp} onChange={set("admin_whatsapp")} placeholder="9XX XXX XXX" inputMode="tel" className={campo} />
+              <span className="text-xs text-slate-500">A este número se envían los reportes.</span>
+            </label>
+          </div>
+        </Seccion>
+        <div className="flex flex-wrap items-center gap-3">
+          <button className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black cursor-pointer">Guardar configuración</button>
+          {msg && <p className="text-sm font-bold text-emerald-700">{msg}</p>}
+          {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
+        </div>
       </div>
-      {msg && <p className="text-sm font-bold text-emerald-700">{msg}</p>}
-      {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
-      <button className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black cursor-pointer">Guardar configuración</button>
+
+      {/* Vista previa */}
+      <aside className="space-y-4">
+        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+          <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Así se ve en tickets y mensajes</p>
+          <div className="rounded-xl border border-dashed border-slate-300 p-4 text-center">
+            <img src="/logo-radical.png" alt="" className="w-14 h-14 rounded-full mx-auto mb-2" />
+            <p className="text-base font-black text-slate-900 tracking-wide">{f.gym_nombre || "Nombre del gimnasio"}</p>
+            <p className="text-xs text-slate-500">{f.gym_ruc ? `RUC ${f.gym_ruc}` : "RUC sin registrar"}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{f.gym_direccion || "Dirección sin registrar"}</p>
+            <div className="mt-3 pt-3 border-t border-dashed border-slate-200 space-y-1 text-xs">
+              <p className="flex items-center justify-center gap-1.5 text-slate-600"><IcPhone className="w-3.5 h-3.5" /> Recepción: <b>{f.gym_whatsapp || "—"}</b></p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-black text-slate-900">Datos completos</p>
+            <span className="text-sm font-black text-blue-600">{completos}/5</span>
+          </div>
+          <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${(completos / 5) * 100}%` }} />
+          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            {completos === 5 ? "Todo listo: tickets y reportes salen con los datos del gimnasio." : "Completa lo que falta para que tickets y reportes salgan con todos los datos."}
+          </p>
+        </div>
+      </aside>
     </form>
   );
 };
@@ -352,10 +405,23 @@ const ConfiguracionGimnasio = () => {
 // ------------------------------------------------------------
 // Turnos fijos de recepción
 // ------------------------------------------------------------
+const aMinT = (t) => {
+  const [h, m] = String(t || "").split(":").map(Number);
+  return Number.isFinite(h) ? h * 60 + (m || 0) : null;
+};
+const fmtT = (t) => {
+  const m = aMinT(t);
+  if (m == null) return "—";
+  const h = Math.floor(m / 60);
+  return `${h % 12 || 12}:${String(m % 60).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+};
+const COLORES_TURNO = ["from-amber-400 to-orange-500", "from-sky-500 to-blue-600", "from-violet-500 to-indigo-600", "from-emerald-500 to-teal-600"];
+
 const TurnosRecepcion = () => {
   const [turnos, setTurnos] = useState([]);
   const [nuevo, setNuevo] = useState({ name: "", start: "", end: "" });
   const [error, setError] = useState("");
+  const [guardado, setGuardado] = useState("");
   const cargar = () => api("/metas/turnos-recepcion").then(setTurnos).catch((e) => setError(e.message));
   useEffect(() => {
     cargar();
@@ -364,6 +430,8 @@ const TurnosRecepcion = () => {
     setError("");
     try {
       await api(`/metas/turnos-recepcion/${t.id}`, { method: "PUT", body: t });
+      setGuardado(t.id);
+      setTimeout(() => setGuardado(""), 2000);
       cargar();
     } catch (e) {
       setError(e.message);
@@ -380,44 +448,112 @@ const TurnosRecepcion = () => {
       setError(er.message);
     }
   };
-  const campo = "px-2 py-1.5 rounded-lg border border-slate-300 text-sm";
+  const cambiar = (i, k, v) => setTurnos(turnos.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
+  const campo = "px-3 py-2 rounded-xl border border-slate-300 text-sm";
+  // Línea de tiempo de 5 AM a 11 PM
+  const T0 = 5 * 60, T1 = 23 * 60;
+  const pos = (m) => `${Math.max(0, Math.min(100, ((m - T0) / (T1 - T0)) * 100))}%`;
+  const activos = turnos.filter((t) => t.active);
+  const cubre = activos.length ? [Math.min(...activos.map((t) => aMinT(t.start) ?? T1)), Math.max(...activos.map((t) => aMinT(t.end) ?? T0))] : null;
+  const personas = turnos.reduce((a, t) => a + (t.people?.length || 0), 0);
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 max-w-4xl">
-      <p className="text-sm text-slate-600">
-        Cada recepcionista pertenece a un turno (se elige en su usuario). Las metas de recepción se asignan por turno y suman
-        todo lo cobrado en las cajas que abren las personas de ese turno.
-      </p>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs uppercase text-slate-400 border-b border-slate-200">
-            <th className="py-2 pr-2">Turno</th>
-            <th className="py-2 pr-2">Desde</th>
-            <th className="py-2 pr-2">Hasta</th>
-            <th className="py-2 pr-2">Personas</th>
-            <th className="py-2 pr-2">Activo</th>
-            <th className="py-2" />
-          </tr>
-        </thead>
-        <tbody>
-          {turnos.map((t, i) => (
-            <tr key={t.id} className="border-b border-slate-100">
-              <td className="py-2 pr-2"><input value={t.name} onChange={(e) => setTurnos(turnos.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} className={`${campo} w-full`} /></td>
-              <td className="py-2 pr-2"><input type="time" value={t.start} onChange={(e) => setTurnos(turnos.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)))} className={campo} /></td>
-              <td className="py-2 pr-2"><input type="time" value={t.end} onChange={(e) => setTurnos(turnos.map((x, j) => (j === i ? { ...x, end: e.target.value } : x)))} className={campo} /></td>
-              <td className="py-2 pr-2 text-slate-600">{t.people.map((p) => p.name).join(", ") || "—"}</td>
-              <td className="py-2 pr-2"><input type="checkbox" checked={t.active} onChange={(e) => setTurnos(turnos.map((x, j) => (j === i ? { ...x, active: e.target.checked } : x)))} /></td>
-              <td className="py-2 text-right"><button onClick={() => guardar(turnos[i])} className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-bold cursor-pointer">Guardar</button></td>
-            </tr>
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div className="xl:col-span-2 space-y-3">
+        {/* Resumen */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            ["Turnos activos", activos.length, IcClock],
+            ["Recepcionistas asignadas", personas, IcUsers],
+            ["Atención en recepción", cubre ? `${fmtT(`${Math.floor(cubre[0] / 60)}:${cubre[0] % 60}`)} – ${fmtT(`${Math.floor(cubre[1] / 60)}:${cubre[1] % 60}`)}` : "—", IcBuilding],
+          ].map(([t, v, I]) => (
+            <div key={t} className="bg-white rounded-2xl border border-slate-200 p-3.5 flex items-center gap-3">
+              <span className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><I className="w-4 h-4" /></span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-black uppercase tracking-wide text-slate-400 truncate">{t}</p>
+                <p className="text-base font-black text-slate-900 truncate">{v}</p>
+              </div>
+            </div>
           ))}
-        </tbody>
-      </table>
-      <form onSubmit={crear} className="flex flex-wrap items-end gap-2 pt-2 border-t border-slate-100">
-        <label className="text-xs font-bold text-slate-600">Nuevo turno<input required value={nuevo.name} onChange={(e) => setNuevo({ ...nuevo, name: e.target.value })} placeholder="Turno 3 - Noche" className={`${campo} block mt-0.5`} /></label>
-        <label className="text-xs font-bold text-slate-600">Desde<input type="time" value={nuevo.start} onChange={(e) => setNuevo({ ...nuevo, start: e.target.value })} className={`${campo} block mt-0.5`} /></label>
-        <label className="text-xs font-bold text-slate-600">Hasta<input type="time" value={nuevo.end} onChange={(e) => setNuevo({ ...nuevo, end: e.target.value })} className={`${campo} block mt-0.5`} /></label>
-        <button className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold cursor-pointer">Agregar turno</button>
-      </form>
-      {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
+        </div>
+
+        {/* Turnos */}
+        {turnos.map((t, i) => {
+          const a = aMinT(t.start), b = aMinT(t.end);
+          return (
+            <div key={t.id} className={`bg-white rounded-2xl border border-slate-200 p-4 ${t.active ? "" : "opacity-60"}`}>
+              <div className="flex flex-wrap items-end gap-3">
+                <span className={`w-10 h-10 rounded-xl bg-gradient-to-br ${COLORES_TURNO[i % COLORES_TURNO.length]} text-white flex items-center justify-center shrink-0 shadow`}>
+                  <IcClock className="w-5 h-5" />
+                </span>
+                <label className="flex-1 min-w-[180px] text-xs font-bold text-slate-500">
+                  Nombre del turno
+                  <input value={t.name} onChange={(e) => cambiar(i, "name", e.target.value)} className={`${campo} w-full mt-0.5 font-bold text-slate-900`} />
+                </label>
+                <label className="text-xs font-bold text-slate-500">
+                  Desde
+                  <input type="time" value={t.start} onChange={(e) => cambiar(i, "start", e.target.value)} className={`${campo} block mt-0.5`} />
+                </label>
+                <label className="text-xs font-bold text-slate-500">
+                  Hasta
+                  <input type="time" value={t.end} onChange={(e) => cambiar(i, "end", e.target.value)} className={`${campo} block mt-0.5`} />
+                </label>
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-600 pb-2.5 cursor-pointer">
+                  <input type="checkbox" checked={t.active} onChange={(e) => cambiar(i, "active", e.target.checked)} className="w-4 h-4" /> Activo
+                </label>
+                <button onClick={() => guardar(turnos[i])} className="mb-0.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black cursor-pointer">
+                  {guardado === t.id ? "Guardado" : "Guardar"}
+                </button>
+              </div>
+              {/* línea de tiempo */}
+              <div className="mt-3">
+                <div className="relative h-2.5 rounded-full bg-slate-100">
+                  {a != null && b != null && b > a && (
+                    <span className={`absolute top-0 h-full rounded-full bg-gradient-to-r ${COLORES_TURNO[i % COLORES_TURNO.length]}`} style={{ left: pos(a), width: `calc(${pos(b)} - ${pos(a)})` }} />
+                  )}
+                </div>
+                <div className="relative h-4 text-[10px] font-bold text-slate-400 mt-1">
+                  {[[5, "5 AM"], [9, "9 AM"], [13, "1 PM"], [17, "5 PM"], [21, "9 PM"], [23, "11 PM"]].map(([h, x]) => (
+                    <span key={x} className="absolute -translate-x-1/2 first:translate-x-0 last:-translate-x-full" style={{ left: pos(h * 60) }}>{x}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-500">Personas:</span>
+                {t.people?.length ? (
+                  t.people.map((p) => (
+                    <span key={p.id || p.name} className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700">
+                      <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-black flex items-center justify-center">{String(p.name || "?")[0]}</span>
+                      {p.name}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-400">Nadie asignado aún (se elige en el usuario de cada recepcionista)</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
+      </div>
+
+      <aside className="space-y-4">
+        <form onSubmit={crear} className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+          <h3 className="text-sm font-black text-slate-900 flex items-center gap-2"><IcPlus className="w-4 h-4 text-blue-600" /> Nuevo turno</h3>
+          <label className="block text-xs font-bold text-slate-600">Nombre<input required value={nuevo.name} onChange={(e) => setNuevo({ ...nuevo, name: e.target.value })} placeholder="Turno 3 - Noche" className={`${campo} w-full mt-0.5`} /></label>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block text-xs font-bold text-slate-600">Desde<input type="time" value={nuevo.start} onChange={(e) => setNuevo({ ...nuevo, start: e.target.value })} className={`${campo} w-full mt-0.5`} /></label>
+            <label className="block text-xs font-bold text-slate-600">Hasta<input type="time" value={nuevo.end} onChange={(e) => setNuevo({ ...nuevo, end: e.target.value })} className={`${campo} w-full mt-0.5`} /></label>
+          </div>
+          <button className="w-full px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-black cursor-pointer">Agregar turno</button>
+        </form>
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-2 text-sm text-slate-600">
+          <h3 className="text-sm font-black text-slate-900 flex items-center gap-2"><IcInfo className="w-4 h-4 text-blue-600" /> Cómo funcionan</h3>
+          <p>Cada recepcionista pertenece a un turno; se elige en su usuario.</p>
+          <p>Las metas de recepción se asignan por turno y suman todo lo cobrado en las cajas que abren las personas de ese turno.</p>
+          <p>En Arqueo de caja cada quien ve solo la meta de su turno.</p>
+        </div>
+      </aside>
     </div>
   );
 };
