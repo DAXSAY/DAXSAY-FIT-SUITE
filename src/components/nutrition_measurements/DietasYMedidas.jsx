@@ -155,10 +155,10 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
                     type="button"
                     onClick={() => setPaso(k)}
                     className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-left cursor-pointer transition-all ${
-                      paso === k ? "bg-teal-50 border-teal-500 ring-1 ring-teal-500 text-teal-900" : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                      paso === k ? "bg-teal-600 border-teal-600 text-white shadow-md" : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
                     }`}
                   >
-                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${paso === k ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-500"}`}>
+                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${paso === k ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
                       <I className="w-4 h-4" />
                     </span>
                     <span className="min-w-0">
