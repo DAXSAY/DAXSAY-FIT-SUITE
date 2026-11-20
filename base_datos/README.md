@@ -8,11 +8,12 @@ Abre **`gestion_radicalgym.sql`** en MySQL Workbench y ejecútalo completo (⚡)
 
 > ⚠️ Borra y vuelve a crear la base. Para no perder datos, saca antes una copia desde el sistema (Inicio → «Hacer copia ahora»); la copia también es un solo archivo `.sql` con tablas y registros, y se restaura igual.
 
-La carpeta `anteriores/` guarda los scripts sueltos de antes (01 a 35) solo como referencia, por si alguna base antigua necesita una actualización puntual. Para instalar no hacen falta.
+La carpeta `anteriores/` guarda los scripts sueltos de antes (01 a 36) solo como referencia, por si alguna base antigua necesita una actualización puntual. Para instalar no hacen falta.
 
 ### Herramientas (no son actualizaciones)
 
 - `anteriores/verificar_integridad.sql`: solo lectura. Revisa que todo lo registrado en el sistema esté sincronizado y cuadrado (registros de la app copiados a sus tablas, cobros en caja, abonos, ventas, stock contra kárdex, alumnos con código y usuario). En cada fila, "problemas = 0" es lo correcto.
+- `anteriores/36_pendientes_finales.sql`: para bases instaladas antes de la limpieza 33. Borra los 6 pagos de planilla de contratos demo (`pyr-demo-…`), quita las 4 tablas viejas **solo si están vacías**, los 5 procedimientos sin uso y deja al día el disparador de asistencias del personal. Ejecútalo una vez en Workbench con root.
 - `anteriores/99_reiniciar_para_produccion.sql`: **borra todos los datos de prueba y demostración** (alumnos, matrículas, asistencias, ventas, caja, CRM...) y deja la configuración, los planes, los catálogos y los usuarios del personal. Úsalo una sola vez, antes de empezar con datos reales, y saca un respaldo antes.
 
 ## Usuarios de prueba
