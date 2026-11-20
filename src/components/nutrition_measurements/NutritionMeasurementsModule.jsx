@@ -38,7 +38,7 @@ export const NutritionMeasurementsModule = () => {
       />
 
       <div className="transition-opacity duration-200">
-        {!subTab && <SinSeleccion texto="Elige Dietas y medidas, Seguimiento, Porciones y platos u Horario de atención." />}
+        {!subTab && <SinSeleccion tema="nutricion" texto="Elige una opción de arriba." />}
         {subTab === "dym" && <DietasYMedidas pedirCrear={pedirCrear} />}
         {subTab === "guide" && <NutritionModule vista="guide" onVista={setSubTab} />}
         {subTab === "seguimiento" && <SeguimientoServicio tipo="nutricion" />}

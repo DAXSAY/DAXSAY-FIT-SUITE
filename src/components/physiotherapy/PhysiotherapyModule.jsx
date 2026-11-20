@@ -1313,7 +1313,7 @@ export const PhysiotherapyModule = () => {
       />
 
       {!activeMainView ? (
-        <SinSeleccion texto="Elige Fichas clínicas, Evaluaciones por alumno, Seguimiento u Horario de atención." />
+        <SinSeleccion tema="fisio" texto="Elige una opción de arriba." />
       ) : activeMainView === "seguimiento" ? (
         <SeguimientoServicio tipo="fisioterapia" />
       ) : activeMainView === "agenda" ? (

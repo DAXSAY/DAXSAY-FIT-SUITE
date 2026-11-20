@@ -1644,7 +1644,7 @@ export const ReportsModule = () => {
         </span>
       </div>
       <div key={`${tab}-${clave}`}>
-        {!tab && <SinSeleccion texto="Elige un reporte de la lista de arriba para verlo." />}
+        {!tab && <SinSeleccion tema="reportes" texto="Elige un reporte de arriba." />}
         {tab === "alumnos" && <ReporteAlumnos />}
         {tab === "matriculas" && <ReporteMatriculas />}
         {tab === "ingresos" && <ReporteIngresos />}

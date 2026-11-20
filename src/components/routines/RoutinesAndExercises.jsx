@@ -407,7 +407,7 @@ export const RoutinesAndExercises = () => {
       })()}
 
       {/* SUBTAB 1: ROUTINES LIST */}
-      {!activeSubTab && <SinSeleccion texto="Elige Rutinas, Rutinas asignadas o Banco de ejercicios, o toca «Crear rutina»." />}
+      {!activeSubTab && <SinSeleccion tema="rutinas" texto="Elige una opción de arriba o toca «Crear rutina»." />}
 
       {activeSubTab === "routines" && (
         <div className="space-y-4">

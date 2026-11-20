@@ -330,14 +330,14 @@ export const CalendarioAsistencias = ({ memberId, titulo = true, seguimiento = t
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
-          <div className="grid grid-cols-7 gap-1.5 text-center">
+          <div className="grid grid-cols-7 gap-1 text-center">
             {DIAS.map((d) => (
               <span key={d} className="text-[11px] font-bold uppercase text-slate-400 py-1">
                 {d}
               </span>
             ))}
             {!datos
-              ? Array.from({ length: 35 }, (_, i) => <span key={i} className="aspect-square rounded-xl bg-slate-50 animate-pulse" />)
+              ? Array.from({ length: 35 }, (_, i) => <span key={i} className="h-11 rounded-lg bg-slate-50 animate-pulse" />)
               : celdas.map((c, i) =>
                   c ? (
                     <button
@@ -345,7 +345,7 @@ export const CalendarioAsistencias = ({ memberId, titulo = true, seguimiento = t
                       type="button"
                       onClick={() => setDiaSel(c)}
                       title={`${c.fecha.split("-").reverse().join("/")} · ${ESTADOS_DIA[c.estado].nombre}${c.asistencia ? ` · ${c.asistencia.time}` : ""}`}
-                      className={`aspect-square rounded-xl border flex flex-col items-center justify-center text-sm font-bold cursor-pointer transition-transform hover:scale-105 ${ESTADOS_DIA[c.estado].clase} ${
+                      className={`h-11 rounded-lg border flex flex-col items-center justify-center text-sm font-bold cursor-pointer transition-transform hover:scale-105 ${ESTADOS_DIA[c.estado].clase} ${
                         c.fecha === datos.hoy ? "ring-2 ring-offset-1 ring-slate-900" : ""
                       }`}
                     >

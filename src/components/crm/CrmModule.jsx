@@ -941,7 +941,7 @@ export const CrmModule = () => {
         ))}
       </div>
 
-      {!vista && <SinSeleccion texto="Elige Interesados, Pases libres, Registro o Reporte para empezar." />}
+      {!vista && <SinSeleccion tema="clientes" texto="Elige una opción de arriba." />}
       {vista === "pases" && (
         <PanelPases
           gym={gym}

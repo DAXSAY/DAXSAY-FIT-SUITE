@@ -3399,3 +3399,12 @@ html.dark .rd-caja-abierta {
   background: linear-gradient(90deg, rgba(16, 72, 70, 0.55), rgba(15, 32, 54, 0.9) 55%, rgba(30, 90, 100, 0.45)) !important;
   border-color: rgba(64, 200, 170, 0.45) !important;
 }
+
+/* Pantallas vacías: ilustración pastel en claro, neón suave en oscuro */
+.rd-ilu { stroke: #9fb8b4; }
+.rd-ilu .rd-ilu-acento { stroke: #2f7f84; }
+.rd-ilu .rd-ilu-suave { stroke: #d9cfbd; }
+html.dark .rd-ilu { stroke: rgba(150, 190, 215, 0.45); }
+html.dark .rd-ilu .rd-ilu-acento { stroke: #6fdde3; filter: drop-shadow(0 0 4px rgba(64, 200, 210, 0.45)); }
+html.dark .rd-ilu .rd-ilu-suave { stroke: rgba(120, 160, 190, 0.22); }
+html.dark .rd-sin-seleccion { background: linear-gradient(160deg, rgba(15, 32, 54, 0.75), rgba(10, 22, 40, 0.6)); }
