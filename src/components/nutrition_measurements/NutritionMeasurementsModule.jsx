@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Utensils, Activity, Sparkles, Users, CalendarDays, Calculator, Hand, Apple, Plus } from "lucide-react";
 import { useRecordado } from "../../utils/subPestana";
 import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
-import { SeguimientoServicio, useCobertura } from "../common/Programados";
+import { SeguimientoServicio } from "../common/Programados";
 import { AgendaEspecialistas } from "../appointments/AgendaEspecialistas";
 import { NutritionModule } from "../nutrition/NutritionModule";
 import { DietasYMedidas } from "./DietasYMedidas";
@@ -15,8 +15,6 @@ export const NutritionMeasurementsModule = () => {
   const { nutritionPlans, bodyAssessments, members } = useGym();
 
   const totalDietPlans = nutritionPlans.length;
-  const conPlan = useCobertura().nutricion;
-  const sinPlan = members.filter((m) => !conPlan.has(String(m.id))).length;
   const totalAssessments = bodyAssessments.length;
   const evaluatedStudentsCount = new Set(bodyAssessments.map((a) => a.memberId))
     .size;
@@ -33,7 +31,7 @@ export const NutritionMeasurementsModule = () => {
         onCambiar={setSubTab}
         pestanas={[
           { k: "dym", icono: Utensils, label: "Dietas y medidas", badge: totalDietPlans, tono: "emerald" },
-          { k: "seguimiento", icono: Users, label: "Seguimiento", badge: `${sinPlan} sin plan`, tono: "violet" },
+          { k: "seguimiento", icono: Users, label: "Seguimiento", tono: "violet" },
           { k: "guide", icono: Hand, label: "Porciones y platos", tono: "amber" },
           { k: "agenda", icono: CalendarDays, label: "Horario de atención", tono: "amber" },
         ]}

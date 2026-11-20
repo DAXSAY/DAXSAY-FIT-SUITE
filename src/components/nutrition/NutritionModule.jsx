@@ -1,3 +1,4 @@
+import { MeasurementsModule } from "../measurements/MeasurementsModule";
 import { CampoNumero } from "../common/CampoNumero";
 import React, { useState, useMemo, useEffect } from "react";
 import {
@@ -20,6 +21,8 @@ import {
   Clock,
   Info,
   X,
+  Activity,
+  Check,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 // Sin confeti: el sistema usa avisos de color en su lugar
@@ -294,6 +297,9 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
 
   // Modal State for New/Edit Plan
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // «Crear / asignar dieta» en dos pasos: 1) dieta  2) medidas del mismo alumno
+  const [pasoCrear, setPasoCrear] = useState("dieta");
+  const [dietaGuardada, setDietaGuardada] = useState(false);
   const [editingPlanId, setEditingPlanId] = useState(null);
 
   // Form State
@@ -433,6 +439,8 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
   // Open modal for new plan
   const handleOpenCreateModal = (fromCalculator = false) => {
     setEditingPlanId(null);
+    setPasoCrear("dieta");
+    setDietaGuardada(false);
     if (fromCalculator) {
       const student = members.find((m) => m.id === calcSelectedStudentId);
       setFormTitle(
@@ -472,6 +480,8 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
   // Open modal to edit existing plan
   const handleOpenEditModal = (plan) => {
     setEditingPlanId(plan.id);
+    setPasoCrear("dieta");
+    setDietaGuardada(false);
     setFormTitle(plan.title);
     setFormStudentId(plan.targetStudentId || "");
     setFormObjective(plan.objective);
@@ -538,6 +548,12 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
       confetti({ particleCount: 40, spread: 70, origin: { y: 0.6 } });
     }
 
+    // Con alumno elegido, al guardar la dieta se pasa al Paso 2: medidas
+    if (formStudentId) {
+      setDietaGuardada(true);
+      setPasoCrear("medidas");
+      return;
+    }
     setIsModalOpen(false);
   };
 
@@ -1416,11 +1432,10 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                   <h3 className="font-bold text-slate-900 text-base">
                     {editingPlanId
                       ? "Editar Pauta Nutricional"
-                      : "Crear y Asignar Pauta Nutricional"}
+                      : "Crear y asignar dieta y medidas"}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Configura los requerimientos calóricos, macronutrientes y
-                    comidas del alumno.
+                    Paso 1: dieta (calorías, macros y comidas). Paso 2: medidas del mismo alumno.
                   </p>
                 </div>
               </div>
@@ -1432,10 +1447,57 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
               </button>
             </div>
 
+            {/* Pasos: 1 Dieta · 2 Medidas */}
+            <div className="px-4 sm:px-5 pt-3 w-full max-w-[1200px] mx-auto">
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  ["dieta", Utensils, "Paso 1 · Dieta", dietaGuardada ? "Guardada" : "Calorías, macros y comidas"],
+                  ["medidas", Activity, "Paso 2 · Medidas", "Peso, perímetros y bioimpedancia"],
+                ].map(([k, I, t, d]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setPasoCrear(k)}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-left cursor-pointer transition-all ${
+                      pasoCrear === k ? "bg-teal-600 border-teal-600 text-white shadow-md" : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${pasoCrear === k ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
+                      {k === "dieta" && dietaGuardada ? <Check className="w-4 h-4" /> : <I className="w-4 h-4" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-extrabold leading-tight">{t}</span>
+                      <span className="block text-[11px] opacity-75">{d}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {pasoCrear === "medidas" && (
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 w-full max-w-[1200px] mx-auto">
+                {formStudentId ? (
+                  <MeasurementsModule
+                    alumnoFijo={formStudentId}
+                    soloFormulario
+                    onGuardado={() => setIsModalOpen(false)}
+                    onCancelar={() => setIsModalOpen(false)}
+                  />
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center">
+                    <p className="text-sm font-bold text-slate-600">Primero elige el alumno en el Paso 1.</p>
+                    <button type="button" onClick={() => setPasoCrear("dieta")} className="mt-3 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold cursor-pointer">
+                      Ir al Paso 1
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Modal Form */}
             <form
               onSubmit={handleSavePlan}
-              className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 w-full max-w-[1200px] mx-auto"
+              className={`flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 w-full max-w-[1200px] mx-auto ${pasoCrear === "dieta" ? "" : "hidden"}`}
             >
               {/* General info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1663,7 +1725,9 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                 >
                   {editingPlanId
                     ? "Guardar Cambios"
-                    : "Guardar y Asignar Dieta"}
+                    : formStudentId
+                      ? "Guardar dieta y seguir a medidas"
+                      : "Guardar y Asignar Dieta"}
                 </button>
               </div>
             </form>

@@ -5,7 +5,6 @@ import { AgendaEspecialistas } from "../appointments/AgendaEspecialistas";
 import { UsersRound, CalendarDays, AlertTriangle as FiAlerta, ClipboardCheck as FiFicha, CircleDashed as FiSinEval, Flame as FiDolor } from "lucide-react";
 import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
 import { useRecordado } from "../../utils/subPestana";
-import { useCobertura } from "../common/Programados";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   HeartPulse,
@@ -217,8 +216,6 @@ export const PhysiotherapyModule = () => {
     staffDirectory,
     currentUser,
   } = useGym();
-  const evaluados = useCobertura().fisioterapia;
-  const sinEvaluar = members.filter((m) => !evaluados.has(String(m.id))).length;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroFisio, setFiltroFisio] = useState(""); // todos · lesiones · con_sesiones · sin_eval · dolor_alto
@@ -1310,7 +1307,7 @@ export const PhysiotherapyModule = () => {
         pestanas={[
           { k: "fichas", icono: Layers, label: "Fichas clínicas e historial", tono: "teal" },
           { k: "textual", icono: BookOpen, label: "Evaluaciones por alumno", badge: physioRecords.length, tono: "emerald" },
-          { k: "seguimiento", icono: UsersRound, label: "Seguimiento", badge: `${sinEvaluar} sin evaluar`, tono: "violet" },
+          { k: "seguimiento", icono: UsersRound, label: "Seguimiento", tono: "violet" },
           { k: "agenda", icono: CalendarDays, label: "Horario de atención", tono: "amber" },
         ]}
       />

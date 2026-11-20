@@ -80,7 +80,7 @@ const Resultado = ({ titulo, valor, detalle, color }) => (
   </div>
 );
 
-export const MeasurementsModule = ({ alumnoFijo = "" } = {}) => {
+export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, onGuardado, onCancelar, onNuevoControl } = {}) => {
   const {
     members,
     trainers,
@@ -412,7 +412,14 @@ export const MeasurementsModule = ({ alumnoFijo = "" } = {}) => {
 
     confetti({ particleCount: 50, spread: 80, origin: { y: 0.6 } });
     setIsNewModalOpen(false);
+    onGuardado?.(targetMember.id);
   };
+
+  // Dentro de «Crear / asignar dieta» (Paso 2): el formulario se abre solo, para ese alumno
+  useEffect(() => {
+    if (soloFormulario && alumnoFijo) handleOpenNewAssessment(alumnoFijo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [soloFormulario, alumnoFijo]);
 
   // WhatsApp share report
   const handleShareWhatsApp = (assessment) => {
@@ -468,6 +475,347 @@ export const MeasurementsModule = ({ alumnoFijo = "" } = {}) => {
     );
   }, [members, searchMemberQuery]);
 
+  const formularioNuevo = (
+        <div className={soloFormulario ? "" : "fixed inset-0 z-50 rd-velo"}>
+<div className={soloFormulario ? "flex flex-col" : "rd-hoja flex flex-col"}>
+          {!soloFormulario && (
+          <div className="bg-gradient-to-r from-slate-900 to-blue-950 text-white px-4 sm:px-8 py-4 flex items-center justify-between gap-4 shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold uppercase tracking-widest text-cyan-300">
+                  Evaluación antropométrica y bioimpedancia
+                </span>
+                <h3 className="text-lg font-extrabold truncate">
+                  {members.find((m) => m.id === formMemberId)?.fullName || "Nueva evaluación"}
+                </h3>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsNewModalOpen(false)}
+              className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
+              title="Cerrar"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          )}
+
+          <form onSubmit={handleSaveAssessment} className="flex-1 overflow-y-auto">
+            <div className={`max-w-[1600px] mx-auto ${soloFormulario ? "p-0" : "p-4 sm:p-8"} grid grid-cols-1 xl:grid-cols-3 gap-6`}>
+              {/* COLUMNA IZQUIERDA: DATOS */}
+              <div className="xl:col-span-2 space-y-6">
+                {/* 1. Datos generales */}
+                <section className={SECCION}>
+                  <h4 className={TITULO}>
+                    <User className="w-5 h-5 text-blue-600" /> 1. Datos de la evaluación
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="md:col-span-2">
+                      <label className={ETQ}>Alumno *</label>
+                      <SelectorAlumno
+                        alumnos={members}
+                        value={formMemberId}
+                        onChange={(id) => {
+                          setFormMemberId(id);
+                          loadMemberValuesIntoForm(id);
+                        }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className={ETQ}>Fecha</label>
+                      <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} className={CAMPO} />
+                    </div>
+                    <div>
+                      <label className={ETQ}>Hora</label>
+                      <input type="text" value={formTime} onChange={(e) => setFormTime(e.target.value)} className={CAMPO} />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className={ETQ}>Evaluador</label>
+                      <input
+                        list="lista-evaluadores"
+                        value={formEvaluator}
+                        onChange={(e) => setFormEvaluator(e.target.value)}
+                        placeholder="Nombre del evaluador"
+                        className={CAMPO}
+                      />
+                      <datalist id="lista-evaluadores">
+                        {currentUser?.fullName && <option value={currentUser.fullName} />}
+                        {trainers.map((t) => (
+                          <option key={t.id} value={t.name} />
+                        ))}
+                      {staffDirectory.map((p) => (
+                      <option key={`st-${p.id}`} value={p.fullName} />
+                    ))}
+                  </datalist>
+                    </div>
+                    <Campo label="Peso *" unit="kg" value={formWeight} onChange={setFormWeight} step="0.1" />
+                    <Campo label="Estatura *" unit="cm" value={formHeight} onChange={setFormHeight} step="0.5" />
+                  </div>
+                  {formMemberPreviousAssessment && (
+                    <p className="mt-3 text-sm text-slate-500">
+                      Se precargaron los valores de la última evaluación ({formMemberPreviousAssessment.date}). Actualice
+                      solo lo que cambió.
+                    </p>
+                  )}
+                </section>
+
+                {/* 2. Bioimpedancia */}
+                <section className={SECCION}>
+                  <h4 className={TITULO}>
+                    <Scale className="w-5 h-5 text-violet-600" /> 2. Composición corporal (báscula de bioimpedancia)
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Campo label="Grasa corporal" unit="%" value={biaFatPct} onChange={setBiaFatPct} step="0.1" />
+                    <Campo label="Masa muscular" unit="%" value={biaMusclePct} onChange={setBiaMusclePct} step="0.1" />
+                    <Campo label="Agua corporal" unit="%" value={biaWaterPct} onChange={setBiaWaterPct} step="0.1" />
+                    <Campo label="Grasa visceral" unit="nivel" value={biaVisceral} onChange={setBiaVisceral} />
+                    <Campo label="Masa ósea" unit="kg" value={biaBoneKg} onChange={setBiaBoneKg} step="0.1" />
+                    <Campo label="Metabolismo basal" unit="kcal" value={biaBmr} onChange={setBiaBmr} />
+                    <Campo label="Edad metabólica" unit="años" value={biaMetabolicAge} onChange={setBiaMetabolicAge} />
+                  </div>
+                  {biaVisceral !== "" && (
+                    <div className="mt-5">
+                      <div className="flex justify-between text-sm font-semibold mb-1.5">
+                        <span className="text-slate-700">Grasa visceral</span>
+                        <span
+                          className={
+                            Number(biaVisceral) <= 9
+                              ? "text-emerald-600"
+                              : Number(biaVisceral) <= 14
+                                ? "text-amber-600"
+                                : "text-rose-600"
+                          }
+                        >
+                          Nivel {biaVisceral} ·{" "}
+                          {Number(biaVisceral) <= 9 ? "Saludable" : Number(biaVisceral) <= 14 ? "Elevado" : "Muy elevado"}
+                        </span>
+                      </div>
+                      <div className="relative h-3 rounded-full overflow-hidden flex">
+                        <div className="bg-emerald-500" style={{ width: "30%" }} />
+                        <div className="bg-amber-400" style={{ width: "17%" }} />
+                        <div className="bg-rose-500 flex-1" />
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-4 border-slate-900"
+                          style={{ left: `calc(${Math.min(100, (Number(biaVisceral) / 30) * 100)}% - 8px)` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-slate-500 mt-1">
+                        <span>1</span>
+                        <span>9</span>
+                        <span>14</span>
+                        <span>30</span>
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* 3. Perímetros */}
+                <section className={SECCION}>
+                  <h4 className={TITULO}>
+                    <Ruler className="w-5 h-5 text-cyan-600" /> 3. Perímetros corporales (cinta métrica, cm)
+                  </h4>
+                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_220px] gap-4 items-start">
+                  <div className="space-y-5">
+                    <div>
+                      <span className={SUB}>Tronco</span>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <Campo label="Cuello" unit="cm" value={perimNeck} onChange={setPerimNeck} onFocus={() => setPerimActivo("neck")} step="0.1" />
+                        <Campo label="Hombros" unit="cm" value={perimShoulders} onChange={setPerimShoulders} onFocus={() => setPerimActivo("shoulders")} step="0.1" />
+                        <Campo label="Pecho / tórax" unit="cm" value={perimChest} onChange={setPerimChest} onFocus={() => setPerimActivo("chest")} step="0.1" />
+                        <Campo
+                          label="Cintura mínima"
+                          unit="cm"
+                          value={perimWaist}
+                          onChange={setPerimWaist} onFocus={() => setPerimActivo("waist")}
+                          step="0.1"
+                          hint="Punto más estrecho"
+                        />
+                        <Campo
+                          label="Abdomen"
+                          unit="cm"
+                          value={perimAbdomen}
+                          onChange={setPerimAbdomen} onFocus={() => setPerimActivo("abdomen")}
+                          step="0.1"
+                          hint="A nivel del ombligo"
+                        />
+                        <Campo
+                          label="Cadera / glúteos"
+                          unit="cm"
+                          value={perimHip}
+                          onChange={setPerimHip} onFocus={() => setPerimActivo("hip")}
+                          step="0.1"
+                          hint="Máxima protuberancia glútea"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <span className={SUB}>Miembro superior</span>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <Campo label="Brazo relajado I" unit="cm" value={perimBicepsRelL} onChange={setPerimBicepsRelL} onFocus={() => setPerimActivo("bicepsRel")} step="0.1" />
+                        <Campo label="Brazo relajado D" unit="cm" value={perimBicepsRelR} onChange={setPerimBicepsRelR} onFocus={() => setPerimActivo("bicepsRel")} step="0.1" />
+                        <Campo label="Brazo contraído I" unit="cm" value={perimBicepsFlexL} onChange={setPerimBicepsFlexL} onFocus={() => setPerimActivo("bicepsFlex")} step="0.1" />
+                        <Campo label="Brazo contraído D" unit="cm" value={perimBicepsFlexR} onChange={setPerimBicepsFlexR} onFocus={() => setPerimActivo("bicepsFlex")} step="0.1" />
+                        <Campo label="Antebrazo" unit="cm" value={perimForearm} onChange={setPerimForearm} onFocus={() => setPerimActivo("forearm")} step="0.1" />
+                      </div>
+                    </div>
+                    <div>
+                      <span className={SUB}>Miembro inferior</span>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <Campo label="Muslo superior" unit="cm" value={perimThighSup} onChange={setPerimThighSup} onFocus={() => setPerimActivo("thighSup")} step="0.1" />
+                        <Campo label="Muslo medio" unit="cm" value={perimThighMid} onChange={setPerimThighMid} onFocus={() => setPerimActivo("thighMid")} step="0.1" />
+                        <Campo label="Pantorrilla" unit="cm" value={perimCalf} onChange={setPerimCalf} onFocus={() => setPerimActivo("calf")} step="0.1" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="lg:sticky lg:top-4">
+                    <GuiaPerimetros
+                      activo={perimActivo}
+                      sexo={formMember?.gender}
+                      valores={{ neck: perimNeck, shoulders: perimShoulders, chest: perimChest, waist: perimWaist, abdomen: perimAbdomen, hip: perimHip, bicepsRel: perimBicepsRelR || perimBicepsRelL, bicepsFlex: perimBicepsFlexR || perimBicepsFlexL, forearm: perimForearm, thighSup: perimThighSup, thighMid: perimThighMid, calf: perimCalf }}
+                    />
+                  </div>
+                  </div>
+                </section>
+
+                {/* 4. Observaciones */}
+                <section className={SECCION}>
+                  <h4 className={TITULO}>4. Observaciones y objetivos</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className={ETQ}>Observaciones</label>
+                      <textarea
+                        rows={3}
+                        value={formNotes}
+                        onChange={(e) => setFormNotes(e.target.value)}
+                        placeholder="Condiciones de la medición, hidratación, comentarios…"
+                        className={CAMPO}
+                      />
+                    </div>
+                    <div>
+                      <label className={ETQ}>Objetivo para la próxima evaluación</label>
+                      <textarea
+                        rows={3}
+                        value={formGoals}
+                        onChange={(e) => setFormGoals(e.target.value)}
+                        placeholder="Ej. Reducir 2 cm de cintura y bajar 1,5 % de grasa en 6 semanas"
+                        className={CAMPO}
+                      />
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              {/* COLUMNA DERECHA: RESULTADOS CALCULADOS (fija) */}
+              <aside className="space-y-4 xl:sticky xl:top-6 self-start">
+                <div className="bg-slate-900 text-white rounded-2xl p-5">
+                  <h4 className="text-sm font-black uppercase tracking-widest text-cyan-300 mb-4">
+                    Resultados calculados
+                  </h4>
+                  <div className="space-y-3">
+                    <Resultado
+                      titulo="IMC"
+                      valor={computedFormMetrics.bmi || "–"}
+                      detalle={computedFormMetrics.bmi ? computedFormMetrics.bmiClassification : "Falta peso y estatura"}
+                      color={
+                        !computedFormMetrics.bmi
+                          ? "#64748b"
+                          : computedFormMetrics.bmi < 18.5 || computedFormMetrics.bmi >= 30
+                            ? "var(--color-rose-500)"
+                            : computedFormMetrics.bmi >= 25
+                              ? "var(--color-amber-500)"
+                              : "var(--color-emerald-500)"
+                      }
+                    />
+                    <Resultado
+                      titulo="Índice cintura / cadera"
+                      valor={computedFormMetrics.waistHipRatio || "–"}
+                      detalle={computedFormMetrics.waistHipRatio ? `Riesgo ${computedFormMetrics.waistHipRisk.toLowerCase()}` : "Falta cintura y cadera"}
+                      color={
+                        computedFormMetrics.waistHipRisk === "Alto"
+                          ? "var(--color-rose-500)"
+                          : computedFormMetrics.waistHipRisk === "Moderado"
+                            ? "var(--color-amber-500)"
+                            : "var(--color-emerald-500)"
+                      }
+                    />
+                    <Resultado
+                      titulo="Índice cintura / talla"
+                      valor={computedFormMetrics.waistHeightRatio || "–"}
+                      detalle={
+                        computedFormMetrics.waistHeightRatio
+                          ? computedFormMetrics.waistHeightRatio < 0.5
+                            ? "Saludable (< 0,50)"
+                            : "Riesgo cardiometabólico (≥ 0,50)"
+                          : "Falta cintura y estatura"
+                      }
+                      color={computedFormMetrics.waistHeightRatio >= 0.5 ? "var(--color-rose-500)" : "var(--color-emerald-500)"}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-700">
+                    {[
+                      ["Masa grasa", computedFormMetrics.fatKg, "kg"],
+                      ["Masa muscular", computedFormMetrics.muscleKg, "kg"],
+                      ["Masa libre de grasa", computedFormMetrics.leanMassKg, "kg"],
+                      ["Agua corporal", computedFormMetrics.waterLiters, "L"],
+                    ].map(([t, v, u]) => (
+                      <div key={t} className="bg-slate-800 rounded-xl p-3">
+                        <span className="block text-xs text-slate-400">{t}</span>
+                        <span className="text-xl font-black">
+                          {v ? v : "–"} <span className="text-sm text-slate-400">{v ? u : ""}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {(() => {
+                  const R0 = rangos(formMember?.gender, edadDe(formMember?.birthDate));
+                  const peso = Number(formWeight) || 0;
+                  return (
+                    <div className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">
+                        ¿Está en rango? · {formMember?.gender === "F" ? "mujer" : "hombre"}
+                        {edadDe(formMember?.birthDate) ? `, ${edadDe(formMember?.birthDate)} años` : ""}
+                      </h4>
+                      <BarraRango compacto titulo="IMC" icono="⚖️" valor={computedFormMetrics.bmi || null} cfg={R0.imc} invertido />
+                      <BarraRango compacto titulo="Grasa corporal" icono="🟠" valor={biaFatPct || null} unidad="%" cfg={R0.grasa} invertido />
+                      <BarraRango compacto titulo="Masa muscular" icono="💪" valor={biaMusclePct || (peso && computedFormMetrics.muscleKg ? (computedFormMetrics.muscleKg / peso) * 100 : null)} unidad="%" cfg={R0.musculo} />
+                      <BarraRango compacto titulo="Grasa visceral" icono="🫀" valor={biaVisceral || null} unidad="nivel" cfg={R0.visceral} invertido decimales={0} />
+                      <BarraRango compacto titulo="Agua corporal" icono="💧" valor={biaWaterPct || null} unidad="%" cfg={R0.agua} />
+                      <BarraRango compacto titulo="Cintura" icono="📐" valor={perimWaist || null} unidad="cm" cfg={R0.cintura} invertido />
+                      <BarraRango compacto titulo="Cintura / talla" icono="📏" valor={computedFormMetrics.waistHeightRatio || null} cfg={R0.cinturaTalla} invertido decimales={2} />
+                    </div>
+                  );
+                })()}
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-extrabold shadow-md cursor-pointer"
+                  >
+                    Guardar evaluación
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => (soloFormulario ? onCancelar?.() : setIsNewModalOpen(false))}
+                    className="w-full py-3 rounded-xl border border-slate-300 text-sm font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </aside>
+            </div>
+          </form>
+        </div>
+</div>
+  );
+  if (soloFormulario) return isNewModalOpen ? formularioNuevo : null;
+
   return (
     <div className="space-y-6">
       {alumnoFijo ? (
@@ -475,7 +823,7 @@ export const MeasurementsModule = ({ alumnoFijo = "" } = {}) => {
           <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
             <Activity className="w-4 h-4 text-teal-600" /> Medidas del alumno: peso, perímetros y bioimpedancia. Cada control queda en su historial.
           </p>
-          <AccionCabecera icono={Plus} onClick={() => handleOpenNewAssessment(alumnoFijo)}>Nueva evaluación / control</AccionCabecera>
+          <AccionCabecera icono={Plus} onClick={() => (onNuevoControl ? onNuevoControl() : handleOpenNewAssessment(alumnoFijo))}>Nuevo control: dieta y medidas</AccionCabecera>
         </div>
       ) : (
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1367,343 +1715,7 @@ export const MeasurementsModule = ({ alumnoFijo = "" } = {}) => {
       </div>
 
       {/* EVALUACIÓN ANTROPOMÉTRICA: PANTALLA COMPLETA */}
-      {isNewModalOpen && (
-        <div className="fixed inset-0 z-50 rd-velo">
-<div className="rd-hoja flex flex-col">
-          <div className="bg-gradient-to-r from-slate-900 to-blue-950 text-white px-4 sm:px-8 py-4 flex items-center justify-between gap-4 shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300">
-                <Activity className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold uppercase tracking-widest text-cyan-300">
-                  Evaluación antropométrica y bioimpedancia
-                </span>
-                <h3 className="text-lg font-extrabold truncate">
-                  {members.find((m) => m.id === formMemberId)?.fullName || "Nueva evaluación"}
-                </h3>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsNewModalOpen(false)}
-              className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
-              title="Cerrar"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          <form onSubmit={handleSaveAssessment} className="flex-1 overflow-y-auto">
-            <div className="max-w-[1600px] mx-auto p-4 sm:p-8 grid grid-cols-1 xl:grid-cols-3 gap-6">
-              {/* COLUMNA IZQUIERDA: DATOS */}
-              <div className="xl:col-span-2 space-y-6">
-                {/* 1. Datos generales */}
-                <section className={SECCION}>
-                  <h4 className={TITULO}>
-                    <User className="w-5 h-5 text-blue-600" /> 1. Datos de la evaluación
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="md:col-span-2">
-                      <label className={ETQ}>Alumno *</label>
-                      <SelectorAlumno
-                        alumnos={members}
-                        value={formMemberId}
-                        onChange={(id) => {
-                          setFormMemberId(id);
-                          loadMemberValuesIntoForm(id);
-                        }}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className={ETQ}>Fecha</label>
-                      <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} className={CAMPO} />
-                    </div>
-                    <div>
-                      <label className={ETQ}>Hora</label>
-                      <input type="text" value={formTime} onChange={(e) => setFormTime(e.target.value)} className={CAMPO} />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className={ETQ}>Evaluador</label>
-                      <input
-                        list="lista-evaluadores"
-                        value={formEvaluator}
-                        onChange={(e) => setFormEvaluator(e.target.value)}
-                        placeholder="Nombre del evaluador"
-                        className={CAMPO}
-                      />
-                      <datalist id="lista-evaluadores">
-                        {currentUser?.fullName && <option value={currentUser.fullName} />}
-                        {trainers.map((t) => (
-                          <option key={t.id} value={t.name} />
-                        ))}
-                      {staffDirectory.map((p) => (
-                      <option key={`st-${p.id}`} value={p.fullName} />
-                    ))}
-                  </datalist>
-                    </div>
-                    <Campo label="Peso *" unit="kg" value={formWeight} onChange={setFormWeight} step="0.1" />
-                    <Campo label="Estatura *" unit="cm" value={formHeight} onChange={setFormHeight} step="0.5" />
-                  </div>
-                  {formMemberPreviousAssessment && (
-                    <p className="mt-3 text-sm text-slate-500">
-                      Se precargaron los valores de la última evaluación ({formMemberPreviousAssessment.date}). Actualice
-                      solo lo que cambió.
-                    </p>
-                  )}
-                </section>
-
-                {/* 2. Bioimpedancia */}
-                <section className={SECCION}>
-                  <h4 className={TITULO}>
-                    <Scale className="w-5 h-5 text-violet-600" /> 2. Composición corporal (báscula de bioimpedancia)
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Campo label="Grasa corporal" unit="%" value={biaFatPct} onChange={setBiaFatPct} step="0.1" />
-                    <Campo label="Masa muscular" unit="%" value={biaMusclePct} onChange={setBiaMusclePct} step="0.1" />
-                    <Campo label="Agua corporal" unit="%" value={biaWaterPct} onChange={setBiaWaterPct} step="0.1" />
-                    <Campo label="Grasa visceral" unit="nivel" value={biaVisceral} onChange={setBiaVisceral} />
-                    <Campo label="Masa ósea" unit="kg" value={biaBoneKg} onChange={setBiaBoneKg} step="0.1" />
-                    <Campo label="Metabolismo basal" unit="kcal" value={biaBmr} onChange={setBiaBmr} />
-                    <Campo label="Edad metabólica" unit="años" value={biaMetabolicAge} onChange={setBiaMetabolicAge} />
-                  </div>
-                  {biaVisceral !== "" && (
-                    <div className="mt-5">
-                      <div className="flex justify-between text-sm font-semibold mb-1.5">
-                        <span className="text-slate-700">Grasa visceral</span>
-                        <span
-                          className={
-                            Number(biaVisceral) <= 9
-                              ? "text-emerald-600"
-                              : Number(biaVisceral) <= 14
-                                ? "text-amber-600"
-                                : "text-rose-600"
-                          }
-                        >
-                          Nivel {biaVisceral} ·{" "}
-                          {Number(biaVisceral) <= 9 ? "Saludable" : Number(biaVisceral) <= 14 ? "Elevado" : "Muy elevado"}
-                        </span>
-                      </div>
-                      <div className="relative h-3 rounded-full overflow-hidden flex">
-                        <div className="bg-emerald-500" style={{ width: "30%" }} />
-                        <div className="bg-amber-400" style={{ width: "17%" }} />
-                        <div className="bg-rose-500 flex-1" />
-                        <div
-                          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-4 border-slate-900"
-                          style={{ left: `calc(${Math.min(100, (Number(biaVisceral) / 30) * 100)}% - 8px)` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-xs text-slate-500 mt-1">
-                        <span>1</span>
-                        <span>9</span>
-                        <span>14</span>
-                        <span>30</span>
-                      </div>
-                    </div>
-                  )}
-                </section>
-
-                {/* 3. Perímetros */}
-                <section className={SECCION}>
-                  <h4 className={TITULO}>
-                    <Ruler className="w-5 h-5 text-cyan-600" /> 3. Perímetros corporales (cinta métrica, cm)
-                  </h4>
-                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_220px] gap-4 items-start">
-                  <div className="space-y-5">
-                    <div>
-                      <span className={SUB}>Tronco</span>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <Campo label="Cuello" unit="cm" value={perimNeck} onChange={setPerimNeck} onFocus={() => setPerimActivo("neck")} step="0.1" />
-                        <Campo label="Hombros" unit="cm" value={perimShoulders} onChange={setPerimShoulders} onFocus={() => setPerimActivo("shoulders")} step="0.1" />
-                        <Campo label="Pecho / tórax" unit="cm" value={perimChest} onChange={setPerimChest} onFocus={() => setPerimActivo("chest")} step="0.1" />
-                        <Campo
-                          label="Cintura mínima"
-                          unit="cm"
-                          value={perimWaist}
-                          onChange={setPerimWaist} onFocus={() => setPerimActivo("waist")}
-                          step="0.1"
-                          hint="Punto más estrecho"
-                        />
-                        <Campo
-                          label="Abdomen"
-                          unit="cm"
-                          value={perimAbdomen}
-                          onChange={setPerimAbdomen} onFocus={() => setPerimActivo("abdomen")}
-                          step="0.1"
-                          hint="A nivel del ombligo"
-                        />
-                        <Campo
-                          label="Cadera / glúteos"
-                          unit="cm"
-                          value={perimHip}
-                          onChange={setPerimHip} onFocus={() => setPerimActivo("hip")}
-                          step="0.1"
-                          hint="Máxima protuberancia glútea"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <span className={SUB}>Miembro superior</span>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        <Campo label="Brazo relajado I" unit="cm" value={perimBicepsRelL} onChange={setPerimBicepsRelL} onFocus={() => setPerimActivo("bicepsRel")} step="0.1" />
-                        <Campo label="Brazo relajado D" unit="cm" value={perimBicepsRelR} onChange={setPerimBicepsRelR} onFocus={() => setPerimActivo("bicepsRel")} step="0.1" />
-                        <Campo label="Brazo contraído I" unit="cm" value={perimBicepsFlexL} onChange={setPerimBicepsFlexL} onFocus={() => setPerimActivo("bicepsFlex")} step="0.1" />
-                        <Campo label="Brazo contraído D" unit="cm" value={perimBicepsFlexR} onChange={setPerimBicepsFlexR} onFocus={() => setPerimActivo("bicepsFlex")} step="0.1" />
-                        <Campo label="Antebrazo" unit="cm" value={perimForearm} onChange={setPerimForearm} onFocus={() => setPerimActivo("forearm")} step="0.1" />
-                      </div>
-                    </div>
-                    <div>
-                      <span className={SUB}>Miembro inferior</span>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <Campo label="Muslo superior" unit="cm" value={perimThighSup} onChange={setPerimThighSup} onFocus={() => setPerimActivo("thighSup")} step="0.1" />
-                        <Campo label="Muslo medio" unit="cm" value={perimThighMid} onChange={setPerimThighMid} onFocus={() => setPerimActivo("thighMid")} step="0.1" />
-                        <Campo label="Pantorrilla" unit="cm" value={perimCalf} onChange={setPerimCalf} onFocus={() => setPerimActivo("calf")} step="0.1" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="lg:sticky lg:top-4">
-                    <GuiaPerimetros
-                      activo={perimActivo}
-                      sexo={formMember?.gender}
-                      valores={{ neck: perimNeck, shoulders: perimShoulders, chest: perimChest, waist: perimWaist, abdomen: perimAbdomen, hip: perimHip, bicepsRel: perimBicepsRelR || perimBicepsRelL, bicepsFlex: perimBicepsFlexR || perimBicepsFlexL, forearm: perimForearm, thighSup: perimThighSup, thighMid: perimThighMid, calf: perimCalf }}
-                    />
-                  </div>
-                  </div>
-                </section>
-
-                {/* 4. Observaciones */}
-                <section className={SECCION}>
-                  <h4 className={TITULO}>4. Observaciones y objetivos</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className={ETQ}>Observaciones</label>
-                      <textarea
-                        rows={3}
-                        value={formNotes}
-                        onChange={(e) => setFormNotes(e.target.value)}
-                        placeholder="Condiciones de la medición, hidratación, comentarios…"
-                        className={CAMPO}
-                      />
-                    </div>
-                    <div>
-                      <label className={ETQ}>Objetivo para la próxima evaluación</label>
-                      <textarea
-                        rows={3}
-                        value={formGoals}
-                        onChange={(e) => setFormGoals(e.target.value)}
-                        placeholder="Ej. Reducir 2 cm de cintura y bajar 1,5 % de grasa en 6 semanas"
-                        className={CAMPO}
-                      />
-                    </div>
-                  </div>
-                </section>
-              </div>
-
-              {/* COLUMNA DERECHA: RESULTADOS CALCULADOS (fija) */}
-              <aside className="space-y-4 xl:sticky xl:top-6 self-start">
-                <div className="bg-slate-900 text-white rounded-2xl p-5">
-                  <h4 className="text-sm font-black uppercase tracking-widest text-cyan-300 mb-4">
-                    Resultados calculados
-                  </h4>
-                  <div className="space-y-3">
-                    <Resultado
-                      titulo="IMC"
-                      valor={computedFormMetrics.bmi || "–"}
-                      detalle={computedFormMetrics.bmi ? computedFormMetrics.bmiClassification : "Falta peso y estatura"}
-                      color={
-                        !computedFormMetrics.bmi
-                          ? "#64748b"
-                          : computedFormMetrics.bmi < 18.5 || computedFormMetrics.bmi >= 30
-                            ? "var(--color-rose-500)"
-                            : computedFormMetrics.bmi >= 25
-                              ? "var(--color-amber-500)"
-                              : "var(--color-emerald-500)"
-                      }
-                    />
-                    <Resultado
-                      titulo="Índice cintura / cadera"
-                      valor={computedFormMetrics.waistHipRatio || "–"}
-                      detalle={computedFormMetrics.waistHipRatio ? `Riesgo ${computedFormMetrics.waistHipRisk.toLowerCase()}` : "Falta cintura y cadera"}
-                      color={
-                        computedFormMetrics.waistHipRisk === "Alto"
-                          ? "var(--color-rose-500)"
-                          : computedFormMetrics.waistHipRisk === "Moderado"
-                            ? "var(--color-amber-500)"
-                            : "var(--color-emerald-500)"
-                      }
-                    />
-                    <Resultado
-                      titulo="Índice cintura / talla"
-                      valor={computedFormMetrics.waistHeightRatio || "–"}
-                      detalle={
-                        computedFormMetrics.waistHeightRatio
-                          ? computedFormMetrics.waistHeightRatio < 0.5
-                            ? "Saludable (< 0,50)"
-                            : "Riesgo cardiometabólico (≥ 0,50)"
-                          : "Falta cintura y estatura"
-                      }
-                      color={computedFormMetrics.waistHeightRatio >= 0.5 ? "var(--color-rose-500)" : "var(--color-emerald-500)"}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-700">
-                    {[
-                      ["Masa grasa", computedFormMetrics.fatKg, "kg"],
-                      ["Masa muscular", computedFormMetrics.muscleKg, "kg"],
-                      ["Masa libre de grasa", computedFormMetrics.leanMassKg, "kg"],
-                      ["Agua corporal", computedFormMetrics.waterLiters, "L"],
-                    ].map(([t, v, u]) => (
-                      <div key={t} className="bg-slate-800 rounded-xl p-3">
-                        <span className="block text-xs text-slate-400">{t}</span>
-                        <span className="text-xl font-black">
-                          {v ? v : "–"} <span className="text-sm text-slate-400">{v ? u : ""}</span>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {(() => {
-                  const R0 = rangos(formMember?.gender, edadDe(formMember?.birthDate));
-                  const peso = Number(formWeight) || 0;
-                  return (
-                    <div className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2">
-                      <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">
-                        ¿Está en rango? · {formMember?.gender === "F" ? "mujer" : "hombre"}
-                        {edadDe(formMember?.birthDate) ? `, ${edadDe(formMember?.birthDate)} años` : ""}
-                      </h4>
-                      <BarraRango compacto titulo="IMC" icono="⚖️" valor={computedFormMetrics.bmi || null} cfg={R0.imc} invertido />
-                      <BarraRango compacto titulo="Grasa corporal" icono="🟠" valor={biaFatPct || null} unidad="%" cfg={R0.grasa} invertido />
-                      <BarraRango compacto titulo="Masa muscular" icono="💪" valor={biaMusclePct || (peso && computedFormMetrics.muscleKg ? (computedFormMetrics.muscleKg / peso) * 100 : null)} unidad="%" cfg={R0.musculo} />
-                      <BarraRango compacto titulo="Grasa visceral" icono="🫀" valor={biaVisceral || null} unidad="nivel" cfg={R0.visceral} invertido decimales={0} />
-                      <BarraRango compacto titulo="Agua corporal" icono="💧" valor={biaWaterPct || null} unidad="%" cfg={R0.agua} />
-                      <BarraRango compacto titulo="Cintura" icono="📐" valor={perimWaist || null} unidad="cm" cfg={R0.cintura} invertido />
-                      <BarraRango compacto titulo="Cintura / talla" icono="📏" valor={computedFormMetrics.waistHeightRatio || null} cfg={R0.cinturaTalla} invertido decimales={2} />
-                    </div>
-                  );
-                })()}
-
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="submit"
-                    className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-extrabold shadow-md cursor-pointer"
-                  >
-                    Guardar evaluación
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsNewModalOpen(false)}
-                    className="w-full py-3 rounded-xl border border-slate-300 text-sm font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </aside>
-            </div>
-          </form>
-        </div>
-</div>
-      )}
+      {isNewModalOpen && formularioNuevo}
     </div>
   );
 };

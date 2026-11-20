@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo } from "react";
-import { Search, User, Ruler, Utensils, Flame, X } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Search, User, Ruler, Utensils, Flame, X, Plus } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { coincideAlumno, CodigoAlumno } from "../common/BuscarAlumno";
 import { NutritionModule } from "../nutrition/NutritionModule";
@@ -19,7 +19,7 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
   const [q, setQ] = useRecordado("dym_q", "");
   const [objetivo, setObjetivo] = useRecordado("dym_obj", "all");
   const [alumnoId, setAlumnoId] = useRecordado("dym_alumno", "");
-  const [paso, setPaso] = useRecordado("dym_paso", "medidas");
+  const [paso, setPaso] = useRecordado("dym_paso", "dieta");
 
   const planDe = useMemo(() => {
     const m = new Map();
@@ -47,15 +47,16 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
   }, [members, q, objetivo, planDe, buscando]);
 
   const alumno = members.find((m) => String(m.id) === String(alumnoId));
-  // «Crear / asignar dieta» de la cabecera: con alumno elegido va al paso 2
-  useEffect(() => {
-    if (pedirCrear > 0 && alumnoId) setPaso("dieta");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pedirCrear]);
+  // «Nuevo control»: abre la misma ventana de «Crear / asignar dieta» (Paso 1 dieta, Paso 2 medidas)
+  const [controles, setControles] = useState(0);
+  const pedidos = pedirCrear + controles;
   const plan = alumno ? planDe.get(String(alumno.id)) : null;
   const tomas = alumno ? tomasDe.get(String(alumno.id)) || 0 : 0;
 
   return (
+    <>
+    {/* Ventana de «Crear / asignar dieta» (dieta y medidas en pasos) */}
+    <NutritionModule vista="ninguna" onVista={() => {}} pedirCrear={pedidos} alumnoFijo={alumno?.id || ""} />
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
       {/* Izquierda: buscar alumno */}
       <div className="lg:col-span-4 space-y-3 lg:sticky lg:top-3 self-start">
@@ -124,7 +125,6 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
       </div>
 
       {/* Sin alumno elegido, «Crear / asignar dieta» abre el formulario directo */}
-      {!alumno && pedirCrear > 0 && <NutritionModule vista="ninguna" onVista={() => {}} pedirCrear={pedirCrear} />}
       {/* Derecha: el alumno elegido, en dos pasos */}
       <div className="lg:col-span-8 space-y-4">
         {!alumno ? (
@@ -141,14 +141,21 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
                   <CodigoAlumno m={alumno} /> DNI {alumno.dni} · {alumno.planName || "sin plan"}
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setControles((n) => n + 1)}
+                className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-black shadow-sm cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Nuevo control: dieta y medidas
+              </button>
               <button type="button" onClick={() => setAlumnoId("")} className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center cursor-pointer" title="Cerrar alumno">
                 <X className="w-4 h-4" />
               </button>
               {/* Pasos, como en fisioterapia */}
               <div className="w-full grid grid-cols-2 gap-2">
                 {[
-                  ["medidas", Ruler, "Paso 1 · Medidas", tomas ? `${tomas} ${tomas === 1 ? "medición" : "mediciones"}` : "sin medidas"],
-                  ["dieta", Utensils, "Paso 2 · Plan de alimentación", plan ? `${plan.dailyCaloriesTarget} kcal` : "sin dieta"],
+                  ["dieta", Utensils, "Plan de alimentación", plan ? `${plan.dailyCaloriesTarget} kcal` : "sin dieta"],
+                  ["medidas", Ruler, "Medidas e historial", tomas ? `${tomas} ${tomas === 1 ? "control" : "controles"}` : "sin medidas"],
                 ].map(([k, I, t, d]) => (
                   <button
                     key={k}
@@ -172,13 +179,14 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
               </div>
             </div>
             {paso === "medidas" ? (
-              <MeasurementsModule alumnoFijo={alumno.id} />
+              <MeasurementsModule alumnoFijo={alumno.id} onNuevoControl={() => setControles((n) => n + 1)} />
             ) : (
-              <NutritionModule vista="plans" onVista={() => {}} pedirCrear={pedirCrear} alumnoFijo={alumno.id} />
+              <NutritionModule vista="plans" onVista={() => {}} alumnoFijo={alumno.id} />
             )}
           </>
         )}
       </div>
     </div>
+    </>
   );
 };
