@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import { colorDePlan } from "../../utils/colorPlan";
 import { Check, Snowflake } from "lucide-react";
 import React, { useState, useEffect } from "react";
@@ -588,7 +589,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
                 </span>
                 <label className="flex items-center gap-1.5 text-xs text-slate-600 justify-end">
                   Paga hoy S/
-                  <input
+                  <CampoNumero
                     type="number"
                     min="0.1"
                     step="0.10"

@@ -3,6 +3,7 @@
 // Filtra alumnos, matrículas, ingresos, asistencias y metas; lo que
 // queda en pantalla se exporta a Excel/PDF o se envía por WhatsApp.
 // ============================================================
+import { CampoNumero } from "../common/CampoNumero";
 import { SinSeleccion } from "../common/CabeceraModulo";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -559,11 +560,11 @@ const ReporteAlumnos = () => {
               </Sel>
               <label className="block text-xs">
                 <span className="font-bold text-slate-500">Edad desde</span>
-                <input type="number" min="0" placeholder="Ej. 18" value={f.edadMin} onChange={(e) => set("edadMin", e.target.value)} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 text-sm" />
+                <CampoNumero type="number" min="0" placeholder="Ej. 18" value={f.edadMin} onChange={(e) => set("edadMin", e.target.value)} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 text-sm" />
               </label>
               <label className="block text-xs">
                 <span className="font-bold text-slate-500">Edad hasta</span>
-                <input type="number" min="0" placeholder="Ej. 35" value={f.edadMax} onChange={(e) => set("edadMax", e.target.value)} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 text-sm" />
+                <CampoNumero type="number" min="0" placeholder="Ej. 35" value={f.edadMax} onChange={(e) => set("edadMax", e.target.value)} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 text-sm" />
               </label>
               <label className="col-span-2 flex items-center gap-2 text-xs font-semibold text-slate-600 pt-1">
                 <input type="checkbox" checked={f.restricciones} onChange={(e) => set("restricciones", e.target.checked)} className="accent-blue-600" /> Con restricciones médicas

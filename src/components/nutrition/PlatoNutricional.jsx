@@ -6,6 +6,7 @@
 //  - Anatomía de un plato (equilibrado, mediterráneo, cetogénico, paleo)
 //  - Carbohidratos según horas de ejercicio
 // =====================================================================
+import { CampoNumero } from "../common/CampoNumero";
 import React from "react";
 import { EditorComidas } from "./EditorComidas";
 import { PORCIONES_PESO, CONSEJOS_MANO } from "../../data/nutricionOpciones";
@@ -375,7 +376,7 @@ export const EditorPlato = ({ value, onChange, sexo }) => {
               <span className="block text-xl">{MANOS[m].emoji}</span>
               <span className="block text-[11px] font-bold text-slate-600">{MANOS[m].nombre} · {MANOS[m].que}</span>
               <span className="block text-[10px] text-slate-400">Hombre 2 · Mujer 1</span>
-              <input
+              <CampoNumero
                 type="number"
                 min="0"
                 max="6"
@@ -394,7 +395,7 @@ export const EditorPlato = ({ value, onChange, sexo }) => {
               <span className="block text-xl">{m.emoji}<span className="text-base ml-0.5">{m.gesto}</span></span>
               <span className="block text-[11px] font-bold text-slate-700">{m.nombre} · {m.que}</span>
               <span className="block text-[10px] text-slate-500 leading-tight">{m.detalle}</span>
-              <input
+              <CampoNumero
                 type="number"
                 min="0"
                 max="6"

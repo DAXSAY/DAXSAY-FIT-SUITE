@@ -3,6 +3,7 @@
 // Todo se lee y guarda en MySQL (productos, ventas, venta_detalle,
 // movimientos_inventario) a través de /api/tienda.
 // ============================================================
+import { CampoNumero } from "../common/CampoNumero";
 import { TarjetaKpi } from "../common/TarjetaKpi";
 import React, { useEffect, useMemo, useState } from "react";
 import { tono } from "../../utils/tonos";
@@ -137,7 +138,7 @@ export const StockMovementScreen = ({ product, puedeAjustar, onVolver, onGuardar
             <span className="text-sm font-bold text-slate-700">
               {tipo === "ajuste" ? "Stock contado (unidades)" : "Cantidad (unidades)"}
             </span>
-            <input
+            <CampoNumero
               type="number"
               min="0"
               step="1"
@@ -151,7 +152,7 @@ export const StockMovementScreen = ({ product, puedeAjustar, onVolver, onGuardar
           {tipo === "entrada" ? (
             <label className="block">
               <span className="text-sm font-bold text-slate-700">Costo unitario de compra (S/)</span>
-              <input
+              <CampoNumero
                 type="number"
                 min="0"
                 step="0.01"

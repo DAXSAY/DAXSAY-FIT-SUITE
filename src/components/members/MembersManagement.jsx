@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useEffect, useState } from "react";
 import {
   Users,
@@ -1056,7 +1057,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Descuento (S/)
                   </label>
-                  <input
+                  <CampoNumero
                     type="number"
                     min="0"
                     value={discountAmount}
@@ -1079,7 +1080,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                   </span>
                   <label className="flex items-center gap-1.5 text-gray-500">
                     Paga hoy S/
-                    <input
+                    <CampoNumero
                       type="number"
                       min="0.1"
                       step="0.10"

@@ -1,6 +1,7 @@
 // Indicaciones para el alumno: estiramientos, movilidad, calentamiento, postura y cuidados.
 // El profesional solo elige (clic) y ajusta si hace falta; la dosis estándar ya viene puesta:
 // estiramientos 3 x 30 s, movilidad y calentamiento 2 x 15.
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, ClipboardList, Home, Plus, Save, Search, Sunrise, Sunset, Trash2, X } from "lucide-react";
 import { api } from "../../api/cliente";
@@ -199,11 +200,11 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
               <select value={nueva.zone} onChange={(e) => setNueva({ ...nueva, zone: e.target.value })} className="px-2 py-1.5 rounded-md border border-slate-300">
                 {["general", "cuello", "hombro", "brazo", "pecho", "espalda", "tronco", "cadera", "gluteo", "muslo", "pierna", "tobillo"].map((z) => <option key={z} value={z}>{z === "gluteo" ? "glúteo" : z}</option>)}
               </select>
-              <label className="flex items-center gap-1">Series <input type="number" min="1" max="10" value={nueva.sets} onChange={(e) => setNueva({ ...nueva, sets: e.target.value })} className="w-12 px-1 py-1 rounded border border-slate-300" /></label>
+              <label className="flex items-center gap-1">Series <CampoNumero type="number" min="1" max="10" value={nueva.sets} onChange={(e) => setNueva({ ...nueva, sets: e.target.value })} className="w-12 px-1 py-1 rounded border border-slate-300" /></label>
               {nueva.category === "estiramiento" ? (
-                <label className="flex items-center gap-1">Seg. <input type="number" min="5" max="600" value={nueva.seconds} onChange={(e) => setNueva({ ...nueva, seconds: e.target.value })} className="w-14 px-1 py-1 rounded border border-slate-300" /></label>
+                <label className="flex items-center gap-1">Seg. <CampoNumero type="number" min="5" max="600" value={nueva.seconds} onChange={(e) => setNueva({ ...nueva, seconds: e.target.value })} className="w-14 px-1 py-1 rounded border border-slate-300" /></label>
               ) : (
-                <label className="flex items-center gap-1">Reps <input type="number" min="1" max="100" value={nueva.reps} onChange={(e) => setNueva({ ...nueva, reps: e.target.value })} className="w-14 px-1 py-1 rounded border border-slate-300" /></label>
+                <label className="flex items-center gap-1">Reps <CampoNumero type="number" min="1" max="100" value={nueva.reps} onChange={(e) => setNueva({ ...nueva, reps: e.target.value })} className="w-14 px-1 py-1 rounded border border-slate-300" /></label>
               )}
               <input value={nueva.detail} onChange={(e) => setNueva({ ...nueva, detail: e.target.value })} placeholder="Cómo se hace (opcional)" className="col-span-2 sm:col-span-3 px-2 py-1.5 rounded-md border border-slate-300" />
               <button type="button" onClick={crearIndicacion} className="px-3 py-1.5 rounded-md bg-blue-600 text-white font-bold cursor-pointer">Agregar</button>
@@ -284,13 +285,13 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
                     <span className="flex-1 min-w-0 text-sm text-slate-800 truncate" title={x.detail}>{x.name}</span>
                     {x.category !== "cuidado" && (
                       <span className="flex items-center gap-0.5 text-xs text-slate-500">
-                        <input disabled={!puede} type="number" min="1" max="10" value={x.sets ?? ""} onChange={(e) => cambiar(x.id, "sets", e.target.value)} className="w-9 px-1 py-0.5 rounded border border-slate-200 text-center" />×
+                        <CampoNumero disabled={!puede} type="number" min="1" max="10" value={x.sets ?? ""} onChange={(e) => cambiar(x.id, "sets", e.target.value)} className="w-9 px-1 py-0.5 rounded border border-slate-200 text-center" />×
                         {(() => {
                           const enSeg = x.seconds != null && x.seconds !== "" ? true : x.reps != null && x.reps !== "" ? false : x.category === "estiramiento";
                           const campo = enSeg ? "seconds" : "reps";
                           return (
                             <>
-                              <input disabled={!puede} type="number" min="1" max={enSeg ? 600 : 100} value={x[campo] ?? ""} onChange={(e) => cambiar(x.id, campo, e.target.value)} className="w-11 px-1 py-0.5 rounded border border-slate-200 text-center" />
+                              <CampoNumero disabled={!puede} type="number" min="1" max={enSeg ? 600 : 100} value={x[campo] ?? ""} onChange={(e) => cambiar(x.id, campo, e.target.value)} className="w-11 px-1 py-0.5 rounded border border-slate-200 text-center" />
                               <button
                                 type="button"
                                 disabled={!puede}

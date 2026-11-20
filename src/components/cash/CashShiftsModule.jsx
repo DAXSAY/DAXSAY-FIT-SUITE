@@ -4,6 +4,7 @@
 // (POS, matrículas, renovaciones) y al terminar cuenta el efectivo y
 // cierra. El siguiente turno ve lo que dejó el anterior y continúa.
 // ============================================================
+import { CampoNumero } from "../common/CampoNumero";
 import { TarjetaKpi, Anillo } from "../common/TarjetaKpi";
 import { Wallet as CjWallet, Coins as CjCoins, TrendingDown as CjDown, Vault as CjVault, ShoppingBag as CjBag, UserPlus as CjUser, Scale as CjScale, Receipt as CjReceipt, Target as CjTarget } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
@@ -288,7 +289,7 @@ const AbrirCaja = ({ ultimo, onVolver, onAbierta }) => {
           )}
           <label className="block">
             <span className="text-sm font-bold text-slate-700">Efectivo que cuentas al abrir (S/)</span>
-            <input
+            <CampoNumero
               type="number"
               min="0"
               step="0.10"
@@ -391,7 +392,7 @@ const MovimientoTurno = ({ turno, onVolver, onGuardado }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label className="block">
             <span className="text-sm font-bold text-slate-700">Monto (S/)</span>
-            <input
+            <CampoNumero
               type="number"
               min="0.1"
               step="0.10"
@@ -582,7 +583,7 @@ const CerrarCaja = ({ turno, onVolver, onCerrada }) => {
             <label className="block">
               <span className="text-sm font-black text-slate-800">1. ¿Cuánto efectivo hay en caja ahora? *</span>
               <span className="block text-xs text-slate-500">Cuenta todo el dinero de la caja y escribe el total.</span>
-              <input
+              <CampoNumero
                 type="number"
                 min="0"
                 step="0.10"
@@ -599,7 +600,7 @@ const CerrarCaja = ({ turno, onVolver, onCerrada }) => {
             <label className="block">
               <span className="text-sm font-black text-slate-800">2. ¿Cuánto dice tu app de Yape / Plin hoy? <span className="font-normal text-slate-500">(opcional)</span></span>
               <span className="block text-xs text-slate-500">Para comprobar que todos los pagos por Yape/Plin se registraron.</span>
-              <input
+              <CampoNumero
                 type="number"
                 min="0"
                 step="0.10"
@@ -649,7 +650,7 @@ const CerrarCaja = ({ turno, onVolver, onCerrada }) => {
               </p>
               <label className="block">
                 <span className="text-xs font-bold text-amber-900">Vuelve a escribir el efectivo contado</span>
-                <input
+                <CampoNumero
                   type="number"
                   step="0.10"
                   value={confirmar}
@@ -689,7 +690,7 @@ const CerrarCaja = ({ turno, onVolver, onCerrada }) => {
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
             <label className="block">
               <span className="text-sm font-bold text-slate-700">Efectivo que dejas para el siguiente turno</span>
-              <input
+              <CampoNumero
                 type="number"
                 min="0"
                 step="0.10"

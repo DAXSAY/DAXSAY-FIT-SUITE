@@ -1,5 +1,6 @@
 // Editor de comidas de la dieta: tarjetas por comida, alimentos del catálogo
 // (los macros se recalculan con los gramos) o alimentos escritos a mano.
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useState } from "react";
 import { Plus, Trash2, BookOpen, PenLine, ChevronUp, ChevronDown } from "lucide-react";
 import { SelectorAlimentos, CATEGORIAS, IconoCategoria } from "./CatalogoAlimentos";
@@ -228,7 +229,7 @@ export const EditorComidas = ({ meals, setMeals, metas, indices, soloTotales = f
                   <label className="flex flex-col items-center gap-0.5">
                     <span className="text-[10px] font-bold uppercase text-slate-500">Porción</span>
                     <span className="flex items-center gap-1">
-                    <input
+                    <CampoNumero
                       type="number"
                       min="0"
                       max="2000"
@@ -251,7 +252,7 @@ export const EditorComidas = ({ meals, setMeals, metas, indices, soloTotales = f
                         <label key={k} className="flex flex-col items-center gap-0.5" title={`${l} en ${u} (de la porción completa)`}>
                           <span className={`text-[10px] font-bold uppercase ${color}`}>{l}</span>
                           <span className="relative">
-                            <input
+                            <CampoNumero
                               type="number"
                               min="0"
                               step="0.1"

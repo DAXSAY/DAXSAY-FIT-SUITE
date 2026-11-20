@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import { TarjetaKpi } from "../common/TarjetaKpi";
 import { Users as IcUsers, CalendarDays as IcCal, Clock as IcClock, Wallet as IcWallet } from "lucide-react";
 import React, { useState, useMemo } from "react";
@@ -768,7 +769,7 @@ export const StaffContractsModule = () => {
                   <label className="block font-bold text-slate-700 mb-1">
                     Sueldo Mensual (S/.) *
                   </label>
-                  <input
+                  <CampoNumero
                     type="number"
                     value={formMonthlySalary}
                     onChange={(e) => setFormMonthlySalary(Number(e.target.value))}

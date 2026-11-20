@@ -5,6 +5,7 @@
 // y para toda la semana. Cada lunes empieza una semana nueva; las
 // anteriores quedan en el cuadro para comparar lo proyectado con lo real.
 // =====================================================================
+import { CampoNumero } from "../common/CampoNumero";
 import { Target, CalendarRange, Wallet } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, TrendingUp, Save, CalendarDays, History } from "lucide-react";
@@ -53,13 +54,13 @@ const FilaProyeccion = ({ etiqueta, sub, resaltar, editable, valor, real, guarda
         <p className="text-xs text-slate-500">{sub}</p>
       </td>
       <td className="px-2 py-2 w-[130px]">
-        <input type="number" min="0" step="10" inputMode="decimal" value={f.monto} disabled={!editable} onChange={(e) => set("monto", e.target.value)} placeholder="S/" className={input} />
+        <CampoNumero type="number" min="0" step="10" inputMode="decimal" value={f.monto} disabled={!editable} onChange={(e) => set("monto", e.target.value)} placeholder="S/" className={input} />
       </td>
       <td className="px-2 py-2 w-[90px]">
-        <input type="number" min="0" step="1" inputMode="numeric" value={f.matriculas} disabled={!editable} onChange={(e) => set("matriculas", e.target.value)} placeholder="0" className={input} />
+        <CampoNumero type="number" min="0" step="1" inputMode="numeric" value={f.matriculas} disabled={!editable} onChange={(e) => set("matriculas", e.target.value)} placeholder="0" className={input} />
       </td>
       <td className="px-2 py-2 w-[90px]">
-        <input type="number" min="0" step="1" inputMode="numeric" value={f.renovaciones} disabled={!editable} onChange={(e) => set("renovaciones", e.target.value)} placeholder="0" className={input} />
+        <CampoNumero type="number" min="0" step="1" inputMode="numeric" value={f.renovaciones} disabled={!editable} onChange={(e) => set("renovaciones", e.target.value)} placeholder="0" className={input} />
       </td>
       <td className="px-2 py-2 min-w-[160px]">
         <input value={f.notas} maxLength={200} disabled={!editable} onChange={(e) => set("notas", e.target.value)} placeholder={editable ? "Ej.: lunes de mucha afluencia" : ""} className={input} />

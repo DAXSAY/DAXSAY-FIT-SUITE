@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import { AccionCabecera } from "../common/CabeceraModulo";
 import React, { useState, useMemo, useEffect } from "react";
 import { PanelComposicion, SiluetaMedidas, edadDe, GuiaPerimetros, BarraRango, rangos } from "./VisualMedidas";
@@ -46,7 +47,7 @@ const Campo = ({ label, unit, value, onChange, step = "1", hint, onFocus }) => (
   <label className="block">
     <span className={ETQ}>{label}</span>
     <div className="relative">
-      <input
+      <CampoNumero
         type="number"
         min="0"
         step={step}

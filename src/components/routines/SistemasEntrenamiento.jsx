@@ -8,6 +8,7 @@
 //  - params: valores propios del sistema (peso, reps, segundos…)
 //  - grupo: letra que une ejercicios combinados (A, B…) → se muestran A1, A2
 //  - resumen: texto corto ya armado (para imprimir, PDF y la base de datos)
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useMemo, useState } from "react";
 import { ChevronDown, Minus, Plus, Settings2, X } from "lucide-react";
 
@@ -673,7 +674,7 @@ export const ConfigEjercicio = ({
             <button type="button" disabled={readOnly || series <= 1} onClick={() => onPatch({ [campos.series]: Math.max(1, series - 1) })} className="px-2 text-slate-500 hover:bg-slate-100 cursor-pointer disabled:opacity-40" title="Una serie menos">
               <Minus className="w-3.5 h-3.5" />
             </button>
-            <input
+            <CampoNumero
               type="number"
               min="1"
               max="20"
@@ -714,7 +715,7 @@ export const ConfigEjercicio = ({
             </button>
           ))}
           <label className={`flex items-center gap-1 rounded-lg border px-2 ${otroDescanso ? "border-blue-600 bg-blue-50" : "border-slate-200 bg-white"}`} title="Otro tiempo de descanso">
-            <input
+            <CampoNumero
               type="number"
               min="0"
               step="5"

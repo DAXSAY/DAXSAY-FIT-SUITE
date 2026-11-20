@@ -3,6 +3,7 @@
 // Valores por 100 g (Tablas Peruanas de Composición de Alimentos
 // CENAN/INS 2017 y USDA). El nutricionista puede agregar los suyos.
 // =====================================================================
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useMemo, useState } from "react";
 import { Search, X, Plus, Pencil, EyeOff, Check, Drumstick, Milk, Wheat, Carrot, Bean, LeafyGreen, Apple, Nut, CupSoda, Pill, Soup, Utensils, Lightbulb } from "lucide-react";
 import { useGym } from "../../context/GymContext";
@@ -250,7 +251,7 @@ export const SelectorAlimentos = ({ comida, onAgregar, onCerrar }) => {
                   {m === 1 ? "1 porción" : `×${m}`}
                 </button>
               ))}
-              <input
+              <CampoNumero
                 type="number"
                 min="1"
                 max="2000"
@@ -423,19 +424,19 @@ export const FormularioAlimento = ({ inicial, onCerrar, onGuardado }) => {
                 ].map(([k, l, c]) => (
                   <label key={k} className="block">
                     <span className={`block text-[11px] font-bold ${c}`}>{l} (g)</span>
-                    <input required={k !== "fiber100"} type="number" step="0.1" min="0" max="100" value={form[k]} onChange={set(k)} className="w-full p-2 rounded-lg border border-slate-300 text-sm font-bold" />
+                    <CampoNumero required={k !== "fiber100"} type="number" step="0.1" min="0" max="100" value={form[k]} onChange={set(k)} className="w-full p-2 rounded-lg border border-slate-300 text-sm font-bold" />
                   </label>
                 ))}
               </div>
               <label className="block mt-2">
                 <span className="block text-[11px] font-bold text-slate-600">Calorías (kcal) · déjalo vacío para calcular: {kcalCalc} kcal</span>
-                <input type="number" step="1" min="0" max="900" value={form.kcal100} onChange={set("kcal100")} placeholder={String(kcalCalc)} className="w-full p-2 rounded-lg border border-slate-300 text-sm font-bold" />
+                <CampoNumero type="number" step="1" min="0" max="900" value={form.kcal100} onChange={set("kcal100")} placeholder={String(kcalCalc)} className="w-full p-2 rounded-lg border border-slate-300 text-sm font-bold" />
               </label>
             </div>
             <div className="grid grid-cols-3 gap-2">
               <label className="block">
                 <span className="block text-xs font-bold text-slate-600 mb-1">Porción (g) *</span>
-                <input required type="number" step="0.5" min="1" max="2000" value={form.portionGrams} onChange={set("portionGrams")} className="w-full p-2.5 rounded-xl border border-slate-300 text-sm font-bold" />
+                <CampoNumero required type="number" step="0.5" min="1" max="2000" value={form.portionGrams} onChange={set("portionGrams")} className="w-full p-2.5 rounded-xl border border-slate-300 text-sm font-bold" />
               </label>
               <label className="block col-span-2">
                 <span className="block text-xs font-bold text-slate-600 mb-1">Medida casera / de mano</span>
@@ -448,11 +449,11 @@ export const FormularioAlimento = ({ inicial, onCerrar, onGuardado }) => {
                 <div className="grid grid-cols-2 gap-2">
                   <label className="block">
                     <span className="block text-[11px] font-bold text-slate-600">Azúcares (g / 100 g)</span>
-                    <input type="number" step="0.1" min="0" max="100" value={form.sugar100 ?? ""} onChange={set("sugar100")} className="w-full p-2 rounded-lg border border-slate-300 text-sm" />
+                    <CampoNumero type="number" step="0.1" min="0" max="100" value={form.sugar100 ?? ""} onChange={set("sugar100")} className="w-full p-2 rounded-lg border border-slate-300 text-sm" />
                   </label>
                   <label className="block">
                     <span className="block text-[11px] font-bold text-slate-600">Sodio (mg / 100 g)</span>
-                    <input type="number" step="1" min="0" max="40000" value={form.sodium100 ?? ""} onChange={set("sodium100")} className="w-full p-2 rounded-lg border border-slate-300 text-sm" />
+                    <CampoNumero type="number" step="1" min="0" max="40000" value={form.sodium100 ?? ""} onChange={set("sodium100")} className="w-full p-2 rounded-lg border border-slate-300 text-sm" />
                   </label>
                 </div>
                 <div>

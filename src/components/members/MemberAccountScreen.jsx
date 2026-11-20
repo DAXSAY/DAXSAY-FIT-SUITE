@@ -1,4 +1,5 @@
 // Estado de cuenta del alumno: matrículas, pagos y cobro del saldo pendiente
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useEffect, useState } from "react";
 import { ArrowLeft, Wallet, CheckCircle2, CalendarClock, MessageCircle } from "lucide-react";
 import { DebtDueDatePicker, DebtBadge, enlaceRecordatorioDeuda } from "./DebtDueDate";
@@ -143,7 +144,7 @@ export const MemberAccountScreen = ({ member, onVolver }) => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <label className="block text-sm">
                   <span className="font-bold text-slate-700">Monto (S/)</span>
-                  <input
+                  <CampoNumero
                     type="number"
                     min="0.1"
                     step="0.10"

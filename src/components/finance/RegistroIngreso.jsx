@@ -10,6 +10,7 @@
 // entra el % del gimnasio ("derecho de piso", editable); el resto es del
 // profesional. Se imprime una boleta con el reparto.
 // =====================================================================
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { TrendingUp, X, CheckCircle2, Info, Receipt, Printer, UserPlus, Users, Percent, ChevronDown, Search, Download, MessageCircle, BadgeCheck } from "lucide-react";
 import { imprimirBoleta, descargarBoletaPdf, boletaPorWhatsApp } from "../../utils/boleta";
@@ -422,11 +423,11 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
             <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
               <label className="block text-xs font-bold text-slate-600">
                 N° de sesiones
-                <input type="number" min="1" step="1" value={sesiones} onChange={(e) => setSesiones(e.target.value)} className={`${campo} mt-1`} />
+                <CampoNumero type="number" min="1" step="1" value={sesiones} onChange={(e) => setSesiones(e.target.value)} className={`${campo} mt-1`} />
               </label>
               <label className="block text-xs font-bold text-slate-600">
                 Precio por sesión (S/)
-                <input type="number" min="0" step="0.1" placeholder="Ej. 40" value={precioSesion} onChange={(e) => setPrecioSesion(e.target.value)} className={`${campo} mt-1`} />
+                <CampoNumero type="number" min="0" step="0.1" placeholder="Ej. 40" value={precioSesion} onChange={(e) => setPrecioSesion(e.target.value)} className={`${campo} mt-1`} />
               </label>
               <p className="col-span-2 text-[11px] text-slate-500">Si llenas el precio por sesión, el total se calcula solo. Si no, escribe el monto abajo.</p>
             </div>
@@ -445,7 +446,7 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
           ) : (
             <div className="flex items-center rounded-xl border-2 border-emerald-300 bg-white px-3 focus-within:ring-2 focus-within:ring-emerald-500 max-w-xs">
               <span className="text-lg font-black text-emerald-700">S/</span>
-              <input type="number" min="0" step="0.1" placeholder="0.00" value={monto} onChange={(e) => setMonto(e.target.value)} className="w-full px-2 py-2.5 text-2xl font-black text-slate-900 bg-transparent focus:outline-none" />
+              <CampoNumero type="number" min="0" step="0.1" placeholder="0.00" value={monto} onChange={(e) => setMonto(e.target.value)} className="w-full px-2 py-2.5 text-2xl font-black text-slate-900 bg-transparent focus:outline-none" />
             </div>
           )}
         </div>
@@ -461,7 +462,7 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
                 </button>
               ))}
               <span className="inline-flex items-center gap-1">
-                <input type="number" min="0" max="100" step="1" value={pct === "" ? pctDefecto : pct} onChange={(e) => setPct(e.target.value)} className="w-16 px-2 py-1 rounded-lg border border-slate-300 text-sm font-black text-center" />
+                <CampoNumero type="number" min="0" max="100" step="1" value={pct === "" ? pctDefecto : pct} onChange={(e) => setPct(e.target.value)} className="w-16 px-2 py-1 rounded-lg border border-slate-300 text-sm font-black text-center" />
                 <span className="text-sm font-bold text-slate-500">%</span>
               </span>
               {currentUser?.role === "admin" && saveGymConfig && pctNum !== pctDefecto && (

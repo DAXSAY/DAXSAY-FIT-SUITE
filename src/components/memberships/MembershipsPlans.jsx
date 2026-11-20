@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -610,7 +611,7 @@ export const MembershipsPlans = () => {
               <div className="grid grid-cols-2 gap-4">
                 <label className="block">
                   <span className="block text-sm font-bold text-slate-700 mb-1.5">Precio total (S/) *</span>
-                  <input type="number" min="1" step="0.5" value={form.price} onChange={set("price")} required className="w-full p-3 rounded-xl border border-slate-300 text-sm" />
+                  <CampoNumero type="number" min="1" step="0.5" value={form.price} onChange={set("price")} required className="w-full p-3 rounded-xl border border-slate-300 text-sm" />
                 </label>
                 <label className="block">
                   <span className="block text-sm font-bold text-slate-700 mb-1.5">Duración</span>
@@ -680,17 +681,17 @@ export const MembershipsPlans = () => {
                   <div className="grid grid-cols-3 gap-3">
                     <label className="block">
                       <span className="block text-xs font-bold text-slate-700 mb-1">Total de días</span>
-                      <input type="number" min="1" max="365" value={form.freezeDays} onChange={set("freezeDays")} className="w-full p-2.5 rounded-xl border border-slate-300 text-sm bg-white" />
+                      <CampoNumero type="number" min="1" max="365" value={form.freezeDays} onChange={set("freezeDays")} className="w-full p-2.5 rounded-xl border border-slate-300 text-sm bg-white" />
                     </label>
                     {Number(form.freezeParts || 1) > 1 && (
                       <>
                         <label className="block">
                           <span className="block text-xs font-bold text-slate-700 mb-1">Máx. de periodos</span>
-                          <input type="number" min="2" max="12" value={form.freezeParts} onChange={set("freezeParts")} className="w-full p-2.5 rounded-xl border border-slate-300 text-sm bg-white" />
+                          <CampoNumero type="number" min="2" max="12" value={form.freezeParts} onChange={set("freezeParts")} className="w-full p-2.5 rounded-xl border border-slate-300 text-sm bg-white" />
                         </label>
                         <label className="block">
                           <span className="block text-xs font-bold text-slate-700 mb-1">Mínimo por parte</span>
-                          <input type="number" min="1" value={form.freezeMinDays} onChange={set("freezeMinDays")} className="w-full p-2.5 rounded-xl border border-slate-300 text-sm bg-white" />
+                          <CampoNumero type="number" min="1" value={form.freezeMinDays} onChange={set("freezeMinDays")} className="w-full p-2.5 rounded-xl border border-slate-300 text-sm bg-white" />
                         </label>
                       </>
                     )}

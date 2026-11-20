@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import { SinSeleccion } from "../common/CabeceraModulo";
 import { SeguimientoServicio } from "../common/Programados";
 import { AgendaEspecialistas } from "../appointments/AgendaEspecialistas";
@@ -2653,7 +2654,7 @@ export const PhysiotherapyModule = () => {
                       <div className="grid grid-cols-3 gap-3">
                         <div>
                           <label className={LBL}>Carga máx. (kg)</label>
-                          <input
+                          <CampoNumero
                             type="number"
                             min="0"
                             value={formMaxKg}
@@ -2772,7 +2773,7 @@ export const PhysiotherapyModule = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className={LBL}>Sesiones estimadas</label>
-                          <input type="number" min="1" max="60" value={formSesionesEstimadas} onChange={(e) => setFormSesionesEstimadas(e.target.value)} placeholder="Ej. 8" className={INP} />
+                          <CampoNumero type="number" min="1" max="60" value={formSesionesEstimadas} onChange={(e) => setFormSesionesEstimadas(e.target.value)} placeholder="Ej. 8" className={INP} />
                         </div>
                         <div>
                           <label className={LBL}>Próximo control</label>

@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   Utensils,
@@ -112,7 +113,7 @@ const TdeeEnPlan = ({ alumno, objetivo, onUsar }) => {
   }, [alumno?.id]);
   const r = calcularTdee({ ...d, objetivo });
   const n = (k, paso = 1) => (
-    <input type="number" step={paso} value={d[k]} onChange={(e) => setD({ ...d, [k]: Number(e.target.value) })} className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-sm font-bold" />
+    <CampoNumero type="number" step={paso} value={d[k]} onChange={(e) => setD({ ...d, [k]: Number(e.target.value) })} className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-sm font-bold" />
   );
   return (
     <div className="rounded-xl border border-blue-200 bg-blue-50/50">
@@ -1173,7 +1174,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
               </div>
               <label className="text-xs font-bold text-slate-600">
                 Peso del alumno (kg)
-                <input type="number" min="30" max="250" value={guiaPeso} onChange={(e) => setGuiaPeso(Number(e.target.value))} className="ml-2 w-20 p-1.5 rounded-lg border border-slate-300 text-sm" />
+                <CampoNumero type="number" min="30" max="250" value={guiaPeso} onChange={(e) => setGuiaPeso(Number(e.target.value))} className="ml-2 w-20 p-1.5 rounded-lg border border-slate-300 text-sm" />
               </label>
             </div>
             <TablaCarbosEjercicio peso={guiaPeso} />
@@ -1253,7 +1254,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Edad (años)
                   </label>
-                  <input
+                  <CampoNumero
                     type="number"
                     value={calcAge}
                     onChange={(e) => setCalcAge(Number(e.target.value))}
@@ -1270,7 +1271,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Peso actual (kg)
                   </label>
-                  <input
+                  <CampoNumero
                     type="number"
                     step="0.5"
                     value={calcWeight}
@@ -1282,7 +1283,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Estatura (cm)
                   </label>
-                  <input
+                  <CampoNumero
                     type="number"
                     value={calcHeight}
                     onChange={(e) => setCalcHeight(Number(e.target.value))}
@@ -1542,7 +1543,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                     <label className="block text-xs text-emerald-700 mb-1">
                       Proteínas (g)
                     </label>
-                    <input
+                    <CampoNumero
                       type="number"
                       required
                       value={formProteins}
@@ -1555,7 +1556,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                     <label className="block text-xs text-cyan-700 mb-1">
                       Carbohidratos (g)
                     </label>
-                    <input
+                    <CampoNumero
                       type="number"
                       required
                       value={formCarbs}
@@ -1568,7 +1569,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                     <label className="block text-xs text-rose-700 mb-1">
                       Grasas (g)
                     </label>
-                    <input
+                    <CampoNumero
                       type="number"
                       required
                       value={formFats}
@@ -1581,7 +1582,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                     <label className="block text-xs text-blue-700 mb-1">
                       Agua (Litros/día)
                     </label>
-                    <input
+                    <CampoNumero
                       type="number"
                       step="0.5"
                       required

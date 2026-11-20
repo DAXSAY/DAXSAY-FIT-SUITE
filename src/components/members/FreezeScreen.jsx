@@ -1,4 +1,5 @@
 // Congelamiento de membresía: derecho según el plan, nuevo congelamiento e historial
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Snowflake, CalendarClock, AlertTriangle, CheckCircle2, History, Undo2, LogIn } from "lucide-react";
 import { useGym } from "../../context/GymContext";
@@ -258,7 +259,7 @@ export const FreezeScreen = ({ member, onVolver }) => {
                     </label>
                     <label className="block">
                       <span className="block text-xs font-bold text-slate-600 mb-1">Días *</span>
-                      <input
+                      <CampoNumero
                         type="number"
                         required
                         min={actual.minDias}

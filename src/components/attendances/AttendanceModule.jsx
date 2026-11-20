@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import { Pestanas } from "../common/CabeceraModulo";
 import { useRecordado } from "../../utils/subPestana";
 import React, { useState, useMemo } from "react";
@@ -1007,7 +1008,7 @@ export const AttendanceModule = () => {
                   <label className="block font-bold text-slate-800 mb-1">
                     Horas Trabajadas Hoy *
                   </label>
-                  <input
+                  <CampoNumero
                     type="number"
                     step="0.5"
                     min="0"

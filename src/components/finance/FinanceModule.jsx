@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import { TarjetaKpi } from "../common/TarjetaKpi";
 import React, { useEffect, useState, useMemo } from "react";
 import {
@@ -1624,7 +1625,7 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                               <span className="text-slate-500 text-xs">
                                 Descuento: S/
                               </span>
-                              <input
+                              <CampoNumero
                                 type="number"
                                 min="0"
                                 value={tardinessDiscountVal}
@@ -1823,7 +1824,7 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                 <p className="text-sm font-bold text-slate-800">2. ¿Cuánto sale de caja? *</p>
                 <div className="flex items-center rounded-xl border-2 border-rose-300 bg-white px-3 focus-within:ring-2 focus-within:ring-rose-500 max-w-xs">
                   <span className="text-lg font-black text-rose-700">S/</span>
-                  <input
+                  <CampoNumero
                     type="number"
                     step="0.01"
                     min="0"
@@ -1982,7 +1983,7 @@ const CorregirMovimiento = ({ mov, onCerrar, onCorregir, onAnular }) => {
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-sm">
               <span className="font-bold text-slate-700">Monto (S/)</span>
-              <input type="number" min="0.01" step="0.01" value={monto} onChange={(e) => setMonto(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-black" />
+              <CampoNumero type="number" min="0.01" step="0.01" value={monto} onChange={(e) => setMonto(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-black" />
             </label>
             <label className="block text-sm">
               <span className="font-bold text-slate-700">Método de pago</span>

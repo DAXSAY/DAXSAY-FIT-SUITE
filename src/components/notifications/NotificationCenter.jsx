@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import { Cake as NCake, Sparkles as NSparkles, AlarmClock as NAlarmClock, TriangleAlert as NTriangleAlert, CalendarClock as NCalendarClock, Ban as NBan, Gift as NGift, Bell as NBell } from "lucide-react";
 import { CreadorCampanas } from "./CreadorCampanas";
 import React, { useState } from "react";
@@ -931,7 +932,7 @@ export const NotificationCenter = () => {
                   <label className="block text-slate-700 font-semibold mb-1">
                     Días de Anticipación / Desfase
                   </label>
-                  <input
+                  <CampoNumero
                     type="number"
                     min="0"
                     max="30"

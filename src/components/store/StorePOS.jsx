@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useState, useMemo } from "react";
 import {
   Store,
@@ -1174,7 +1175,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                   <label className="block text-slate-700 font-semibold mb-1">
                     Costo Compra (S/)
                   </label>
-                  <input
+                  <CampoNumero
                     type="number"
                     step="0.1"
                     min="0"
@@ -1188,7 +1189,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                   <label className="block text-slate-700 font-semibold mb-1">
                     Precio Venta (S/) *
                   </label>
-                  <input
+                  <CampoNumero
                     type="number"
                     step="0.1"
                     min="0"
@@ -1206,7 +1207,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                     <label className="block text-slate-700 font-semibold mb-1">
                       {editingProduct ? "Stock actual (si cambia, queda como ajuste en el kárdex)" : "Stock inicial"}
                     </label>
-                    <input
+                    <CampoNumero
                       type="number"
                       min="0"
                       value={prodStock}
@@ -1219,7 +1220,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                     <label className="block text-slate-700 font-semibold mb-1">
                       Alerta de Stock Mínimo
                     </label>
-                    <input
+                    <CampoNumero
                       type="number"
                       min="1"
                       value={prodMinStock}

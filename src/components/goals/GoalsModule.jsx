@@ -7,6 +7,7 @@
 //  Nutrición / Fisioterapia: crean y evalúan objetivos de alumnos;
 //  al aprobarlos, el entrenador del alumno gana un logro.
 // ============================================================
+import { CampoNumero } from "../common/CampoNumero";
 import { CheckCircle2 as IcLogrado, Hourglass as IcFalta } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -378,11 +379,11 @@ const FormMeta = ({ tipo, meta, mes, historial = [], onVolver, onGuardada }) => 
         )}
         <div className="grid grid-cols-2 gap-4">
           {tipo === "recepcion" ? (
-            <label className="block text-sm"><span className="font-bold text-slate-700">Meta en soles *</span><input type="number" min="1" step="0.01" required value={f.amount} onChange={set("amount")} placeholder="5000" className={`${campo} text-lg font-black`} /></label>
+            <label className="block text-sm"><span className="font-bold text-slate-700">Meta en soles *</span><CampoNumero type="number" min="1" step="0.01" required value={f.amount} onChange={set("amount")} placeholder="5000" className={`${campo} text-lg font-black`} /></label>
           ) : (
-            <label className="block text-sm"><span className="font-bold text-slate-700">{especialista ? "Objetivos de alumnos a lograr *" : "Logros (mancuernas) a conseguir *"}</span><input type="number" min="1" required value={f.achievements} onChange={set("achievements")} placeholder="10" className={`${campo} text-lg font-black`} /></label>
+            <label className="block text-sm"><span className="font-bold text-slate-700">{especialista ? "Objetivos de alumnos a lograr *" : "Logros (mancuernas) a conseguir *"}</span><CampoNumero type="number" min="1" required value={f.achievements} onChange={set("achievements")} placeholder="10" className={`${campo} text-lg font-black`} /></label>
           )}
-          <label className="block text-sm"><span className="font-bold text-slate-700">Bono al cumplir (S/)</span><input type="number" min="0" step="0.01" value={f.bonus} onChange={set("bonus")} placeholder="0" className={`${campo} text-lg font-black`} /></label>
+          <label className="block text-sm"><span className="font-bold text-slate-700">Bono al cumplir (S/)</span><CampoNumero type="number" min="0" step="0.01" value={f.bonus} onChange={set("bonus")} placeholder="0" className={`${campo} text-lg font-black`} /></label>
         </div>
         <label className="block text-sm"><span className="font-bold text-slate-700">Notas</span><input value={f.notes} onChange={set("notes")} className={campo} /></label>
         {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
@@ -517,7 +518,7 @@ const FormBono = ({ meta, onVolver, onListo }) => {
             <span className="text-xs text-slate-500">Si son varias personas, aprueba un bono para cada una.</span>
           </label>
         )}
-        <label className="block text-sm"><span className="font-bold text-slate-700">Monto del bono (S/)</span><input type="number" min="1" step="0.01" required value={monto} onChange={(e) => setMonto(e.target.value)} className={`${campo} text-lg font-black`} /></label>
+        <label className="block text-sm"><span className="font-bold text-slate-700">Monto del bono (S/)</span><CampoNumero type="number" min="1" step="0.01" required value={monto} onChange={(e) => setMonto(e.target.value)} className={`${campo} text-lg font-black`} /></label>
         {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
         <button className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black cursor-pointer">Aprobar bono</button>
       </form>
@@ -601,8 +602,8 @@ const FormObjetivo = ({ areaFija, onVolver, onGuardado }) => {
           <input required value={f.description} onChange={set("description")} placeholder="Ej. Bajar de 90 kg a 85 kg / Dolor lumbar de EVA 7 a 2" className={campo} />
         </label>
         <div className="grid grid-cols-3 gap-4">
-          <label className="block text-sm"><span className="font-bold text-slate-700">Valor inicial</span><input type="number" step="0.01" value={f.initialValue} onChange={set("initialValue")} className={campo} /></label>
-          <label className="block text-sm"><span className="font-bold text-slate-700">Valor meta</span><input type="number" step="0.01" value={f.targetValue} onChange={set("targetValue")} className={campo} /></label>
+          <label className="block text-sm"><span className="font-bold text-slate-700">Valor inicial</span><CampoNumero type="number" step="0.01" value={f.initialValue} onChange={set("initialValue")} className={campo} /></label>
+          <label className="block text-sm"><span className="font-bold text-slate-700">Valor meta</span><CampoNumero type="number" step="0.01" value={f.targetValue} onChange={set("targetValue")} className={campo} /></label>
           <label className="block text-sm"><span className="font-bold text-slate-700">Unidad</span><input value={f.unit || TIPO_OBJ[f.type][2]} onChange={set("unit")} className={campo} /></label>
         </div>
         <label className="block text-sm">
@@ -646,7 +647,7 @@ const EvaluarObjetivo = ({ objetivo, onVolver, onListo }) => {
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200"><span className="text-xs font-bold text-slate-400 block">INICIAL</span><strong>{objetivo.initialValue ?? "—"} {objetivo.unit}</strong></div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200"><span className="text-xs font-bold text-slate-400 block">META</span><strong>{objetivo.targetValue ?? "—"} {objetivo.unit}</strong></div>
-          <label className="block"><span className="text-xs font-bold text-slate-500">VALOR HOY</span><input type="number" step="0.01" value={valorFinal} onChange={(e) => setValorFinal(e.target.value)} className={`${campo} mt-0.5 font-black`} /></label>
+          <label className="block"><span className="text-xs font-bold text-slate-500">VALOR HOY</span><CampoNumero type="number" step="0.01" value={valorFinal} onChange={(e) => setValorFinal(e.target.value)} className={`${campo} mt-0.5 font-black`} /></label>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <button type="button" onClick={() => setEstado("conseguida")} className={`p-4 rounded-xl border-2 font-black flex items-center justify-center gap-2 cursor-pointer ${estado === "conseguida" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-500"}`}>
@@ -705,7 +706,7 @@ const RegistrarControl = ({ objetivo, onVolver, onListo }) => {
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200"><span className="text-xs font-bold text-slate-400 block">{objetivo.lastControl ? "ÚLTIMO CONTROL" : "INICIAL"}</span><strong>{previo ?? "—"} {objetivo.unit}</strong></div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200"><span className="text-xs font-bold text-slate-400 block">META</span><strong>{objetivo.targetValue ?? "—"} {objetivo.unit}</strong></div>
-          <label className="block"><span className="text-xs font-bold text-slate-500">VALOR HOY *</span><input type="number" step="0.01" required value={f.value} onChange={set("value")} className={`${campo} mt-0.5 font-black`} /></label>
+          <label className="block"><span className="text-xs font-bold text-slate-500">VALOR HOY *</span><CampoNumero type="number" step="0.01" required value={f.value} onChange={set("value")} className={`${campo} mt-0.5 font-black`} /></label>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <label className="block text-sm"><span className="font-bold text-slate-700">Fecha del control</span><input type="date" max={hoyISO()} value={f.date} onChange={set("date")} className={campo} /></label>

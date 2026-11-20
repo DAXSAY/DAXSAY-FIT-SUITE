@@ -1,3 +1,4 @@
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useMemo, useState } from "react";
 import {
   ResponsiveContainer,
@@ -527,7 +528,7 @@ const NumIn = ({ value, onChange, color, label }) => (
       {label}
     </span>
     <div className="relative">
-      <input
+      <CampoNumero
         type="number"
         min="0"
         max="200"
@@ -709,11 +710,11 @@ export const RomSection = ({ scales, set, zones = [] }) => {
                           </span>
                           {bil ? (
                             <>
-                              <input type="number" min="0" max="200" value={v.izq ?? ""} onChange={(e) => setVal(m.id, "izq", e.target.value === "" ? null : Number(e.target.value))} className={inp} placeholder="°" />
-                              <input type="number" min="0" max="200" value={v.der ?? ""} onChange={(e) => setVal(m.id, "der", e.target.value === "" ? null : Number(e.target.value))} className={inp} placeholder="°" />
+                              <CampoNumero type="number" min="0" max="200" value={v.izq ?? ""} onChange={(e) => setVal(m.id, "izq", e.target.value === "" ? null : Number(e.target.value))} className={inp} placeholder="°" />
+                              <CampoNumero type="number" min="0" max="200" value={v.der ?? ""} onChange={(e) => setVal(m.id, "der", e.target.value === "" ? null : Number(e.target.value))} className={inp} placeholder="°" />
                             </>
                           ) : (
-                            <input type="number" min="0" max="200" value={v.val ?? ""} onChange={(e) => setVal(m.id, "val", e.target.value === "" ? null : Number(e.target.value))} className={`${inp} col-span-2`} placeholder="° medido" />
+                            <CampoNumero type="number" min="0" max="200" value={v.val ?? ""} onChange={(e) => setVal(m.id, "val", e.target.value === "" ? null : Number(e.target.value))} className={`${inp} col-span-2`} placeholder="° medido" />
                           )}
                           <span className="min-w-0 space-y-0.5">
                             {barra(pI, "var(--color-indigo-500)")}

@@ -1,5 +1,6 @@
 // Piezas del formulario de contratos: funciones por cargo, horario con
 // cálculo automático de horas, reglas de tardanza y la renovación.
+import { CampoNumero } from "../common/CampoNumero";
 import React, { useState } from "react";
 import { Plus, X, RotateCw, CheckCircle2, Clock, Pencil, Save } from "lucide-react";
 import { useGym } from "../../context/GymContext";
@@ -137,7 +138,7 @@ export const EditorHorario = ({ modalidad, onModalidad, value, onChange }) => {
         </label>
         <label className="text-[11px] font-bold text-slate-600">
           Refrigerio (min)
-          <input type="number" min="0" step="15" value={h.refrigerio || 0} onChange={(e) => onChange({ ...h, refrigerio: Number(e.target.value) })} className="block mt-1 w-20 px-2 py-1.5 rounded-lg border border-slate-300 text-sm bg-white" />
+          <CampoNumero type="number" min="0" step="15" value={h.refrigerio || 0} onChange={(e) => onChange({ ...h, refrigerio: Number(e.target.value) })} className="block mt-1 w-20 px-2 py-1.5 rounded-lg border border-slate-300 text-sm bg-white" />
         </label>
         <div className={`ml-auto px-3 py-1.5 rounded-xl text-center ${exceso ? "bg-rose-50 border border-rose-300" : "bg-emerald-50 border border-emerald-200"}`}>
           <span className={`block text-lg font-black ${exceso ? "text-rose-700" : "text-emerald-700"}`}>{total} h</span>
@@ -168,7 +169,7 @@ export const ReglasTardanza = () => {
   const ejemplo = (min) => descuentoTardanza(min, edit || reglas, 60);
   const r = edit || reglas;
   const num = (k, paso = 1) => (
-    <input type="number" min="0" step={paso} value={r[k]} onChange={(e) => setEdit({ ...r, [k]: Number(e.target.value) })} className="w-20 px-2 py-1 rounded-lg border border-slate-300 text-sm font-bold bg-white" />
+    <CampoNumero type="number" min="0" step={paso} value={r[k]} onChange={(e) => setEdit({ ...r, [k]: Number(e.target.value) })} className="w-20 px-2 py-1 rounded-lg border border-slate-300 text-sm font-bold bg-white" />
   );
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
@@ -290,7 +291,7 @@ export const RenovarContrato = ({ contrato, onCerrar, onConfirmar }) => {
           </label>
           <label className="text-xs font-bold text-slate-600">
             3. Sueldo mensual (S/)
-            <input type="number" min="0" value={o.sueldo} onChange={(e) => setO({ ...o, sueldo: e.target.value })} className={`${campo} mt-1`} />
+            <CampoNumero type="number" min="0" value={o.sueldo} onChange={(e) => setO({ ...o, sueldo: e.target.value })} className={`${campo} mt-1`} />
             {cambioSueldo !== 0 && (
               <span className={`block mt-1 text-[11px] ${cambioSueldo > 0 ? "text-emerald-700" : "text-rose-700"}`}>
                 {cambioSueldo > 0 ? "Aumento" : "Reducción"} de S/ {Math.abs(cambioSueldo).toFixed(2)} ({Math.round((cambioSueldo / (contrato.monthlySalary || 1)) * 100)}%)
