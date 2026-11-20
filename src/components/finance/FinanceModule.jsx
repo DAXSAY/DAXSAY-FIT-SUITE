@@ -44,8 +44,6 @@ import {
   CartesianGrid,
   Line,
 } from "recharts";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 import { ReporteFinanciero } from "./ReporteFinanciero";
 import { RegistroIngreso } from "./RegistroIngreso";
@@ -387,7 +385,6 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
         expenseCategory === "free_expense" ? freeExpenseComment : undefined,
     });
 
-    confetti({ particleCount: 50, spread: 70 });
     setExpenseAmount("");
     setExpenseDesc("");
     setBreakdownDetails("");
@@ -451,7 +448,6 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
     if (!selectedPayrollItem) return;
 
     payStaffSalary(selectedPayrollItem.id, payMethod, payReceipt);
-    confetti({ particleCount: 50, spread: 70 });
     setIsPayModalOpen(false);
     setSelectedPayrollItem(null);
   };

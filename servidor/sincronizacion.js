@@ -10,7 +10,7 @@
 //   evaluaciones_corporales -> medidas
 //   fisioterapia -> sesiones_fisioterapia + sesion_zonas + sesion_tecnicas
 //   asistencias -> asistencias_alumno / asistencias_empleado
-//   productos, contratos (+ empleados), planilla, clases,
+//   contratos (+ empleados), planilla, clases,
 //   reglas_notificacion, notificaciones, plantillas_fisioterapia, ejercicios
 // Cada fila guarda `idregistro_app` para saber de qué registro viene.
 // =====================================================================
@@ -476,6 +476,8 @@ const MAPAS = {
     const horaAsis = hora(d.time);
     const metodo = METODO_ASISTENCIA[d.checkInMethod] || "dni_manual";
     if (d.category === "staff") {
+      // El personal externo (contrato «ext-…») no está en empleados: su marcación vive solo en la app
+      if (String(d.contractId || d.userId || "").startsWith("ext-")) return;
       const idemp = await idEmpleado(cx, d.contractId || d.userId, d.userName);
       if (!idemp) throw new ErrorSincronizacion("El trabajador no está registrado en empleados");
       const estado = { puntual: "puntual", on_time: "puntual", tarde: "tarde", late: "tarde", falta: "falta", permiso: "permiso" }[d.status] || "puntual";
@@ -517,23 +519,6 @@ const MAPAS = {
       metodo,
       resultado: { warning: "advertencia", denied: "denegado", denegado: "denegado" }[d.status] || "autorizado",
       notas: txt(d.notes || d.reason, 200),
-    });
-  },
-
-  async productos(cx, id, d) {
-    if (vacio(d.name)) throw new ErrorSincronizacion("El producto no tiene nombre");
-    await guardarFila(cx, "productos", "idproducto", id, {
-      nombre: txt(d.name, 100),
-      categoria: ["bebidas", "suplementos", "quemadores", "snacks", "accesorios", "ropa"].includes(d.category) ? d.category : "accesorios",
-      precio_compra: rango(d.purchaseCost, 0, 99999999.99) ?? 0,
-      precio_venta: rango(d.salePrice, 0, 99999999.99) ?? 0,
-      stock: entero(d.stock, 0, 2147483647) ?? 0,
-      stock_minimo: entero(d.minStockAlert, 0, 2147483647) ?? 5,
-      marca: txt(d.brand, 60),
-      codigo_barras: txt(d.barcode, 40),
-      descripcion: txt(d.description, 300),
-      imagen: url(d.image),
-      activo: 1,
     });
   },
 
@@ -693,7 +678,6 @@ const TABLA = {
   planes_nutricion: ["dietas", "iddieta"],
   evaluaciones_corporales: ["medidas", "idmedida"],
   fisioterapia: ["sesiones_fisioterapia", "idsesion_fisioterapia"],
-  productos: ["productos", "idproducto"],
   contratos: ["contratos", "idcontrato"],
   planilla: ["planilla", "idplanilla"],
   clases: ["clases", "idclase"],
@@ -704,7 +688,7 @@ const TABLA = {
 
 // Orden para copiar lo que ya existe (primero lo que otros necesitan)
 export const ORDEN_MODULOS = [
-  "ejercicios", "contratos", "planilla", "productos", "rutinas", "asignaciones_rutina",
+  "ejercicios", "contratos", "planilla", "rutinas", "asignaciones_rutina",
   "planes_nutricion", "evaluaciones_corporales", "citas", "fisioterapia", "asistencias",
   "clases", "reglas_notificacion", "notificaciones", "plantillas_fisioterapia",
 ];

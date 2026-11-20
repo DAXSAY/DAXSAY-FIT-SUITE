@@ -35,8 +35,6 @@ import { fechaCorta, sumarDias, hoyISO } from "../../utils/fecha";
 import { textoObjetivos } from "../../utils/objetivos";
 import { coincideAlumno } from "../../utils/buscarPersona";
 import { BotonesDescarga } from "../common/BotonesDescarga";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 
 export const MembersManagement = ({ onOpenNewMemberModal }) => {
   const {
@@ -158,11 +156,6 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
     if (!ok) return;
     setRenewPaid("");
     setRenewDueDate("");
-    confetti({
-      particleCount: 50,
-      spread: 70,
-      origin: { y: 0.6 },
-    });
 
     setRenewingMember(null);
     setSelectedPlanId("");

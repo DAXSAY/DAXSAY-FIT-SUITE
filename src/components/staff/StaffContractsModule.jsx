@@ -24,8 +24,6 @@ import { DocumentoContrato } from "./DocumentoContrato";
 import { SelectorDuracion, SelectorFunciones, EditorHorario, ReglasTardanza, RenovarContrato } from "./CamposContrato";
 import { DURACIONES, FUNCIONES_POR_ROL, MODALIDADES, etiquetaDuracion, fechaFin, horasSemana, textoHorario } from "../../utils/contratos";
 import { coincidePersonal } from "../../utils/buscarPersona";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 
 const COLOR_CARGO = {
   trainer: "var(--rd-rol-naranja)",
@@ -255,7 +253,6 @@ export const StaffContractsModule = () => {
       notes: formNotes.trim() || undefined,
     });
 
-    confetti({ particleCount: 50, spread: 60 });
     setIsNewContractModalOpen(false);
   };
 

@@ -3400,11 +3400,37 @@ html.dark .rd-caja-abierta {
   border-color: rgba(64, 200, 170, 0.45) !important;
 }
 
-/* Pantallas vacías: ilustración pastel en claro, neón suave en oscuro */
-.rd-ilu { stroke: #9fb8b4; }
-.rd-ilu .rd-ilu-acento { stroke: #2f7f84; }
-.rd-ilu .rd-ilu-suave { stroke: #d9cfbd; }
-html.dark .rd-ilu { stroke: rgba(150, 190, 215, 0.45); }
-html.dark .rd-ilu .rd-ilu-acento { stroke: #6fdde3; filter: drop-shadow(0 0 4px rgba(64, 200, 210, 0.45)); }
-html.dark .rd-ilu .rd-ilu-suave { stroke: rgba(120, 160, 190, 0.22); }
+/* Pantallas vacías: ilustraciones (pastel en claro, neón suave en oscuro) */
+.rd-ilu { --i1: #5aa9a6; --i1s: #cfe6e1; --i2: #e7a96b; --i3: #a79bd8; --tarjeta: #ffffff; --borde: #e6dccb;
+  --texto: #e9e1d3; --texto-f: #b9ae9b; --pista: #f1ebe0; --halo: #f3ede2; --plato: #fbf8f2; --cuerpo: #e9e3d8;
+  --bien: #7cc5a0; --medio: #f0c36b; --mal: #e88a8a; }
+html.dark .rd-ilu { --i1: #5fd8de; --i1s: rgba(64, 200, 210, 0.28); --i2: #f2b46a; --i3: #a99cf5; --tarjeta: #13284a; --borde: rgba(100, 190, 220, 0.28);
+  --texto: rgba(150, 190, 220, 0.25); --texto-f: rgba(170, 215, 240, 0.55); --pista: rgba(120, 160, 200, 0.16); --halo: rgba(64, 200, 210, 0.07);
+  --plato: #0f2240; --cuerpo: rgba(130, 170, 210, 0.2); --bien: #4fd6a0; --medio: #f2c35e; --mal: #f07a8a; }
+.rd-ilu .ilu-halo { fill: var(--halo); }
+.rd-ilu .ilu-tarjeta { fill: var(--tarjeta); stroke: var(--borde); stroke-width: 1.2; filter: drop-shadow(0 6px 10px rgba(80, 60, 30, 0.08)); }
+html.dark .rd-ilu .ilu-tarjeta { filter: drop-shadow(0 0 8px rgba(64, 200, 210, 0.12)); }
+.rd-ilu .ilu-c1 { fill: var(--i1); } .rd-ilu .ilu-c1-suave { fill: var(--i1s); }
+.rd-ilu .ilu-c2 { fill: var(--i2); } .rd-ilu .ilu-c3 { fill: var(--i3); }
+.rd-ilu .ilu-texto { fill: var(--texto); } .rd-ilu .ilu-texto-fuerte { fill: var(--texto-f); }
+.rd-ilu .ilu-pista { fill: var(--pista); } .rd-ilu .ilu-plato { fill: var(--plato); }
+.rd-ilu .ilu-plato-borde { fill: var(--tarjeta); stroke: var(--borde); stroke-width: 2; }
+.rd-ilu .ilu-barra { fill: var(--texto-f); } .rd-ilu .ilu-cuerpo { fill: var(--cuerpo); }
+.rd-ilu .ilu-trazo { fill: none; stroke: var(--texto-f); stroke-width: 4; }
+.rd-ilu .ilu-trazo-grueso { fill: none; stroke: var(--cuerpo); stroke-width: 12; }
+.rd-ilu .ilu-trazo-claro { fill: none; stroke: #fff; stroke-width: 2; }
+.rd-ilu .ilu-c2-aro { fill: none; stroke: var(--i2); stroke-width: 2.5; stroke-dasharray: 5 5; }
+.rd-ilu .ilu-marcador { fill: var(--tarjeta); stroke: var(--texto-f); stroke-width: 2.5; }
+.rd-ilu .ilu-pulso { fill: none; stroke: var(--i1); stroke-width: 3; }
+.rd-ilu .ilu-linea-dato { fill: none; stroke: var(--i2); stroke-width: 3; }
+.rd-ilu .ilu-pista-linea { stroke: var(--borde); stroke-width: 1.5; }
+.rd-ilu .ilu-dona-pista { fill: none; stroke: var(--pista); stroke-width: 9; }
+.rd-ilu .ilu-dona { fill: none; stroke: var(--i1); stroke-width: 9; }
+.rd-ilu .ilu-dona-2 { fill: none; stroke: var(--i3); stroke-width: 9; }
+.rd-ilu .ilu-stop-bien { stop-color: var(--bien); } .rd-ilu .ilu-stop-medio { stop-color: var(--medio); } .rd-ilu .ilu-stop-mal { stop-color: var(--mal); }
+html.dark .rd-ilu .ilu-c1, html.dark .rd-ilu .ilu-pulso, html.dark .rd-ilu .ilu-dona { filter: drop-shadow(0 0 4px rgba(64, 200, 210, 0.5)); }
+.rd-ilu .ilu-flota { animation: rd-ilu-flota 6s ease-in-out infinite; }
+.rd-ilu .ilu-flota-2 { animation-delay: -3s; }
+@keyframes rd-ilu-flota { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .rd-ilu .ilu-flota { animation: none; } }
 html.dark .rd-sin-seleccion { background: linear-gradient(160deg, rgba(15, 32, 54, 0.75), rgba(10, 22, 40, 0.6)); }

@@ -23,8 +23,6 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import { buscarAlumno } from "../../utils/codigo";
 import { CalendarioAsistencias } from "./CalendarioAsistencias";
 import { CalendarioPersonal } from "./CalendarioPersonal";
@@ -320,7 +318,6 @@ export const AttendanceModule = () => {
         `Registro manual en contrato: ${staff.contractDurationLabel}`,
     });
 
-    confetti({ particleCount: 40, spread: 60 });
     setIsStaffModalOpen(false);
     setModalStaffReason("");
     setModalStaffNotes("");

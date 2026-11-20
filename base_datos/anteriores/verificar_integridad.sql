@@ -37,6 +37,8 @@ SELECT * FROM (
             SELECT JSON_UNQUOTE(JSON_EXTRACT(r.datos, '$.contractId')) AS c, JSON_UNQUOTE(JSON_EXTRACT(r.datos, '$.date')) AS f
               FROM registros_app r
              WHERE r.modulo = 'asistencias' AND r.sync_estado = 'ok' AND JSON_UNQUOTE(JSON_EXTRACT(r.datos, '$.category')) = 'staff'
+               -- el personal externo no tiene fila en empleados (a propósito)
+               AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(r.datos, '$.contractId')), '') NOT LIKE 'ext-%'
              GROUP BY c, f
             HAVING NOT EXISTS (SELECT 1 FROM asistencias_empleado t JOIN registros_app r2 ON r2.modulo = 'asistencias' AND r2.idregistro = t.idregistro_app
                                 WHERE JSON_UNQUOTE(JSON_EXTRACT(r2.datos, '$.contractId')) = c AND t.fecha = f)) x)

@@ -30,8 +30,6 @@ import {
 } from "recharts";
 import { useGym } from "../../context/GymContext";
 import { TelWhatsApp } from "../common/TelWhatsApp";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 
 import { SelectorAlumno, coincideAlumno } from "../common/BuscarAlumno";
@@ -410,7 +408,6 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
     // Keep active student in sync
     setSelectedMemberId(targetMember.id);
 
-    confetti({ particleCount: 50, spread: 80, origin: { y: 0.6 } });
     setIsNewModalOpen(false);
     onGuardado?.(targetMember.id);
   };

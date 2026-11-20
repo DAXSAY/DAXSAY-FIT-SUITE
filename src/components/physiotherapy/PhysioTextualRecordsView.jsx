@@ -2,8 +2,6 @@ import { williamsElegidos, textoRespuestaWilliams, textoToleranciaWilliams } fro
 import React, { useState, useMemo } from "react";
 import { etiquetaPostura } from "./PosturaEvaluacion";
 import { FileText, Search, Copy, Check, Share2 } from "lucide-react";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 
 export const PhysioTextualRecordsView = ({
   records = [],
@@ -260,7 +258,6 @@ export const PhysioTextualRecordsView = ({
     navigator.clipboard.writeText(text);
     setCopiedId(r.id);
     try {
-      confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
     } catch (e) {}
     setTimeout(() => setCopiedId(null), 2500);
   };

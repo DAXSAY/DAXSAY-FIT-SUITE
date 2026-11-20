@@ -18,8 +18,6 @@ import {
   Users,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import {
   useExerciseBank,
   ExerciseLibrary,
@@ -346,11 +344,6 @@ export const RoutinesAndExercises = () => {
     }
     setEditando(null);
 
-    confetti({
-      particleCount: 50,
-      spread: 70,
-      origin: { y: 0.6 },
-    });
 
     setActiveSubTab(!editando && datos.targetStudentId ? "asignadas" : volver);
   };
@@ -365,11 +358,6 @@ export const RoutinesAndExercises = () => {
     setAssigningRoutine(null);
     setStudentToAssignId("");
 
-    confetti({
-      particleCount: 40,
-      spread: 60,
-      origin: { y: 0.6 },
-    });
   };
 
   return (

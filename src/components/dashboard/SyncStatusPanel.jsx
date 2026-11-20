@@ -8,7 +8,6 @@ const NOMBRES = {
   ejercicios: "Ejercicios propios",
   contratos: "Contratos",
   planilla: "Planilla",
-  productos: "Productos",
   rutinas: "Rutinas",
   asignaciones_rutina: "Rutinas asignadas",
   planes_nutricion: "Dietas",

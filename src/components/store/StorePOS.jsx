@@ -13,14 +13,19 @@ import {
   Camera,
   X,
   Package as PackageIcon,
+  LayoutGrid,
+  GlassWater,
+  Dumbbell,
+  Flame,
+  Cookie,
+  Backpack,
+  Shirt,
   BarChart3 as BarChartIcon,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { TelWhatsApp } from "../common/TelWhatsApp";
 import { userCan } from "../../config/roles";
 import { StockMovementScreen, KardexScreen, SalesReport } from "./StoreExtras";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import { buscarAlumno } from "../../utils/codigo";
 import { filtrarAlumnos } from "../../utils/buscarPersona";
 import { BotonesDescarga } from "../common/BotonesDescarga";
@@ -81,6 +86,9 @@ const TONO_CAJA = {
   rose: ["bg-rose-50 border-rose-200", "text-rose-700", "text-rose-800"],
   slate: ["bg-slate-50 border-slate-200", "text-slate-600", "text-slate-800"],
 };
+
+// Ícono de línea de la categoría (cuando el producto no tiene foto)
+const IconoCategoriaProducto = ({ icono: I = PackageIcon, clase }) => <I className={`${clase} text-slate-400`} strokeWidth={1.6} />;
 
 export const StorePOS = ({ onAbrirCaja }) => {
   const {
@@ -191,13 +199,13 @@ export const StorePOS = ({ onAbrirCaja }) => {
   const [prodImage, setProdImage] = useState("");
 
   const categories = [
-    { id: "all", label: "Todos", icon: "⚡" },
-    { id: "bebidas", label: "Bebidas & Aguas", icon: "💧" },
-    { id: "suplementos", label: "Proteínas & Suplementos", icon: "💪" },
-    { id: "quemadores", label: "Quemadores & Termogénicos", icon: "🔥" },
-    { id: "snacks", label: "Snacks & Barras", icon: "🍫" },
-    { id: "accesorios", label: "Accesorios Gym", icon: "🎒" },
-    { id: "ropa", label: "Indumentaria", icon: "👕" },
+    { id: "all", label: "Todos", icon: LayoutGrid },
+    { id: "bebidas", label: "Bebidas & Aguas", icon: GlassWater },
+    { id: "suplementos", label: "Proteínas & Suplementos", icon: Dumbbell },
+    { id: "quemadores", label: "Quemadores & Termogénicos", icon: Flame },
+    { id: "snacks", label: "Snacks & Barras", icon: Cookie },
+    { id: "accesorios", label: "Accesorios Gym", icon: Backpack },
+    { id: "ropa", label: "Indumentaria", icon: Shirt },
   ];
 
   // Real-time filter by name, brand, category, or description
@@ -312,11 +320,6 @@ export const StorePOS = ({ onAbrirCaja }) => {
     }
     setCobrando(false);
 
-    confetti({
-      particleCount: 60,
-      spread: 70,
-      origin: { y: 0.6 },
-    });
 
     setLastReceipt(receipt);
     setCart([]);
@@ -531,7 +534,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                           : "bg-gray-100 text-gray-600 hover:text-slate-900 border border-gray-200 hover:bg-gray-200"
                       }`}
                     >
-                      <span>{cat.icon}</span>
+                      <cat.icon className="w-3.5 h-3.5" />
                       <span>{cat.label}</span>
                     </button>
                   ))}
@@ -605,10 +608,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                             }}
                           />
                         ) : (
-                          <span className="text-3xl">
-                            {categories.find((c) => c.id === prod.category)
-                              ?.icon || "📦"}
-                          </span>
+                          <IconoCategoriaProducto icono={categories.find((c) => c.id === prod.category)?.icon} clase="w-9 h-9" />
                         )}
                         {isOutOfStock ? (
                           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-2xs flex items-center justify-center">
@@ -929,7 +929,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                       : "bg-gray-100 text-gray-600 hover:text-slate-900 border border-gray-200"
                   }`}
                 >
-                  <span>{cat.icon}</span>
+                  <cat.icon className="w-3.5 h-3.5" />
                   <span>{cat.label}</span>
                 </button>
               ))}
@@ -978,10 +978,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <span className="text-xl">
-                                {categories.find((c) => c.id === prod.category)
-                                  ?.icon || "📦"}
-                              </span>
+                              <IconoCategoriaProducto icono={categories.find((c) => c.id === prod.category)?.icon} clase="w-5 h-5" />
                             )}
                           </div>
                         </td>
@@ -1392,7 +1389,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                       <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Así se verá en la tienda</span>
                       <div className="p-2.5 rounded-xl border border-gray-200 bg-white shadow-xs">
                         <div className="w-full h-24 bg-gray-100 rounded-lg mb-1.5 overflow-hidden flex items-center justify-center border border-gray-100">
-                          {prodImage ? <img src={prodImage} alt="" className="w-full h-full object-cover" onError={(e) => (e.target.style.display = "none")} /> : <span className="text-3xl">{cat?.icon || "📦"}</span>}
+                          {prodImage ? <img src={prodImage} alt="" className="w-full h-full object-cover" onError={(e) => (e.target.style.display = "none")} /> : <IconoCategoriaProducto icono={cat?.icon} clase="w-9 h-9" />}
                         </div>
                         <div className="flex items-center justify-between gap-1 mb-1">
                           <span className="text-[10px] font-bold text-gray-400 uppercase truncate">{prodBrand || "Marca"}</span>

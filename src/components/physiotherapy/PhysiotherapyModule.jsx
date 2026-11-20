@@ -88,8 +88,6 @@ import { ExercisePrescriptionCard } from "./ExercisePrescriptionCard";
 import { PhysioTextualRecordsView } from "./PhysioTextualRecordsView";
 import { PhysioReportModal } from "./PhysioReportModal";
 import { ESTADOS_EVOLUCION, estadoEvolucion, ADHERENCIA, FRECUENCIA_SESIONES, PRONOSTICO } from "./evolucion";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import { api } from "../../api/cliente";
 import { SelectorAlumno, CodigoAlumno, coincideAlumno } from "../common/BuscarAlumno";
 import { SelectorIndicaciones, sugerirIndicaciones, textoIndicaciones } from "../indicaciones/Indicaciones";
@@ -621,7 +619,6 @@ export const PhysiotherapyModule = () => {
     setTimeout(() => setTemplateAppliedToast(null), 3500);
 
     try {
-      confetti({ particleCount: 35, spread: 60, origin: { y: 0.6 } });
     } catch (e) {
       // ignore
     }
@@ -1267,11 +1264,6 @@ export const PhysiotherapyModule = () => {
     setIsNewSessionModalOpen(false);
 
     try {
-      confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
     } catch (e) {
       // ignore
     }
@@ -1381,10 +1373,10 @@ export const PhysiotherapyModule = () => {
                   const n = sesionesDe.get(member.id) || 0;
                   const eva = Number(ult?.painLevelEVA);
                   const chip = ult
-                    ? { t: `🩺 ${ult.consultationReason || (ult.affectedZones || []).join(", ") || "Evaluado"}`, c: "bg-cyan-50 text-cyan-800 border-cyan-200" }
+                    ? { I: FiFicha, t: ult.consultationReason || (ult.affectedZones || []).join(", ") || "Evaluado", c: "bg-cyan-50 text-cyan-800 border-cyan-200" }
                     : conLesion(member)
-                      ? { t: "⚠️ Lesión declarada · sin evaluar", c: "bg-amber-50 text-amber-800 border-amber-200" }
-                      : { t: "⭕ Sin evaluación", c: "bg-slate-50 text-slate-600 border-slate-200" };
+                      ? { I: FiAlerta, t: "Lesión declarada · sin evaluar", c: "bg-amber-50 text-amber-800 border-amber-200" }
+                      : { I: FiSinEval, t: "Sin evaluación", c: "bg-slate-50 text-slate-600 border-slate-200" };
                   return (
                     <div
                       key={member.id}
@@ -1395,7 +1387,9 @@ export const PhysiotherapyModule = () => {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <span className={`inline-block max-w-full truncate px-2 py-0.5 rounded-md text-xs font-bold border mb-1.5 ${chip.c}`}>{chip.t}</span>
+                          <span className={`inline-flex items-center gap-1 max-w-full px-2 py-0.5 rounded-md text-xs font-bold border mb-1.5 ${chip.c}`}>
+                            <chip.I className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{chip.t}</span>
+                          </span>
                           <h3 className="font-bold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-1">{member.fullName}</h3>
                         </div>
                         {ult && Number.isFinite(eva) ? (

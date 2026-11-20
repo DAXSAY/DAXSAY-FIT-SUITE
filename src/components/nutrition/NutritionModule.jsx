@@ -25,8 +25,6 @@ import {
   Check,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import {
   EditorPlatos, VistaPlatos, PlatoSVG, porcionesBase, LeyendaPlato, GuiaPorciones, TablaCarbosEjercicio, MODELOS_PLATO, MANOS, MANOS_EXTRA, normalizarPlato, platosDePlan,
 } from "./PlatoNutricional";
@@ -545,7 +543,6 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
       updateNutritionPlan(editingPlanId, planPayload);
     } else {
       addNutritionPlan(planPayload);
-      confetti({ particleCount: 40, spread: 70, origin: { y: 0.6 } });
     }
 
     // Con alumno elegido, al guardar la dieta se pasa al Paso 2: medidas

@@ -28,8 +28,6 @@ import {
   Legend,
   ReferenceLine,
 } from "recharts";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 import { MiRutina, MiDieta, MiFisioterapia } from "./StudentExtras";
 import ProgresoPesos from "../progreso/ProgresoPesos";

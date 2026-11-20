@@ -28,7 +28,6 @@ const MODULOS = {
   ejercicios:          { permiso: "routines",      lectura: ["dashboard"] },
   rutinas:             { permiso: "routines",      lectura: ["dashboard", "members"], alumno: "targetStudentId", portal: true },
   asignaciones_rutina: { permiso: "routines",      lectura: ["dashboard", "members"], alumno: "memberId", portal: true, escritura: ["members"] },
-  productos:           { permiso: "store",         lectura: ["dashboard", "finance"] },
   reglas_notificacion: { permiso: "alerts",        lectura: ["dashboard"] },
   notificaciones:      { permiso: "alerts",        lectura: ["dashboard"], escritura: ["members", "attendances", "store", "appointments"] },
   clases:              { permiso: "alerts",        lectura: ["dashboard", "attendances", "appointments"] },

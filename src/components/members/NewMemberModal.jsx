@@ -4,8 +4,6 @@ import { Check, Snowflake } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { X, UserPlus, CreditCard, IdCard, Dumbbell } from "lucide-react";
 import { useGym } from "../../context/GymContext";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 import { DebtDueDatePicker } from "./DebtDueDate";
 import { api } from "../../api/cliente";
@@ -155,11 +153,6 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
     setMedicalNotes(""); setNotes(""); setObjective("hipertrofia"); setSelectedPlanId("");
     setStartDate(todayStr); setAssignedTrainerId(""); setAssignedRoutineId(""); setPaymentMethod("efectivo");
 
-    confetti({
-      particleCount: 70,
-      spread: 80,
-      origin: { y: 0.5 },
-    });
 
     if (nuevo.cuentaNueva) setCuenta({ ...nuevo.cuentaNueva, nombre: nuevo.fullName, telefono: nuevo.phone, codigo: nuevo.codeLabel });
     else onClose();

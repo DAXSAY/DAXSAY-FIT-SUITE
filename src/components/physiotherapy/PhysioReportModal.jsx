@@ -28,8 +28,6 @@ import {
   Loader2,
   Pill,
 } from "lucide-react";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import {
   RED_FLAGS,
   ROM_NORMS,
@@ -151,11 +149,6 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
     window.open(url, "_blank");
 
     try {
-      confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: { y: 0.8 },
-      });
     } catch (e) {
       // ignore
     }
@@ -225,11 +218,6 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
         `Ficha_Fisioterapia_${cleanName}_${session.date || "sesion"}.pdf`,
       );
 
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.6 },
-      });
     } catch (err) {
       console.error("Error generating PDF with html2canvas:", err);
       window.print();

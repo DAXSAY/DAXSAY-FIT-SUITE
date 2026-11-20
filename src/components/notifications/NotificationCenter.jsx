@@ -25,8 +25,6 @@ import {
 import { useGym } from "../../context/GymContext";
 import { TelWhatsApp } from "../common/TelWhatsApp";
 import { userCan } from "../../config/roles";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 import { PanelAlertasAdmin } from "../alerts/AlertasAdmin";
 import { MensajesCategorias } from "./MensajesCategorias";
@@ -129,7 +127,6 @@ export const NotificationCenter = () => {
       "¡Has habilitado las notificaciones push en tiempo real en tu navegador!",
     );
     if (granted) {
-      confetti({ particleCount: 40, spread: 60, origin: { y: 0.2 } });
     }
   };
 
@@ -156,7 +153,6 @@ export const NotificationCenter = () => {
     });
 
     setEditingRule(null);
-    confetti({ particleCount: 30, spread: 50, origin: { y: 0.5 } });
   };
 
   const handleToggleChannelInRule = (channel) => {
@@ -193,7 +189,6 @@ export const NotificationCenter = () => {
       });
 
       setIsSendingCampaign(false);
-      confetti({ particleCount: 60, spread: 75, origin: { y: 0.5 } });
       alert(
         `¡Campaña enviada exitosamente a ${count} socios por [${campChannels.join(", ")}]!`,
       );
@@ -233,7 +228,6 @@ export const NotificationCenter = () => {
       );
     }
 
-    confetti({ particleCount: 35, spread: 60, origin: { y: 0.5 } });
   };
 
   // Send class notice broadcast
@@ -266,7 +260,6 @@ export const NotificationCenter = () => {
       sent++;
     });
 
-    confetti({ particleCount: 45, spread: 60, origin: { y: 0.4 } });
     alert(
       `¡Aviso de clase enviado a ${sent} alumnos inscritos vía Push y Email!`,
     );
@@ -291,7 +284,6 @@ export const NotificationCenter = () => {
     setNewClassInstructor("");
     setNewClassSchedule("");
     setIsNewClassModalOpen(false);
-    confetti({ particleCount: 30, spread: 50, origin: { y: 0.6 } });
   };
 
   // Filtered alerts
@@ -765,11 +757,6 @@ export const NotificationCenter = () => {
                         );
                         if (m) {
                           renewMembership(m.id, m.planId, "efectivo");
-                          confetti({
-                            particleCount: 40,
-                            spread: 60,
-                            origin: { y: 0.6 },
-                          });
                         }
                       }}
                       className="w-full py-1 text-center bg-gray-100 hover:bg-gray-200 text-slate-800 text-xs font-semibold rounded cursor-pointer transition-colors"

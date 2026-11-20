@@ -18,8 +18,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useGym } from "../../context/GymContext";
-// Sin confeti: el sistema usa avisos de color en su lugar
-const confetti = () => {};
 import { hoyISO } from "../../utils/fecha";
 
 import { SelectorAlumno, coincideAlumno } from "../common/BuscarAlumno";
@@ -278,7 +276,6 @@ export const AppointmentsScheduleModule = () => {
       dayOfWeek: fechaLarga(formDate).split(",")[0],
     });
 
-    confetti({ particleCount: 50, spread: 70 });
     setIsBookingModalOpen(false);
   };
 
@@ -392,7 +389,6 @@ export const AppointmentsScheduleModule = () => {
     setPortalSuccessMessage(
       `¡Cita agendada con éxito para el ${portalSelectedDate} a las ${portalSelectedSlot}! Se envió la confirmación a recepción.`,
     );
-    confetti({ particleCount: 60, spread: 80 });
   };
 
   // User Portal: Send WhatsApp to reception
