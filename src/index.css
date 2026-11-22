@@ -2569,8 +2569,8 @@ html.dark .rd-campo-checkin { background: #0b1a2c; color: #e6fbff; border-color:
 html.dark .rd-campo-checkin::placeholder { color: #7fb8c0; }
 html.dark .rd-campo-checkin:focus { border-color: #4fd8e0; box-shadow: 0 0 16px -3px rgba(79, 216, 224, .55); }
 html.dark .rd-icono-checkin { color: #4fd8e0; }
-html.dark .rd-boton-marcar { background: #1aa6b0; }
-html.dark .rd-boton-marcar:hover { background: #158a93; }
+html.dark .rd-boton-marcar { background: #137f88; }
+html.dark .rd-boton-marcar:hover { background: #0f6970; }
 
 /* ===== PALETA ÚNICA DEL SISTEMA: todos los tonos (50 a 950) de cada color.
    Claro = pastel en todo · Oscuro = neón medio en todo ===== */
@@ -2989,7 +2989,7 @@ html.dark {
   --rd-rol-turquesa: #2dd4bf;
 }
 .rd-menu .rd-menu-titulo { color: var(--rd-rol) !important; }
-html:not(.dark) .rd-menu .rd-menu-titulo { color: color-mix(in srgb, var(--rd-rol) 78%, #3a3226) !important; }
+html:not(.dark) .rd-menu .rd-menu-titulo { color: color-mix(in srgb, var(--rd-rol) 52%, #2a241b) !important; }
 
 /* ===== Etiqueta de rol: el MISMO estilo en menú, cabecera y Usuarios ===== */
 .rd-chip-rol { background: color-mix(in srgb, var(--c) 24%, transparent) !important; color: color-mix(in srgb, var(--c) 62%, #2e2b25) !important; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent); }
@@ -3434,3 +3434,30 @@ html.dark .rd-ilu .ilu-c1, html.dark .rd-ilu .ilu-pulso, html.dark .rd-ilu .ilu-
 @keyframes rd-ilu-flota { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .rd-ilu .ilu-flota { animation: none; } }
 html.dark .rd-sin-seleccion { background: linear-gradient(160deg, rgba(15, 32, 54, 0.75), rgba(10, 22, 40, 0.6)); }
+
+/* Firma DAXSAY legible en modo claro */
+html:not(.dark) .rd-firma-texto { color: #5b6474 !important; }
+
+/* Revisión de contraste 22-nov */
+.recharts-legend-item-text { color: #475569 !important; }
+html.dark .recharts-legend-item-text { color: #cbd5e1 !important; }
+.rd-precio-plan { color: color-mix(in srgb, var(--c) 62%, #1e293b); }
+html.dark .rd-precio-plan { color: color-mix(in srgb, var(--c) 70%, #ffffff); }
+html:not(.dark) .rd-doc-etiqueta { color: #1f6f78 !important; }
+
+/* Días de calendario (asistencias de alumnos y del personal): colores fijos y legibles en ambos modos */
+.rd-dia { border-width: 1px; }
+.rd-dia-vino { background: #bfeedd; color: #064e3b; border-color: #6fcfa9; }
+.rd-dia-tarde { background: #fde7b0; color: #713f12; border-color: #f2c25a; }
+.rd-dia-falta { background: #fbd0d6; color: #881337; border-color: #f08a9b; }
+.rd-dia-permiso { background: #cfe9fb; color: #0c4a6e; border-color: #7cc3ee; }
+.rd-dia-vacio { background: #ffffff; color: #8a94a3; border-color: #eef0f3; }
+html.dark .rd-dia-vino { background: #0f4a3a; color: #b6f5dc; border-color: #2fbf8d; }
+html.dark .rd-dia-tarde { background: #4d3a0c; color: #fde7a6; border-color: #e0a92e; }
+html.dark .rd-dia-falta { background: #551a2a; color: #ffd0da; border-color: #e5607d; }
+html.dark .rd-dia-permiso { background: #0f3b57; color: #cdeafe; border-color: #3aa6e6; }
+html.dark .rd-dia-vacio { background: #0e1a2b; color: #6f8199; border-color: #1c2b40; }
+
+/* Textos oscuros de color que faltaban en modo oscuro */
+html.dark .text-teal-800:not(.rd-claro, .rd-claro *) { color: var(--color-teal-300); }
+html.dark .text-teal-900:not(.rd-claro, .rd-claro *) { color: var(--color-teal-200); }

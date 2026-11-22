@@ -204,7 +204,7 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
                 }`}
               >
                 {d.nombre}
-                {i === diaSugerido(plan, resumen.sesiones) && <span className="ml-1.5 text-[10px] text-cyan-400">• te toca</span>}
+                {i === diaSugerido(plan, resumen.sesiones) && <span className="ml-1.5 text-[10px] font-black opacity-90">• te toca</span>}
               </button>
             ))}
           </div>

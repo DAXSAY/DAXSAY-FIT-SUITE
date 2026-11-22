@@ -479,7 +479,7 @@ export function MensajesCategorias() {
                             {hecho ? <Check className="w-3.5 h-3.5" /> : <MessageCircle className="w-3.5 h-3.5" />} {hecho ? "Enviado" : "WhatsApp"}
                           </a>
                         ) : (
-                          <span title="Primero ponle un mensaje" className="px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 bg-slate-100 text-slate-400">
+                          <span title="Primero ponle un mensaje" className="px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 bg-slate-100 text-slate-500">
                             <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
                           </span>
                         )}

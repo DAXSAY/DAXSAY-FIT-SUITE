@@ -83,7 +83,7 @@ export const BotonTema = ({ className = "", compacto = false, vertical = false }
 // Firma del sistema (marca de agua): RADICAL funciona con DAXSAY Fit Suite
 export const FirmaDaxsay = ({ className = "", claro = false, apilada = false }) => (
   <span className={`inline-flex items-center gap-1.5 select-none ${apilada ? "flex-col gap-0.5" : "whitespace-nowrap"} ${className}`}>
-    <span className={`flex items-center gap-1.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] ${claro ? "text-slate-400/80" : "text-slate-400"}`}>
+    <span className={`rd-firma-texto flex items-center gap-1.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] ${claro ? "text-slate-400/80" : "text-slate-400"}`}>
       <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
       con tecnología
     </span>

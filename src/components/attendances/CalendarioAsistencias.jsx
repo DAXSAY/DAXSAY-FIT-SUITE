@@ -45,12 +45,12 @@ const dentro = (fecha, rangos) => rangos.some((r) => fecha >= r.start && fecha <
 
 // Estilos por estado del día
 export const ESTADOS_DIA = {
-  vino: { nombre: "Vino", clase: "bg-emerald-500 text-white border-emerald-500", punto: "bg-emerald-500" },
-  aviso: { nombre: "Vino (membresía vencida o congelada)", clase: "bg-amber-400 text-white border-amber-400", punto: "bg-amber-400" },
+  vino: { nombre: "Vino", clase: "rd-dia rd-dia-vino", punto: "bg-emerald-500" },
+  aviso: { nombre: "Vino (membresía vencida o congelada)", clase: "rd-dia rd-dia-tarde", punto: "bg-amber-400" },
   falto: { nombre: "No vino", clase: "bg-rose-50 text-rose-700 border-rose-200", punto: "bg-rose-200" },
   congelado: { nombre: "Congelado", clase: "bg-sky-50 text-sky-700 border-sky-200", punto: "bg-sky-300" },
   sin: { nombre: "Sin membresía", clase: "bg-slate-50 text-slate-300 border-slate-100", punto: "bg-slate-200" },
-  futuro: { nombre: "Próximo", clase: "bg-white text-slate-300 border-slate-100", punto: "bg-white border border-slate-200" },
+  futuro: { nombre: "Próximo", clase: "rd-dia rd-dia-vacio", punto: "bg-white border border-slate-200" },
 };
 
 /** Clasifica cada día del rango */

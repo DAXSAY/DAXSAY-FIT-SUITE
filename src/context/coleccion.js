@@ -127,7 +127,7 @@ export function useColeccion(modulo) {
           if (previo === undefined) sincronizados.current.delete(id);
           else sincronizados.current.set(id, previo);
           restaurar(id, previo);
-          avisar("error", `No se pudo guardar (${modulo}): ${e.message}`);
+          avisar("error", e.datos?.repetido ? e.message : `No se pudo guardar (${modulo}): ${e.message}`);
         })
         .finally(() => {
           if (colas.current.get(id) === envio) {

@@ -846,7 +846,7 @@ export const UsersAccessModule = () => {
         {puedeCrear && (
           <button
             onClick={() => setVista("nuevo")}
-            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 font-black text-sm flex items-center gap-1.5 cursor-pointer"
+            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm flex items-center gap-1.5 cursor-pointer"
           >
             <UserPlus className="w-4 h-4" /> Nuevo usuario
           </button>

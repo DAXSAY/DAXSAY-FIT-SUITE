@@ -15,7 +15,7 @@ export const DocumentoContrato = ({ contrato, onCerrar }) => {
             {/* Modal Header */}
             <div className="bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between">
               <div>
-                <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider block">
+                <span className="rd-doc-etiqueta text-xs font-semibold text-blue-400 uppercase tracking-wider block">
                   Documento Oficial de Recursos Humanos
                 </span>
                 <h3 className="text-base sm:text-lg font-extrabold text-white flex items-center gap-2">

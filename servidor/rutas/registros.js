@@ -248,6 +248,23 @@ const guardarRegistro = async (req, res, next) => {
         return res.status(409).json({ error: "Otra persona modificó este registro hace un momento.", actual });
       }
     }
+    // Dos computadoras marcan el ingreso de la misma persona al mismo tiempo:
+    // solo vale el primero (la misma regla que ya aplica cada pantalla).
+    if (req.params.modulo === "asistencias" && !existe && (datos.type || "in") === "in" && datos.status !== "falta" && datos.userId && datos.date) {
+      const [previo] = await consultar(
+        `SELECT datos FROM registros_app
+          WHERE modulo = 'asistencias'
+            AND JSON_UNQUOTE(JSON_EXTRACT(datos, '$.userId')) = ? AND JSON_UNQUOTE(JSON_EXTRACT(datos, '$.date')) = ?
+            AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(datos, '$.type')), 'in') = 'in'
+            AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(datos, '$.status')), '') <> 'falta'
+          LIMIT 1`,
+        [String(datos.userId), String(datos.date)],
+      );
+      if (previo) {
+        const p = parsear(previo);
+        return res.status(409).json({ error: `${String(datos.userName || "Esta persona").split(" ")[0]} ya marcó su ingreso hoy a las ${p.time || "—"} (desde otra pantalla). No se volvió a registrar.`, repetido: true });
+      }
+    }
     const modulosPermiso = [cfg.permiso, ...(cfg.escritura || [])];
     // Cualquier trabajador puede pedir su propio permiso (queda pendiente para administración)
     const pideSuPermiso =
@@ -298,7 +315,12 @@ const guardarRegistro = async (req, res, next) => {
 };
 // Los guardados de un mismo registro se hacen uno tras otro: así la
 // comparación de huellas nunca se cruza entre dos pantallas.
-router.put("/:modulo/:id", (req, res, next) => enFila(`reg:${req.params.modulo}:${req.params.id}`, () => guardarRegistro(req, res, next)));
+// Las asistencias se ordenan por persona y día, para que dos ingresos simultáneos no se dupliquen
+const filaDe = (req) => {
+  const d = req.body?.datos;
+  return req.params.modulo === "asistencias" && d?.userId && d?.date ? `asis:${d.userId}:${d.date}` : `reg:${req.params.modulo}:${req.params.id}`;
+};
+router.put("/:modulo/:id", (req, res, next) => enFila(filaDe(req), () => guardarRegistro(req, res, next)));
 
 // DELETE /api/registros/:modulo/:id
 const borrarRegistro = async (req, res, next) => {

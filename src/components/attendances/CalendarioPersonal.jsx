@@ -17,13 +17,13 @@ const moverMes = (mes, n) => {
 };
 
 export const ESTADOS_PERSONAL = {
-  puntual: { nombre: "Puntual", clase: "bg-emerald-500 text-white border-emerald-500", punto: "bg-emerald-500", icono: CalendarCheck, texto: "text-emerald-600" },
-  tarde: { nombre: "Tarde", clase: "bg-amber-400 text-white border-amber-400", punto: "bg-amber-400", icono: Clock, texto: "text-amber-600" },
-  falta: { nombre: "Faltó", clase: "bg-rose-500 text-white border-rose-500", punto: "bg-rose-500", icono: CalendarX, texto: "text-rose-600" },
-  permiso: { nombre: "Permiso", clase: "bg-sky-500 text-white border-sky-500", punto: "bg-sky-500", icono: FileCheck2, texto: "text-sky-600" },
+  puntual: { nombre: "Puntual", clase: "rd-dia rd-dia-vino", punto: "bg-emerald-500", icono: CalendarCheck, texto: "text-emerald-600" },
+  tarde: { nombre: "Tarde", clase: "rd-dia rd-dia-tarde", punto: "bg-amber-400", icono: Clock, texto: "text-amber-600" },
+  falta: { nombre: "Faltó", clase: "rd-dia rd-dia-falta", punto: "bg-rose-500", icono: CalendarX, texto: "text-rose-600" },
+  permiso: { nombre: "Permiso", clase: "rd-dia rd-dia-permiso", punto: "bg-sky-500", icono: FileCheck2, texto: "text-sky-600" },
   sin: { nombre: "Sin registro", clase: "bg-slate-50 text-slate-500 border-dashed border-slate-300", punto: "bg-slate-200", icono: HelpCircle, texto: "text-slate-500" },
-  descanso: { nombre: "Descanso / fuera de contrato", clase: "bg-white text-slate-300 border-slate-100", punto: "bg-white border border-slate-200" },
-  futuro: { nombre: "Próximo", clase: "bg-white text-slate-300 border-slate-100", punto: "bg-white border border-slate-200" },
+  descanso: { nombre: "Descanso / fuera de contrato", clase: "rd-dia rd-dia-vacio", punto: "bg-white border border-slate-200" },
+  futuro: { nombre: "Próximo", clase: "rd-dia rd-dia-vacio", punto: "bg-white border border-slate-200" },
 };
 
 export const normalizarEstado = (s) =>
@@ -214,9 +214,9 @@ export const CalendarioPersonal = () => {
                   <b className="font-mono text-violet-700">{x.staffCode}</b> · {x.roleTitle}
                 </span>
                 <span className="flex gap-1.5 mt-1">
-                  <span className={`px-1.5 rounded text-[10px] font-black ${r.tarde ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-400"}`}>{r.tarde} tard.</span>
-                  <span className={`px-1.5 rounded text-[10px] font-black ${r.falta ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-400"}`}>{r.falta} faltas</span>
-                  <span className={`px-1.5 rounded text-[10px] font-black ${r.permiso ? "bg-sky-100 text-sky-700" : "bg-slate-100 text-slate-400"}`}>{r.permiso} perm.</span>
+                  <span className={`px-1.5 rounded text-[10px] font-black ${r.tarde ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}>{r.tarde} tard.</span>
+                  <span className={`px-1.5 rounded text-[10px] font-black ${r.falta ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-600"}`}>{r.falta} faltas</span>
+                  <span className={`px-1.5 rounded text-[10px] font-black ${r.permiso ? "bg-sky-100 text-sky-700" : "bg-slate-100 text-slate-600"}`}>{r.permiso} perm.</span>
                 </span>
               </span>
               <span className="text-right shrink-0">

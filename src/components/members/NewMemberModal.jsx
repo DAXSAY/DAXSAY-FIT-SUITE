@@ -472,7 +472,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
                         )}
                       </span>
                       <span className="block text-[11px] text-slate-500 mt-0.5">{p.durationDays} días</span>
-                      <span className="block font-black font-mono text-sm mt-0.5" style={{ color: c.hex }}>S/ {Number(p.price).toFixed(2)}</span>
+                      <span className="rd-precio-plan block font-black font-mono text-sm mt-0.5" style={{ "--c": c.hex }}>S/ {Number(p.price).toFixed(2)}</span>
                       <span className={`mt-1 inline-flex items-center gap-1 text-[10px] font-bold ${p.freezeDays ? "text-sky-700" : "text-slate-400"}`}>
                         <Snowflake className="w-3 h-3" /> {p.freezeDays ? `${p.freezeDays} días de congelamiento` : "Sin congelamiento"}
                       </span>
