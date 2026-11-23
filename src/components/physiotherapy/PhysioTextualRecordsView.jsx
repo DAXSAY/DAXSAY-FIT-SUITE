@@ -3,6 +3,119 @@ import React, { useState, useMemo } from "react";
 import { etiquetaPostura } from "./PosturaEvaluacion";
 import { FileText, Search, Copy, Check, Share2 } from "lucide-react";
 
+export const textoPlanoFicha = (r) => {
+  const lat = r.physicalEvaluation?.posturalVisualEvaluation?.lateralView;
+  const knees = r.physicalEvaluation?.posturalVisualEvaluation?.visualKnees;
+  const ankles = r.physicalEvaluation?.posturalVisualEvaluation?.visualAnkles;
+  const williams = r.functionalEvaluation?.williamsEvaluation;
+  const medsText =
+    r.physicalEvaluation?.medicationsText ||
+    r.physicalEvaluation?.medications?.join(", ") ||
+    "Sin medicación reportada";
+
+  let out = `================================================================================\n`;
+  out += `FICHA CLÍNICA DE FISIOTERAPIA & REHABILITACIÓN FUNCIONAL\n`;
+  out += `================================================================================\n\n`;
+  out += `PACIENTE: ${r.memberName.toUpperCase()}\n`;
+  out += `DNI: ${r.memberDni} | TELÉFONO: ${r.memberPhone || "No registrado"}\n`;
+  out += `FECHA DE ATENCIÓN: ${r.date} a las ${r.time} (Sesión #${r.sessionNumber || 1})\n`;
+  out += `PROFESIONAL A CARGO: ${r.physiotherapistName}\n\n`;
+  out += `--------------------------------------------------------------------------------\n`;
+  out += `1. MOTIVO DE CONSULTA & DIAGNÓSTICO:\n`;
+  out += `${r.consultationReason}\n`;
+  out += `• Zonas Afectadas: ${r.affectedZones?.join(", ") || r.affectedZone || "Lumbar"}\n`;
+  out += `• Nivel de Dolor Inicial (EVA): ${r.painLevelEVA}/10\n`;
+  if (r.initialMedicalRestrictions) {
+    out += `• Antecedentes Médicos de Inscripción: ${r.initialMedicalRestrictions}\n`;
+  }
+  out += `\n--------------------------------------------------------------------------------\n`;
+  out += `2. MEDICAMENTOS & FARMACOTERAPIA ACTUAL:\n`;
+  out += `${medsText}\n`;
+  out += `\n--------------------------------------------------------------------------------\n`;
+  out += `3. EVALUACIÓN POSTURAL & BIOMECÁNICA (INCLUYE VISIÓN LATERAL & RODILLAS/TOBILLOS):\n`;
+  out += `• Resumen Postural: ${r.posturalEvaluation || "Sin alteraciones severas"}\n`;
+  if (lat) {
+    out += `• VISIÓN LATERAL (SAGITAL):\n`;
+    out += `  - Cabeza: ${etiquetaPostura("headPosition", lat.headPosition)}\n`;
+    out += `  - Columna Cervical: ${etiquetaPostura("cervicalSpine", lat.cervicalSpine)}\n`;
+    out += `  - Columna Dorsal: ${etiquetaPostura("thoracicSpine", lat.thoracicSpine)}\n`;
+    out += `  - Columna Lumbar: ${etiquetaPostura("lumbarSpine", lat.lumbarSpine)}\n`;
+    if (lat.shoulderPosition) out += `  - Hombros: ${etiquetaPostura("shoulderPosition", lat.shoulderPosition)}\n`;
+    if (lat.abdomen) out += `  - Abdomen: ${etiquetaPostura("abdomen", lat.abdomen)}\n`;
+    out += `  - Pelvis (Báscula): ${etiquetaPostura("pelvisTilt", lat.pelvisTilt)}\n`;
+    out += `  - Rodillas Sagital: ${etiquetaPostura("kneeSagittal", lat.kneeSagittal)}\n`;
+    out += `  - Línea de Plomada: ${etiquetaPostura("plumbLineDeviation", lat.plumbLineDeviation)}\n`;
+    if (lat.notes) out += `  - Notas de Visión Lateral: ${lat.notes}\n`;
+  }
+  if (knees) {
+    out += `• EVALUACIÓN VISUAL DE RODILLAS:\n`;
+    out += `  - Alineación Frontal: ${etiquetaPostura("frontalAlignment", knees.frontalAlignment)}\n`;
+    out += `  - Tracking Patelar: ${etiquetaPostura("patellarTracking", knees.patellarTracking)}\n`;
+    out += `  - Inflamación / Derrame: ${etiquetaPostura("effusionInflammation", knees.effusionInflammation)}\n`;
+    if (knees.details) out += `  - Detalles de Rodillas: ${knees.details}\n`;
+  }
+  if (ankles) {
+    out += `• EVALUACIÓN VISUAL DE TOBILLO Y PIE:\n`;
+    out += `  - Alineación Retropié: ${etiquetaPostura("hindfootAlignment", ankles.hindfootAlignment)}\n`;
+    out += `  - Arco Plantar: ${etiquetaPostura("plantarArch", ankles.plantarArch)}\n`;
+    if (ankles.forefoot) out += `  - Dedos y antepié: ${etiquetaPostura("forefoot", ankles.forefoot)}\n`;
+    out += `  - Tendón de Aquiles: ${etiquetaPostura("achillesTendon", ankles.achillesTendon)}\n`;
+    if (ankles.details) out += `  - Detalles de Tobillo: ${ankles.details}\n`;
+  }
+  if (r.physicalEvaluation?.posturalVisualEvaluation?.visualComments) {
+    out += `• Comentarios Visuales Generales: ${r.physicalEvaluation.posturalVisualEvaluation.visualComments}\n`;
+  }
+  out += `\n--------------------------------------------------------------------------------\n`;
+  out += `4. EVALUACIÓN FUNCIONAL & PROTOCOLO DE WILLIAMS:\n`;
+  out += `• Rango Articular (ROM): ${r.rangeOfMotion}\n`;
+  if (williams && williams.enabled) {
+    out += `• PROTOCOLO DE FLEXIÓN DE WILLIAMS (COLUMNA LUMBO-SACRA):\n`;
+    out += `  - Tolerancia Global: ${textoToleranciaWilliams(williams.overallTolerance)}\n`;
+    williamsElegidos(williams).forEach((w) => {
+      out += `  [Ej #${w.number}] ${w.name}: ${textoRespuestaWilliams(w.executionStatus)} | Dolor EVA: ${w.painEVA}/10 | ${w.clinicalComment || ""}\n`;
+    });
+    if (williams.summaryNotes)
+      out += `  - Conclusión Williams: ${williams.summaryNotes}\n`;
+  }
+  out += `\n--------------------------------------------------------------------------------\n`;
+  out += `5. TRATAMIENTO & TÉCNICAS APLICADAS:\n`;
+  if (r.editableTreatments && r.editableTreatments.length > 0) {
+    r.editableTreatments
+      .filter((t) => t.applied)
+      .forEach((t, i) => {
+        out += `[${i + 1}] ${t.name} (${t.category})\n    Dosificación: ${t.dosage}\n    ${t.notes ? `Nota: ${t.notes}\n` : ""}`;
+      });
+  } else {
+    out += `${r.treatmentsApplied?.join(", ") || "Terapia manual y ejercicios terapéuticos"}\n`;
+  }
+  out += `\n--------------------------------------------------------------------------------\n`;
+  out += `6. CARTILLA DE EJERCICIOS DOSIFICADOS:\n`;
+  if (r.exerciseDosage && r.exerciseDosage.customExercises.length > 0) {
+    out += `Título: ${r.exerciseDosage.customCardTitle} (${r.exerciseDosage.customCardFrequency})\n`;
+    r.exerciseDosage.customExercises.forEach((ex, i) => {
+      out += `${i + 1}. ${ex.name} - ${ex.series} series x ${ex.repsOrTime} (Descanso: ${ex.restSeconds}s)${ex.metodo?.resumen ? ` · ${ex.metodo.resumen}` : ""}\n`;
+      out += `   Indicación Técnica: ${ex.techniqueTips}\n`;
+      if (ex.commentsWithImages && ex.commentsWithImages.length > 0) {
+        ex.commentsWithImages.forEach((c) => {
+          out += `   [Pauta con Foto]: ${c.imageTitle ? `${c.imageTitle}: ` : ""}${c.comment}\n`;
+        });
+      }
+    });
+  }
+  out += `\n--------------------------------------------------------------------------------\n`;
+  out += `7. RESTRICCIONES EN EL GIMNASIO / SALA DE PESAS:\n`;
+  out += `${r.gymWorkoutRestrictions || "Adaptación según escala de dolor."}\n\n`;
+  out += `8. PAUTAS EN CASA:\n`;
+  out += `${r.homeIndications || "Seguir las indicaciones del fisioterapeuta."}\n\n`;
+  if (r.nextAppointmentDate) {
+    out += `PRÓXIMO CONTROL / CITA: ${r.nextAppointmentDate}\n`;
+  }
+  out += `================================================================================\n`;
+  out += `CENTRO DE FISIOTERAPIA & RENDIMIENTO DEPORTIVO\n`;
+  out += `================================================================================\n`;
+  return out;
+};
+
 export const PhysioTextualRecordsView = ({
   records = [],
   members = [],
@@ -65,118 +178,7 @@ export const PhysioTextualRecordsView = ({
   }, [records, selectedRecordId, filteredRecords]);
 
   // Generate plain textual representation
-  const generatePlainTextRecord = (r) => {
-    const lat = r.physicalEvaluation?.posturalVisualEvaluation?.lateralView;
-    const knees = r.physicalEvaluation?.posturalVisualEvaluation?.visualKnees;
-    const ankles = r.physicalEvaluation?.posturalVisualEvaluation?.visualAnkles;
-    const williams = r.functionalEvaluation?.williamsEvaluation;
-    const medsText =
-      r.physicalEvaluation?.medicationsText ||
-      r.physicalEvaluation?.medications?.join(", ") ||
-      "Sin medicación reportada";
-
-    let out = `================================================================================\n`;
-    out += `FICHA CLÍNICA DE FISIOTERAPIA & REHABILITACIÓN FUNCIONAL\n`;
-    out += `================================================================================\n\n`;
-    out += `PACIENTE: ${r.memberName.toUpperCase()}\n`;
-    out += `DNI: ${r.memberDni} | TELÉFONO: ${r.memberPhone || "No registrado"}\n`;
-    out += `FECHA DE ATENCIÓN: ${r.date} a las ${r.time} (Sesión #${r.sessionNumber || 1})\n`;
-    out += `PROFESIONAL A CARGO: ${r.physiotherapistName}\n\n`;
-    out += `--------------------------------------------------------------------------------\n`;
-    out += `1. MOTIVO DE CONSULTA & DIAGNÓSTICO:\n`;
-    out += `${r.consultationReason}\n`;
-    out += `• Zonas Afectadas: ${r.affectedZones?.join(", ") || r.affectedZone || "Lumbar"}\n`;
-    out += `• Nivel de Dolor Inicial (EVA): ${r.painLevelEVA}/10\n`;
-    if (r.initialMedicalRestrictions) {
-      out += `• Antecedentes Médicos de Inscripción: ${r.initialMedicalRestrictions}\n`;
-    }
-    out += `\n--------------------------------------------------------------------------------\n`;
-    out += `2. MEDICAMENTOS & FARMACOTERAPIA ACTUAL:\n`;
-    out += `${medsText}\n`;
-    out += `\n--------------------------------------------------------------------------------\n`;
-    out += `3. EVALUACIÓN POSTURAL & BIOMECÁNICA (INCLUYE VISIÓN LATERAL & RODILLAS/TOBILLOS):\n`;
-    out += `• Resumen Postural: ${r.posturalEvaluation || "Sin alteraciones severas"}\n`;
-    if (lat) {
-      out += `• VISIÓN LATERAL (SAGITAL):\n`;
-      out += `  - Cabeza: ${etiquetaPostura("headPosition", lat.headPosition)}\n`;
-      out += `  - Columna Cervical: ${etiquetaPostura("cervicalSpine", lat.cervicalSpine)}\n`;
-      out += `  - Columna Dorsal: ${etiquetaPostura("thoracicSpine", lat.thoracicSpine)}\n`;
-      out += `  - Columna Lumbar: ${etiquetaPostura("lumbarSpine", lat.lumbarSpine)}\n`;
-      if (lat.shoulderPosition) out += `  - Hombros: ${etiquetaPostura("shoulderPosition", lat.shoulderPosition)}\n`;
-      if (lat.abdomen) out += `  - Abdomen: ${etiquetaPostura("abdomen", lat.abdomen)}\n`;
-      out += `  - Pelvis (Báscula): ${etiquetaPostura("pelvisTilt", lat.pelvisTilt)}\n`;
-      out += `  - Rodillas Sagital: ${etiquetaPostura("kneeSagittal", lat.kneeSagittal)}\n`;
-      out += `  - Línea de Plomada: ${etiquetaPostura("plumbLineDeviation", lat.plumbLineDeviation)}\n`;
-      if (lat.notes) out += `  - Notas de Visión Lateral: ${lat.notes}\n`;
-    }
-    if (knees) {
-      out += `• EVALUACIÓN VISUAL DE RODILLAS:\n`;
-      out += `  - Alineación Frontal: ${etiquetaPostura("frontalAlignment", knees.frontalAlignment)}\n`;
-      out += `  - Tracking Patelar: ${etiquetaPostura("patellarTracking", knees.patellarTracking)}\n`;
-      out += `  - Inflamación / Derrame: ${etiquetaPostura("effusionInflammation", knees.effusionInflammation)}\n`;
-      if (knees.details) out += `  - Detalles de Rodillas: ${knees.details}\n`;
-    }
-    if (ankles) {
-      out += `• EVALUACIÓN VISUAL DE TOBILLO Y PIE:\n`;
-      out += `  - Alineación Retropié: ${etiquetaPostura("hindfootAlignment", ankles.hindfootAlignment)}\n`;
-      out += `  - Arco Plantar: ${etiquetaPostura("plantarArch", ankles.plantarArch)}\n`;
-      if (ankles.forefoot) out += `  - Dedos y antepié: ${etiquetaPostura("forefoot", ankles.forefoot)}\n`;
-      out += `  - Tendón de Aquiles: ${etiquetaPostura("achillesTendon", ankles.achillesTendon)}\n`;
-      if (ankles.details) out += `  - Detalles de Tobillo: ${ankles.details}\n`;
-    }
-    if (r.physicalEvaluation?.posturalVisualEvaluation?.visualComments) {
-      out += `• Comentarios Visuales Generales: ${r.physicalEvaluation.posturalVisualEvaluation.visualComments}\n`;
-    }
-    out += `\n--------------------------------------------------------------------------------\n`;
-    out += `4. EVALUACIÓN FUNCIONAL & PROTOCOLO DE WILLIAMS:\n`;
-    out += `• Rango Articular (ROM): ${r.rangeOfMotion}\n`;
-    if (williams && williams.enabled) {
-      out += `• PROTOCOLO DE FLEXIÓN DE WILLIAMS (COLUMNA LUMBO-SACRA):\n`;
-      out += `  - Tolerancia Global: ${textoToleranciaWilliams(williams.overallTolerance)}\n`;
-      williamsElegidos(williams).forEach((w) => {
-        out += `  [Ej #${w.number}] ${w.name}: ${textoRespuestaWilliams(w.executionStatus)} | Dolor EVA: ${w.painEVA}/10 | ${w.clinicalComment || ""}\n`;
-      });
-      if (williams.summaryNotes)
-        out += `  - Conclusión Williams: ${williams.summaryNotes}\n`;
-    }
-    out += `\n--------------------------------------------------------------------------------\n`;
-    out += `5. TRATAMIENTO & TÉCNICAS APLICADAS:\n`;
-    if (r.editableTreatments && r.editableTreatments.length > 0) {
-      r.editableTreatments
-        .filter((t) => t.applied)
-        .forEach((t, i) => {
-          out += `[${i + 1}] ${t.name} (${t.category})\n    Dosificación: ${t.dosage}\n    ${t.notes ? `Nota: ${t.notes}\n` : ""}`;
-        });
-    } else {
-      out += `${r.treatmentsApplied?.join(", ") || "Terapia manual y ejercicios terapéuticos"}\n`;
-    }
-    out += `\n--------------------------------------------------------------------------------\n`;
-    out += `6. CARTILLA DE EJERCICIOS DOSIFICADOS:\n`;
-    if (r.exerciseDosage && r.exerciseDosage.customExercises.length > 0) {
-      out += `Título: ${r.exerciseDosage.customCardTitle} (${r.exerciseDosage.customCardFrequency})\n`;
-      r.exerciseDosage.customExercises.forEach((ex, i) => {
-        out += `${i + 1}. ${ex.name} - ${ex.series} series x ${ex.repsOrTime} (Descanso: ${ex.restSeconds}s)${ex.metodo?.resumen ? ` · ${ex.metodo.resumen}` : ""}\n`;
-        out += `   Indicación Técnica: ${ex.techniqueTips}\n`;
-        if (ex.commentsWithImages && ex.commentsWithImages.length > 0) {
-          ex.commentsWithImages.forEach((c) => {
-            out += `   [Pauta con Foto]: ${c.imageTitle ? `${c.imageTitle}: ` : ""}${c.comment}\n`;
-          });
-        }
-      });
-    }
-    out += `\n--------------------------------------------------------------------------------\n`;
-    out += `7. RESTRICCIONES EN EL GIMNASIO / SALA DE PESAS:\n`;
-    out += `${r.gymWorkoutRestrictions || "Adaptación según escala de dolor."}\n\n`;
-    out += `8. PAUTAS EN CASA:\n`;
-    out += `${r.homeIndications || "Seguir las indicaciones del fisioterapeuta."}\n\n`;
-    if (r.nextAppointmentDate) {
-      out += `PRÓXIMO CONTROL / CITA: ${r.nextAppointmentDate}\n`;
-    }
-    out += `================================================================================\n`;
-    out += `CENTRO DE FISIOTERAPIA & RENDIMIENTO DEPORTIVO\n`;
-    out += `================================================================================\n`;
-    return out;
-  };
+  const generatePlainTextRecord = textoPlanoFicha;
 
   // Misma información de la ficha, en secciones para mostrarla con diseño
   const seccionesFicha = (r) => {

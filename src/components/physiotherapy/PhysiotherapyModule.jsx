@@ -2,7 +2,7 @@ import { CampoNumero } from "../common/CampoNumero";
 import { SinSeleccion } from "../common/CabeceraModulo";
 import { SeguimientoServicio } from "../common/Programados";
 import { AgendaEspecialistas } from "../appointments/AgendaEspecialistas";
-import { UsersRound, CalendarDays, AlertTriangle as FiAlerta, ClipboardCheck as FiFicha, CircleDashed as FiSinEval, Flame as FiDolor } from "lucide-react";
+import { UsersRound, CalendarDays, AlertTriangle as FiAlerta, ClipboardCheck as FiFicha, CircleDashed as FiSinEval, Flame as FiDolor, Copy } from "lucide-react";
 import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
 import { useRecordado } from "../../utils/subPestana";
 import React, { useState, useMemo, useEffect } from "react";
@@ -85,7 +85,7 @@ import {
   DEFAULT_TREATMENT_ITEMS,
 } from "./EditableTreatments";
 import { ExercisePrescriptionCard } from "./ExercisePrescriptionCard";
-import { PhysioTextualRecordsView } from "./PhysioTextualRecordsView";
+import { textoPlanoFicha } from "./PhysioTextualRecordsView";
 import { PhysioReportModal } from "./PhysioReportModal";
 import { ESTADOS_EVOLUCION, estadoEvolucion, ADHERENCIA, FRECUENCIA_SESIONES, PRONOSTICO } from "./evolucion";
 import { api } from "../../api/cliente";
@@ -239,7 +239,8 @@ export const PhysiotherapyModule = () => {
   const [chartMetricView, setChartMetricView] = useState("both");
 
   // Main View Switcher ('fichas' or 'textual')
-  const [activeMainView, setActiveMainView] = useRecordado("fisio", "", ["agenda"]);
+  const [copiadoTexto, setCopiadoTexto] = useState(false);
+  const [activeMainView, setActiveMainView] = useRecordado("fisio", "", ["agenda", "textual"]);
 
   // FORM STATES
   const [formMemberId, setFormMemberId] = useState("");
@@ -391,10 +392,41 @@ export const PhysiotherapyModule = () => {
     return m;
   }, [physioRecords]);
   const conLesion = (m) => !!(m.medicalNotes && m.medicalNotes.trim());
+  // Búsqueda también DENTRO de las fichas: diagnóstico, medicamentos, postura, Williams, restricciones…
+  const coincidenciaFicha = useMemo(() => {
+    const t = searchTerm.trim().toLowerCase();
+    const mapa = new Map();
+    if (t.length < 3) return mapa;
+    physioRecords.forEach((r) => {
+      if (mapa.has(String(r.memberId))) return;
+      const campos = [
+        r.consultationReason,
+        (r.affectedZones || []).join(", "),
+        r.initialMedicalRestrictions,
+        r.physicalEvaluation?.medicationsText,
+        (r.physicalEvaluation?.medications || []).join(", "),
+        r.posturalEvaluation,
+        (r.physicalEvaluation?.posturalVisualEvaluation?.postureFindings || []).join(", "),
+        r.functionalEvaluation?.williamsEvaluation?.summaryNotes,
+        r.gymWorkoutRestrictions,
+        r.homeIndications,
+        (r.editableTreatments || []).filter((x) => x.applied).map((x) => x.name).join(", "),
+        (r.treatmentsApplied || []).join(", "),
+      ].filter((x) => typeof x === "string" && x);
+      const hit = campos.find((x) => x.toLowerCase().includes(t));
+      if (hit) {
+        const i = hit.toLowerCase().indexOf(t);
+        const ini = Math.max(0, i - 25);
+        mapa.set(String(r.memberId), `${ini ? "…" : ""}${hit.slice(ini, i + t.length + 35)}${i + t.length + 35 < hit.length ? "…" : ""}`);
+      }
+    });
+    return mapa;
+  }, [physioRecords, searchTerm]);
+
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
       if (!searchTerm.trim() && !filtroFisio) return false; // nada cargado hasta buscar o filtrar
-      if (!coincideAlumno(m, searchTerm)) return false;
+      if (!coincideAlumno(m, searchTerm) && !coincidenciaFicha.has(String(m.id))) return false;
       const ult = ultimaSesion.get(m.id);
       if (filtroFisio === "lesiones") return conLesion(m);
       if (filtroFisio === "con_sesiones") return !!ult;
@@ -402,7 +434,7 @@ export const PhysiotherapyModule = () => {
       if (filtroFisio === "dolor_alto") return Number(ult?.painLevelEVA) >= 6;
       return true;
     });
-  }, [members, searchTerm, filtroFisio, ultimaSesion]);
+  }, [members, searchTerm, filtroFisio, ultimaSesion, coincidenciaFicha]);
 
   // Selected member object
   const selectedMember = useMemo(() => {
@@ -1299,7 +1331,6 @@ export const PhysiotherapyModule = () => {
         onCambiar={setActiveMainView}
         pestanas={[
           { k: "fichas", icono: Layers, label: "Fichas clínicas e historial", tono: "teal" },
-          { k: "textual", icono: BookOpen, label: "Evaluaciones por alumno", badge: physioRecords.length, tono: "emerald" },
           { k: "seguimiento", icono: UsersRound, label: "Seguimiento", tono: "violet" },
           { k: "agenda", icono: CalendarDays, label: "Horario de atención", tono: "amber" },
         ]}
@@ -1311,14 +1342,6 @@ export const PhysiotherapyModule = () => {
         <SeguimientoServicio tipo="fisioterapia" />
       ) : activeMainView === "agenda" ? (
         <AgendaEspecialistas servicioInicial="fisioterapia" fijo />
-      ) : activeMainView === "textual" ? (
-        <PhysioTextualRecordsView
-          records={physioRecords}
-          members={members}
-          onSelectSessionToEdit={(session) => handleEditSession(session)}
-          onOpenReportModal={(session) => setReportModalSession(session)}
-          onNewEvaluation={() => handleOpenNewSession()}
-        />
       ) : (
         /* MAIN TWO-COLUMN WORKSPACE */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -1329,7 +1352,7 @@ export const PhysiotherapyModule = () => {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Código del alumno (12 o DR-12), nombre o DNI..."
+                  placeholder="Código, nombre, DNI… o lo que dice la ficha (hernia, L4, ibuprofeno)"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
@@ -1365,7 +1388,7 @@ export const PhysiotherapyModule = () => {
             <div className="space-y-2.5 max-h-[720px] lg:max-h-[calc(100vh-9rem)] overflow-y-auto pr-1">
               {filteredMembers.length === 0 ? (
                 <div className="bg-white p-8 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
-                  {searchTerm.trim() || filtroFisio ? "No hay alumnos con los filtros aplicados." : "Escribe un código, nombre o DNI, o elige un filtro para ver alumnos."}
+                  {searchTerm.trim() || filtroFisio ? "No hay alumnos con los filtros aplicados." : "Escribe un código, nombre o DNI — o algo de la ficha (diagnóstico, medicamento, postura) — o elige un filtro."}
                 </div>
               ) : (
                 filteredMembers.map((member) => {
@@ -1392,6 +1415,9 @@ export const PhysiotherapyModule = () => {
                             <chip.I className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{chip.t}</span>
                           </span>
                           <h3 className="font-bold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-1">{member.fullName}</h3>
+                          {!coincideAlumno(member, searchTerm) && coincidenciaFicha.has(String(member.id)) && coincidenciaFicha.get(String(member.id)) !== chip.t && (
+                            <p className="rd-coincide text-[11px] mt-1 line-clamp-2">🔎 En su ficha: «{coincidenciaFicha.get(String(member.id))}»</p>
+                          )}
                         </div>
                         {ult && Number.isFinite(eva) ? (
                           <span className={`shrink-0 text-xs font-black px-2 py-1 rounded-md ${eva >= 6 ? "bg-rose-50 text-rose-700" : eva >= 4 ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>EVA {eva}/10</span>
@@ -1459,6 +1485,21 @@ export const PhysiotherapyModule = () => {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
+                    {memberSessions.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(textoPlanoFicha(memberSessions[0]));
+                          setCopiadoTexto(true);
+                          setTimeout(() => setCopiadoTexto(false), 2000);
+                        }}
+                        className="flex items-center space-x-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                        title="Copiar la última ficha como texto (para WhatsApp o un informe)"
+                      >
+                        {copiadoTexto ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiadoTexto ? "¡Copiado!" : "Copiar como texto"}</span>
+                      </button>
+                    )}
                     {memberSessions.length > 0 && (
                       <button
                         onClick={() => setReportModalSession(memberSessions[0])}

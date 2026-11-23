@@ -3866,3 +3866,5 @@ html.dark .rd-fila-seg:hover{background:rgba(64,200,210,.06)}
 html.dark .rd-badge-menu{background:#fbbf24!important;color:#1a1204!important;box-shadow:0 0 10px -3px rgba(251,191,36,.8)}
 /* Textos secundarios en modo claro: un poco más oscuros para leerse sobre el fondo crema */
 html:not(.dark) :is(.text-slate-400,.text-gray-400):not(.rd-claro *):not(.rd-menu *):not(button.bg-blue-600 *){color:#827969}
+.rd-coincide{color:#1f6f75;background:#e3f3f1;border-radius:6px;padding:2px 6px}
+html.dark .rd-coincide{color:#7ff0f7;background:rgba(64,200,210,.12)}
