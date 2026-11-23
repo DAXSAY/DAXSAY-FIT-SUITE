@@ -6,8 +6,8 @@ import { NutritionModule } from "../nutrition/NutritionModule";
 import { MeasurementsModule } from "../measurements/MeasurementsModule";
 import { useRecordado } from "../../utils/subPestana";
 import { OBJETIVOS_NUTRI } from "../../data/nutricionOpciones";
+import { ChipsFiltro, PanelFiltros, BuscadorFiltro } from "../common/ChipsFiltro";
 
-const OBJETIVOS = [["all", "Todos los objetivos"], ...OBJETIVOS_NUTRI.map((o) => [o.id, o.label])];
 
 /**
  * Dietas y medidas: el alumno es el centro. Se busca (no se carga nada hasta
@@ -41,7 +41,10 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
     if (!buscando) return [];
     return members.filter((m) => {
       if (q.trim() && !coincideAlumno(m, q)) return false;
-      if (objetivo !== "all") return planDe.get(String(m.id))?.objective === objetivo;
+      if (objetivo === "todos" || objetivo === "all") return true;
+      if (objetivo === "con_dieta") return planDe.has(String(m.id));
+      if (objetivo === "sin_dieta") return !planDe.has(String(m.id));
+      return planDe.get(String(m.id))?.objective === objetivo;
       return true;
     });
   }, [members, q, objetivo, planDe, buscando]);
@@ -57,36 +60,45 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
     <>
     {/* Ventana de «Crear / asignar dieta» (dieta y medidas en pasos) */}
     <NutritionModule vista="ninguna" onVista={() => {}} pedirCrear={pedidos} alumnoFijo={alumno?.id || ""} />
+    <div className="space-y-4">
+    {/* Filtros: el mismo diseño que el panel de Rutinas */}
+    <PanelFiltros
+      filas={[
+        {
+          etiqueta: "Filtro",
+          contenido: (
+            <ChipsFiltro
+              valor={["todos", "con_dieta", "sin_dieta"].includes(objetivo) ? objetivo : ""}
+              onCambio={(k) => setObjetivo(k || "all")}
+              opciones={[
+                { k: "todos", emoji: "👥", texto: "Todos", n: members.length },
+                { k: "con_dieta", emoji: "🥗", texto: "Con dieta", n: members.filter((m) => planDe.has(String(m.id))).length },
+                { k: "sin_dieta", emoji: "⏳", texto: "Sin dieta", n: members.filter((m) => !planDe.has(String(m.id))).length },
+              ]}
+            />
+          ),
+        },
+        {
+          etiqueta: "Objetivo",
+          contenido: (
+            <ChipsFiltro
+              valor={objetivo}
+              onCambio={(k) => setObjetivo(k || "all")}
+              opciones={OBJETIVOS_NUTRI.map((o) => ({ k: o.id, emoji: o.emoji, texto: o.label, n: members.filter((m) => planDe.get(String(m.id))?.objective === o.id).length })).filter((o) => o.n > 0)}
+            />
+          ),
+        },
+        {
+          etiqueta: "Buscar",
+          contenido: <BuscadorFiltro valor={q} onCambio={setQ} placeholder="Código, nombre o DNI del alumno" total={buscando ? lista.length : null} />,
+        },
+      ]}
+    />
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
       {/* Izquierda: buscar alumno */}
       <div className="lg:col-span-4 space-y-3 lg:sticky lg:top-3 self-start">
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Código del alumno (12 o DR-12), nombre o DNI..."
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <select
-            value={objetivo}
-            onChange={(e) => setObjetivo(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-hidden"
-          >
-            {OBJETIVOS.map(([k, t]) => (
-              <option key={k} value={k}>
-                {t}
-                {k !== "all" ? ` (${nutritionPlans.filter((p) => p.objective === k).length})` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {!buscando ? (
-          <p className="text-xs text-slate-500 px-1">Escribe un código, nombre o DNI, o elige un objetivo para ver alumnos.</p>
+          <div className="bg-white p-8 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">Escribe un código, nombre o DNI, o elige un filtro para ver alumnos.</div>
         ) : (
           <div className="space-y-2 max-h-[640px] lg:max-h-[calc(100vh-14rem)] overflow-y-auto pr-1">
             {lista.length === 0 && <p className="text-xs text-slate-500 px-1 py-4 text-center">Ningún alumno coincide.</p>}
@@ -186,6 +198,7 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
           </>
         )}
       </div>
+    </div>
     </div>
     </>
   );

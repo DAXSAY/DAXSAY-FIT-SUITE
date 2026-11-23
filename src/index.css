@@ -3868,3 +3868,4 @@ html.dark .rd-badge-menu{background:#fbbf24!important;color:#1a1204!important;bo
 html:not(.dark) :is(.text-slate-400,.text-gray-400):not(.rd-claro *):not(.rd-menu *):not(button.bg-blue-600 *){color:#827969}
 .rd-coincide{color:#1f6f75;background:#e3f3f1;border-radius:6px;padding:2px 6px}
 html.dark .rd-coincide{color:#7ff0f7;background:rgba(64,200,210,.12)}
+

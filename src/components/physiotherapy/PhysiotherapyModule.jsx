@@ -86,6 +86,7 @@ import {
 } from "./EditableTreatments";
 import { ExercisePrescriptionCard } from "./ExercisePrescriptionCard";
 import { textoPlanoFicha } from "./PhysioTextualRecordsView";
+import { ChipsFiltro, PanelFiltros, BuscadorFiltro } from "../common/ChipsFiltro";
 import { PhysioReportModal } from "./PhysioReportModal";
 import { ESTADOS_EVOLUCION, estadoEvolucion, ADHERENCIA, FRECUENCIA_SESIONES, PRONOSTICO } from "./evolucion";
 import { api } from "../../api/cliente";
@@ -1344,47 +1345,42 @@ export const PhysiotherapyModule = () => {
         <AgendaEspecialistas servicioInicial="fisioterapia" fijo />
       ) : (
         /* MAIN TWO-COLUMN WORKSPACE */
+        <div className="space-y-4">
+        {/* Filtros: el mismo diseño que el panel de Rutinas */}
+        <PanelFiltros
+          filas={[
+            {
+              etiqueta: "Filtro",
+              contenido: (
+                <ChipsFiltro
+                  valor={filtroFisio}
+                  onCambio={setFiltroFisio}
+                  opciones={[
+                    { k: "todos", emoji: "👥", texto: "Todos", n: members.length },
+                    { k: "lesiones", emoji: "⚠️", texto: "Con lesión", n: members.filter(conLesion).length },
+                    { k: "con_sesiones", emoji: "📋", texto: "Evaluados", n: members.filter((m) => ultimaSesion.has(m.id)).length },
+                    { k: "sin_eval", emoji: "⏳", texto: "Sin evaluación", n: members.filter((m) => !ultimaSesion.has(m.id)).length },
+                    { k: "dolor_alto", emoji: "🔥", texto: "Dolor alto (EVA 6+)", n: members.filter((m) => Number(ultimaSesion.get(m.id)?.painLevelEVA) >= 6).length },
+                  ]}
+                />
+              ),
+            },
+            {
+              etiqueta: "Buscar",
+              contenido: (
+                <BuscadorFiltro
+                  valor={searchTerm}
+                  onCambio={setSearchTerm}
+                  placeholder="Código, nombre, DNI… o lo que dice la ficha (hernia, L4, ibuprofeno)"
+                  total={searchTerm.trim() || filtroFisio ? filteredMembers.length : null}
+                />
+              ),
+            },
+          ]}
+        />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* COLUMNA IZQUIERDA: buscador, filtro y lista (mismo diseño que Nutrición) */}
           <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-3 self-start">
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Código, nombre, DNI… o lo que dice la ficha (hernia, L4, ibuprofeno)"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              {/* Filtros como chips con íconos de línea */}
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  ["todos", UsersRound, "Todos", members.length, "slate"],
-                  ["lesiones", FiAlerta, "Con lesión", members.filter(conLesion).length, "amber"],
-                  ["con_sesiones", FiFicha, "Evaluados", members.filter((m) => ultimaSesion.has(m.id)).length, "teal"],
-                  ["sin_eval", FiSinEval, "Sin evaluación", members.filter((m) => !ultimaSesion.has(m.id)).length, "sky"],
-                  ["dolor_alto", FiDolor, "Dolor alto (EVA 6+)", members.filter((m) => Number(ultimaSesion.get(m.id)?.painLevelEVA) >= 6).length, "rose"],
-                ].map(([k, I, t, n, tono]) => {
-                  const on = filtroFisio === k;
-                  return (
-                    <button
-                      key={k}
-                      type="button"
-                      onClick={() => setFiltroFisio(on ? "" : k)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold cursor-pointer transition-all ${
-                        on ? `${CHIP_FISIO[tono][0]} text-white shadow-sm` : "bg-white border-slate-200 text-slate-700 hover:border-slate-400"
-                      }`}
-                    >
-                      <I className={`w-3.5 h-3.5 ${on ? "" : CHIP_FISIO[tono][1]}`} /> {t}
-                      <span className={`px-1.5 rounded-full text-[10px] tabular-nums ${on ? "bg-white/25" : "bg-slate-100 text-slate-500"}`}>{n}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             <div className="space-y-2.5 max-h-[720px] lg:max-h-[calc(100vh-9rem)] overflow-y-auto pr-1">
               {filteredMembers.length === 0 ? (
                 <div className="bg-white p-8 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
@@ -2189,6 +2185,7 @@ export const PhysiotherapyModule = () => {
               </div>
             )}
           </div>
+        </div>
         </div>
       )}
 
