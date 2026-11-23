@@ -22,10 +22,11 @@ import { hoyISO } from "../../utils/fecha";
 
 import { SelectorAlumno, coincideAlumno } from "../common/BuscarAlumno";
 import { AgendaEspecialistas, useHorasAtencion } from "./AgendaEspecialistas";
-import { aMin, deMin, turnos, rangoCita, seCruzan, horaDeMin } from "../../utils/horario";
-// Horas que la agenda muestra siempre (7 AM a 7 PM); se suman las que abran
-// fisioterapia o nutrición fuera de ese rango (por ejemplo 6 AM o 9 PM).
-const HORAS_BASE = Array.from({ length: 13 }, (_, i) => deMin((7 + i) * 60));
+import { aMin, deMin, corta, turnos, rangoCita, seCruzan, horaDeMin, HORAS_DIA } from "../../utils/horario";
+// La agenda muestra siempre el mismo día que el horario de atención de fisioterapia
+// y nutrición: de 5 AM a 11 PM, cada hora con sus 4 bloques de 15 minutos.
+const HORAS_BASE = HORAS_DIA;
+const CUARTOS = [0, 15, 30, 45];
 const DURACION_LIBRE = 45; // días sin horario configurado: citas de 45 min cada hora
 
 const NOMBRES_DIA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -182,8 +183,9 @@ export const AppointmentsScheduleModule = () => {
     setFormService(srv);
     setFormDate(d);
     // Primer turno libre dentro de esa hora (si el especialista abrió turnos de 15, 20… min)
+    const exacto = srv && horasDelDia(srv, d).find((t) => aMin(t) === aMin(h));
     const enHora = srv ? horasDelDia(srv, d).filter((t) => aMin(t) >= aMin(h) && aMin(t) < aMin(h) + 60) : [];
-    setFormSlot(enHora.find((t) => !ocupanTurno(srv, d, t).length) || enHora[0] || h);
+    setFormSlot(exacto || enHora.find((t) => !ocupanTurno(srv, d, t).length) || enHora[0] || h);
     setFormReason("");
     setFormNotes("");
     setFormStaffName(srv ? specialistsFor(srv)[0] || "" : "");
@@ -654,7 +656,8 @@ export const AppointmentsScheduleModule = () => {
             {/* LEFT / CENTER: GOOGLE CALENDAR GRID (7 COLUMNS) */}
             <div className="lg:col-span-12 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               {/* Encabezado y horas dentro del mismo contenedor con scroll: columnas siempre alineadas */}
-              <div className="max-h-[560px] overflow-y-auto rd-agenda-semana">
+              <div className="max-h-[74vh] overflow-auto rd-agenda-semana">
+              <div className="min-w-[880px]">
               {/* Calendar Days Header */}
               <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] bg-slate-900 text-white border-b border-slate-800 text-center text-xs font-bold sticky top-0 z-10">
                 <div className="p-2 bg-slate-950 text-slate-400 border-r border-slate-800 flex items-center justify-center">
@@ -688,133 +691,128 @@ export const AppointmentsScheduleModule = () => {
                 })}
               </div>
 
-              {/* Time Slots Rows */}
+              {/* Filas: cada hora de 5 AM a 10 PM, dividida en sus 4 bloques de 15 minutos,
+                  igual que el horario de atención de fisioterapia y nutrición */}
               <div className="divide-y divide-slate-100">
-                {HOURS.map((hour) => {
-                  return (
-                    <div
-                      key={hour}
-                      className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] min-h-[44px] group"
-                    >
-                      {/* Left time label */}
-                      <div className="p-2 bg-slate-50 border-r border-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center text-center select-none">
-                        {hour}
-                      </div>
-
-                      {/* Day cells for this hour */}
-                      {DAYS_OF_WEEK.map((day) => {
-                        const cellApts = getAppointmentsForCell(day.date, hour);
-                        const isCellSelected =
-                          selectedDate === day.date && selectedHour === hour;
-                        const hasFalta = cellApts.some(
-                          (a) => a.status === "falta",
-                        );
-                        const isSlotFree =
-                          cellApts.length === 0 ||
-                          (hasFalta &&
-                            cellApts.every((a) => a.status === "falta"));
-
-                        const srvCal = serviceFilter !== "all" ? serviceFilter : currentUser?.role === "physio" ? "physiotherapy" : currentUser?.role === "nutritionist" ? "nutrition" : "all";
-                        if (cellApts.length === 0 && !atiende(srvCal, day.date, hour)) {
+                {(() => {
+                  const srvCal = serviceFilter !== "all" ? serviceFilter : currentUser?.role === "physio" ? "physiotherapy" : currentUser?.role === "nutritionist" ? "nutrition" : "all";
+                  const servicios = serviciosDe(srvCal);
+                  const hoy = hoyISO();
+                  const ahora = (() => {
+                    const f = new Date(Date.now() - 5 * 3600e3);
+                    return f.getUTCHours() * 60 + f.getUTCMinutes();
+                  })();
+                  // Turnos de cada servicio y día (se calculan una vez por pantalla)
+                  const cache = {};
+                  const turnosDe = (srv, fecha) => (cache[`${srv}|${fecha}`] ||= horasDelDia(srv, fecha).map((t) => ({ t, m: aMin(t) })));
+                  const abiertoEn = (srv, fecha, q) => {
+                    const l = horasAtencion(srv, fecha);
+                    if (l === null) return turnosDe(srv, fecha).some((x) => q >= x.m && q < x.m + DURACION_LIBRE);
+                    return l.bloques.some((b) => aMin(b) === q);
+                  };
+                  return HOURS.map((hour) => {
+                    const h = aMin(hour);
+                    return (
+                      <div key={hour} className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] group">
+                        <div className="px-1 py-1.5 bg-slate-50 border-r border-slate-200 text-slate-600 font-black text-xs flex items-center justify-center text-center select-none">
+                          {hour.replace(":00 ", " ").replace(/^0/, "")}
+                        </div>
+                        {DAYS_OF_WEEK.map((day) => {
+                          const citasDia = appointments.filter(
+                            (a) => a.date === day.date && a.status !== "cancelled" && (serviceFilter === "all" || a.serviceType === serviceFilter),
+                          );
+                          const isCellSelected = selectedDate === day.date && aMin(selectedHour) >= h && aMin(selectedHour) < h + 60;
                           return (
                             <div
                               key={`${day.key}-${hour}`}
-                              title="El especialista no atiende a esta hora"
-                              className="p-1 border-r border-slate-100 last:border-r-0 select-none flex items-center justify-center text-[11px] font-semibold text-slate-400"
-                              style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(148,163,184,.12) 0 6px, transparent 6px 12px)" }}
+                              className={`rd-celda-agenda p-1 border-r border-slate-100 last:border-r-0 grid grid-cols-4 gap-0.5 ${isCellSelected ? "bg-blue-50/70" : ""}`}
                             >
-                              No atiende
-                            </div>
-                          );
-                        }
-
-                        // Filter condition
-                        if (onlyAvailableFilter && !isSlotFree) {
-                          return (
-                            <div
-                              key={`${day.key}-${hour}`}
-                              className="p-1 border-r border-slate-100 last:border-r-0 bg-slate-50/50 opacity-40 select-none flex items-center justify-center text-xs text-slate-400"
-                            >
-                              Ocupado
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div
-                            key={`${day.key}-${hour}`}
-                            onClick={() => {
-                              setSelectedDate(day.date);
-                              setSelectedHour(hour);
-                              if (cellApts.length === 0) {
-                                if (day.date >= hoyISO()) openBooking(day.date, hour);
-                              } else {
-                                setDetalleHora(true);
-                              }
-                            }}
-                            className={`p-1.5 border-r border-slate-100 last:border-r-0 transition-all cursor-pointer relative flex flex-col justify-between ${
-                              isCellSelected
-                                ? "bg-blue-50/90 ring-2 ring-blue-600 z-10"
-                                : isSlotFree
-                                  ? "hover:bg-slate-50 bg-white"
-                                  : "bg-slate-50/60 hover:bg-slate-100/80"
-                            }`}
-                          >
-                            {cellApts.length === 0 ? (
-                              day.date < hoyISO() ? (
-                                <div className="h-full" />
-                              ) : (
-                                <div className="h-full flex items-center justify-center py-0.5">
-                                  <span className="w-8 h-8 rounded-full border-2 border-dashed border-slate-300 text-slate-400 flex items-center justify-center hover:border-blue-500 hover:text-white hover:bg-blue-600 transition-all">
-                                    <Plus className="w-4 h-4" />
-                                  </span>
-                                </div>
-                              )
-                            ) : (
-                              <div className="space-y-1 w-full">
-                                {cellApts.map((apt) => {
-                                  const badge = getStatusBadge(apt.status);
-                                  const isPhysio =
-                                    apt.serviceType === "physiotherapy";
-
+                              {CUARTOS.map((d) => {
+                                const q = h + d;
+                                const pasado = day.date < hoy || (day.date === hoy && q + 15 <= ahora);
+                                // Citas que ocupan este bloque
+                                const enBloque = citasDia.filter((a) => {
+                                  const r = rangoCita(a);
+                                  return r && r.ini < q + 15 && r.fin > q;
+                                });
+                                const empieza = enBloque.filter((a) => {
+                                  const r = rangoCita(a);
+                                  return r.ini >= q && r.ini < q + 15;
+                                });
+                                if (enBloque.length && !(onlyAvailableFilter && enBloque.every((a) => a.status !== "falta"))) {
+                                  const a = empieza[0] || enBloque[0];
+                                  const fisio = a.serviceType === "physiotherapy";
+                                  const falta = a.status === "falta";
+                                  const badge = getStatusBadge(a.status);
                                   return (
-                                    <div
-                                      key={apt.id}
-                                      className={`p-1 rounded-md text-xs font-semibold leading-tight shadow-xs border ${
-                                        isPhysio
-                                          ? "bg-cyan-50/90 border-cyan-200 text-cyan-950"
-                                          : "bg-emerald-50/90 border-emerald-200 text-emerald-950"
+                                    <button
+                                      type="button"
+                                      key={d}
+                                      title={`${a.timeSlot} · ${a.memberName} · ${fisio ? "Fisioterapia" : "Nutrición"} · ${badge.label}`}
+                                      onClick={() => {
+                                        setSelectedDate(day.date);
+                                        setSelectedHour(hour);
+                                        setDetalleHora(true);
+                                      }}
+                                      className={`rd-bloque rd-bloque-cita h-8 min-w-0 rounded-md border text-[10px] font-extrabold leading-none px-0.5 flex flex-col items-center justify-center cursor-pointer ${
+                                        falta ? "bg-rose-50 border-rose-200 text-rose-800" : fisio ? "bg-cyan-100 border-cyan-300 text-cyan-950" : "bg-emerald-100 border-emerald-300 text-emerald-950"
+                                      } ${empieza.length ? "" : "opacity-70"}`}
+                                    >
+                                      {empieza.length ? (
+                                        <>
+                                          <span className="truncate max-w-full">{a.memberName.split(" ")[0]}</span>
+                                          <span className="text-[9px] font-bold opacity-75">{corta(rangoCita(a).ini)}</span>
+                                        </>
+                                      ) : (
+                                        <span className="text-[9px] font-bold opacity-75">{corta(q)}</span>
+                                      )}
+                                    </button>
+                                  );
+                                }
+                                // Turnos libres que empiezan en este bloque (según la duración que eligió cada especialista)
+                                const libres = servicios
+                                  .map((srv) => ({ srv, t: turnosDe(srv, day.date).find((x) => x.m >= q && x.m < q + 15) }))
+                                  .filter((x) => x.t && !ocupanTurno(x.srv, day.date, x.t.t).length);
+                                const abierto = servicios.some((srv) => abiertoEn(srv, day.date, q));
+                                if (libres.length && !pasado) {
+                                  const solo = libres.length === 1 ? libres[0] : null;
+                                  const hora = libres[0].t.t;
+                                  return (
+                                    <button
+                                      type="button"
+                                      key={d}
+                                      title={`Agendar ${solo ? (solo.srv === "nutrition" ? "nutrición" : "fisioterapia") : "cita"} · ${hora}`}
+                                      onClick={() => {
+                                        setSelectedDate(day.date);
+                                        setSelectedHour(hora);
+                                        openBooking(day.date, hora, solo ? solo.srv : srvCal !== "all" ? srvCal : undefined);
+                                      }}
+                                      className={`rd-bloque rd-bloque-libre h-8 min-w-0 rounded-md border border-dashed text-[10px] font-bold leading-none flex items-center justify-center cursor-pointer transition-colors ${
+                                        solo?.srv === "nutrition" ? "rd-libre-nutri" : solo?.srv === "physiotherapy" ? "rd-libre-fisio" : "rd-libre-ambos"
                                       }`}
                                     >
-                                      <div className="flex items-center justify-between gap-1">
-                                        <span className="truncate font-extrabold">
-                                          {apt.memberName.split(" ")[0]}
-                                        </span>
-                                        <span
-                                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${badge.dot}`}
-                                        />
-                                      </div>
-                                      <div className="text-xs text-slate-500 truncate mt-0.5">
-                                        {badge.label}
-                                      </div>
-                                    </div>
+                                      {corta(libres[0].t.m)}
+                                    </button>
                                   );
-                                })}
-                              </div>
-                            )}
-
-                            {/* Indicator of selection */}
-                            {isCellSelected && (
-                              <div className="absolute top-1 right-1">
-                                <span className="w-2 h-2 rounded-full bg-blue-600 block" />
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
+                                }
+                                return (
+                                  <span
+                                    key={d}
+                                    title={pasado ? "Horario pasado" : abierto ? "Dentro de una cita en curso" : "El especialista no atiende a esta hora"}
+                                    className={`rd-bloque h-8 min-w-0 rounded-md text-[9px] font-semibold leading-none flex items-center justify-center select-none ${abierto && !pasado ? "rd-bloque-encurso" : "rd-bloque-cerrado"}`}
+                                  >
+                                    {corta(q)}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
               </div>
               </div>
             </div>

@@ -3461,3 +3461,21 @@ html.dark .rd-dia-vacio { background: #0e1a2b; color: #6f8199; border-color: #1c
 /* Textos oscuros de color que faltaban en modo oscuro */
 html.dark .text-teal-800:not(.rd-claro, .rd-claro *) { color: var(--color-teal-300); }
 html.dark .text-teal-900:not(.rd-claro, .rd-claro *) { color: var(--color-teal-200); }
+
+/* Agenda de Horarios y citas: bloques de 15 minutos (mismos colores que el horario de atención) */
+.rd-bloque-libre { background: #ffffff; color: #0f5a63; border-color: #9fd4da; }
+.rd-bloque-libre:hover { background: #0f7f8a; color: #fff; border-style: solid; border-color: #0f7f8a; }
+.rd-bloque-libre.rd-libre-nutri { color: #116149; border-color: #9ad9bd; }
+.rd-bloque-libre.rd-libre-nutri:hover { background: #10916a; border-color: #10916a; color: #fff; }
+.rd-bloque-libre.rd-libre-fisio { color: #0b5f74; border-color: #93cfe0; }
+.rd-bloque-libre.rd-libre-fisio:hover { background: #0e88a6; border-color: #0e88a6; color: #fff; }
+.rd-bloque-encurso { background: #eef3f6; color: #6f7a89; }
+.rd-bloque-cerrado { color: #a9b2be; background-image: repeating-linear-gradient(135deg, rgba(148,163,184,.13) 0 5px, transparent 5px 10px); }
+html.dark .rd-bloque-libre { background: #0c2033; color: #8fe3ea; border-color: rgba(79,216,224,.45); }
+html.dark .rd-bloque-libre:hover { background: #12a3ad; color: #04121c; border-color: #12a3ad; }
+html.dark .rd-bloque-libre.rd-libre-nutri { color: #86efc4; border-color: rgba(52,211,153,.45); }
+html.dark .rd-bloque-libre.rd-libre-nutri:hover { background: #22b07e; color: #04121c; border-color: #22b07e; }
+html.dark .rd-bloque-libre.rd-libre-fisio { color: #8adcf0; border-color: rgba(56,189,248,.45); }
+html.dark .rd-bloque-libre.rd-libre-fisio:hover { background: #1aa3c7; color: #04121c; border-color: #1aa3c7; }
+html.dark .rd-bloque-encurso { background: #0f1d2e; color: #7d93ad; }
+html.dark .rd-bloque-cerrado { color: #4a5f78; background-image: repeating-linear-gradient(135deg, rgba(100,130,160,.12) 0 5px, transparent 5px 10px); }
