@@ -50,7 +50,7 @@ export const Pestanas = ({ pestanas, activa, onCambiar, className = "" }) => (
             </span>
           )}
           <span>{label}</span>
-          {badge != null && badge !== "" && <span className="rd-pestana-badge px-2 py-0.5 rounded-full text-[11px] font-black">{badge}</span>}
+          {/* Sin números en las pestañas: solo el nombre */}
         </button>
       );
     })}
