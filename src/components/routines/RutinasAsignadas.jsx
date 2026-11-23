@@ -9,7 +9,7 @@ import { ExerciseThumb, MUSCLE_LABELS } from "./ExerciseBank";
 import { InsigniaMetodo, InsigniaTipoDia, etiquetasGrupo } from "./SistemasEntrenamiento";
 import { textoNivelRutina, textoObjetivoRutina } from "../../utils/rutinas";
 import { SaludAlumno } from "./SaludAlumno";
-import { BotonProgramar } from "../common/Programados";
+import { BotonProgramar, BotonPerfil, EstadoSeguimiento, CabeceraSeguimiento, COLUMNAS_SEG } from "../common/Programados";
 import { TONO, TONO_NIVEL } from "./FormEjercicioPropio";
 import { IconoEmoji } from "../common/IconoEmoji";
 
@@ -185,13 +185,7 @@ export const RutinasAsignadas = ({
       {/* Lista de alumnos (hasta elegir uno) */}
       {!alumno && (vista || q.trim()) && (
         <div id="rd-lista-asignadas" className="bg-white rounded-2xl border border-slate-200 overflow-hidden scroll-mt-20">
-          <div className="hidden md:grid grid-cols-[110px_minmax(0,1.3fr)_minmax(0,1.5fr)_140px_170px] gap-3 px-4 py-2 bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500">
-            <span>Código</span>
-            <span>Alumno</span>
-            <span>Rutina</span>
-            <span>Estado</span>
-            <span>Acción</span>
-          </div>
+          <CabeceraSeguimiento detalle="Rutina" />
           {lista.length === 0 && <p className="text-sm text-slate-500 py-6 text-center">{q.trim() ? `Ningún alumno con «${q}».` : "No hay alumnos en este grupo."}</p>}
           <div className="divide-y divide-slate-100 max-h-[calc(100vh-20rem)] overflow-y-auto">
             {lista.map((m) => {
@@ -204,7 +198,7 @@ export const RutinasAsignadas = ({
                   tabIndex={0}
                   onClick={() => ir(m)}
                   onKeyDown={(e) => e.key === "Enter" && ir(m)}
-                  className="w-full grid md:grid-cols-[110px_minmax(0,1.3fr)_minmax(0,1.5fr)_140px_170px] gap-1 md:gap-3 items-center px-4 py-2.5 text-left cursor-pointer hover:bg-blue-50/60 transition-colors"
+                  className={`w-full grid ${COLUMNAS_SEG} gap-1 md:gap-3 items-center px-4 py-2.5 text-left cursor-pointer rd-fila-seg`}
                 >
                   <span>
                     <CodigoAlumno m={m} />
@@ -214,20 +208,15 @@ export const RutinasAsignadas = ({
                     {rs.length ? rs.map((r) => String(r.title || "").replace(/\s*·\s*[^·]+$/, "")).join(" · ") : "—"}
                   </span>
                   <span>
-                    {rs.length ? (
-                      <span className={`px-2 py-0.5 rounded-full border text-[11px] font-bold ${pers ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-emerald-50 border-emerald-200 text-emerald-800"}`}>
-                        {pers ? "Personalizada" : "✓ Con rutina"}
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full border text-[11px] font-bold bg-rose-50 border-rose-200 text-rose-800"><IconoEmoji e="⚠" /> Sin rutina</span>
-                    )}
+                    <EstadoSeguimiento tiene={!!rs.length} con={pers ? "Personalizada" : "Con rutina"} sin="Sin rutina" tono={pers ? "ambar" : ""} />
                   </span>
-                  <span onClick={(e) => e.stopPropagation()}>
+                  <span className="flex items-center gap-1.5 flex-nowrap" onClick={(e) => e.stopPropagation()}>
                     {rs.length ? (
-                      <span className="text-[11px] font-semibold text-slate-400">Ver rutina →</span>
+                      <button type="button" onClick={() => ir(m)} className="rd-btn-ver">Ver rutina →</button>
                     ) : (
                       <BotonProgramar tipo="rutina" member={m} />
                     )}
+                    <BotonPerfil member={m} />
                   </span>
                 </div>
               );

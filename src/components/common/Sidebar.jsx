@@ -113,7 +113,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         </span>
         {badge > 0 && (
           <span
-            className={`px-1.5 text-[10px] leading-4 font-extrabold rounded-full bg-amber-500 text-slate-950 ${
+            className={`px-1.5 text-[10px] leading-4 font-extrabold rounded-full rd-badge-menu ${
               plegado ? "md:absolute md:top-0.5 md:right-0.5 md:px-1 md:text-[9px]" : "md:absolute md:top-0.5 md:right-0.5 md:px-1 md:text-[9px] lg:static lg:px-1.5 lg:text-[10px]"
             }`}
           >

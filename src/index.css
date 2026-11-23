@@ -1413,8 +1413,8 @@ button:not(:disabled):active { transform: translateY(1px) scale(.985); }
 button { transition-property: color, background-color, border-color, box-shadow, transform, opacity; }
 
 /* ---------- Tipografía unificada ---------- */
-body { font-family: "Plus Jakarta Sans", "Noto Emoji Variable", system-ui, sans-serif; font-variant-emoji: text; font-feature-settings: "ss01", "cv11"; }
-h1, h2, h3, h4, .rd-titulo { font-family: "Outfit", "Plus Jakarta Sans", "Noto Emoji Variable", sans-serif; letter-spacing: -0.012em; }
+body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; font-variant-emoji: normal; font-feature-settings: "ss01", "cv11"; }
+h1, h2, h3, h4, .rd-titulo { font-family: "Outfit", "Plus Jakarta Sans", sans-serif; letter-spacing: -0.012em; }
 h1 { font-weight: 800; }
 input, select, textarea, button { font-family: inherit; }
 input:focus-visible, select:focus-visible, textarea:focus-visible {
@@ -3674,7 +3674,7 @@ html.dark .rd-campo-hora { background: #0b1a2c; color: #e6fbff; border-color: rg
   src: url(/fonts/noto-emoji/noto-emoji-10-wght-normal.woff2) format('woff2-variations');
   unicode-range: U+1f6d9,U+1fa8b-1fa8d,U+1facc,U+1fadd,U+1faeb;
 }
-.font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Noto Emoji Variable", monospace; }
+.font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
 /* Cinta de avisos: ícono en una pastilla del mismo tono */
 .rd-cinta-ico { background: rgba(255,255,255,.22); }
@@ -3803,10 +3803,10 @@ html.dark input.rd-campo-activo{border-color:#40c8d2!important;box-shadow:0 0 0 
 .rd-disp-turno{display:flex;flex-direction:column;gap:1px;padding:6px 9px;font-size:12px}
 .rd-disp-libre{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
 .rd-disp-reservado{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
-.rd-disp-atendiendo{background:#10b981;border-color:#059669;color:#fff;animation:rd-latido 1.8s ease-in-out infinite}
+.rd-disp-atendiendo{background:#c9f2df;border-color:#6fd3a6;color:#0b5e3f;animation:rd-latido 1.8s ease-in-out infinite}
 @keyframes rd-latido{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.45)}50%{box-shadow:0 0 0 5px rgba(16,185,129,0)}}
 .rd-disp-atendido{background:#f1f5f9;border-color:#e2e8f0;color:#64748b}
-.rd-disp-pasado{background:transparent;border-color:#e2e8f0;border-style:dashed;color:#94a3b8}
+.rd-disp-pasado{background:transparent;border-color:#ddd3c2;border-style:dashed;color:#7d7464}
 html.dark .rd-disp{background:#0d1526;border-color:rgba(64,200,210,.25)}
 html.dark .rd-disp h3{color:#f1fbfc}
 html.dark .rd-disp-vivo{background:rgba(16,185,129,.18);color:#6ee7b7}
@@ -3832,3 +3832,37 @@ button,[role="button"],[role="tab"],a,label,summary,.rd-cinta-mascara,.rd-cinta-
 html.dark ::selection{background:rgba(64,200,210,.22);color:inherit}
 input::selection,textarea::selection{background:rgba(31,111,117,.22)}
 html.dark input::selection,html.dark textarea::selection{background:rgba(64,200,210,.3)}
+
+/* ===== Seguimiento (Rutinas asignadas · Nutrición · Fisioterapia): un solo diseño ===== */
+.rd-btn-programar,.rd-chip-programado,.rd-btn-perfil,.rd-btn-ver{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border-radius:9px;font-size:11px;font-weight:800;white-space:nowrap;border:1px solid transparent;cursor:pointer;transition:filter .15s,background .15s}
+.rd-btn-programar{background:#cdeeea;border-color:#9fd8d1;color:#13585e}
+.rd-btn-programar:hover{filter:brightness(.97)}
+.rd-chip-programado{background:#ece6fb;border-color:#d4c8f4;color:#5b3fa8;cursor:default}
+.rd-btn-perfil{background:#fffdf9;border-color:#e2d8c6;color:#5b5446}
+.rd-btn-perfil:hover{background:#f6f1e7}
+.rd-btn-ver{background:transparent;color:#1f6f75;padding:0 6px}
+.rd-estado-seg{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid transparent;white-space:nowrap}
+.rd-estado-ok{background:#ddf3e6;border-color:#b5e3c7;color:#256b45}
+.rd-estado-ambar{background:#fbefd5;border-color:#f0d9a6;color:#8a5a12}
+.rd-estado-falta{background:#fbe1e3;border-color:#f2c1c6;color:#9b2f3c}
+.rd-cab-seg{background:#f6f1e7;border-bottom:1px solid #e7dfd0;color:#8a8172}
+.rd-fila-seg:hover{background:rgba(31,111,117,.05)}
+html.dark .rd-btn-programar{background:rgba(64,200,210,.14);border-color:rgba(64,200,210,.55);color:#7ff0f7;box-shadow:0 0 12px -5px rgba(64,200,210,.8)}
+html.dark .rd-btn-programar:hover{background:rgba(64,200,210,.24)}
+html.dark .rd-chip-programado{background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.5);color:#c4b5fd;box-shadow:0 0 12px -6px rgba(167,139,250,.8)}
+html.dark .rd-btn-perfil{background:#0f1c30;border-color:rgba(148,163,184,.28);color:#cbd5e1}
+html.dark .rd-btn-perfil:hover{background:#15243c}
+html.dark .rd-btn-ver{color:#5fe0ea}
+html.dark .rd-estado-ok{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.45);color:#6ee7b7}
+html.dark .rd-estado-ambar{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.45);color:#fcd34d}
+html.dark .rd-estado-falta{background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.45);color:#fda4af}
+html.dark .rd-cab-seg{background:#13223a;border-color:rgba(64,200,210,.15);color:#8fb3bb}
+html.dark .rd-fila-seg:hover{background:rgba(64,200,210,.06)}
+
+/* Emojis de color en todo el sistema (como antes): más visuales y fáciles de entender */
+.rd-emoji{font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;font-variant-emoji:emoji;font-style:normal;line-height:1;display:inline-block;vertical-align:-0.08em}
+/* Contadores del menú: ámbar pastel en claro, ámbar neón en oscuro (se leen bien) */
+.rd-badge-menu{background:#f6dfa6!important;color:#5c3d05!important}
+html.dark .rd-badge-menu{background:#fbbf24!important;color:#1a1204!important;box-shadow:0 0 10px -3px rgba(251,191,36,.8)}
+/* Textos secundarios en modo claro: un poco más oscuros para leerse sobre el fondo crema */
+html:not(.dark) :is(.text-slate-400,.text-gray-400):not(.rd-claro *):not(.rd-menu *):not(button.bg-blue-600 *){color:#827969}

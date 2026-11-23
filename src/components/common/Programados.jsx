@@ -210,16 +210,15 @@ export const ProgramadosCompleto = () => {
   );
 };
 
-/** Botón Programar (para una fila de alumno sin servicio) */
+/** Botón Programar (para una fila de alumno sin servicio). Igual en rutinas, nutrición y fisioterapia. */
 export const BotonProgramar = ({ tipo, member, className = "" }) => {
   const { programados = [], programarAlumno } = useGym();
   const [hecho, setHecho] = useState(false);
   const t = TIPOS_PROG[tipo];
-  const c = TONO[t.color];
   const ya = programados.some((p) => p.id === `prog-${tipo}-${member.id}` && p.estado === "pendiente");
   if (ya || hecho)
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] font-bold ${c.caja} ${c.texto} ${className}`} title={`Avisado a ${t.area}`}>
+      <span className={`rd-chip-programado ${className}`} title={`Avisado a ${t.area}`}>
         <CalendarClock className="w-3.5 h-3.5" /> Programado
       </span>
     );
@@ -233,20 +232,60 @@ export const BotonProgramar = ({ tipo, member, className = "" }) => {
         setHecho(true);
       }}
       title={`Avisa a ${t.area} y copia el código ${member.codeLabel || ""}`}
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer ${c.boton} ${className}`}
+      className={`rd-btn-programar ${className}`}
     >
       <CalendarClock className="w-3.5 h-3.5" /> {t.accion}
     </button>
   );
 };
 
+/** Botón «Perfil»: el mismo en las tres listas de seguimiento */
+export const BotonPerfil = ({ member }) => (
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      abrirPerfilAlumno(member.id);
+    }}
+    title="Ver perfil del alumno (teléfono, datos)"
+    className="rd-btn-perfil"
+  >
+    <UserRound className="w-3.5 h-3.5" /> Perfil
+  </button>
+);
+
+/** Estado de la fila: ✓ con servicio / ⚠ sin servicio */
+export const EstadoSeguimiento = ({ tiene, con, sin, tono }) =>
+  tiene ? <span className={`rd-estado-seg ${tono === "ambar" ? "rd-estado-ambar" : "rd-estado-ok"}`}>✓ {con}</span> : <span className="rd-estado-seg rd-estado-falta">⚠️ {sin}</span>;
+
+/** Cabecera y columnas comunes de las tablas de seguimiento */
+export const COLUMNAS_SEG = "md:grid-cols-[100px_minmax(0,1.3fr)_minmax(0,1.4fr)_150px_210px]";
+export const CabeceraSeguimiento = ({ detalle }) => (
+  <div className={`hidden md:grid ${COLUMNAS_SEG} gap-3 px-4 py-2 rd-cab-seg text-[10px] font-black uppercase tracking-wider`}>
+    <span>Código</span>
+    <span>Alumno</span>
+    <span>{detalle}</span>
+    <span>Estado</span>
+    <span>Acción</span>
+  </div>
+);
+
 /**
  * Seguimiento de un servicio (nutrición o fisioterapia): con / sin / todos.
  * La lista aparece solo al escribir o al elegir un grupo.
  */
 export const SeguimientoServicio = ({ tipo }) => {
-  const { members = [] } = useGym();
+  const { members = [], nutritionPlans = [], physioRecords = [] } = useGym();
   const cob = useCobertura()[tipo];
+  const detalleDe = (m) => {
+    const id = String(m.id);
+    if (tipo === "nutricion") {
+      const p = nutritionPlans.find((x) => x.active !== false && String(x.targetStudentId) === id);
+      return p ? String(p.title || "Plan activo").replace(/\s*[·—-]\s*[^·—-]+$/, "") : "";
+    }
+    const r = physioRecords.filter((x) => String(x.memberId) === id).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+    return r ? `${r.date ? r.date.split("-").reverse().join("/") : ""}${r.consultationReason ? ` · ${r.consultationReason}` : ""}` : "";
+  };
   const t = TIPOS_PROG[tipo];
   const [q, setQ] = useRecordado(`seg_q_${tipo}`, "");
   const [vista, setVista] = useRecordado(`seg_${tipo}`, "");
@@ -272,15 +311,26 @@ export const SeguimientoServicio = ({ tipo }) => {
               setQ(e.target.value);
               if (e.target.value.trim() && vista) setVista("");
             }}
+            onKeyDown={(e) => e.key === "Enter" && document.getElementById(`rd-lista-seg-${tipo}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
             aria-label="Buscar alumno por código, nombre o DNI"
-            className="rd-campo-checkin w-full h-full pl-9 pr-3 py-2.5 rounded-xl text-sm font-semibold focus:outline-none transition-all"
+            className="rd-campo-checkin w-full h-full pl-9 pr-24 py-2.5 rounded-xl text-sm font-semibold focus:outline-none transition-all"
           />
           {!q && (
-            <span className="absolute left-9 right-3 top-1/2 -translate-y-1/2 pointer-events-none text-sm text-slate-400 truncate">
+            <span className="absolute left-9 right-24 top-1/2 -translate-y-1/2 pointer-events-none text-sm text-slate-400 truncate">
               Buscar alumno: <b className="font-semibold">código (DF-1 o 1), nombre o DNI</b>
             </span>
           )}
           <UserCheck className="rd-icono-checkin w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <button
+            type="button"
+            onClick={() => {
+              if (!q.trim() && !vista) setVista("todos");
+              setTimeout(() => document.getElementById(`rd-lista-seg-${tipo}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+            }}
+            className="rd-boton-marcar absolute right-1 top-1 bottom-1 px-3 text-white text-xs font-black rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+          >
+            <Search className="w-3.5 h-3.5" /> Ver
+          </button>
         </div>
         <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto">
           {[
@@ -311,39 +361,24 @@ export const SeguimientoServicio = ({ tipo }) => {
 
       {(q.trim() || vista) && (
         <div id={`rd-lista-seg-${tipo}`} className="bg-white rounded-2xl border border-slate-200 overflow-hidden scroll-mt-20">
-          <div className="hidden md:grid grid-cols-[110px_minmax(0,1.4fr)_150px_minmax(0,1fr)] gap-3 px-4 py-2 bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500">
-            <span>Código</span>
-            <span>Alumno</span>
-            <span>Estado</span>
-            <span>Acción</span>
-          </div>
+          <CabeceraSeguimiento detalle={tipo === "nutricion" ? "Plan de alimentación" : "Última evaluación"} />
           {lista.length === 0 && <p className="text-sm text-slate-500 py-6 text-center">Ningún alumno{q ? ` con «${q}»` : ""}.</p>}
           <div className="divide-y divide-slate-100 max-h-[calc(100vh-22rem)] overflow-y-auto">
             {lista.map((m) => {
               const tiene = cob.has(String(m.id));
               return (
-                <div key={m.id} className="grid md:grid-cols-[110px_minmax(0,1.4fr)_150px_minmax(0,1fr)] gap-1 md:gap-3 items-center px-4 py-2.5">
+                <div key={m.id} className={`grid ${COLUMNAS_SEG} gap-1 md:gap-3 items-center px-4 py-2.5 rd-fila-seg`}>
                   <span>
                     <CodigoAlumno m={m} />
                   </span>
                   <span className="text-sm font-bold text-slate-900 truncate">{m.fullName}</span>
+                  <span className="text-xs text-slate-600 truncate">{detalleDe(m) || "—"}</span>
                   <span>
-                    {tiene ? (
-                      <span className="px-2 py-0.5 rounded-full border text-[11px] font-bold bg-emerald-50 border-emerald-200 text-emerald-800">✓ {etiquetaCon}</span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full border text-[11px] font-bold bg-rose-50 border-rose-200 text-rose-800"><IconoEmoji e="⚠" /> {etiquetaSin}</span>
-                    )}
+                    <EstadoSeguimiento tiene={tiene} con={etiquetaCon} sin={etiquetaSin} />
                   </span>
-                  <span className="flex flex-wrap items-center gap-1.5">
+                  <span className="flex items-center gap-1.5 flex-nowrap">
                     {!tiene && <BotonProgramar tipo={tipo} member={m} />}
-                    <button type="button" onClick={() => abrirPerfilAlumno(m.id)} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 text-[11px] font-bold cursor-pointer hover:bg-slate-50">
-                      <UserRound className="w-3.5 h-3.5" /> Ver perfil
-                    </button>
-                    {!tiene && m.codeLabel && (
-                      <button type="button" onClick={() => copiar(m.codeLabel)} title="Copiar código" className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 bg-white text-slate-500 text-[11px] font-bold cursor-pointer hover:bg-slate-50">
-                        <ClipboardCopy className="w-3.5 h-3.5" /> {m.codeLabel}
-                      </button>
-                    )}
+                    <BotonPerfil member={m} />
                   </span>
                 </div>
               );

@@ -279,40 +279,22 @@ export const sinEmoji = (t) => (typeof t === "string" ? t.replace(RE_EMOJI, "").
  * Dibuja el "ícono" de un dato: si es un emoji lo cambia por su ícono de línea,
  * si ya es un componente o elemento lo muestra tal cual, si es texto lo deja.
  */
-// Círculos de color (prioridad, nivel): se dibujan como un punto de ese color
-const PUNTOS = { "🔴": "#ef4444", "🟠": "#f97316", "🟡": "#eab308", "🟢": "#22c55e", "🔵": "#3b82f6", "🟣": "#a855f7", "⚫": "#334155", "⚪": "#cbd5e1" };
-const Punto = ({ color }) => <span aria-hidden="true" className="inline-block w-[0.72em] h-[0.72em] rounded-full align-[-0.05em] shrink-0" style={{ background: color }} />;
 
 export function IconoEmoji({ e, className = "w-[1.1em] h-[1.1em]", strokeWidth = 2.2 }) {
   if (e == null || e === "" || e === false) return null;
   if (React.isValidElement(e)) return e;
   if (typeof e === "function" || (typeof e === "object" && e.$$typeof)) return React.createElement(e, { className, strokeWidth });
-  const limpio = String(e).trim().replace(/\u{FE0F}/gu, "");
-  if (PUNTOS[limpio]) return <Punto color={PUNTOS[limpio]} />;
-  const Icono = iconoDeEmoji(String(e));
-  if (Icono) return <Icono className={`inline-block align-[-0.15em] shrink-0 ${className}`} strokeWidth={strokeWidth} aria-hidden="true" />;
-  return <>{sinEmoji(String(e))}</>;
+  // Emoji: se muestra el emoji de color (más visual y fácil de entender)
+  RE_EMOJI.lastIndex = 0;
+  if (!SIMBOLOS.has(String(e).trim()) && RE_EMOJI.test(String(e))) return <span className="rd-emoji" aria-hidden="true">{String(e)}</span>;
+  return <>{String(e)}</>;
 }
 
 /** Texto que puede traer emojis (avisos, plantillas): cada emoji se dibuja como ícono */
-export function ConIconos({ texto, className }) {
-  if (typeof texto !== "string") return texto ?? null;
-  RE_EMOJI.lastIndex = 0;
-  if (!RE_EMOJI.test(texto)) return texto;
-  const partes = [];
-  let ultimo = 0;
-  let i = 0;
-  texto.replace(RE_EMOJI, (m, pos) => {
-    if (pos > ultimo) partes.push(texto.slice(ultimo, pos));
-    const Icono = iconoDeEmoji(m);
-    if (Icono) partes.push(<IconoEmoji key={`e${i++}`} e={m} className={className} />);
-    ultimo = pos + m.length;
-    return m;
-  });
-  if (ultimo < texto.length) partes.push(texto.slice(ultimo));
-  return <>{partes.map((x, k) => (typeof x === "string" ? <React.Fragment key={k}>{x}</React.Fragment> : x))}</>;
+export function ConIconos({ texto }) {
+  // Los emojis del texto se dejan tal cual (de color)
+  return texto ?? null;
 }
-
 /** Repite el ícono de un emoji n veces (p. ej. porciones con la mano) */
 export function IconosRepetidos({ e, n, className }) {
   const k = Math.max(0, Math.min(6, Math.round(Number(n) || 0)));
