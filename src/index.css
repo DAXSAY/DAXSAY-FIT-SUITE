@@ -3408,13 +3408,13 @@ input[type="time"]::-webkit-datetime-edit-minute-field:focus,
 input[type="time"]::-webkit-datetime-edit-ampm-field:focus,
 input[type="date"]::-webkit-datetime-edit-day-field:focus,
 input[type="date"]::-webkit-datetime-edit-month-field:focus,
-input[type="date"]::-webkit-datetime-edit-year-field:focus { background: #d6efed; color: #1f6f75; border-radius: 5px; outline: none; }
+input[type="date"]::-webkit-datetime-edit-year-field:focus { background: transparent !important; color: inherit !important; outline: none; box-shadow: none; }
 html.dark input[type="time"]::-webkit-datetime-edit-hour-field:focus,
 html.dark input[type="time"]::-webkit-datetime-edit-minute-field:focus,
 html.dark input[type="time"]::-webkit-datetime-edit-ampm-field:focus,
 html.dark input[type="date"]::-webkit-datetime-edit-day-field:focus,
 html.dark input[type="date"]::-webkit-datetime-edit-month-field:focus,
-html.dark input[type="date"]::-webkit-datetime-edit-year-field:focus { background: rgba(64, 200, 210, .28); color: #e6fbff; }
+html.dark input[type="date"]::-webkit-datetime-edit-year-field:focus { background: transparent !important; color: inherit !important; }
 html.dark input[type="time"] { color-scheme: dark; }
 .rd-hora { width: min(300px, calc(100vw - 16px)); }
 .rd-hora-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
@@ -3743,14 +3743,30 @@ html.dark .rd-campo-hora { background: #0b1a2c; color: #e6fbff; border-color: rg
   .rd-hr-dia,.rd-hr-tabla tr{break-inside:avoid}
   .rd-hr-barra{display:none!important}
 }
-/* La hoja siempre en claro, también con el modo oscuro activo */
-.dark .rd-hoja-rutina .rd-hr-tabla td{background:#fff!important;color:#334155!important}
-.dark .rd-hoja-rutina .rd-hr-tabla tbody tr:nth-child(even) td{background:#fcfdfd!important}
-.dark .rd-hoja-rutina .rd-hr-tabla th{background:#f8fafc!important;color:#64748b!important}
-.dark .rd-hoja-rutina .rd-hr-ej,.dark .rd-hoja-rutina .rd-hr-titulo,.dark .rd-hoja-rutina .rd-hr-gym,.dark .rd-hoja-rutina .rd-hr-dia-tit,.dark .rd-hoja-rutina .rd-hr-dato-val{color:#0f172a!important}
-.dark .rd-hoja-rutina .rd-hr-num{color:#1f6f75!important}
-.dark .rd-hoja-rutina .rd-hr-tabla tr{background:#fff!important}
-.dark .rd-hoja-rutina{box-shadow:0 0 0 1px rgba(64,200,210,.25),0 10px 40px rgba(0,0,0,.5)}
+/* Hoja de rutina en modo oscuro (en pantalla). Al imprimir, PDF o foto sale en claro. */
+.dark .rd-hoja-rutina{background:#0d1526;color:#cfe9ec;box-shadow:0 0 0 1px rgba(64,200,210,.28),0 12px 40px rgba(0,0,0,.55)}
+.dark .rd-hr-cab{border-bottom-color:#40c8d2}
+.dark .rd-hr-gym,.dark .rd-hr-titulo,.dark .rd-hr-dia-tit,.dark .rd-hr-ej,.dark .rd-hr-dato-val{color:#f1fbfc}
+.dark .rd-hr-doc,.dark .rd-hr-indic-tit{color:#5fe0ea}
+.dark .rd-hr-sub,.dark .rd-hr-desc,.dark .rd-hr-dia-foco,.dark .rd-hr-nota{color:#8fb3bb}
+.dark .rd-hr-chip-a{background:rgba(64,200,210,.16);color:#7ff0f7}
+.dark .rd-hr-chip-b{background:rgba(251,191,36,.15);color:#fcd34d}
+.dark .rd-hr-dato{background:#111d33;border-color:rgba(64,200,210,.22);color:#5fe0ea}
+.dark .rd-hr-dato-et{color:#6f8f99}
+.dark .rd-hr-dia{border-color:rgba(64,200,210,.25)}
+.dark .rd-hr-dia-cab{background:linear-gradient(90deg,rgba(64,200,210,.16),rgba(13,21,38,0))}
+.dark .rd-hr-dia-num{background:#40c8d2;color:#06212a}
+.dark .rd-hoja-rutina .rd-hr-tabla tr{background:transparent!important}
+.dark .rd-hoja-rutina .rd-hr-tabla th{background:#111d33!important;color:#7fa3ac!important;border-bottom-color:rgba(64,200,210,.2)}
+.dark .rd-hoja-rutina .rd-hr-tabla td{background:#0d1526!important;color:#cfe9ec!important;border-bottom-color:rgba(148,163,184,.12)}
+.dark .rd-hoja-rutina .rd-hr-tabla tbody tr:nth-child(even) td{background:#101a2e!important}
+.dark .rd-hoja-rutina .rd-hr-num{color:#5fe0ea!important}
+.dark .rd-hoja-rutina .rd-hr-tabla td.text-amber-700{color:#fcd34d!important}
+.dark .rd-hr-check{border-color:#4f6b78}
+.dark .rd-hr-indic>div{background:#111d33;border-color:rgba(64,200,210,.25);color:#a9c6cd}
+.dark .rd-hr-pie{border-top-color:rgba(64,200,210,.2)}
+.dark .rd-hr-pie .text-slate-500,.dark .rd-hr-firma p{color:#8fb3bb}
+.dark .rd-hr-firma span{border-bottom-color:#7fa3ac}
 /* En celular cada ejercicio es una tarjeta: datos en una fila debajo del nombre */
 @media (max-width:640px){
   .rd-hr-tabla{min-width:0}
@@ -3762,9 +3778,12 @@ html.dark .rd-campo-hora { background: #0b1a2c; color: #e6fbff; border-color: rg
   .rd-hr-c-img>*{width:3.4rem!important;height:3.4rem!important}
   .rd-hr-c-ej{grid-column:4/12;grid-row:1;align-self:center;padding-left:.35rem!important}
   .rd-hr-c-ok{grid-column:12/13;grid-row:1;align-self:center}
-  .rd-hoja-rutina .rd-hr-tabla tbody tr,.dark .rd-hoja-rutina .rd-hr-tabla tbody tr{background:#fff!important}
+  .rd-hoja-rutina .rd-hr-tabla tbody tr{background:#fff!important}
+  .dark .rd-hoja-rutina .rd-hr-tabla tbody tr{background:#0d1526!important;border-bottom-color:rgba(148,163,184,.12)}
   .dark .rd-hoja-rutina .rd-hr-tabla tbody tr td{background:transparent!important}
-  .dark .rd-hoja-rutina .rd-hr-tabla tbody tr td.rd-hr-c-d{background:#f1f7f7!important}
+  .dark .rd-hoja-rutina .rd-hr-tabla tbody tr td.rd-hr-c-d{background:#111d33!important}
   .rd-hr-c-d{grid-column:span 3;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-top:.5rem;padding:.3rem .2rem!important;border-radius:.5rem;background:#f1f7f7!important;font-size:12px}
   .rd-hr-c-d::before{content:attr(data-et);font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:1px}
 }
+.rd-velo-hoja{background:#e8eef1}
+.dark .rd-velo-hoja{background:#060b16}

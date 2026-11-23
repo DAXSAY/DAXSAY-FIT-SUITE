@@ -1054,7 +1054,7 @@ export const RoutinesAndExercises = () => {
 
       {/* Ver rutina: hoja ordenada para imprimir, PDF o foto */}
       {viewingRoutine && (
-        <div className="fixed inset-0 z-50 bg-slate-200/95 dark:bg-slate-950/95 overflow-y-auto rd-velo-hoja">
+        <div className="fixed inset-0 z-50 overflow-y-auto rd-velo-hoja">
           <div className="rd-hr-barra" data-no-captura="1">
             <button onClick={() => setViewingRoutine(null)} className="rd-hr-btn rd-ctrl-volver">
               <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Volver</span>
