@@ -9,9 +9,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, '.'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, '.') },
+      // Íconos de contenido como emojis de color en todo el sistema (src/utils/lucideEmoji.js)
+      { find: /^lucide-react$/, replacement: path.resolve(__dirname, 'src/utils/lucideEmoji.js') },
+    ],
   },
   build: {
     chunkSizeWarningLimit: 1400,

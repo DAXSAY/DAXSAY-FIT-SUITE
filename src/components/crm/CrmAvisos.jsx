@@ -322,72 +322,72 @@ const COLOR_SECCION = {
 };
 const iniciales = (n) => String(n || "?").trim().split(/\s+/).slice(0, 2).map((x) => x[0]).join("").toUpperCase();
 
+// Fila compacta: el mismo diseño que las alertas del gimnasio
+// (iniciales · nombre y detalle · una sola etiqueta de tiempo · botones pequeños)
+const diasDesde = (iso) => {
+  if (!iso) return null;
+  const hoy = new Date(new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" }) + "T12:00:00");
+  return Math.round((hoy - new Date(`${String(iso).slice(0, 10)}T12:00:00`)) / 86400000);
+};
 const FilaPanel = ({ tipo, p, setActiveTab, onCerrar }) => {
   const { gymConfig, currentUser } = useGym();
-  const t = textoAviso(tipo, p);
   const c = COLOR_SECCION[tipo];
   const hecho = tipo === "hoy" && (p.reminderSeen || p.status === "matriculado");
-  const hora = tipo === "ahora" || tipo === "hoy" ? p.contactTime || "—" : tipo === "noVino" ? fCorta(p.passDate).slice(0, 5) : `${p.freeInDays}d`;
   const gym = gymConfig?.gym_nombre || "RADICAL";
   const quien = currentUser?.fullName || "";
-  const I = tipo === "hoy" ? ICONO[p.contactType] || CalendarDays : t.icono;
-  const boton = "w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors";
+  // Una sola marca de tiempo (sin repetir la fecha en el texto)
+  const d = tipo === "noVino" ? diasDesde(p.passDate) : null;
+  const tiempo =
+    tipo === "noVino" ? (d == null ? fCorta(p.passDate) : d <= 0 ? "hoy" : d === 1 ? "ayer" : `hace ${d} d`) : tipo === "libera" ? `en ${p.freeInDays} d` : p.contactTime || "—";
+  const detalle =
+    tipo === "noVino"
+      ? [p.passCode && `🎟️ ${p.passCode}`, p.planName].filter(Boolean).join(" · ")
+      : tipo === "libera"
+        ? `${p.daysWithoutFollowUp} días sin seguimiento${p.planName ? ` · ${p.planName}` : ""}`
+        : [`${ACCION[p.contactType] || "Contactar a"} ${String(p.fullName || "").split(" ")[0]}`, p.passCode ? `🎟️ ${p.passCode}` : p.planName].filter(Boolean).join(" · ");
+  const mini = "w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer transition-colors shrink-0";
   return (
-    <div className={`relative flex gap-3 ${hecho ? "opacity-55" : ""}`}>
-      {/* línea de tiempo */}
-      <div className="w-12 shrink-0 flex flex-col items-center pt-3">
-        <span className="text-[11px] font-black text-slate-700 leading-none">{hora}</span>
-        <span className={`mt-1.5 w-2.5 h-2.5 rounded-full ring-4 ring-white ${hecho ? "bg-emerald-500" : c.punto}`} />
-        <span className="flex-1 w-px bg-slate-200 mt-1" />
-      </div>
-      <div className={`flex-1 min-w-0 mb-2.5 rounded-2xl bg-white border border-slate-200 border-l-4 ${c.linea} p-3 shadow-sm hover:shadow-md transition-shadow`}>
-        <div className="flex items-start gap-2.5">
-          <span className={`shrink-0 w-9 h-9 rounded-full bg-gradient-to-br ${c.avatar} text-white text-xs font-black flex items-center justify-center`}>{iniciales(p.fullName)}</span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-sm font-black text-slate-900 leading-tight truncate">{p.fullName}</p>
-              {hecho ? (
-                <span className="shrink-0 text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 flex items-center gap-0.5"><Check className="w-3 h-3" /> Hecho</span>
-              ) : (
-                <I className="w-4 h-4 shrink-0 text-slate-400" />
-              )}
-            </div>
-            <p className="text-xs text-slate-600 mt-0.5 leading-snug">
-              {tipo === "hoy" ? `${ACCION[p.contactType] || "Contactar a"} ${p.fullName.split(" ")[0]}` : t.detalle}
-            </p>
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {p.planName && <span className={`text-[10px] font-bold border rounded-full px-1.5 py-px ${c.chip}`}>{p.planName}</span>}
-              {p.passCode && <span className="text-[10px] font-mono font-bold border rounded-full px-1.5 py-px bg-slate-50 text-slate-600 border-slate-200"><IconoEmoji e="🎟️" /> {p.passCode}</span>}
-              {p.owner && <span className="text-[10px] font-bold text-slate-400">· {p.owner.split(" ")[0]}</span>}
-            </div>
-          </div>
-        </div>
-        {!hecho && (
-          <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-slate-100">
-            <a href={`tel:${p.phone}`} title="Llamar" className={`${boton} bg-blue-50 text-blue-700 hover:bg-blue-100`}>
-              <Phone className="w-4 h-4" />
-            </a>
-            <a
-              href={enlaceWhatsApp(p.phone, tipo === "noVino" ? mensajeReprogramar(p, gym, quien) : mensajeWhatsApp(p, gym, quien))}
-              target="_blank"
-              rel="noreferrer"
-              title="WhatsApp"
-              className={`${boton} bg-emerald-50 text-emerald-700 hover:bg-emerald-100`}
-            >
-              <MessageCircle className="w-4 h-4" />
-            </a>
-            <button type="button" onClick={() => (abrirFicha(p, setActiveTab), onCerrar?.())} className="h-8 px-2.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold flex items-center gap-1 cursor-pointer">
-              {tipo === "noVino" ? <CalendarClock className="w-3.5 h-3.5" /> : !p.passCode ? <Ticket className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
-              {tipo === "noVino" ? "Reprogramar" : !p.passCode ? "Generar pase" : "Ver ficha"}
+    <div className={`rd-fila-crm flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 border-l-4 ${c.linea} shadow-sm ${hecho ? "opacity-55" : ""}`}>
+      <span className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-[11px] font-black text-white bg-gradient-to-br ${c.avatar}`}>{iniciales(p.fullName)}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs font-black text-slate-900 truncate">{p.fullName}</span>
+        <span className="block text-[11px] text-slate-500 truncate">{detalle || "—"}</span>
+      </span>
+      {hecho ? (
+        <span className="shrink-0 text-[10px] font-black px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">✓ Hecho</span>
+      ) : (
+        <span className={`shrink-0 text-[10px] font-black px-2 py-1 rounded-full border ${c.chip}`}>{tiempo}</span>
+      )}
+      {!hecho && (
+        <span className="flex items-center gap-1 shrink-0">
+          <a
+            href={enlaceWhatsApp(p.phone, tipo === "noVino" ? mensajeReprogramar(p, gym, quien) : mensajeWhatsApp(p, gym, quien))}
+            target="_blank"
+            rel="noreferrer"
+            title="WhatsApp"
+            className={`${mini} bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100`}
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+          </a>
+          <a href={`tel:${p.phone}`} title="Llamar" className={`${mini} bg-sky-50 border border-sky-200 text-sky-700 hover:bg-sky-100`}>
+            <Phone className="w-3.5 h-3.5" />
+          </a>
+          {tipo === "ahora" ? (
+            <button type="button" onClick={() => marcarListo(p)} title="Listo" className={`${mini} bg-emerald-600 text-white hover:bg-emerald-700`}>
+              <Check className="w-3.5 h-3.5" />
             </button>
-            {tipo === "ahora" && (
-              <button type="button" onClick={() => marcarListo(p)} className="ml-auto h-8 px-2.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-black flex items-center gap-1 cursor-pointer">
-                <Check className="w-3.5 h-3.5" /> Listo
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => (abrirFicha(p, setActiveTab), onCerrar?.())}
+              title={tipo === "noVino" ? "Reprogramar" : !p.passCode ? "Generar pase" : "Ver ficha"}
+              className={`${mini} bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100`}
+            >
+              {tipo === "noVino" ? <CalendarClock className="w-3.5 h-3.5" /> : !p.passCode ? <Ticket className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
+            </button>
+          )}
+        </span>
+      )}
     </div>
   );
 };
@@ -396,8 +396,10 @@ export const CrmCampana = ({ setActiveTab }) => {
   const d = useAvisosCrm();
   const [abierto, setAbierto] = useState(false);
   const [seccion, setSeccion] = useState("ahora");
+  const boton = React.useRef(null);
   useEffect(() => {
-    const abrir = () => setAbierto(true);
+    // Hay una campana para celular y otra para pantalla grande: abre solo la que se ve
+    const abrir = () => boton.current?.offsetParent && setAbierto(true);
     window.addEventListener("radical:crm-panel", abrir);
     return () => window.removeEventListener("radical:crm-panel", abrir);
   }, []);
@@ -415,6 +417,7 @@ export const CrmCampana = ({ setActiveTab }) => {
   return (
     <>
       <button
+        ref={boton}
         type="button"
         onClick={abrirPanel}
         title="Avisos del CRM"
@@ -485,7 +488,12 @@ export const CrmCampana = ({ setActiveTab }) => {
               })}
             </div>
             {/* Lista */}
-            <div className="flex-1 overflow-y-auto px-3 pt-3 pb-1">
+            <div className="flex-1 overflow-y-auto px-3 pt-3 pb-2 space-y-1.5">
+              {d.cargado && listas[seccion].length > 0 && (
+                <p className={`text-[10px] font-black uppercase tracking-wider px-1 ${seccion === "noVino" ? "text-rose-600" : seccion === "hoy" ? "text-sky-600" : seccion === "libera" ? "text-violet-600" : "text-orange-600"}`}>
+                  {{ ahora: "Ahora · por contactar", noVino: "No vinieron · reprogramar", hoy: "Agenda de hoy", libera: "Se liberan · dar seguimiento" }[seccion]} ({listas[seccion].length})
+                </p>
+              )}
               {!d.cargado && <p className="text-sm text-slate-500 p-2">Cargando…</p>}
               {d.cargado && !listas[seccion].length && (
                 <div className="text-center py-14">
