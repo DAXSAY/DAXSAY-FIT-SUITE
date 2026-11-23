@@ -48,6 +48,7 @@ import { hoyISO } from "../../utils/fecha";
 import { ReporteFinanciero } from "./ReporteFinanciero";
 import { RegistroIngreso } from "./RegistroIngreso";
 import { coincidePersonal } from "../../utils/buscarPersona";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 export const FinanceModule = ({ onOpenNewExpenseModal }) => {
   const {
@@ -415,9 +416,9 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
     other: ["Agua de mesa", "Movilidad / delivery", "Útiles de oficina", "Bolsas y descartables"],
   };
   const METODOS_GASTO = [
-    ["efectivo", "💵", "Efectivo (caja chica)"],
-    ["yape_plin", "📱", "Yape / Plin"],
-    ["transferencia", "🏦", "Transferencia"],
+    ["efectivo", "", "Efectivo (caja chica)"],
+    ["yape_plin", "", "Yape / Plin"],
+    ["transferencia", "", "Transferencia"],
   ];
   const elegirCategoriaGasto = (cat) => {
     setExpenseCategory(cat);
@@ -1372,10 +1373,10 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                   className="w-full p-2 bg-white border border-slate-300 rounded-lg font-semibold"
                 >
                   <option value="transferencia">
-                    🏦 Transferencia Bancaria (Abono en cuenta)
+                     Transferencia Bancaria (Abono en cuenta)
                   </option>
-                  <option value="efectivo">💵 Efectivo de Caja Chica</option>
-                  <option value="yape_plin">📱 Yape / Plin</option>
+                  <option value="efectivo">Efectivo de Caja Chica</option>
+                  <option value="yape_plin">Yape / Plin</option>
                 </select>
               </div>
 
@@ -1479,7 +1480,7 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                             expenseCategory === t.k ? "border-rose-500 bg-rose-50 shadow-sm" : "border-slate-200 bg-white hover:border-rose-300"
                           }`}
                         >
-                          <span className="text-2xl leading-none">{t.icono}</span>
+                          <span className="text-2xl leading-none"><IconoEmoji e={t.icono} /></span>
                           <span className={`block mt-1.5 text-sm font-black ${expenseCategory === t.k ? "text-rose-800" : "text-slate-900"}`}>{t.titulo}</span>
                           <span className="block text-[11px] text-slate-500">{t.sub}</span>
                         </button>
@@ -1972,7 +1973,7 @@ const CorregirMovimiento = ({ mov, onCerrar, onCorregir, onAnular }) => {
           <button type="button" onClick={onCerrar} title="Cerrar" className="w-8 h-8 rounded-full border border-slate-200 text-slate-500 cursor-pointer">✕</button>
         </div>
         <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-100 text-sm font-bold">
-          <button type="button" onClick={() => setModo("corregir")} className={`py-2 rounded-lg cursor-pointer ${modo === "corregir" ? "bg-white shadow-sm text-amber-700" : "text-slate-500"}`}>✏️ Corregir</button>
+          <button type="button" onClick={() => setModo("corregir")} className={`py-2 rounded-lg cursor-pointer ${modo === "corregir" ? "bg-white shadow-sm text-amber-700" : "text-slate-500"}`}>Corregir</button>
           <button type="button" onClick={() => setModo("anular")} className={`py-2 rounded-lg cursor-pointer ${modo === "anular" ? "bg-white shadow-sm text-rose-700" : "text-slate-500"}`}>✕ Anular</button>
         </div>
         {modo === "corregir" ? (

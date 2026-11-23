@@ -299,7 +299,7 @@ export const CatalogoAlimentos = () => {
       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="font-extrabold text-slate-900">🍽️ Catálogo de alimentos</h3>
+            <h3 className="font-extrabold text-slate-900">Catálogo de alimentos</h3>
             <p className="text-xs text-slate-500">
               {foods.length} alimentos · valores por 100 g (Tablas Peruanas de Composición de Alimentos CENAN/INS 2017 y USDA)
             </p>

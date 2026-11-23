@@ -555,10 +555,10 @@ export const ExerciseVisuals = ({
                       {preset.name}
                     </h6>
                     <p className="text-xs text-cyan-300">
-                      🎯 {preset.targetZone}
+                       {preset.targetZone}
                     </p>
                     <p className="text-xs text-slate-400 font-medium">
-                      ⏱ {preset.series} series × {preset.repsOrTime} (Desc:{" "}
+                       {preset.series} series × {preset.repsOrTime} (Desc:{" "}
                       {preset.restSeconds}s)
                     </p>
                   </div>
@@ -692,7 +692,7 @@ export const ExerciseVisuals = ({
                   {/* Tips */}
                   {ex.techniqueTips && (
                     <p className="text-xs text-slate-600 italic bg-white p-1.5 rounded-lg border border-slate-200">
-                      💡 {ex.techniqueTips}
+                       {ex.techniqueTips}
                     </p>
                   )}
                 </div>

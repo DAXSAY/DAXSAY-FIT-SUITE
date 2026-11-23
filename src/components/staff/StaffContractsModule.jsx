@@ -506,7 +506,7 @@ export const StaffContractsModule = () => {
                   <div className="text-xs font-bold text-amber-800 bg-amber-100/80 px-2 py-1 rounded flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3 text-amber-600" />
                     <span>
-                      ⚠️ Contrato próximo a vencer. Requiere renovación.
+                       Contrato próximo a vencer. Requiere renovación.
                     </span>
                   </div>
                 )}

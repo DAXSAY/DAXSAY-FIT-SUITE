@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Send, Bell, MessageCircle, Mail, Users, Check, Sparkles, ExternalLink } from "lucide-react";
 import { enlaceWhatsApp } from "../common/TelWhatsApp";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 // Tipos de campaña pensados para un gimnasio de pesas (sin clases grupales)
 const TIPOS = [
@@ -131,7 +132,7 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
             const on = tipo === x.k;
             return (
               <button key={x.k} type="button" onClick={() => elegirTipo(x)} className={`text-left rounded-xl border p-2.5 cursor-pointer transition ${on ? "border-violet-400 bg-violet-50 ring-2 ring-violet-300/40" : "border-slate-200 bg-white hover:border-violet-300"}`}>
-                <span className="text-lg">{x.emoji}</span>
+                <span className="text-lg"><IconoEmoji e={x.emoji} /></span>
                 <span className="block text-sm font-black text-slate-900 leading-tight mt-0.5">{x.nombre}</span>
                 <span className="block text-[11px] text-slate-500 leading-snug">{x.ayuda}</span>
               </button>
@@ -188,7 +189,7 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
         <div className="space-y-2">
           <p className="text-xs font-black uppercase tracking-wide text-slate-500">Así lo verá {destinatarios[0] ? destinatarios[0].fullName.split(" ")[0] : "el alumno"}</p>
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-            <p className="text-xs font-black text-emerald-800">{t?.emoji} {destinatarios[0] ? personalizar(titulo, destinatarios[0]) : titulo}</p>
+            <p className="text-xs font-black text-emerald-800"><IconoEmoji e={t?.emoji} /> {destinatarios[0] ? personalizar(titulo, destinatarios[0]) : titulo}</p>
             <p className="text-sm text-slate-800 mt-1 whitespace-pre-line">{destinatarios[0] ? personalizar(mensaje, destinatarios[0]) : mensaje}</p>
           </div>
         </div>

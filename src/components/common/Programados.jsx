@@ -330,7 +330,7 @@ export const SeguimientoServicio = ({ tipo }) => {
                     {tiene ? (
                       <span className="px-2 py-0.5 rounded-full border text-[11px] font-bold bg-emerald-50 border-emerald-200 text-emerald-800">✓ {etiquetaCon}</span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full border text-[11px] font-bold bg-rose-50 border-rose-200 text-rose-800">⚠ {etiquetaSin}</span>
+                      <span className="px-2 py-0.5 rounded-full border text-[11px] font-bold bg-rose-50 border-rose-200 text-rose-800">{etiquetaSin}</span>
                     )}
                   </span>
                   <span className="flex flex-wrap items-center gap-1.5">

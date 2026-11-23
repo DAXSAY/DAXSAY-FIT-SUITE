@@ -92,6 +92,7 @@ import { api } from "../../api/cliente";
 import { SelectorAlumno, CodigoAlumno, coincideAlumno } from "../common/BuscarAlumno";
 import { SelectorIndicaciones, sugerirIndicaciones, textoIndicaciones } from "../indicaciones/Indicaciones";
 import { ContextoClinico } from "./ContextoClinico";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 const PHYSIO_STEPS = [
   { id: "anamnesis", label: "Anamnesis y dolor", icon: ClipboardList },
@@ -1529,12 +1530,12 @@ export const PhysiotherapyModule = () => {
                           }`}
                         >
                           {progressStats.overallStatus === "notable_mejora"
-                            ? "🎉 Notable Mejoría"
+                            ? "Notable Mejoría"
                             : progressStats.overallStatus === "mejora_leve"
-                              ? "👍 Mejoría Leve"
+                              ? "Mejoría Leve"
                               : progressStats.overallStatus === "estable"
-                                ? "⚖️ Condición Estable"
-                                : "🔍 En Seguimiento Inicial"}
+                                ? "Condición Estable"
+                                : "En Seguimiento Inicial"}
                         </span>
                       </div>
                     </div>
@@ -2117,10 +2118,10 @@ export const PhysiotherapyModule = () => {
                                                 {ex.series}x{ex.repsOrTime}
                                               </span>
                                             </div>
-                                            {ex.metodo?.resumen && <p className="text-[11px] font-bold text-violet-700 mt-0.5">⚙ {ex.metodo.resumen}</p>}
+                                            {ex.metodo?.resumen && <p className="text-[11px] font-bold text-violet-700 mt-0.5">{ex.metodo.resumen}</p>}
                                             {ex.techniqueTips && (
                                               <p className="text-xs text-slate-500 italic mt-0.5">
-                                                💡 {ex.techniqueTips}
+                                                 {ex.techniqueTips}
                                               </p>
                                             )}
                                           </div>
@@ -2466,8 +2467,8 @@ export const PhysiotherapyModule = () => {
                 <div className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-3">
                     {[
-                      [false, "📋", "Solo evaluación", "Hoy se evaluó y no se aplicó tratamiento. Completa abajo las indicaciones para el entrenador y pasa al paso 5."],
-                      [true, "🩺", "Sí, apliqué tratamiento", "Registra las técnicas, los ejercicios terapéuticos y el protocolo de Williams."],
+                      [false, "", "Solo evaluación", "Hoy se evaluó y no se aplicó tratamiento. Completa abajo las indicaciones para el entrenador y pasa al paso 5."],
+                      [true, "", "Sí, apliqué tratamiento", "Registra las técnicas, los ejercicios terapéuticos y el protocolo de Williams."],
                     ].map(([v, ic, t, d]) => {
                       const on = formPlanEnabled === v;
                       return (
@@ -2709,7 +2710,7 @@ export const PhysiotherapyModule = () => {
                         <div className={`mb-4 rounded-xl border px-3 py-2 text-sm flex flex-wrap items-center gap-3 ${dif > 0 ? "bg-emerald-50 border-emerald-200 text-emerald-900" : dif < 0 ? "bg-rose-50 border-rose-200 text-rose-900" : "bg-slate-50 border-slate-200 text-slate-700"}`}>
                           <span>Sesión anterior ({previa.date}): dolor <b>{previa.painLevelEVA ?? "—"}/10</b></span>
                           <span>→ hoy <b>{ahora}/10</b></span>
-                          <span className="font-bold">{dif > 0 ? `Bajó ${dif} punto(s) 👏` : dif < 0 ? `Subió ${-dif} punto(s)` : "Igual"}</span>
+                          <span className="font-bold">{dif > 0 ? `Bajó ${dif} punto(s)` : dif < 0 ? `Subió ${-dif} punto(s)` : "Igual"}</span>
                         </div>
                       );
                     })()}
@@ -2725,7 +2726,7 @@ export const PhysiotherapyModule = () => {
                             formImprovementStatus === e.v ? `${e.clase} ring-2 ring-offset-1 ring-blue-400` : "bg-white border-slate-200 text-slate-600 hover:border-slate-400"
                           }`}
                         >
-                          {e.emoji} {e.l}
+                          <IconoEmoji e={e.emoji} /> {e.l}
                           {e.d && <span className="opacity-70 font-normal"> · {e.d}</span>}
                         </button>
                       ))}
@@ -2736,7 +2737,7 @@ export const PhysiotherapyModule = () => {
                         <div className="flex flex-wrap gap-1.5">
                           {ADHERENCIA.map((a) => (
                             <button key={a.v} type="button" onClick={() => setFormAdherencia(a.v)} className={`px-2.5 py-1.5 rounded-lg border text-sm cursor-pointer ${formAdherencia === a.v ? "bg-slate-900 border-slate-900 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
-                              {a.emoji} {a.l}
+                              <IconoEmoji e={a.emoji} /> {a.l}
                             </button>
                           ))}
                         </div>
@@ -2746,7 +2747,7 @@ export const PhysiotherapyModule = () => {
                         <div className="flex flex-wrap gap-1.5">
                           {PRONOSTICO.map((a) => (
                             <button key={a.v} type="button" onClick={() => setFormPronostico(formPronostico === a.v ? "" : a.v)} className={`px-2.5 py-1.5 rounded-lg border text-sm cursor-pointer ${formPronostico === a.v ? "bg-slate-900 border-slate-900 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
-                              {a.emoji} {a.l}
+                              <IconoEmoji e={a.emoji} /> {a.l}
                             </button>
                           ))}
                         </div>

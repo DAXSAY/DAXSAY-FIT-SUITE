@@ -118,17 +118,17 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
   const getObjectiveLabel = (obj) => {
     switch (obj) {
       case "hipertrofia":
-        return "💪 Ganancia Muscular";
+        return "Ganancia Muscular";
       case "perdida_peso":
-        return "🔥 Pérdida de Grasa";
+        return "Pérdida de Grasa";
       case "fuerza":
-        return "⚡ Fuerza Máxima";
+        return "Fuerza Máxima";
       case "tonificacion":
-        return "✨ Tonificación";
+        return "Tonificación";
       case "resistencia":
-        return "🏃 Resistencia & Cardio";
+        return "Resistencia & Cardio";
       case "salud_rehabilitacion":
-        return "🩺 Salud & Postura";
+        return "Salud & Postura";
       default:
         return obj;
     }
@@ -622,19 +622,19 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 </p>
                 <div className="text-xs text-slate-600 space-y-1 pt-1">
                   <p>
-                    📅 Inicio:{" "}
+                     Inicio:{" "}
                     <span className="font-mono">
                       {selectedMember.membershipStartDate}
                     </span>
                   </p>
                   <p>
-                    ⏳ Vencimiento:{" "}
+                     Vencimiento:{" "}
                     <span className="font-mono text-blue-700 font-bold">
                       {selectedMember.membershipEndDate}
                     </span>
                   </p>
                   <p>
-                    💳 Deuda:{" "}
+                     Deuda:{" "}
                     <span className={`font-bold ${selectedMember.debt > 0 ? "text-rose-600" : "text-green-700"}`}>
                       {selectedMember.debt > 0 ? `S/ ${selectedMember.debt.toFixed(2)}` : "Al día"}
                     </span>{" "}
@@ -654,10 +654,10 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                       {selectedMember.debt > 0 ? "Cobrar saldo" : "Estado de cuenta"}
                     </button>
                   </p>
-                  {selectedMember.address && <p>🏠 Dirección: <span className="font-semibold">{selectedMember.address}</span></p>}
+                  {selectedMember.address && <p>Dirección: <span className="font-semibold">{selectedMember.address}</span></p>}
                   {selectedMember.lastPaymentAmount && (
                     <p>
-                      💰 Último Pago:{" "}
+                       Último Pago:{" "}
                       <span className="font-bold text-green-700">
                         S/ {selectedMember.lastPaymentAmount}
                       </span>{" "}
@@ -818,7 +818,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                   }}
                   className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-md text-xs font-semibold cursor-pointer"
                 >
-                  📅 Asistencias
+                   Asistencias
                 </button>
                 <button
                   onClick={() => {
@@ -827,7 +827,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                   }}
                   className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-800 rounded-md text-xs font-semibold cursor-pointer"
                 >
-                  💪 Progreso de pesos
+                   Progreso de pesos
                 </button>
                 {(userCan(currentUser, "routines", "editar") || userCan(currentUser, "physiotherapy", "editar")) && (
                   <button
@@ -837,7 +837,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                     }}
                     className="px-3 py-1.5 bg-violet-50 hover:bg-violet-100 border border-violet-300 text-violet-800 rounded-md text-xs font-semibold cursor-pointer"
                   >
-                    📋 Indicaciones
+                     Indicaciones
                   </button>
                 )}
                 {gestiona && (
@@ -1018,7 +1018,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                           <p className="text-xs text-gray-500">
                             {p.durationDays} días de acceso ·{" "}
                             <span className={p.freezeDays ? "text-sky-700 font-semibold" : ""}>
-                              {p.freezeDays ? `❄️ ${p.freezeDays} días congelamiento` : "sin congelamiento"}
+                              {p.freezeDays ? `${p.freezeDays} días congelamiento` : "sin congelamiento"}
                             </span>
                           </p>
                         </div>
@@ -1041,8 +1041,8 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-slate-800 focus:outline-none focus:border-blue-600"
                   >
-                    <option value="efectivo">💵 Efectivo</option>
-                    <option value="yape_plin">📱 Yape / Plin</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="yape_plin">Yape / Plin</option>
                   </select>
                 </div>
 

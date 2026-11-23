@@ -10,6 +10,7 @@ import { useGym } from "../../context/GymContext";
 import { hoyISO } from "../../utils/fecha";
 import { userCan } from "../../config/roles";
 import { registrosDe } from "./CalendarioPersonal";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 export const TIPOS_PERMISO = {
   salud: { nombre: "Salud / cita médica", icono: "🩺" },
@@ -217,7 +218,7 @@ export const PermisosPersonal = () => {
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(TIPOS_PERMISO).map(([k, t]) => (
                 <button key={k} type="button" onClick={() => setForm({ ...form, tipo: k })} className={`px-2.5 py-1 rounded-full text-xs font-bold border cursor-pointer ${form.tipo === k ? "bg-sky-600 border-sky-600 text-white" : "bg-white border-slate-200 text-slate-700"}`}>
-                  {t.icono} {t.nombre}
+                  <IconoEmoji e={t.icono} /> {t.nombre}
                 </button>
               ))}
             </div>
@@ -286,7 +287,7 @@ export const PermisosPersonal = () => {
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs">
                   <span className="px-2 py-1 rounded-lg bg-slate-100 font-bold text-slate-700">
-                    {T.icono} {T.nombre}
+                    <IconoEmoji e={T.icono} /> {T.nombre}
                   </span>
                   <span className="px-2 py-1 rounded-lg bg-slate-100 font-bold text-slate-700 inline-flex items-center gap-1">
                     {p.porHoras ? <Clock className="w-3.5 h-3.5" /> : <CalendarRange className="w-3.5 h-3.5" />}

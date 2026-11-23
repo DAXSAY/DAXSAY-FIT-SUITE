@@ -35,7 +35,8 @@ import { SelectorAlumno, CodigoAlumno, coincideAlumno } from "../common/BuscarAl
 import { objetivoNutricion } from "../../utils/objetivos";
 import { OBJETIVOS_NUTRI, COLOR_OBJETIVO, objetivoNutri, calcularTdee, ACTIVIDADES, SUPLEMENTOS_BASE } from "../../data/nutricionOpciones";
 import { BotonesDescarga } from "../common/BotonesDescarga";
-const OBJECTIVE_LABELS = Object.fromEntries(OBJETIVOS_NUTRI.map((o) => [o.id, `${o.emoji} ${o.label}`]));
+import { IconoEmoji } from "../common/IconoEmoji";
+const OBJECTIVE_LABELS = Object.fromEntries(OBJETIVOS_NUTRI.map((o) => [o.id, o.label]));
 const OBJECTIVE_COLORS = Object.fromEntries(OBJETIVOS_NUTRI.map((o) => [o.id, COLOR_OBJETIVO[o.color]]));
 
 /** Suplementos: selección múltiple + propios (se recuerdan en este equipo y salen de los planes ya hechos) */
@@ -119,7 +120,7 @@ const TdeeEnPlan = ({ alumno, objetivo, onUsar }) => {
   return (
     <div className="rounded-xl border border-blue-200 bg-blue-50/50">
       <button type="button" onClick={() => setAbierto(!abierto)} className="w-full flex items-center justify-between px-3 py-2 text-xs font-black text-blue-800 cursor-pointer">
-        <span>🧮 Calcular metas con TDEE (Mifflin-St Jeor) · {objetivoNutri(objetivo).label}</span>
+        <span>Calcular metas con TDEE (Mifflin-St Jeor) · {objetivoNutri(objetivo).label}</span>
         <span>{abierto ? "Ocultar ▲" : `${r.kcal} kcal sugeridas ▼`}</span>
       </button>
       {abierto && (
@@ -754,7 +755,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              🥗 Planes & Dietas ({nutritionPlans.length})
+               Planes & Dietas ({nutritionPlans.length})
             </button>
             <button
               onClick={() => setViewMode("calculator")}
@@ -773,7 +774,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                 viewMode === "guide" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              ✋ Guía de porciones y platos
+               Guía de porciones y platos
             </button>
             <button
               onClick={() => setViewMode("foods")}
@@ -781,7 +782,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                 viewMode === "foods" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              🥗 Catálogo de alimentos
+               Catálogo de alimentos
             </button>
           </div>
 
@@ -820,10 +821,10 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                 onChange={(e) => setFilterObjective(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-hidden"
               >
-                <option value="all">🎯 Todos los objetivos</option>
+                <option value="all">Todos los objetivos</option>
                 {OBJETIVOS_NUTRI.map((o) => (
                   <option key={o.id} value={o.id}>
-                    {o.emoji} {o.label}
+                    <IconoEmoji e={o.emoji} /> {o.label}
                   </option>
                 ))}
               </select>
@@ -1046,7 +1047,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                             >
                               <div className="min-w-0 pr-3">
                                 <p className="font-bold text-slate-800 truncate">
-                                  {item.emoji ? `${item.emoji} ` : ""}{item.name}
+                                  {item.emoji ? <><IconoEmoji e={item.emoji} /> </> : ""}{item.name}
                                 </p>
                                 <p className="text-xs text-slate-500">
                                   Porción sugerida:{" "}
@@ -1160,7 +1161,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
       {viewMode === "guide" && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="font-extrabold text-slate-900 mb-1">✋ Porciones con la mano</h3>
+            <h3 className="font-extrabold text-slate-900 mb-1">Porciones con la mano</h3>
             <p className="text-xs text-slate-500 mb-4">Esta misma guía la ve el alumno en su portal (Mi Alimentación), junto con su plato.</p>
             <GuiaPorciones />
           </div>
@@ -1182,7 +1183,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h3 className="font-extrabold text-slate-900">⚡ Carbohidratos según el ejercicio</h3>
+                <h3 className="font-extrabold text-slate-900">Carbohidratos según el ejercicio</h3>
                 <p className="text-xs text-slate-500">Cuánto carbohidrato al día según las horas de entrenamiento.</p>
               </div>
               <label className="text-xs font-bold text-slate-600">
@@ -1345,7 +1346,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                 >
                   {OBJETIVOS_NUTRI.map((o) => (
                     <option key={o.id} value={o.id}>
-                      {o.emoji} {o.label} ({o.ajuste > 0 ? "+" : ""}{o.ajuste} kcal)
+                      <IconoEmoji e={o.emoji} /> {o.label} ({o.ajuste > 0 ? "+" : ""}{o.ajuste} kcal)
                     </option>
                   ))}
                 </select>
@@ -1538,7 +1539,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                   >
                     {OBJETIVOS_NUTRI.map((o) => (
                       <option key={o.id} value={o.id}>
-                        {o.emoji} {o.label}
+                        <IconoEmoji e={o.emoji} /> {o.label}
                       </option>
                     ))}
                   </select>

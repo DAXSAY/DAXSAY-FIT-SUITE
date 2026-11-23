@@ -13,6 +13,19 @@ export default defineConfig({
       '@': path.resolve(__dirname, '.'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1400,
+    rollupOptions: {
+      output: {
+        // Librerías grandes en archivos aparte: se descargan una vez y quedan en caché
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (/recharts|d3-|victory-vendor|decimal\.js-light|eventemitter3/.test(id)) return "graficos";
+          if (/react-dom|scheduler|\/react\//.test(id)) return "react";
+        },
+      },
+    },
+  },
   server: {
     port: 3000,
     host: true, // también accesible desde otros equipos de la red / VPN (Tailscale)

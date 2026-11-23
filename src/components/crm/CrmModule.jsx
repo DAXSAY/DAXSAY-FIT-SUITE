@@ -77,34 +77,8 @@ export const estadoCita = (p) => {
   return { tono: "bg-sky-50 text-sky-800 border-sky-200", texto: "Agendado", min };
 };
 
-/** Primer nombre de quien atiende (recepcionista conectada) */
-export const primerNombre = (t) => String(t || "").trim().split(/\s+/)[0] || "";
-/** "soy Margot de RADICAL" (o "te escribe recepción de RADICAL" si la cuenta aún tiene nombre genérico) */
-const presentacion = (quien, gym) => {
-  const n = primerNombre(quien);
-  if (!n || /^(recepci[oó]n|administra|admin|entrenador|nutrici|fisioterap|usuario)/i.test(n)) return `te escribe recepción de *${gym}*`;
-  return `soy ${n} de *${gym}*`;
-};
-
-/** Mensaje de WhatsApp para el interesado, firmado por quien lo atiende */
-export const mensajeWhatsApp = (p, gym = "RADICAL", quien = "") => {
-  const nombre = primerNombre(p.fullName);
-  const yo = presentacion(quien, gym);
-  const plan = p.planName ? `el plan *${p.planName}*${p.planPrice ? ` (S/ ${p.planPrice})` : ""}` : "nuestros planes";
-  const vinoHoy = p.source === "visita" && String(p.createdAt || "").slice(0, 10) === hoyISO();
-  const inicio = vinoHoy ? `Gracias por visitarnos hoy y preguntar por ${plan}.` : `Gracias por tu interés en ${plan}.`;
-  if (p.passCode) {
-    const hora = p.contactDate === p.passDate && p.contactTime ? ` a las ${p.contactTime}` : "";
-    return `Hola ${nombre} 👋, ${yo}. ${inicio}\n\n🎟️ Aquí tienes tu *pase libre* para conocer el gimnasio y entrenar gratis:\nCódigo: *${p.passCode}*\nVálido el ${fCorta(p.passDate)}${hora}.\n\nMuestra el QR (o el código) en recepción al llegar. Cualquier duda o consulta, escríbenos por aquí. ¡Te esperamos! 💪`;
-  }
-  return `Hola ${nombre} 👋, ${yo}. ${inicio}\n¿Te ayudamos a separar tu matrícula o prefieres venir a conocer el gimnasio con un pase libre? 💪`;
-};
-
-/** Para quien no vino con su pase: invitarlo a reprogramar */
-export const mensajeReprogramar = (p, gym = "RADICAL", quien = "") => {
-  const yo = presentacion(quien, gym);
-  return `Hola ${primerNombre(p.fullName)} 👋, ${yo}. Te esperábamos el ${fCorta(p.passDate)} con tu pase libre *${p.passCode}* 😊. ¿Te lo reprogramamos para otro día? Dinos qué día y hora te queda mejor.`;
-};
+export { primerNombre, mensajeWhatsApp, mensajeReprogramar } from "./mensajesCrm";
+import { primerNombre, presentacion, mensajeWhatsApp, mensajeReprogramar } from "./mensajesCrm";
 
 /** El pase ya venció sin usarse (o es hoy y pasó más de 1 hora de la cita) */
 export const paseNoUsado = (p) => {
@@ -283,7 +257,7 @@ const FormularioProspecto = ({ inicial, planes, onGuardar, onCerrar }) => {
                 <span className="font-bold text-slate-700">Hora</span>
                 <input type="time" value={f.contactTime} onChange={(e) => set("contactTime", e.target.value)} className={campo} />
               </label>
-              <p className="text-xs text-blue-800">🔔 El sistema te avisará 30 minutos antes.</p>
+              <p className="text-xs text-blue-800">El sistema te avisará 30 minutos antes.</p>
             </>
           )}
         </div>
@@ -295,10 +269,10 @@ const FormularioProspecto = ({ inicial, planes, onGuardar, onCerrar }) => {
             </p>
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => elegirPase(true)} className={`px-3 py-1.5 rounded-xl border text-sm font-bold cursor-pointer ${aceptaPase ? "bg-violet-600 border-violet-600 text-white" : "bg-white border-violet-200 text-violet-800 hover:bg-violet-50"}`}>
-                ✅ Sí, generar su QR
+                 Sí, generar su QR
               </button>
               <button type="button" onClick={() => elegirPase(false)} className={`px-3 py-1.5 rounded-xl border text-sm font-bold cursor-pointer ${!aceptaPase ? "bg-slate-700 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
-                ⏳ No, por ahora
+                 No, por ahora
               </button>
             </div>
             <p className="text-xs text-violet-900">
@@ -355,7 +329,7 @@ const AccionesPase = ({ p, gym, grande = false }) => {
                 : modo === "descargado"
                   ? "⬇ QR descargado. En el chat de WhatsApp que se abrió, adjunta la imagen descargada."
                   : modo === "compartido"
-                    ? "✅ QR compartido."
+                    ? "QR compartido."
                     : "",
             );
           }}
@@ -493,7 +467,7 @@ const DetalleProspecto = ({ p, puedeEditar, puedeEliminar, gym, onCambio, onEdit
           </div>
         </div>
         <PanelResponsable p={p} admin={currentUser?.role === "admin"} onCambio={onCambio} />
-        {p.notes && <p className="text-sm text-slate-600 bg-slate-50 rounded-xl px-3 py-2 border border-slate-200">📝 {p.notes}</p>}
+        {p.notes && <p className="text-sm text-slate-600 bg-slate-50 rounded-xl px-3 py-2 border border-slate-200">{p.notes}</p>}
 
         {/* Pase libre */}
         <div className="rounded-2xl border border-violet-200 bg-violet-50/50 p-4">
@@ -518,12 +492,12 @@ const DetalleProspecto = ({ p, puedeEditar, puedeEliminar, gym, onCambio, onEdit
           )}
           {noVino && (
             <p className="mt-3 text-sm font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
-              ⚠️ No vino con su pase. Llámalo o escríbele y reprográmale el día para que no se pierda.
+               No vino con su pase. Llámalo o escríbele y reprográmale el día para que no se pierda.
             </p>
           )}
           {puedeEditar && p.passCode && !p.passUsedAt && p.status === "pase_entregado" && !noConcretado && (
             <button type="button" onClick={() => setNoConcretado(true)} className="mt-3 px-3 py-2 rounded-xl bg-white border-2 border-rose-300 text-rose-700 hover:bg-rose-50 text-sm font-bold cursor-pointer">
-              ✖ No vino / canceló: registrar motivo
+               No vino / canceló: registrar motivo
             </button>
           )}
           {noConcretado && (
@@ -678,7 +652,7 @@ const TarjetaInteresado = ({ p, onAbrir, compacta = false }) => {
         {!compacta && <span className={`px-2 py-0.5 rounded-full border text-[10px] font-black whitespace-nowrap ${E.chip}`}>{E.label}</span>}
       </div>
       <div className="flex flex-wrap items-center gap-1.5 text-xs">
-        {paseNoUsado(p) && <span className="px-2 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-rose-800 font-black">⚠️ No vino · reprogramar</span>}
+        {paseNoUsado(p) && <span className="px-2 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-rose-800 font-black">No vino · reprogramar</span>}
         {p.contactDate && I && !["matriculado", "de_baja"].includes(p.status) && (
           <span className="inline-flex items-center gap-1 text-slate-600">
             <I className="w-3.5 h-3.5" /> {fCorta(p.contactDate)} {p.contactTime}
@@ -847,7 +821,7 @@ export const CrmModule = () => {
     ["nuevo", "Nuevos"],
     ["seguimiento", "En seguimiento"],
     ["pase_entregado", "Con pase libre"],
-    ["no_vino", "⚠️ No vinieron", lista.filter(paseNoUsado).length],
+    ["no_vino", "No vinieron", lista.filter(paseNoUsado).length],
     ["matriculado", "Matriculados"],
     ["de_baja", "De baja"],
     ["todos", "Todos", lista.length],
@@ -896,7 +870,7 @@ export const CrmModule = () => {
             </button>
             {camaraQRDisponible() && (
               <button type="button" onClick={() => setCamara(true)} className="px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-sm font-bold cursor-pointer">
-                📷 Escanear QR
+                 Escanear QR
               </button>
             )}
           </div>

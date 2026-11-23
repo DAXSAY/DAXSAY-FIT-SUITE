@@ -273,17 +273,17 @@ export const StudentPortalModule = ({
                   }`}
                 >
                   {currentMember?.status === "frozen"
-                    ? "❄️ Membresía Congelada"
+                    ? "Membresía Congelada"
                     : currentMember?.status === "active"
                     ? "● Membresía Activa"
                     : currentMember?.status === "expiring_soon"
-                      ? "⚠️ Por Vencer"
-                      : "⛔ Membresía Vencida"}
+                      ? "Por Vencer"
+                      : "Membresía Vencida"}
                 </span>
               </div>
 
               <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                ¡Hola, {currentMember?.fullName.split(" ")[0]}! 👋
+                ¡Hola, {currentMember?.fullName.split(" ")[0]}! 
               </h1>
 
               <p className="text-xs sm:text-sm text-slate-300 font-medium">
@@ -343,7 +343,7 @@ export const StudentPortalModule = ({
           >
             <div>
               <p className="text-xs font-black uppercase tracking-wider text-amber-200">
-                {currentMember.debtStatus === "vencida" ? "⛔ Pago pendiente vencido" : "💳 Tienes un saldo pendiente"}
+                {currentMember.debtStatus === "vencida" ? "Pago pendiente vencido" : "Tienes un saldo pendiente"}
               </p>
               <p className="text-2xl font-black text-white">S/ {currentMember.debt.toFixed(2)}</p>
               {currentMember.debtDueDate && (
@@ -1485,8 +1485,8 @@ export const StudentPortalModule = ({
       {activeTab === "routine" && (
         <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl w-fit">
           {[
-            ["pesos", "💪 Anotar pesos y mi progreso"],
-            ["rutina", "📋 Ver mi rutina completa"],
+            ["pesos", "Anotar pesos y mi progreso"],
+            ["rutina", "Ver mi rutina completa"],
           ].map(([k, t]) => (
             <button
               key={k}
@@ -1516,7 +1516,7 @@ export const StudentPortalModule = ({
       {activeTab === "attendance" && currentMember && (
         <div className="space-y-3">
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="text-lg font-extrabold text-slate-900">📅 Mis asistencias</h3>
+            <h3 className="text-lg font-extrabold text-slate-900">Mis asistencias</h3>
             <p className="text-sm text-slate-500">
               Los días en verde viniste al gimnasio; en rosado, días de tu membresía en los que no viniste. Tu código para marcar es{" "}
               <b className="font-mono text-blue-700">{currentMember.codeLabel}</b>.

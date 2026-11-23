@@ -16,6 +16,7 @@ import {
 import { exportarExcelProgreso, exportarPdfProgreso } from "./exportarProgreso";
 import GraficosProgreso from "./GraficosProgreso";
 import { filasRegistro, InsigniaMetodo } from "../routines/SistemasEntrenamiento";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 // Casillas que anota el alumno según el sistema del ejercicio (rest-pause, drop set, HIIT…)
 const UNIDAD = { reps: "reps", seg: "seg", rondas: "rondas", min: "min", saltos: "saltos" };
@@ -25,7 +26,7 @@ const Chip = ({ t, children }) => {
   const e = ESTILO_TENDENCIA[t] || ESTILO_TENDENCIA.nuevo;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-bold ${e.clase}`}>
-      <span>{e.icono}</span>
+      <span><IconoEmoji e={e.icono} /></span>
       {children ?? e.texto}
     </span>
   );
@@ -232,7 +233,7 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
                 {ex.metodo && (
                   <div className="mt-1.5 space-y-1">
                     <InsigniaMetodo metodo={ex.metodo} etiqueta={ex.metodo.grupo || ""} />
-                    <p className="text-[11px] text-emerald-700 font-semibold">✍️ Anota {filasRegistro({ series: ex.series, reps: ex.reps, metodo: ex.metodo }).anota}.</p>
+                    <p className="text-[11px] text-emerald-700 font-semibold">Anota {filasRegistro({ series: ex.series, reps: ex.reps, metodo: ex.metodo }).anota}.</p>
                   </div>
                 )}
               </div>
@@ -741,7 +742,7 @@ export default function ProgresoPesos({ memberId, modo = "alumno", abrirAnotar =
     <div className="space-y-4">
       <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-blue-950 text-white rounded-2xl p-5 flex flex-wrap items-center gap-4">
         <div className="flex-1 min-w-[220px]">
-          <p className="text-xs font-bold uppercase tracking-widest text-cyan-300">💪 Progreso de pesos</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-cyan-300">Progreso de pesos</p>
           <h2 className="text-2xl font-black mt-0.5">{esAlumno ? "Mi progreso" : datos.alumno.nombre}</h2>
           <p className="text-sm text-slate-300">
             {!esAlumno && <span className="font-mono text-cyan-200 mr-2">{datos.alumno.codigo}</span>}
@@ -823,7 +824,7 @@ export default function ProgresoPesos({ memberId, modo = "alumno", abrirAnotar =
           )}
           {resumen.sinRegistrar.length > 0 && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-sm font-black text-amber-800">✍️ {resumen.sinRegistrar.length} día(s) que vino sin anotar pesos</p>
+              <p className="text-sm font-black text-amber-800">{resumen.sinRegistrar.length} día(s) que vino sin anotar pesos</p>
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {resumen.sinRegistrar.slice(-10).map((f) =>
                   datos.puedeAnotar ? (
@@ -846,23 +847,23 @@ export default function ProgresoPesos({ memberId, modo = "alumno", abrirAnotar =
       <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-2xl w-fit">
         {datos.puedeAnotar && (
           <Pestana activa={vista === "anotar"} onClick={() => { setFechaAnotar(null); setVista("anotar"); }}>
-            ✍️ Anotar pesos
+             Anotar pesos
           </Pestana>
         )}
         <Pestana activa={vista === "graficos"} onClick={() => setVista("graficos")}>
-          📈 Gráficos
+           Gráficos
         </Pestana>
         <Pestana activa={vista === "resumen"} onClick={() => setVista("resumen")}>
-          📊 Resumen
+           Resumen
         </Pestana>
         <Pestana activa={vista === "semana"} onClick={() => setVista("semana")}>
-          📅 Semana
+           Semana
         </Pestana>
         <Pestana activa={vista === "mes"} onClick={() => setVista("mes")}>
-          🗓️ Mes
+           Mes
         </Pestana>
         <Pestana activa={vista === "ejercicio"} onClick={() => setVista("ejercicio")}>
-          🏋️ Por ejercicio
+           Por ejercicio
         </Pestana>
       </div>
 

@@ -11,6 +11,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { BellRing, Users } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { useAvisosCrm } from "../crm/CrmAvisos";
+import { ConIconos } from "./IconoEmoji";
 
 const ACCION = { llamada: "Llamar a", whatsapp: "Escribir a", visita: "Recibe a" };
 const primer = (n) => String(n || "").trim().split(/\s+/).slice(0, 2).join(" ");
@@ -193,7 +194,7 @@ const Carril = ({ titulo, icono, tono, items, vacio, onAbrir }) => {
         it.fuerte ? "bg-gradient-to-r from-rose-600 to-orange-500 text-white" : tono === "crm" ? "rd-chip-crm" : "rd-chip-gym"
       }`}
     >
-      {it.texto}
+      <ConIconos texto={it.texto} />
     </button>
   );
 

@@ -11,6 +11,7 @@
 import { CampoNumero } from "../common/CampoNumero";
 import React, { useMemo, useState } from "react";
 import { ChevronDown, Minus, Plus, Settings2, X } from "lucide-react";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 // ---------------------------------------------------------------------
 // Catálogo
@@ -377,30 +378,30 @@ export const DESCANSOS = [30, 45, 60, 90, 120];
 
 // Tipo de sesión por día (ej. sábado funcional)
 export const TIPOS_DIA = [
-  ["fuerza", "💪", "Fuerza", "indigo"],
-  ["hipertrofia", "🏋️", "Hipertrofia", "violet"],
-  ["potencia", "⚡", "Potencia", "amber"],
-  ["pliometria", "🦘", "Pliometría", "amber"],
-  ["halterofilia", "🏅", "Halterofilia", "sky"],
-  ["powerlifting", "🔩", "Powerlifting", "indigo"],
-  ["calistenia", "🤸‍♂️", "Calistenia", "violet"],
-  ["funcional", "🤸", "Funcional", "orange"],
-  ["cross", "🔥", "Entrenamiento cruzado (WOD)", "rose"],
+  ["fuerza", "", "Fuerza", "indigo"],
+  ["hipertrofia", "", "Hipertrofia", "violet"],
+  ["potencia", "", "Potencia", "amber"],
+  ["pliometria", "", "Pliometría", "amber"],
+  ["halterofilia", "", "Halterofilia", "sky"],
+  ["powerlifting", "", "Powerlifting", "indigo"],
+  ["calistenia", "", "Calistenia", "violet"],
+  ["funcional", "", "Funcional", "orange"],
+  ["cross", "", "Entrenamiento cruzado (WOD)", "rose"],
   ["hiit", "⏱️", "HIIT / Metabólico", "rose"],
-  ["circuito", "🔄", "Circuito", "amber"],
-  ["resistencia", "🔋", "Resistencia muscular", "pink"],
-  ["cardio", "❤️", "Cardio", "pink"],
-  ["velocidad", "💨", "Velocidad y agilidad", "sky"],
-  ["deportivo", "⚽", "Específico deportivo", "emerald"],
+  ["circuito", "", "Circuito", "amber"],
+  ["resistencia", "", "Resistencia muscular", "pink"],
+  ["cardio", "", "Cardio", "pink"],
+  ["velocidad", "", "Velocidad y agilidad", "sky"],
+  ["deportivo", "", "Específico deportivo", "emerald"],
   ["core", "🎯", "Core", "teal"],
-  ["movilidad", "🧘", "Movilidad", "teal"],
-  ["flexibilidad", "🤲", "Flexibilidad / estiramiento", "teal"],
-  ["equilibrio", "⚖️", "Equilibrio / propiocepción", "sky"],
-  ["postura", "🧍", "Postura", "emerald"],
-  ["prevencion", "🛡️", "Prevención de lesiones", "emerald"],
-  ["rehabilitacion", "🩺", "Rehabilitación", "emerald"],
-  ["recuperacion", "🛌", "Recuperación activa", "slate"],
-  ["adulto_mayor", "👵", "Adulto mayor", "emerald"],
+  ["movilidad", "", "Movilidad", "teal"],
+  ["flexibilidad", "", "Flexibilidad / estiramiento", "teal"],
+  ["equilibrio", "", "Equilibrio / propiocepción", "sky"],
+  ["postura", "", "Postura", "emerald"],
+  ["prevencion", "", "Prevención de lesiones", "emerald"],
+  ["rehabilitacion", "", "Rehabilitación", "emerald"],
+  ["recuperacion", "", "Recuperación activa", "slate"],
+  ["adulto_mayor", "", "Adulto mayor", "emerald"],
 ];
 export const tipoDia = (k) => TIPOS_DIA.find((t) => t[0] === k);
 
@@ -587,7 +588,7 @@ export const InsigniaMetodo = ({ metodo, etiqueta, className = "" }) => {
     <div className={`inline-flex flex-wrap items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${c.caja} ${className}`}>
       {etiqueta && <span className={`px-1.5 rounded-md text-[11px] font-black ${c.on}`}>{etiqueta}</span>}
       <span className={`font-bold ${c.texto}`}>
-        {s.icono} {texto}
+        <IconoEmoji e={s.icono} /> {texto}
       </span>
     </div>
   );
@@ -738,7 +739,7 @@ export const ConfigEjercicio = ({
             <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500">Sistema de entrenamiento · personalizar</span>
             <span className={`block text-xs font-bold truncate ${metodo ? c.texto : "text-slate-600"}`}>
               {etiqueta && <span className={`mr-1 px-1.5 rounded-md text-[11px] ${c.on}`}>{etiqueta}</span>}
-              {sis.icono} {metodo ? metodo.resumen || resumenMetodo(metodo) : "Series normales (toca para biserie, rest-pause, tempo, HIIT…)"}
+              <IconoEmoji e={sis.icono} /> {metodo ? metodo.resumen || resumenMetodo(metodo) : "Series normales (toca para biserie, rest-pause, tempo, HIIT…)"}
             </span>
           </span>
           {metodo && !readOnly && (
@@ -798,7 +799,7 @@ export const ConfigEjercicio = ({
                       className={`rounded-lg border px-2 py-1.5 text-left cursor-pointer transition-colors ${on ? col.on : `${col.chip} hover:brightness-95`}`}
                     >
                       <span className="block text-xs font-black leading-tight">
-                        {s.icono} {s.nombre}
+                        <IconoEmoji e={s.icono} /> {s.nombre}
                       </span>
                       {s.agrupa && <span className={`block text-[10px] font-semibold ${on ? "opacity-90" : "opacity-75"}`}>{s.agrupa[0] === s.agrupa[1] ? `${s.agrupa[0]} ejercicios` : `${s.agrupa[0]}+ ejercicios`}</span>}
                     </button>
@@ -810,7 +811,7 @@ export const ConfigEjercicio = ({
               <div className="rounded-lg bg-white border border-slate-200 p-2 space-y-2">
                 <p className="text-xs text-slate-600">
                   <b className={c.texto}>
-                    {sis.icono} {sis.nombre}:
+                    <IconoEmoji e={sis.icono} /> {sis.nombre}:
                   </b>{" "}
                   {sis.desc}
                 </p>
@@ -836,7 +837,7 @@ export const ConfigEjercicio = ({
                   </div>
                 )}
                 <p className="text-[11px] rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-1">
-                  ✍️ El alumno anotará en su portal: <b>{filasRegistro({ series: ex[campos.series], reps: ex[campos.reps], metodo }).anota}</b>. El peso no se fija aquí.
+                   El alumno anotará en su portal: <b>{filasRegistro({ series: ex[campos.series], reps: ex[campos.reps], metodo }).anota}</b>. El peso no se fija aquí.
                 </p>
                 {sis.agrupa && (
                   <div className="space-y-1">

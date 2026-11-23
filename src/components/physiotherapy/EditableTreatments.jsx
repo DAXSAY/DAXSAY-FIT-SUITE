@@ -341,7 +341,7 @@ export const EditableTreatments = ({
                   </div>
 
                   <p className="text-xs text-amber-200/90 font-mono font-medium">
-                    ⚡ {t.dosage}
+                     {t.dosage}
                   </p>
 
                   {t.notes && (

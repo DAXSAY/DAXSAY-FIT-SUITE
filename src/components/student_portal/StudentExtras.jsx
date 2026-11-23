@@ -5,12 +5,13 @@ import { useExerciseBank, ExerciseThumb, ExerciseDetail, MUSCLE_LABELS, ATRIBUCI
 import { zoneLabel } from "../physiotherapy/BodyMapVisual";
 import { InsigniaMetodo, InsigniaTipoDia, etiquetasGrupo } from "../routines/SistemasEntrenamiento";
 import { GuiaPorciones, VistaPlatos, platosDePlan } from "../nutrition/PlatoNutricional";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 /** Recomendaciones de porciones con la mano (se ven aunque no tenga dieta) */
 const RecomendacionesPorciones = ({ sexo }) => (
   <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
     <div>
-      <h3 className="text-lg font-extrabold text-slate-900">✋ Recomendaciones: mide tus porciones con la mano</h3>
+      <h3 className="text-lg font-extrabold text-slate-900">Recomendaciones: mide tus porciones con la mano</h3>
       <p className="text-sm text-slate-500">
         Tu mano siempre está contigo y es proporcional a tu cuerpo. Úsala para servirte sin balanza.
       </p>
@@ -205,7 +206,7 @@ export const MiDieta = ({ plan, sexo }) => {
       {/* Tus platos (gráficos) */}
       {platos.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <h3 className="text-lg font-extrabold text-slate-900">🍽️ Así se ven tus platos</h3>
+          <h3 className="text-lg font-extrabold text-slate-900">Así se ven tus platos</h3>
           <p className="text-sm text-slate-500 mb-4">Tu nutricionista te asignó {platos.length} plato{platos.length === 1 ? "" : "s"}. Toca cada uno para ver cómo servirlo.</p>
           <VistaPlatos plates={platos} metas={{ proteinas: plan.proteinsTargetGrams, carbohidratos: plan.carbsTargetGrams, grasas: plan.fatsTargetGrams }} />
         </div>
@@ -226,7 +227,7 @@ export const MiDieta = ({ plan, sexo }) => {
                 {meal.items.map((it) => (
                   <li key={it.id} className="flex justify-between gap-3 text-sm bg-slate-50 rounded-lg px-3 py-2">
                     <span className="font-semibold text-slate-800">
-                      {it.emoji ? <span className="mr-1.5">{it.emoji}</span> : null}
+                      {it.emoji ? <span className="mr-1.5"><IconoEmoji e={it.emoji} /></span> : null}
                       {it.name}
                     </span>
                     <span className="font-mono text-slate-600 shrink-0">

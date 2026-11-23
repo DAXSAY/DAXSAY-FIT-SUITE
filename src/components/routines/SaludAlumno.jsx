@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import { AlertTriangle, ChevronDown, Droplets, HeartPulse, Lock, Salad, ShieldCheck, Stethoscope } from "lucide-react";
 import { api } from "../../api/cliente";
 import { CATEGORIAS, LUGARES, textoDosis } from "../indicaciones/Indicaciones";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 const ZONA = {
   cervical: "Cervical", dorsal: "Dorsal", lumbar: "Lumbar", hombro: "Hombro", codo: "Codo", muneca: "Muñeca", cadera: "Cadera",
@@ -109,7 +110,7 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
                 {(zonas.length > 0 || Number(f?.dolorEVA) > 0) && (
                   <div className="flex flex-wrap items-center gap-1.5">
                     {zonas.map((z) => (
-                      <Chip key={z}>🩹 {zona(z)}</Chip>
+                      <Chip key={z}>{zona(z)}</Chip>
                     ))}
                     {Number(f?.dolorEVA) > 0 && <Chip tono="amber">Dolor {f.dolorEVA}/10</Chip>}
                     {f?.tonoMuscular && f.tonoMuscular !== "normotono" && <Chip tono="sky">Tono: {f.tonoMuscular}</Chip>}
@@ -127,7 +128,7 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
                 )}
                 {restricciones.map((t, i) => (
                   <p key={i} className="rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1.5 text-xs font-bold text-amber-900">
-                    ⚠️ {t}
+                     {t}
                   </p>
                 ))}
                 {(indItems.length > 0 || indEval.length > 0) && (
@@ -139,7 +140,7 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
                         return (
                           <li key={`i${i}`} className="flex items-start gap-1.5 text-xs text-slate-700">
                             <span className={`shrink-0 px-1.5 py-px rounded-md border text-[10px] font-bold ${c?.chip || "bg-slate-50 border-slate-200 text-slate-700"}`}>
-                              {c?.emoji} {LUGARES[it.place]?.corto || c?.corto || "Indicación"}
+                              <IconoEmoji e={c?.emoji} /> {LUGARES[it.place]?.corto || c?.corto || "Indicación"}
                             </span>
                             <span>
                               <b>{it.name}</b>
@@ -232,7 +233,7 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
                   {d.objetivo ? ` · ${String(d.objetivo).replace(/_/g, " ")}` : ""}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {d.kcal > 0 && <Chip tono="amber">🔥 {d.kcal} kcal</Chip>}
+                  {d.kcal >0 && <Chip tono="amber">{d.kcal} kcal</Chip>}
                   {d.proteinas > 0 && <Chip tono="sky">P {d.proteinas} g</Chip>}
                   {d.carbohidratos > 0 && <Chip tono="sky">C {d.carbohidratos} g</Chip>}
                   {d.grasas > 0 && <Chip tono="sky">G {d.grasas} g</Chip>}
@@ -262,7 +263,7 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
                     <b>Hidratación:</b> {d.hidratacion}
                   </p>
                 )}
-                {d.recomendaciones && <p className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 text-xs text-emerald-900">💬 {d.recomendaciones}</p>}
+                {d.recomendaciones && <p className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 text-xs text-emerald-900">{d.recomendaciones}</p>}
               </>
             )}
           </div>

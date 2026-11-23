@@ -17,6 +17,7 @@ import { imprimirBoleta, descargarBoletaPdf, boletaPorWhatsApp } from "../../uti
 import { useGym } from "../../context/GymContext";
 import { SelectorAlumno } from "../common/BuscarAlumno";
 import { coincidePersonal } from "../../utils/buscarPersona";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 export const TIPOS_INGRESO = {
   membership: { icono: "🏋️", titulo: "Membresía / matrícula", sub: "Cuotas, inscripción, carnet", conAlumno: true, concepto: "Pago de membresía" },
@@ -42,8 +43,8 @@ const MONTOS_PASE = [5, 8, 10, 15, 20];
 const OTROS_RAPIDOS = ["Aporte / fondo para caja", "Alquiler de espacio", "Evento / clase especial", "Carnet o tarjeta", "Casillero", "Toalla / candado", "Donación o patrocinio"];
 
 const METODOS = [
-  ["efectivo", "💵", "Efectivo"],
-  ["yape_plin", "📱", "Yape / Plin"],
+  ["efectivo", "", "Efectivo"],
+  ["yape_plin", "", "Yape / Plin"],
 ];
 
 const soles = (n) => `S/ ${Number(n || 0).toFixed(2)}`;
@@ -337,7 +338,7 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
                   tipo === k ? "border-emerald-500 bg-emerald-50 shadow-sm" : "border-slate-200 bg-white hover:border-emerald-300"
                 }`}
               >
-                <span className="text-2xl leading-none">{t.icono}</span>
+                <span className="text-2xl leading-none"><IconoEmoji e={t.icono} /></span>
                 <span className={`block mt-1.5 text-sm font-black ${tipo === k ? "text-emerald-800" : "text-slate-900"}`}>{t.titulo}</span>
                 <span className="block text-[11px] text-slate-500">{t.sub}</span>
               </button>
@@ -547,7 +548,7 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
             <p className="text-xs font-black uppercase tracking-wider text-emerald-700">Entrará a caja</p>
             <p className="text-3xl font-black text-emerald-700 leading-tight">{soles(total)}</p>
             <p>
-              {T.icono} {T.titulo} · {METODOS.find((m) => m[0] === metodo)?.[2]}
+              <IconoEmoji e={T.icono} /> {T.titulo} · {METODOS.find((m) => m[0] === metodo)?.[2]}
               {alumno ? ` · ${alumno.fullName}` : ""}
             </p>
             {esServicio && cobrado > 0 && (

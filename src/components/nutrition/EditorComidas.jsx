@@ -132,7 +132,7 @@ export const EditorComidas = ({ meals, setMeals, metas, indices, soloTotales = f
       <>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h4 className="font-extrabold text-sm text-slate-900">{soloTotales ? "Alimentos del día vs. metas" : "🍴 Comidas y alimentos"}</h4>
+          <h4 className="font-extrabold text-sm text-slate-900">{soloTotales ? "Alimentos del día vs. metas" : "Comidas y alimentos"}</h4>
           <p className="text-xs text-slate-500">
             {soloTotales ? "Suma de los alimentos de todos los platos. Los alimentos se agregan dentro de cada plato." : "Elige del catálogo y ajusta los gramos: calorías y macros se calculan solos."}
           </p>

@@ -30,7 +30,7 @@ export function imprimirBoleta(b) {
   <p><b>BOLETA N° ${esc(b.numero)}</b><br>${esc(b.fecha)}</p><hr>
   <table>${fila("Concepto", esc(b.concepto))}${b.cliente ? fila("Cliente", esc(b.cliente)) : ""}${b.profesional ? fila("Profesional", esc(b.profesional)) : ""}${lineas}</table><hr>
   <table>${fila('<span class="t">TOTAL</span>', `<span class="t">${S(b.total)}</span>`)}${fila("Medio de pago", esc(b.metodo))}</table>${rep}
-  <p class="n">Constancia interna de pago · Gracias por tu preferencia 💪</p><script>window.onload=()=>{window.print()}</script></body></html>`);
+  <p class="n">Constancia interna de pago · Gracias por tu preferencia</p><script>window.onload=()=>{window.print()}</script></body></html>`);
   w.document.close();
   return true;
 }
@@ -108,7 +108,7 @@ export const textoBoleta = (b) =>
     `Concepto: ${b.concepto}`,
     b.cliente ? `Cliente: ${b.cliente}` : "",
     `*Total: ${S(b.total)}* (${b.metodo})`,
-    "¡Gracias por tu pago! 💪",
+    "¡Gracias por tu pago! ",
   ]
     .filter(Boolean)
     .join("\n");

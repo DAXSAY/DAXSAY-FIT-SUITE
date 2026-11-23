@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { CalendarClock, Check, CheckCheck } from "lucide-react";
 import { api } from "../../api/cliente";
+import { ConIconos } from "../common/IconoEmoji";
 
 const fc = (f) => (f ? String(f).slice(0, 10).split("-").reverse().join("/") : "—");
 
@@ -78,7 +79,7 @@ export function AlertaFechaPago({ alerta, onVista, compacta = false }) {
             <b className={alerta.seen ? "" : "text-blue-700"}>{fc(alerta.newDate)}</b>
             {alerta.debt != null && <> · debe S/ {alerta.debt.toFixed(2)}</>}
           </p>
-          {!compacta && <p className="text-[11px] text-slate-500 mt-0.5">{alerta.message}</p>}
+          {!compacta && <p className="text-[11px] text-slate-500 mt-0.5"><ConIconos texto={alerta.message} /></p>}
           {compacta && alerta.by && <p className="text-[11px] text-slate-500 mt-0.5">Cambiado por: {alerta.by}</p>}
         </div>
         {!alerta.seen && onVista && (

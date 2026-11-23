@@ -7,6 +7,7 @@ import { useGym } from "../../context/GymContext";
 import { hoyISO } from "../../utils/fecha";
 import { TIPOS_PERMISO, diasDelPermiso } from "./PermisosPersonal";
 import { getRole } from "../../config/roles";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 export const BotonSolicitarPermiso = () => {
   const { currentUser } = useGym();
@@ -73,7 +74,7 @@ export const BotonSolicitarPermiso = () => {
                 <div className="grid grid-cols-2 gap-1.5">
                   {Object.entries(TIPOS_PERMISO).map(([k, t]) => (
                     <button key={k} type="button" onClick={() => setF({ ...f, tipo: k })} className={`px-2.5 py-2 rounded-xl border text-xs font-bold text-left cursor-pointer ${f.tipo === k ? "bg-sky-600 border-sky-600 text-white" : "bg-white border-slate-200 text-slate-700"}`}>
-                      {t.icono} {t.nombre}
+                      <IconoEmoji e={t.icono} /> {t.nombre}
                     </button>
                   ))}
                 </div>

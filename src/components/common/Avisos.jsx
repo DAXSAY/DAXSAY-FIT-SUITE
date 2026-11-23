@@ -10,6 +10,7 @@ import { api } from "../../api/cliente";
 import { useGym } from "../../context/GymContext";
 import { enlaceWhatsApp } from "./TelWhatsApp";
 import { SeccionProgramados, usePendientes } from "./Programados";
+import { ConIconos } from "./IconoEmoji";
 
 const claveOcultos = (id) => `radical_avisos_ocultos_${id || "x"}`;
 const leerOcultos = (id) => {
@@ -160,14 +161,14 @@ export function ListaAvisos({ avisos, onOcultar, onAccion, hecho, onCerrarHecho,
       {avisos.map((a) => (
         <div key={a.id} className={`p-2.5 rounded-lg border text-xs ${ESTILO[a.tipo] || "border-slate-200 bg-slate-50"}`}>
           <div className="flex items-start gap-2">
-            <p className="flex-1 font-bold text-slate-900">{a.titulo}</p>
+            <p className="flex-1 font-bold text-slate-900"><ConIconos texto={a.titulo} /></p>
             {!a.fijo && (
               <button type="button" onClick={() => onOcultar(a.id)} title="Ocultar" className="text-slate-400 hover:text-slate-700 cursor-pointer">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
-          <p className="text-slate-600 mt-0.5 leading-snug">{a.mensaje}</p>
+          <p className="text-slate-600 mt-0.5 leading-snug"><ConIconos texto={a.mensaje} /></p>
           {a.accion && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               <button
@@ -280,10 +281,10 @@ export function RecordatorioPesos({ setActiveTab }) {
   if (!a) return null;
   return (
     <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3.5 flex flex-wrap items-center gap-3">
-      <span className="text-2xl">💪</span>
+      <span className="text-2xl"></span>
       <div className="flex-1 min-w-[200px]">
-        <p className="text-sm font-black text-amber-900">{a.titulo}</p>
-        <p className="text-xs text-amber-800">{a.mensaje}</p>
+        <p className="text-sm font-black text-amber-900"><ConIconos texto={a.titulo} /></p>
+        <p className="text-xs text-amber-800"><ConIconos texto={a.mensaje} /></p>
       </div>
       <button type="button" onClick={() => ejecutar(a)} className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-black cursor-pointer">
         Anotar ahora

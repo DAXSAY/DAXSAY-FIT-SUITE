@@ -10,6 +10,7 @@ import { CampoNumero } from "../common/CampoNumero";
 import React from "react";
 import { EditorComidas } from "./EditorComidas";
 import { PORCIONES_PESO, CONSEJOS_MANO } from "../../data/nutricionOpciones";
+import { IconoEmoji, IconosRepetidos } from "../common/IconoEmoji";
 
 // --- Porciones con la mano --------------------------------------------
 // Los gramos son una referencia aproximada para estimar macros.
@@ -84,7 +85,7 @@ export const MODELOS_PLATO = {
 
 export const COLORES_PLATO = { protein: "var(--color-rose-600)", veg: "var(--color-green-600)", carbs: "var(--color-amber-500)", fats: "var(--color-yellow-700)" };
 export const NOMBRES_PLATO = { protein: "Proteína", veg: "Verduras / ensalada", carbs: "Carbohidratos", fats: "Grasas" };
-const EMOJI_PLATO = { protein: "🍗", veg: "🥗", carbs: "🍚", fats: "🥑" };
+const EMOJI_PLATO = { protein: "", veg: "", carbs: "", fats: "" };
 
 /** Plato completo con valores por defecto (para planes antiguos sin plato) */
 export function normalizarPlato(p, sexo) {
@@ -229,7 +230,7 @@ export const PorcionesMano = ({ plate, oscuro = false }) => {
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
       {filas.map(([k, n]) => (
         <div key={k} className={`min-w-0 rounded-xl p-3 text-center border ${oscuro ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
-          <div className="text-2xl leading-none">{MANOS[k].emoji.repeat(Math.max(0, Math.min(3, Math.round(n))) || 0) || "—"}</div>
+          <div className="text-2xl leading-none"><IconosRepetidos e={MANOS[k].emoji} n={Math.min(3, n)} /></div>
           <p className={`mt-1 text-base leading-tight font-black break-words ${oscuro ? "text-white" : "text-slate-900"}`}>
             {n} {MANOS[k].nombre.toLowerCase()}
             {n === 1 ? "" : "s"}
@@ -242,7 +243,7 @@ export const PorcionesMano = ({ plate, oscuro = false }) => {
       <div className="flex flex-wrap gap-2">
         {extras.map((m) => (
           <span key={m.campo} className={`px-3 py-1.5 rounded-full border text-xs font-bold ${oscuro ? "bg-white/5 border-white/10 text-slate-100" : "bg-amber-50 border-amber-200 text-amber-900"}`}>
-            {m.emoji} {plate[m.campo]} {m.nombre.toLowerCase()} · {m.que}
+            <IconoEmoji e={m.emoji} /> {plate[m.campo]} {m.nombre.toLowerCase()} · {m.que}
           </span>
         ))}
       </div>
@@ -373,7 +374,7 @@ export const EditorPlato = ({ value, onChange, sexo }) => {
             ["thumbs", "pulgar"],
           ].map(([k, m]) => (
             <label key={k} className="block bg-white rounded-xl border border-slate-200 p-2 text-center">
-              <span className="block text-xl">{MANOS[m].emoji}</span>
+              <span className="block text-xl"><IconoEmoji e={MANOS[m].emoji} /></span>
               <span className="block text-[11px] font-bold text-slate-600">{MANOS[m].nombre} · {MANOS[m].que}</span>
               <span className="block text-[10px] text-slate-400">Hombre 2 · Mujer 1</span>
               <CampoNumero
@@ -392,7 +393,7 @@ export const EditorPlato = ({ value, onChange, sexo }) => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {Object.values(MANOS_EXTRA).map((m) => (
             <label key={m.campo} title={m.detalle} className="block bg-amber-50/60 rounded-xl border border-amber-200 p-2 text-center">
-              <span className="block text-xl">{m.emoji}<span className="text-base ml-0.5">{m.gesto}</span></span>
+              <span className="block text-xl"><IconoEmoji e={m.emoji} /><span className="text-base ml-0.5"><IconoEmoji e={m.gesto} /></span></span>
               <span className="block text-[11px] font-bold text-slate-700">{m.nombre} · {m.que}</span>
               <span className="block text-[10px] text-slate-500 leading-tight">{m.detalle}</span>
               <CampoNumero
@@ -431,7 +432,7 @@ export const GuiaPorciones = ({ oscuro = false, sexo }) => (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {Object.entries(MANOS).map(([k, m]) => (
         <div key={k} className={`rounded-2xl p-4 border ${oscuro ? "bg-white/5 border-white/10 text-white" : "bg-white border-slate-200"}`}>
-          <div className="text-3xl">{m.emoji}</div>
+          <div className="text-3xl"><IconoEmoji e={m.emoji} /></div>
           <p className="font-black mt-1">
             {m.nombre} = {m.que}
           </p>
@@ -457,7 +458,7 @@ export const GuiaPorciones = ({ oscuro = false, sexo }) => (
             <tr key={g.grupo} className={`border-t ${oscuro ? "border-white/10 text-slate-100" : "border-slate-100 text-slate-700"}`}>
               <td className="p-3 font-bold">{g.grupo}</td>
               <td className="p-3 whitespace-nowrap">
-                <span className="text-lg mr-1">{g.mano}</span> {g.gesto}
+                <span className="text-lg mr-1"><IconoEmoji e={g.mano} /></span> <IconoEmoji e={g.gesto} />
               </td>
               <td className="p-3 whitespace-nowrap">{g.medida}</td>
               <td className="p-3">{g.cuanto}</td>
@@ -468,10 +469,10 @@ export const GuiaPorciones = ({ oscuro = false, sexo }) => (
     </div>
     <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 text-sm ${oscuro ? "text-slate-200" : "text-slate-700"}`}>
       {[
-        ["🥦 Verduras", "Inclúyelas crudas o cocidas en cada comida y cambia de colores: cada verdura aporta nutrientes distintos."],
-        ["🍗 Proteína", "Elige proteínas magras (pollo, pescado, huevo, menestras, tofu) y evita embutidos y carnes muy grasosas."],
-        ["🍠 Carbohidratos", "Prefiere los ricos en fibra (avena, quinua, camote, arroz integral) sobre todo antes y después de entrenar; limita dulces y snacks."],
-        ["🥑 Grasas", "Palta, frutos secos, aceite de oliva o pescado azul; evita frituras y grasas trans."],
+        ["Verduras", "Inclúyelas crudas o cocidas en cada comida y cambia de colores: cada verdura aporta nutrientes distintos."],
+        ["Proteína", "Elige proteínas magras (pollo, pescado, huevo, menestras, tofu) y evita embutidos y carnes muy grasosas."],
+        ["Carbohidratos", "Prefiere los ricos en fibra (avena, quinua, camote, arroz integral) sobre todo antes y después de entrenar; limita dulces y snacks."],
+        ["Grasas", "Palta, frutos secos, aceite de oliva o pescado azul; evita frituras y grasas trans."],
       ].map(([t, x]) => (
         <div key={t} className={`rounded-xl p-3 border ${oscuro ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
           <b>{t}:</b> {x}
@@ -481,13 +482,13 @@ export const GuiaPorciones = ({ oscuro = false, sexo }) => (
     <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs ${oscuro ? "text-slate-200" : "text-slate-700"}`}>
       {CONSEJOS_MANO.map(([e, t]) => (
         <div key={t} className={`rounded-xl p-2.5 border flex gap-2 ${oscuro ? "bg-white/5 border-white/10" : "bg-emerald-50/60 border-emerald-200"}`}>
-          <span className="text-lg leading-none">{e}</span>
+          <span className="text-lg leading-none"><IconoEmoji e={e} /></span>
           <span>{t}</span>
         </div>
       ))}
     </div>
     <div className={`overflow-x-auto rounded-2xl border ${oscuro ? "border-white/10" : "border-slate-200 bg-white"}`}>
-      <p className={`px-3 pt-3 text-xs font-black uppercase tracking-wider ${oscuro ? "text-amber-300" : "text-amber-700"}`}>⚖️ Porciones por peso (para quien prefiere pesar)</p>
+      <p className={`px-3 pt-3 text-xs font-black uppercase tracking-wider ${oscuro ? "text-amber-300" : "text-amber-700"}`}>Porciones por peso (para quien prefiere pesar)</p>
       <table className="w-full text-sm">
         <thead>
           <tr className={`text-left text-[11px] uppercase ${oscuro ? "text-slate-300" : "text-slate-500"}`}>
@@ -663,7 +664,7 @@ export const EditorPlatos = ({ value, onChange, sexo, metas, comidas = [], setCo
                   {p.time || "sin hora"} · {(MODELOS_PLATO[p.model] || {}).nombre || "Personalizado"}
                 </span>
                 <span className={`mt-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-black ${kcal ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-400"}`}>{kcal ? `${kcal} kcal` : "sin alimentos"}</span>
-                <span className={`block mt-1 text-[10px] font-black ${on ? "text-emerald-700" : "text-blue-700"}`}>{on ? "▲ Cerrar" : "⚙ Programar"}</span>
+                <span className={`block mt-1 text-[10px] font-black ${on ? "text-emerald-700" : "text-blue-700"}`}>{on ? "▲ Cerrar" : "Programar"}</span>
               </button>
             );
           })}

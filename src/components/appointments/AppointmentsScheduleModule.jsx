@@ -319,8 +319,8 @@ export const AppointmentsScheduleModule = () => {
   const sendWhatsAppReminder = (apt) => {
     const serviceName =
       apt.serviceType === "nutrition"
-        ? "🥗 Nutrición Deportiva"
-        : "🩺 Fisioterapia & Rehabilitación";
+        ? "Nutrición Deportiva"
+        : "Fisioterapia & Rehabilitación";
     const statusLabels = {
       por_atender: "Por Atender (En Espera)",
       atendiendo: "En Atención Ahora",
@@ -1289,7 +1289,7 @@ export const AppointmentsScheduleModule = () => {
 
               <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
                 <div className="font-bold text-slate-800">
-                  📌 Reglas de Atención al Alumno:
+                   Reglas de Atención al Alumno:
                 </div>
                 <div>
                   • Cada cita dura {duracionDe(portalSelectedService, portalSelectedDate)} minutos.

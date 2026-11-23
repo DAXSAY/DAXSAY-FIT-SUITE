@@ -6,6 +6,7 @@ import { AlertTriangle, Users, Package, MessageCircle, Search, BellRing, Siren }
 import { useGym } from "../../context/GymContext";
 import { enlaceWhatsApp } from "../common/TelWhatsApp";
 import { hoyISO } from "../../utils/fecha";
+import { IconoEmoji, ConIconos } from "../common/IconoEmoji";
 
 const PRIORIDAD = {
   critica: { orden: 0, etiqueta: "Urgente", chip: "bg-rose-100 text-rose-800 border-rose-300", barra: "bg-rose-500" },
@@ -24,13 +25,13 @@ const Fila = ({ a }) => {
   return (
     <li className="relative flex items-center gap-3 rounded-xl border border-slate-200 bg-white pl-4 pr-3 py-2.5 overflow-hidden">
       <span className={`absolute left-0 top-0 bottom-0 w-1.5 ${p.barra}`} />
-      <span className="text-lg shrink-0" aria-hidden>{a.emoji}</span>
+      <span className="text-lg shrink-0" aria-hidden><IconoEmoji e={a.emoji} /></span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 min-w-0">
-          <b className="truncate text-sm text-slate-900">{a.titulo}</b>
+          <b className="truncate text-sm text-slate-900"><ConIconos texto={a.titulo} /></b>
           {a.codigo && <span className="shrink-0 font-mono text-[11px] font-bold text-slate-500">{a.codigo}</span>}
         </div>
-        <p className="truncate text-xs text-slate-600">{a.detalle}</p>
+        <p className="truncate text-xs text-slate-600"><ConIconos texto={a.detalle} /></p>
       </div>
       <span className={`shrink-0 px-2 py-0.5 rounded-full border text-[11px] font-bold ${p.chip}`}>{p.etiqueta}</span>
       {a.telefono && (
@@ -113,7 +114,7 @@ export const TodasLasAlertas = () => {
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1.5">
             <span>Por prioridad</span>
             <span>
-              🔴 {cuenta([...clientes, ...productos], "critica")} urgentes · 🟠 {cuenta([...clientes, ...productos], "alta")} altas · 🟡 {cuenta([...clientes, ...productos], "media")} medias
+               {cuenta([...clientes, ...productos], "critica")} urgentes ·  {cuenta([...clientes, ...productos], "alta")} altas ·  {cuenta([...clientes, ...productos], "media")} medias
             </span>
           </div>
           <div className="flex h-3 rounded-full overflow-hidden bg-slate-100">

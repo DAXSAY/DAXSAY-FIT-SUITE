@@ -508,7 +508,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
               <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-200 text-xs">
                 <span className="font-bold text-emerald-800 text-xs block uppercase mb-1">
-                  🟢 Permitido en Sala
+                   Permitido en Sala
                 </span>
                 <p className="text-slate-700 text-xs">
                   {session.exerciseDosage?.exerciseAdaptation?.allowedExercises?.join(
@@ -520,7 +520,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
 
               <div className="bg-white/80 p-2.5 rounded-xl border border-rose-200 text-xs">
                 <span className="font-bold text-rose-800 text-xs block uppercase mb-1">
-                  🔴 Prohibido Temporalmente
+                   Prohibido Temporalmente
                 </span>
                 <p className="text-slate-700 text-xs">
                   {session.gymWorkoutRestrictions ||
@@ -530,7 +530,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
 
               <div className="bg-white/80 p-2.5 rounded-xl border border-blue-200 text-xs">
                 <span className="font-bold text-blue-800 text-xs block uppercase mb-1">
-                  🏡 Cuidado en Casa
+                   Cuidado en Casa
                 </span>
                 <p className="text-slate-700 text-xs">
                   {session.homeIndications ||
@@ -569,7 +569,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
               )}
               {session.followUp.shortTermGoal && (
                 <div className="col-span-2 sm:col-span-4 rounded-xl border border-blue-200 bg-blue-50 p-2.5 text-sm text-blue-900">
-                  🎯 <b>Objetivo próximo:</b> {session.followUp.shortTermGoal}
+                   <b>Objetivo próximo:</b>{session.followUp.shortTermGoal}
                 </div>
               )}
             </div>
@@ -1009,7 +1009,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
                         <InsigniaMetodo metodo={ex.metodo} />
                         {ex.techniqueTips && (
                           <p className="text-xs text-slate-600 italic bg-white p-2 rounded-lg border border-slate-200">
-                            💡 <strong>Técnica:</strong> {ex.techniqueTips}
+                             <strong>Técnica:</strong>{ex.techniqueTips}
                           </p>
                         )}
 
@@ -1018,7 +1018,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
                           ex.commentsWithImages.length > 0 && (
                             <div className="space-y-2 pt-1 border-t border-slate-200">
                               <span className="text-xs font-bold uppercase text-slate-500 block">
-                                📸 Pautas Visuales & Comentarios Adjuntos:
+                                 Pautas Visuales & Comentarios Adjuntos:
                               </span>
                               <div className="space-y-1.5">
                                 {ex.commentsWithImages.map((c) => (
@@ -1027,7 +1027,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
                                     className="bg-white p-2 rounded-lg border border-slate-200 space-y-1.5"
                                   >
                                     <p className="text-xs font-medium text-slate-800 leading-snug">
-                                      💬 {c.comment}
+                                       {c.comment}
                                     </p>
                                     {c.attachedImages &&
                                       c.attachedImages.length > 0 && (

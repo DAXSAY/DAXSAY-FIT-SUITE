@@ -7,6 +7,7 @@ import { api } from "../../api/cliente";
 import { useGym } from "../../context/GymContext";
 import { userCan } from "../../config/roles";
 import { coincideFila } from "../../utils/buscarPersona";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 // Ordenadas por importancia: primero lo que hay que atender hoy
 export const GRUPOS_MSG = [
@@ -30,16 +31,16 @@ export const CATEGORIAS_MSG = [
 const VARIABLES = ["nombre", "plan", "fecha_vencimiento", "dias", "deuda", "fecha_limite", "codigo", "fecha_regreso", "asistencias", "gym"];
 // Botones del editor: el texto entre llaves se cambia solo por el dato de cada alumno
 const ETIQUETAS_VAR = {
-  nombre: ["👤", "Nombre"],
-  plan: ["📋", "Plan"],
-  fecha_vencimiento: ["📅", "Fecha de vencimiento"],
-  dias: ["⏱️", "Días"],
-  deuda: ["💳", "Deuda S/"],
-  fecha_limite: ["🗓️", "Fecha límite de pago"],
-  codigo: ["🔢", "Código"],
-  fecha_regreso: ["❄️", "Fecha de regreso"],
-  asistencias: ["🏋️", "Asistencias del mes"],
-  gym: ["🏠", "Nombre del gym"],
+  nombre: ["", "Nombre"],
+  plan: ["", "Plan"],
+  fecha_vencimiento: ["", "Fecha de vencimiento"],
+  dias: ["", "Días"],
+  deuda: ["", "Deuda S/"],
+  fecha_limite: ["", "Fecha límite de pago"],
+  codigo: ["", "Código"],
+  fecha_regreso: ["", "Fecha de regreso"],
+  asistencias: ["", "Asistencias del mes"],
+  gym: ["", "Nombre del gym"],
 };
 const fc = (f) => (f ? String(f).slice(0, 10).split("-").reverse().join("/") : "");
 
@@ -74,7 +75,7 @@ const detalle = (cat, a) =>
     deuda: `Debe S/ ${a.debt.toFixed(2)}${a.debtDueDate ? ` · hasta ${fc(a.debtDueDate)}` : ""}`,
     renovaron: `${a.plan} · hasta ${fc(a.endDate)}`,
     bienvenida: a.days === 0 ? "Se inscribió hoy" : `Inscrito hace ${a.days} día${a.days === 1 ? "" : "s"}`,
-    cumpleanos: a.today ? "🎉 ¡Hoy!" : `Cumple el ${a.birthday}`,
+    cumpleanos: a.today ? "¡Hoy!" : `Cumple el ${a.birthday}`,
     congelamiento: `Vuelve el ${fc(a.returnDate)}`,
     constancia: `${a.attendances30} asistencias en 30 días`,
   })[cat] || "";
@@ -231,7 +232,7 @@ export function MensajesCategorias() {
               className={`h-full text-left rounded-xl border p-2.5 cursor-pointer transition-colors ${on ? g.on : `${g.borde} hover:border-slate-400`}`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-lg">{c.emoji}</span>
+                <span className="text-lg"><IconoEmoji e={c.emoji} /></span>
                 <span className={`min-w-6 h-6 px-1.5 rounded-full text-xs font-bold flex items-center justify-center ${n ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400"}`}>{n}</span>
               </div>
               <p className="text-sm font-bold text-slate-900 mt-1">{c.label}</p>
@@ -250,7 +251,7 @@ export function MensajesCategorias() {
         <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="font-bold text-slate-900">
-              {info?.emoji} Mensajes · {info?.label} <span className="text-slate-400 font-normal">({mensajes.length})</span>
+              <IconoEmoji e={info?.emoji} /> Mensajes · {info?.label} <span className="text-slate-400 font-normal">({mensajes.length})</span>
             </h3>
             {puedeEditar && !editando && (
               <button type="button" onClick={() => setEditando({ title: "", message: "", category: cat })} className="text-xs font-bold text-blue-700 flex items-center gap-1 cursor-pointer">
@@ -271,7 +272,7 @@ export function MensajesCategorias() {
                   <span className="block text-[11px] font-bold uppercase text-slate-500 mb-1">2. ¿Para qué tipo de alumno?</span>
                   <select value={editando.category || cat} onChange={(e) => setEditando({ ...editando, category: e.target.value })} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm">
                     {CATEGORIAS_MSG.map((c) => (
-                      <option key={c.id} value={c.id}>{c.emoji} {c.label} — {c.desc}</option>
+                      <option key={c.id} value={c.id}>{c.label} — {c.desc}</option>
                     ))}
                   </select>
                 </label>
@@ -297,7 +298,7 @@ export function MensajesCategorias() {
                   onChange={(e) => setEditando({ ...editando, message: e.target.value })}
                   rows={5}
                   maxLength={1000}
-                  placeholder="Ej. ¡Hola  👤 Nombre! Tu plan  📋 Plan vence el  📅 Fecha de vencimiento…"
+                  placeholder="Ej. ¡Hola   Nombre! Tu plan   Plan vence el   Fecha de vencimiento…"
                   className="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm"
                 />
                 <p className="text-[11px] text-slate-500 mt-0.5">
@@ -353,7 +354,7 @@ export function MensajesCategorias() {
                       <GripVertical className="w-3.5 h-3.5 text-slate-300 shrink-0" />
                       {on && <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
                       <span className="truncate">{m.title}</span>
-                      {m.custom && <span className="ml-1 text-[10px] text-blue-600 shrink-0">★ propio</span>}
+                      {m.custom && <span className="ml-1 text-[10px] text-blue-600 shrink-0">propio</span>}
                       {usos > 0 && <span className="ml-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 shrink-0">{usos} persona(s)</span>}
                     </p>
                     <span className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -420,7 +421,7 @@ export function MensajesCategorias() {
             </div>
           )}
           {todosCat.length === 0 ? (
-            <p className="text-sm text-slate-500 text-center py-8">No hay alumnos en esta categoría por ahora. 🎉</p>
+            <p className="text-sm text-slate-500 text-center py-8">No hay alumnos en esta categoría por ahora. </p>
           ) : (
             <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
               {alumnos.map((a) => {

@@ -558,8 +558,8 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
                   onChange={(e) => setPaymentMethod(e.target.value)}
                   className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
                 >
-                  <option value="efectivo">💵 Efectivo</option>
-                  <option value="yape_plin">📱 Yape / Plin</option>
+                  <option value="efectivo">Efectivo</option>
+                  <option value="yape_plin">Yape / Plin</option>
                 </select>
               </div>
             </div>
@@ -607,8 +607,8 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
           {cajaCerrada && (
             <p className={`text-xs font-bold rounded-lg px-3 py-2 border ${bloqueaCaja ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
               {bloqueaCaja
-                ? "🔒 La caja está cerrada: ábrela en Arqueo de caja para cobrar esta matrícula."
-                : "⚠️ Nadie tiene la caja abierta: este cobro quedará fuera de un turno de caja."}
+                ? "La caja está cerrada: ábrela en Arqueo de caja para cobrar esta matrícula."
+                : "Nadie tiene la caja abierta: este cobro quedará fuera de un turno de caja."}
             </p>
           )}
           {errorForm && <p className="text-xs font-bold text-rose-600">{errorForm}</p>}

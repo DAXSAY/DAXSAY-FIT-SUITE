@@ -7,6 +7,7 @@ import { useGym } from "../../context/GymContext";
 import { hoyISO } from "../../utils/fecha";
 import { userCan } from "../../config/roles";
 import { coincidePersonal } from "../../utils/buscarPersona";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 const DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -80,14 +81,14 @@ export const calcularMes = (attendances, c, mes, hoy) => {
 };
 
 const GRUPOS = [
-  ["todos", "Todos", "👥"],
-  ["trainer", "Entrenadores", "🏋️"],
-  ["receptionist", "Recepción", "🛎️"],
-  ["nutritionist", "Nutrición", "🥗"],
-  ["physiotherapist", "Fisioterapia", "🩺"],
-  ["maintenance", "Mantenimiento", "🧰"],
-  ["manager", "Coordinación", "📋"],
-  ["external", "Externos", "🤝"],
+  ["todos", "Todos", ""],
+  ["trainer", "Entrenadores", ""],
+  ["receptionist", "Recepción", ""],
+  ["nutritionist", "Nutrición", ""],
+  ["physiotherapist", "Fisioterapia", ""],
+  ["maintenance", "Mantenimiento", ""],
+  ["manager", "Coordinación", ""],
+  ["external", "Externos", ""],
   ["otros", "Otros", "•"],
 ];
 const grupoDe = (c) => (c.external ? "external" : GRUPOS.some(([k]) => k === c.role) ? c.role : "otros");
@@ -187,7 +188,7 @@ export const CalendarioPersonal = () => {
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold border cursor-pointer ${grupo === k ? "bg-blue-600 border-blue-600 text-white" : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-blue-50"}`}
               >
-                {icono} {nombre} <span className="opacity-70">· {n}</span>
+                <IconoEmoji e={icono} /> {nombre} <span className="opacity-70">· {n}</span>
               </button>
             );
           })}

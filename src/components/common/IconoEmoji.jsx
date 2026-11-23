@@ -1,0 +1,307 @@
+// Íconos del sistema en lugar de emojis (mismo trazo en modo claro y oscuro).
+// Los datos pueden seguir guardando un emoji como "ícono" (p. ej. objetivos,
+// sistemas de entrenamiento, porciones con la mano): aquí se dibuja su ícono.
+import React from "react";
+import {
+  AlarmClock, Apple, Armchair, ArrowDown, ArrowLeftRight, ArrowRight, ArrowUp, Axe, BadgeCheck, Ban, Banana, Bandage, Banknote, BatteryFull, BatteryLow, Bean, BedDouble, Beef, Bell, BellRing, BicepsFlexed, Bike, Bird, Bone, Brain, BrickWall, Briefcase, Brush, Cable, Cake, Calculator, Calendar, CalendarDays, Camera, Carrot, ChartColumn, Check, Cherry, Circle, CircleCheck, CircleDot, CircleX, ClipboardList, Clock, Coffee, Coins, Cookie, CreditCard, CupSoda, Disc, Droplet, Drumstick, Dumbbell, Egg, EggFried, Eye, FastForward, FileText, Fish, Flag, Flame, Footprints, Gift, GraduationCap, Grape, Hand, HandFist, HandHeart, Handshake, Hash, Heart, HeartCrack, HeartPulse, Hospital, Hourglass, House, Infinity, Landmark, Layers, Leaf, Lightbulb, Link, Lock, Mars, Medal, Megaphone, Menu, MessageCircle, Milk, Minus, Moon, Mountain, MountainSnow, MoveUp, NotebookPen, Nut, Package, Paperclip, PartyPopper, Pause, PenLine, Pencil, PersonStanding, PhoneOff, Pin, Pizza, Plane, Play, Plus, Pointer, Puzzle, RefreshCw, Repeat, Repeat1, Rewind, Ribbon, Rocket, Ruler, Salad, Sandwich, Scale, School, Scissors, Search, Settings, Shield, Shirt, Shuffle, Signal, Skull, Smartphone, Smile, Snail, Snowflake, Soup, Sparkles, Spool, Sprout, Star, Stethoscope, Sun, Swords, Tag, Target, Thermometer, ThumbsUp, Ticket, Timer, TrendingDown, TrendingUp, Triangle, TriangleAlert, Trophy, Turtle, Umbrella, Undo2, User, Users, Utensils, Venus, Volleyball, Waves, Wheat, Wind, Wrench, X, Zap,
+} from "lucide-react";
+
+const MAPA = {
+  "💪": BicepsFlexed,
+  "🏋": Dumbbell,
+  "🩺": Stethoscope,
+  "🔥": Flame,
+  "🌱": Sprout,
+  "🎯": Target,
+  "⚡": Zap,
+  "🔋": BatteryFull,
+  "⚖": Scale,
+  "✊": HandFist,
+  "📅": CalendarDays,
+  "✨": Sparkles,
+  "❄": Snowflake,
+  "🎉": PartyPopper,
+  "📋": ClipboardList,
+  "✋": Hand,
+  "👍": ThumbsUp,
+  "👋": Hand,
+  "🥗": Salad,
+  "⏱": Timer,
+  "🤲": HandHeart,
+  "📏": Ruler,
+  "🟢": CircleDot,
+  "💵": Banknote,
+  "📱": Smartphone,
+  "💡": Lightbulb,
+  "⛔": Ban,
+  "🧘": PersonStanding,
+  "🏆": Trophy,
+  "🔔": Bell,
+  "📦": Package,
+  "🔁": Repeat,
+  "💳": CreditCard,
+  "🏃": Footprints,
+  "👤": User,
+  "⏳": Hourglass,
+  "🩹": Bandage,
+  "🟠": CircleDot,
+  "✍": PenLine,
+  "📈": TrendingUp,
+  "🎂": Cake,
+  "🔴": CircleDot,
+  "🟡": CircleDot,
+  "🔄": RefreshCw,
+  "🫀": HeartPulse,
+  "🌀": Wind,
+  "🤸": PersonStanding,
+  "❤": Heart,
+  "👵": User,
+  "☝": Pointer,
+  "😊": Smile,
+  "✅": CircleCheck,
+  "📝": NotebookPen,
+  "🎟": Ticket,
+  "🏠": House,
+  "🥤": CupSoda,
+  "✏": Pencil,
+  "★": Star,
+  "⏰": AlarmClock,
+  "🤝": Handshake,
+  "🍽": Utensils,
+  "✌": Hand,
+  "🧱": BrickWall,
+  "🦘": MoveUp,
+  "♂": Mars,
+  "⚽": Volleyball,
+  "🧍": PersonStanding,
+  "⚙": Settings,
+  "💬": MessageCircle,
+  "💧": Droplet,
+  "🍗": Drumstick,
+  "🥑": Leaf,
+  "🔒": Lock,
+  "🏁": Flag,
+  "🏖": Umbrella,
+  "🔵": CircleDot,
+  "📢": Megaphone,
+  "🏦": Landmark,
+  "🗓": Calendar,
+  "💔": HeartCrack,
+  "🪑": Armchair,
+  "🔺": Triangle,
+  "🧩": Puzzle,
+  "🏅": Medal,
+  "💨": Wind,
+  "🪨": Mountain,
+  "🪜": Layers,
+  "🦵": Footprints,
+  "🩸": Droplet,
+  "🛌": BedDouble,
+  "✎": Pencil,
+  "📐": Ruler,
+  "🔍": Search,
+  "🍚": Wheat,
+  "🥦": Carrot,
+  "🍎": Apple,
+  "🤏": Hand,
+  "👁": Eye,
+  "✖": X,
+  "📷": Camera,
+  "✈": Plane,
+  "🙅": Ban,
+  "💼": Briefcase,
+  "🕒": Clock,
+  "💸": Banknote,
+  "📵": PhoneOff,
+  "🟣": CircleDot,
+  "🧑": User,
+  "🏫": School,
+  "➕": Plus,
+  "🛠": Wrench,
+  "📎": Paperclip,
+  "🧹": Brush,
+  "📊": ChartColumn,
+  "🎁": Gift,
+  "🌟": Star,
+  "🥊": Swords,
+  "🏷": Tag,
+  "🚫": Ban,
+  "🙌": Hand,
+  "🔢": Hash,
+  "⏸": Pause,
+  "📉": TrendingDown,
+  "✂": Scissors,
+  "🐢": Turtle,
+  "🚀": Rocket,
+  "🕐": Clock,
+  "♾": Infinity,
+  "🦍": Dumbbell,
+  "🪫": BatteryLow,
+  "🔂": Repeat1,
+  "🔀": Shuffle,
+  "🧨": Flame,
+  "🖐": Hand,
+  "🌊": Waves,
+  "🔝": ArrowUp,
+  "📶": Signal,
+  "⛓": Link,
+  "⏯": Play,
+  "⌛": Hourglass,
+  "🪓": Axe,
+  "💀": Skull,
+  "🚶": Footprints,
+  "🎢": TrendingUp,
+  "🏐": Volleyball,
+  "🐌": Snail,
+  "🌬": Wind,
+  "🔩": Wrench,
+  "🛡": Shield,
+  "➖": Minus,
+  "🪢": Cable,
+  "🎗": Ribbon,
+  "🧗": Mountain,
+  "💿": Disc,
+  "🧵": Spool,
+  "🚴": Bike,
+  "🚣": Waves,
+  "🌡": Thermometer,
+  "🫁": Wind,
+  "🦅": Bird,
+  "🏔": MountainSnow,
+  "🔱": Zap,
+  "🍑": Cherry,
+  "🦶": Footprints,
+  "🧣": Shirt,
+  "💰": Coins,
+  "👥": Users,
+  "🛎": BellRing,
+  "🧰": Wrench,
+  "👨": User,
+  "👩": User,
+  "👧": User,
+  "📄": FileText,
+  "🎓": GraduationCap,
+  "🕊": Bird,
+  "📌": Pin,
+  "➔": ArrowRight,
+  "🦴": Bone,
+  "⭐": Star,
+  "🏡": House,
+  "📸": Camera,
+  "👏": Hand,
+  "🏥": Hospital,
+  "❌": CircleX,
+  "🥛": Milk,
+  "🥔": Carrot,
+  "🫘": Bean,
+  "🍲": Soup,
+  "🍯": Droplet,
+  "🧮": Calculator,
+  "🍴": Utensils,
+  "🧀": Milk,
+  "🥜": Nut,
+  "🫒": Leaf,
+  "♀": Venus,
+  "🍠": Carrot,
+  "🌿": Leaf,
+  "🤰": User,
+  "🧒": User,
+  "☰": Menu,
+  "⚠": TriangleAlert,
+  "🍳": EggFried,
+  "🥚": Egg,
+  "🐟": Fish,
+  "🥩": Beef,
+  "🍌": Banana,
+  "🍇": Grape,
+  "🥕": Carrot,
+  "🍪": Cookie,
+  "🍕": Pizza,
+  "🥪": Sandwich,
+  "🥣": Soup,
+  "🍞": Wheat,
+  "🌾": Wheat,
+  "☀": Sun,
+  "🌙": Moon,
+  "☕": Coffee,
+  "🍵": Coffee,
+  "🏊": Waves,
+  "💤": Moon,
+  "📲": Smartphone,
+  "🧠": Brain,
+  "🦾": BicepsFlexed,
+  "🥇": Medal,
+  "🥈": Medal,
+  "🥉": Medal,
+  "💯": BadgeCheck,
+  "🆕": Sparkles,
+  "🆗": Check,
+  "🕓": Clock,
+  "🕖": Clock,
+  "⏩": FastForward,
+  "⏪": Rewind,
+  "↩": Undo2,
+  "⬆": ArrowUp,
+  "⬇": ArrowDown,
+  "↔": ArrowLeftRight,
+};
+
+// Emojis y símbolos pictográficos (con o sin selector de variante)
+export const RE_EMOJI = /(?:[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B50}\u{2B06}\u{2194}-\u{21AA}\u{23E9}-\u{23FA}\u{231A}\u{231B}\u{2328}\u{23CF}\u{2605}\u{2630}\u{2794}\u{2642}\u{2640}])\u{FE0F}?(?:\u{200D}[\u{2600}-\u{27BF}\u{1F300}-\u{1FAFF}]\u{FE0F}?)*/gu;
+const SIMBOLOS = new Set(["✓", "✕", "✔", "✗"]);
+
+/** Ícono (componente de lucide) para un emoji, o null si no es emoji */
+export const iconoDeEmoji = (e) => {
+  if (typeof e !== "string") return null;
+  const limpio = e.trim().replace(/\u{FE0F}/gu, "");
+  if (!limpio || SIMBOLOS.has(limpio)) return null;
+  if (MAPA[limpio]) return MAPA[limpio];
+  const primero = [...limpio][0];
+  if (MAPA[primero]) return MAPA[primero];
+  RE_EMOJI.lastIndex = 0;
+  return RE_EMOJI.test(limpio) ? Circle : null;
+};
+
+/** Quita los emojis de un texto (para etiquetas que venían con emoji delante) */
+export const sinEmoji = (t) => (typeof t === "string" ? t.replace(RE_EMOJI, "").replace(/\s{2,}/g, " ").trim() : t);
+
+/**
+ * Dibuja el "ícono" de un dato: si es un emoji lo cambia por su ícono de línea,
+ * si ya es un componente o elemento lo muestra tal cual, si es texto lo deja.
+ */
+export function IconoEmoji({ e, className = "w-[1.1em] h-[1.1em]", strokeWidth = 2.2 }) {
+  if (e == null || e === "" || e === false) return null;
+  if (React.isValidElement(e)) return e;
+  if (typeof e === "function" || (typeof e === "object" && e.$$typeof)) return React.createElement(e, { className, strokeWidth });
+  const Icono = iconoDeEmoji(String(e));
+  if (Icono) return <Icono className={`inline-block align-[-0.15em] shrink-0 ${className}`} strokeWidth={strokeWidth} aria-hidden="true" />;
+  return <>{sinEmoji(String(e))}</>;
+}
+
+/** Texto que puede traer emojis (avisos, plantillas): cada emoji se dibuja como ícono */
+export function ConIconos({ texto, className }) {
+  if (typeof texto !== "string") return texto ?? null;
+  RE_EMOJI.lastIndex = 0;
+  if (!RE_EMOJI.test(texto)) return texto;
+  const partes = [];
+  let ultimo = 0;
+  let i = 0;
+  texto.replace(RE_EMOJI, (m, pos) => {
+    if (pos > ultimo) partes.push(texto.slice(ultimo, pos));
+    const Icono = iconoDeEmoji(m);
+    if (Icono) partes.push(<IconoEmoji key={`e${i++}`} e={m} className={className} />);
+    ultimo = pos + m.length;
+    return m;
+  });
+  if (ultimo < texto.length) partes.push(texto.slice(ultimo));
+  return <>{partes.map((x, k) => (typeof x === "string" ? <React.Fragment key={k}>{x}</React.Fragment> : x))}</>;
+}
+
+/** Repite el ícono de un emoji n veces (p. ej. porciones con la mano) */
+export function IconosRepetidos({ e, n, className }) {
+  const k = Math.max(0, Math.min(6, Math.round(Number(n) || 0)));
+  if (!k) return "—";
+  return <span className="inline-flex gap-0.5">{Array.from({ length: k }, (_, j) => <IconoEmoji key={j} e={e} className={className} />)}</span>;
+}
+
+export default IconoEmoji;

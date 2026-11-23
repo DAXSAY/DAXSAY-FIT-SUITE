@@ -1105,7 +1105,7 @@ const ReporteDeudas = () => {
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Deuda por estado</h4>
           {porEstado.length === 0 ? (
-            <p className="text-sm text-slate-500 py-16 text-center">Sin deudas pendientes 🎉</p>
+            <p className="text-sm text-slate-500 py-16 text-center">Sin deudas pendientes </p>
           ) : (
             <div style={{ height: 240 }}>
               <ResponsiveContainer width="100%" height="100%">

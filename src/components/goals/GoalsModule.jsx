@@ -231,7 +231,7 @@ const TarjetaMeta = ({ meta, admin, onEditar, onEliminar, onBono }) => {
             <ul className="text-xs text-slate-600 space-y-0.5">
               {p.logros.map((l) => (
                 <li key={l.id}>
-                  🏋️ {fCorta(l.dia)} · <strong>{l.alumno}</strong>: {l.descripcion}
+                   {fCorta(l.dia)} · <strong>{l.alumno}</strong>: {l.descripcion}
                   {l.inicial != null && l.final != null && ` (${l.inicial} → ${l.final} ${l.unidad})`} · aprobó {l.evaluador || (l.area === "nutricion" ? "nutrición" : "fisioterapia")}
                 </li>
               ))}
@@ -778,8 +778,8 @@ const AlumnosObjetivosProgreso = ({ puedeCrear, areaPropia, admin, conProgreso }
       {conProgreso && (
         <div className="inline-flex p-1 rounded-xl bg-white border border-slate-200 gap-1">
           {[
-            ["objetivos", "🎯 Objetivos (nutrición y fisio)"],
-            ["progreso", "🏋️ Progreso de pesos en el gym"],
+            ["objetivos", "Objetivos (nutrición y fisio)"],
+            ["progreso", "Progreso de pesos en el gym"],
           ].map(([k, l]) => (
             <button key={k} onClick={() => setVista(k)} className={`px-3 py-1.5 rounded-lg text-sm font-bold cursor-pointer ${vista === k ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
               {l}
@@ -887,10 +887,10 @@ const ListaObjetivos = ({ puedeCrear, areaPropia, admin }) => {
               {puedeEvaluar(o) && (
                 <>
                   <button onClick={() => setVista({ control: o })} className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-black cursor-pointer">
-                    📏 Registrar medida de hoy
+                     Registrar medida de hoy
                   </button>
                   <button onClick={() => setVista({ evaluar: o })} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black cursor-pointer">
-                    🏁 Evaluación final
+                     Evaluación final
                   </button>
                 </>
               )}
@@ -931,7 +931,7 @@ const RankingEspecialistas = ({ datos }) => {
                 {filas.map((f) => (
                   <tr key={f.staffId} className="border-b border-slate-100">
                     <td className="py-2 px-3 font-semibold">{f.name}</td>
-                    <td className="py-2 px-3 font-black text-emerald-600">🏆 {f.achieved}</td>
+                    <td className="py-2 px-3 font-black text-emerald-600">{f.achieved}</td>
                     <td className="py-2 px-3">{f.notAchieved}</td>
                     <td className="py-2 px-3">{f.inProgress}</td>
                   </tr>
@@ -1050,7 +1050,7 @@ const ListaBonos = ({ admin }) => {
                   return (
                     <div key={m.id}>
                       <div className="flex justify-between text-xs font-bold text-slate-600">
-                        <span className="truncate">🎯 {m.type === "recepcion" ? "Meta de recepción" : CATEGORIA[m.category] || "Meta del mes"}</span>
+                        <span className="truncate">{m.type === "recepcion" ? "Meta de recepción" : CATEGORIA[m.category] || "Meta del mes"}</span>
                         <span>
                           {m.type === "recepcion" ? soles(p.logrado) : p.logrado} / {m.type === "recepcion" ? soles(p.objetivo) : p.objetivo}
                         </span>
@@ -1238,7 +1238,7 @@ export const GoalsModule = () => {
       {aviso && <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold">{aviso}</div>}
       {!admin && ["mias", "bonos", "progreso", "ranking"].includes(tab) && (
         <p className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2">
-          👁️ Solo lectura: las metas, los logros y los bonos los define y paga administración.
+           Solo lectura: las metas, los logros y los bonos los define y paga administración.
           {rol === "reception" ? " Lo único que escribes tú son tus proyecciones." : ""}
         </p>
       )}
@@ -1318,7 +1318,7 @@ export const GoalsModule = () => {
                     <td className="py-2">{l.students}</td>
                     <td className="py-2">{l.composition}</td>
                     <td className="py-2">{l.injury}</td>
-                    <td className="py-2 font-black text-amber-600">🏋️ {l.total}</td>
+                    <td className="py-2 font-black text-amber-600">{l.total}</td>
                     <td className="py-2">{l.inProgress}</td>
                   </tr>
                 ))}

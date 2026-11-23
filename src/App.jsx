@@ -1,40 +1,88 @@
 import { marcarNavegacion } from "./utils/subPestana";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from "react";
 import { GymProvider, useGym } from "./context/GymContext";
 import { Header } from "./components/common/Header";
 import { Sidebar } from "./components/common/Sidebar";
-import { DashboardOverview } from "./components/dashboard/DashboardOverview";
-import { MembersManagement } from "./components/members/MembersManagement";
-import { NewMemberModal } from "./components/members/NewMemberModal";
-import { MembershipsPlans } from "./components/memberships/MembershipsPlans";
-import { FinanceModule } from "./components/finance/FinanceModule";
-import { StaffContractsModule } from "./components/staff/StaffContractsModule";
-import { PhysiotherapyModule } from "./components/physiotherapy/PhysiotherapyModule";
-import { AppointmentsScheduleModule } from "./components/appointments/AppointmentsScheduleModule";
-import { NutritionMeasurementsModule } from "./components/nutrition_measurements/NutritionMeasurementsModule";
-import { StorePOS } from "./components/store/StorePOS";
-import { CashShiftsModule } from "./components/cash/CashShiftsModule";
-import { UsersAccessModule } from "./components/users/UsersAccessModule";
-import { ReportsModule } from "./components/reports/ReportsModule";
-import { GoalsModule } from "./components/goals/GoalsModule";
-import { NotificationCenter } from "./components/notifications/NotificationCenter";
-import { AttendanceModule } from "./components/attendances/AttendanceModule";
 import { LoginScreen } from "./components/auth/LoginScreen";
 import { ChangePasswordScreen } from "./components/auth/ChangePasswordScreen";
 import { userCanAccess, getRole, getAllowedTabs } from "./config/roles";
-import { StudentPortalModule } from "./components/student_portal/StudentPortalModule";
 
 // Specialized modules
-import { RoutinesAndExercises } from "./components/routines/RoutinesAndExercises";
 import { ShieldAlert, ArrowRight } from "lucide-react";
 import { ErrorModulo } from "./components/common/ErrorModulo";
-import { CrmModule } from "./components/crm/CrmModule";
 
 import { AvisoIngreso } from "./components/attendances/AvisoIngreso";
 import { CorregirIngreso } from "./components/attendances/CorregirIngreso";
 import { AvisoStockBajo } from "./components/store/AvisoStockBajo";
+import GuardiaCambios from "./components/common/GuardiaCambios";
 import { hayVentanaAbierta, cerrarVentanaSuperior } from "./utils/controlesVentana";
 import { moduloDeLaDireccion } from "./utils/ventanas";
+
+
+// Cada módulo se descarga solo cuando se abre (la primera carga es mucho más liviana,
+// sobre todo en el celular). Después del ingreso se precargan en segundo plano.
+const cargadores = {
+  DashboardOverview: () => import("./components/dashboard/DashboardOverview").then((m) => ({ default: m.DashboardOverview })),
+  MembersManagement: () => import("./components/members/MembersManagement").then((m) => ({ default: m.MembersManagement })),
+  NewMemberModal: () => import("./components/members/NewMemberModal").then((m) => ({ default: m.NewMemberModal })),
+  MembershipsPlans: () => import("./components/memberships/MembershipsPlans").then((m) => ({ default: m.MembershipsPlans })),
+  FinanceModule: () => import("./components/finance/FinanceModule").then((m) => ({ default: m.FinanceModule })),
+  StaffContractsModule: () => import("./components/staff/StaffContractsModule").then((m) => ({ default: m.StaffContractsModule })),
+  PhysiotherapyModule: () => import("./components/physiotherapy/PhysiotherapyModule").then((m) => ({ default: m.PhysiotherapyModule })),
+  AppointmentsScheduleModule: () => import("./components/appointments/AppointmentsScheduleModule").then((m) => ({ default: m.AppointmentsScheduleModule })),
+  NutritionMeasurementsModule: () => import("./components/nutrition_measurements/NutritionMeasurementsModule").then((m) => ({ default: m.NutritionMeasurementsModule })),
+  StorePOS: () => import("./components/store/StorePOS").then((m) => ({ default: m.StorePOS })),
+  CashShiftsModule: () => import("./components/cash/CashShiftsModule").then((m) => ({ default: m.CashShiftsModule })),
+  UsersAccessModule: () => import("./components/users/UsersAccessModule").then((m) => ({ default: m.UsersAccessModule })),
+  ReportsModule: () => import("./components/reports/ReportsModule").then((m) => ({ default: m.ReportsModule })),
+  GoalsModule: () => import("./components/goals/GoalsModule").then((m) => ({ default: m.GoalsModule })),
+  NotificationCenter: () => import("./components/notifications/NotificationCenter").then((m) => ({ default: m.NotificationCenter })),
+  AttendanceModule: () => import("./components/attendances/AttendanceModule").then((m) => ({ default: m.AttendanceModule })),
+  StudentPortalModule: () => import("./components/student_portal/StudentPortalModule").then((m) => ({ default: m.StudentPortalModule })),
+  RoutinesAndExercises: () => import("./components/routines/RoutinesAndExercises").then((m) => ({ default: m.RoutinesAndExercises })),
+  CrmModule: () => import("./components/crm/CrmModule").then((m) => ({ default: m.CrmModule })),
+};
+const DashboardOverview = lazy(cargadores.DashboardOverview);
+const MembersManagement = lazy(cargadores.MembersManagement);
+const NewMemberModal = lazy(cargadores.NewMemberModal);
+const MembershipsPlans = lazy(cargadores.MembershipsPlans);
+const FinanceModule = lazy(cargadores.FinanceModule);
+const StaffContractsModule = lazy(cargadores.StaffContractsModule);
+const PhysiotherapyModule = lazy(cargadores.PhysiotherapyModule);
+const AppointmentsScheduleModule = lazy(cargadores.AppointmentsScheduleModule);
+const NutritionMeasurementsModule = lazy(cargadores.NutritionMeasurementsModule);
+const StorePOS = lazy(cargadores.StorePOS);
+const CashShiftsModule = lazy(cargadores.CashShiftsModule);
+const UsersAccessModule = lazy(cargadores.UsersAccessModule);
+const ReportsModule = lazy(cargadores.ReportsModule);
+const GoalsModule = lazy(cargadores.GoalsModule);
+const NotificationCenter = lazy(cargadores.NotificationCenter);
+const AttendanceModule = lazy(cargadores.AttendanceModule);
+const StudentPortalModule = lazy(cargadores.StudentPortalModule);
+const RoutinesAndExercises = lazy(cargadores.RoutinesAndExercises);
+const CrmModule = lazy(cargadores.CrmModule);
+
+let precargado = false;
+function precargarModulos() {
+  if (precargado) return;
+  precargado = true;
+  const lista = Object.values(cargadores);
+  const siguiente = () => {
+    const f = lista.shift();
+    if (!f) return;
+    f().catch(() => {}).finally(() => (window.requestIdleCallback ? window.requestIdleCallback(siguiente, { timeout: 2000 }) : setTimeout(siguiente, 150)));
+  };
+  setTimeout(siguiente, 1200);
+}
+
+function CargandoModulo() {
+  return (
+    <div className="rd-cargando-modulo flex items-center justify-center py-24" role="status" aria-live="polite">
+      <span className="w-8 h-8 rounded-full border-[3px] border-slate-200 border-t-blue-500 animate-spin" />
+      <span className="sr-only">Cargando…</span>
+    </div>
+  );
+}
 
 function MainAppContent() {
   const { currentUser, authChecked } = useGym();
@@ -144,6 +192,7 @@ function MainAppContent() {
     window.history.replaceState({ radical: arranque, raiz: true }, "");
     window.history.pushState({ radical: arranque }, "");
     setTabInterno(arranque);
+    precargarModulos();
   }, [currentUser?.id]);
 
   // Verificando la sesión guardada con la API
@@ -280,7 +329,7 @@ function MainAppContent() {
         <main className="flex-1 p-3 sm:p-5 lg:p-6 overflow-y-auto min-w-0">
           {currentUser.mustChangePassword && !avisoClaveOculto && (
             <div className="rd-aviso-clave mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 text-amber-900">
-              <span>🔒 Usas la contraseña inicial: cámbiala por una propia.</span>
+              <span>Usas la contraseña inicial: cámbiala por una propia.</span>
               <span className="flex gap-2">
                 <button
                   onClick={() => setCambiarClave(true)}
@@ -297,19 +346,21 @@ function MainAppContent() {
               </span>
             </div>
           )}
-          <ErrorModulo key={activeTab}>{renderModule()}</ErrorModulo>
+          <ErrorModulo key={activeTab}><Suspense fallback={<CargandoModulo />}>{renderModule()}</Suspense></ErrorModulo>
         </main>
       </div>
 
       {/* Los avisos del CRM pasan por la cinta de la barra superior (sin tarjetas en la esquina) */}
       <AvisoIngreso />
       <CorregirIngreso />
+      <GuardiaCambios />
       {userCanAccess(currentUser, "store") && currentUser.role !== "student" && <AvisoStockBajo onAbrir={() => setActiveTab("store")} />}
 
-      <NewMemberModal
-        isOpen={isNewMemberModalOpen}
-        onClose={() => setIsNewMemberModalOpen(false)}
-      />
+      {isNewMemberModalOpen && (
+        <Suspense fallback={null}>
+          <NewMemberModal isOpen={isNewMemberModalOpen} onClose={() => setIsNewMemberModalOpen(false)} />
+        </Suspense>
+      )}
 
       {cambiarClave && <ChangePasswordScreen onClose={() => setCambiarClave(false)} />}
 

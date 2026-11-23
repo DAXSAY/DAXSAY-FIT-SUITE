@@ -332,7 +332,7 @@ export const DashboardOverview = ({
                 : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
             }`}
           >
-            {isPeak ? "⭐ Pico Máximo" : "● Flujo Activo"}
+            {isPeak ? "Pico Máximo" : "● Flujo Activo"}
           </span>
         </div>
 
@@ -420,7 +420,7 @@ export const DashboardOverview = ({
           </span>
           <h1 className="text-2xl font-black mt-1">
             {new Date().getHours() < 12 ? "Buenos días" : new Date().getHours() < 19 ? "Buenas tardes" : "Buenas noches"},{" "}
-            {String(currentUser?.fullName || "").split(" ")[0]} 👋
+            {String(currentUser?.fullName || "").split(" ")[0]} 
           </h1>
           <p className="text-sm text-slate-300 mt-0.5">Así va RADICAL hoy. Toca una tarjeta para ver su gráfico.</p>
         </div>

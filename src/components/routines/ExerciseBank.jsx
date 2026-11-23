@@ -3,6 +3,7 @@ import { NOMBRES_ES, varianteDe } from "../../data/nombresEjercicios";
 import { textoNivelRutina } from "../../utils/rutinas";
 import React, { useEffect, useMemo, useState } from "react";
 import { Search, Plus, X, Dumbbell, Target, Layers, ListOrdered, Info, ShieldCheck, Gauge, Shuffle } from "lucide-react";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 /* ------------------------------------------------------------------
    BANCO DE EJERCICIOS CON GIFS
@@ -637,11 +638,11 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
                       return (
                         <tr key={o} className={`border-t border-slate-100 ${on ? "bg-violet-50" : ""}`}>
                           <td className={`py-1.5 pr-2 font-bold whitespace-nowrap ${on ? "text-violet-800" : "text-slate-800"}`}>
-                            {ic} {o} {on && <span className="ml-1 px-1.5 rounded-full bg-violet-600 text-white text-[9px]">recomendado</span>}
+                            <IconoEmoji e={ic} /> {o} {on && <span className="ml-1 px-1.5 rounded-full bg-violet-600 text-white text-[9px]">recomendado</span>}
                           </td>
                           <td className="py-1.5 pr-2 text-slate-700">{se}</td>
                           <td className="py-1.5 pr-2 font-bold text-blue-700">{re}</td>
-                          <td className="py-1.5 pr-2 text-slate-600">⏱ {de}</td>
+                          <td className="py-1.5 pr-2 text-slate-600">{de}</td>
                           <td className="py-1.5 pr-2 text-slate-600">{inten}</td>
                           <td className="py-1.5 text-slate-500">{tempo}</td>
                         </tr>
@@ -755,7 +756,7 @@ export const ExercisePicker = ({ exercises, onPick, picked = [], compacto = fals
                 style={{ animationDelay: `${i * 30}ms` }}
                 className="rd-aparece rd-grupo-banco group relative overflow-hidden flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-2.5 text-left cursor-pointer"
               >
-                <span className={`w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br ${v.grad} text-white text-lg flex items-center justify-center shadow-md transition-transform group-hover:scale-110`}>{v.emoji}</span>
+                <span className={`w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br ${v.grad} text-white text-lg flex items-center justify-center shadow-md transition-transform group-hover:scale-110`}><IconoEmoji e={v.emoji} /></span>
                 <span className="min-w-0">
                   <span className="block text-sm font-black text-slate-900 truncate">{l}</span>
                   <span className="block text-[11px] font-semibold text-slate-500">{k === "all" ? exercises.length : counts[k]} ejercicios</span>
@@ -778,7 +779,7 @@ export const ExercisePicker = ({ exercises, onPick, picked = [], compacto = fals
                   on ? "bg-blue-600 border-blue-600 text-white shadow" : "bg-white border-slate-200 text-slate-700 hover:border-blue-400"
                 }`}
               >
-                {v.emoji} {l} <span className={on ? "text-blue-100" : "text-slate-400"}>{k === "all" ? exercises.length : counts[k]}</span>
+                <IconoEmoji e={v.emoji} /> {l} <span className={on ? "text-blue-100" : "text-slate-400"}>{k === "all" ? exercises.length : counts[k]}</span>
               </button>
             );
           })}

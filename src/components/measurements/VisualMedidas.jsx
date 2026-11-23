@@ -3,6 +3,7 @@
 // - Dona de composición (grasa, músculo, hueso, resto)
 // - Silueta con las medidas (perímetros) y el cambio respecto a la evaluación anterior
 import React from "react";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 const n = (v) => (v === null || v === undefined || v === "" || Number.isNaN(Number(v)) ? null : Number(v));
 const r1 = (v) => Math.round(v * 10) / 10;
@@ -74,7 +75,7 @@ export function BarraRango({ titulo, icono, valor, unidad = "", cfg, previo, inv
     <div className={`rounded-xl border border-slate-200 bg-white ${compacto ? "p-2" : "p-3"}`}>
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-          {icono && <span className="text-base">{icono}</span>} {titulo}
+          {icono && <span className="text-base"><IconoEmoji e={icono} /></span>} {titulo}
         </span>
         {t && (
           <span className="text-[11px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: t[1] }}>
@@ -113,7 +114,7 @@ export function BarraRango({ titulo, icono, valor, unidad = "", cfg, previo, inv
       </div>
       {cfg.optimo && v != null && (
         <p className={`mt-1.5 text-[11px] font-bold ${v >= cfg.optimo[0] && v <= cfg.optimo[1] ? "text-emerald-700" : "text-rose-600"}`} title={cfg.fuente}>
-          {v >= cfg.optimo[0] && v <= cfg.optimo[1] ? "✓ En rango óptimo" : "⚠ Fuera del rango óptimo"} · óptimo {cfg.optimo[0]}–{cfg.optimo[1]}
+          {v >= cfg.optimo[0] && v <= cfg.optimo[1] ? "✓ En rango óptimo" : "Fuera del rango óptimo"} · óptimo {cfg.optimo[0]}–{cfg.optimo[1]}
           {unidad && unidad !== "nivel" ? ` ${unidad}` : ""}
           {cfg.fuente && <span className="block font-normal text-slate-400">{cfg.fuente}</span>}
         </p>
@@ -193,39 +194,39 @@ export function PanelComposicion({ a, previo, sexo, edad }) {
         <DonaComposicion peso={a.weightKg} grasaKg={b.bodyFatKg ?? (n(b.bodyFatPercentage) && a.weightKg ? (a.weightKg * b.bodyFatPercentage) / 100 : null)} musculoKg={b.muscleMassKg} huesoKg={b.boneMassKg} />
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-orange-50 to-white p-3">
-            <p className="text-xs font-bold text-slate-500">🔥 Metabolismo basal</p>
+            <p className="text-xs font-bold text-slate-500">Metabolismo basal</p>
             <p className="text-2xl font-black text-slate-900">{n(b.basalMetabolicRateKcal) ? Math.round(b.basalMetabolicRateKcal) : "—"} <span className="text-sm font-semibold text-slate-500">kcal/día</span></p>
             <p className="text-[11px] text-slate-500">Lo que gasta tu cuerpo en reposo</p>
           </div>
           <div className={`rounded-xl border p-3 ${edadMet && edad ? (edadMet <= edad ? "border-emerald-200 bg-gradient-to-br from-emerald-50 to-white" : "border-rose-200 bg-gradient-to-br from-rose-50 to-white") : "border-slate-200 bg-white"}`}>
-            <p className="text-xs font-bold text-slate-500">🎂 Edad metabólica</p>
+            <p className="text-xs font-bold text-slate-500">Edad metabólica</p>
             <p className="text-2xl font-black text-slate-900">{edadMet ?? "—"} <span className="text-sm font-semibold text-slate-500">años</span></p>
             {edadMet && edad ? (
               <p className={`text-[11px] font-semibold ${edadMet <= edad ? "text-emerald-700" : "text-rose-700"}`}>
-                {edadMet < edad ? `${edad - edadMet} años más joven que tu edad real 💪` : edadMet === edad ? "Igual a tu edad real" : `${edadMet - edad} años mayor que tu edad real`}
+                {edadMet < edad ? `${edad - edadMet} años más joven que tu edad real` : edadMet === edad ? "Igual a tu edad real" : `${edadMet - edad} años mayor que tu edad real`}
               </p>
             ) : (
               <p className="text-[11px] text-slate-500">Comparada con tu edad real</p>
             )}
           </div>
           <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-sky-50 to-white p-3">
-            <p className="text-xs font-bold text-slate-500">💧 Agua corporal</p>
+            <p className="text-xs font-bold text-slate-500">Agua corporal</p>
             <p className="text-2xl font-black text-slate-900">{n(b.totalBodyWaterLiters) ? r1(b.totalBodyWaterLiters) : n(b.totalBodyWaterPercentage) && n(a.weightKg) ? r1((a.weightKg * b.totalBodyWaterPercentage) / 100) : "—"} <span className="text-sm font-semibold text-slate-500">litros</span></p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-3">
-            <p className="text-xs font-bold text-slate-500">🦴 Masa ósea</p>
+            <p className="text-xs font-bold text-slate-500">Masa ósea</p>
             <p className="text-2xl font-black text-slate-900">{n(b.boneMassKg) ? r1(b.boneMassKg) : "—"} <span className="text-sm font-semibold text-slate-500">kg</span></p>
           </div>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-        <BarraRango titulo="Índice de masa corporal" icono="⚖️" valor={imc} cfg={R.imc} previo={previo?.bmi} invertido />
-        <BarraRango titulo="Grasa corporal" icono="🟠" valor={b.bodyFatPercentage} unidad="%" cfg={R.grasa} previo={bp.bodyFatPercentage} invertido />
-        <BarraRango titulo="Masa muscular" icono="💪" valor={pct(b.muscleMassPercentage, b.muscleMassKg, a.weightKg)} unidad="%" cfg={R.musculo} previo={pct(bp.muscleMassPercentage, bp.muscleMassKg, previo?.weightKg)} />
-        <BarraRango titulo="Grasa visceral" icono="🫀" valor={b.visceralFatLevel} unidad="nivel" cfg={R.visceral} previo={bp.visceralFatLevel} invertido decimales={0} />
-        <BarraRango titulo="Agua corporal" icono="💧" valor={b.totalBodyWaterPercentage} unidad="%" cfg={R.agua} previo={bp.totalBodyWaterPercentage} />
-        {icc != null && <BarraRango titulo="Cintura / cadera" icono="📏" valor={icc} cfg={R.icc} previo={iccPrev} invertido decimales={2} />}
-        {n(a.perimeters?.waist) != null && <BarraRango titulo="Perímetro de cintura" icono="📐" valor={a.perimeters.waist} unidad="cm" cfg={R.cintura} previo={previo?.perimeters?.waist} invertido />}
+        <BarraRango titulo="Índice de masa corporal"icono=""valor={imc} cfg={R.imc} previo={previo?.bmi} invertido />
+        <BarraRango titulo="Grasa corporal"icono=""valor={b.bodyFatPercentage} unidad="%"cfg={R.grasa} previo={bp.bodyFatPercentage} invertido />
+        <BarraRango titulo="Masa muscular"icono=""valor={pct(b.muscleMassPercentage, b.muscleMassKg, a.weightKg)} unidad="%"cfg={R.musculo} previo={pct(bp.muscleMassPercentage, bp.muscleMassKg, previo?.weightKg)} />
+        <BarraRango titulo="Grasa visceral"icono=""valor={b.visceralFatLevel} unidad="nivel"cfg={R.visceral} previo={bp.visceralFatLevel} invertido decimales={0} />
+        <BarraRango titulo="Agua corporal"icono=""valor={b.totalBodyWaterPercentage} unidad="%"cfg={R.agua} previo={bp.totalBodyWaterPercentage} />
+        {icc != null && <BarraRango titulo="Cintura / cadera"icono=""valor={icc} cfg={R.icc} previo={iccPrev} invertido decimales={2} />}
+        {n(a.perimeters?.waist) != null && <BarraRango titulo="Perímetro de cintura"icono=""valor={a.perimeters.waist} unidad="cm"cfg={R.cintura} previo={previo?.perimeters?.waist} invertido />}
       </div>
       <p className="text-[11px] text-slate-400">Rangos de referencia por sexo y edad{edad ? ` (${edad} años)` : ""}. La línea gris marca la evaluación anterior.</p>
     </div>
@@ -334,7 +335,7 @@ export function GuiaPerimetros({ activo, sexo, valores = {} }) {
       </svg>
       {a ? (
         <div className="text-center">
-          <p className="text-sm font-black text-rose-600">📏 {a[0]}</p>
+          <p className="text-sm font-black text-rose-600">{a[0]}</p>
           <p className="text-xs text-slate-600 leading-snug">{a[4]}</p>
         </div>
       ) : (

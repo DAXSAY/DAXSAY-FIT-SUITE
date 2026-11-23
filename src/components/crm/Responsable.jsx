@@ -38,7 +38,7 @@ export const situacion = (p) => {
   return null;
 };
 
-/** Chip para listas: 👤 David · Turno mañana  [Asegurado] */
+/** Chip para listas:  David · Turno mañana  [Asegurado] */
 export const ChipResponsable = ({ p }) => {
   if (!p?.owner) return null;
   const s = situacion(p);
