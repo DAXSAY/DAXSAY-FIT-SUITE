@@ -207,6 +207,7 @@ const MAPAS = {
     let [ini, fin] = franja(d.timeSlot || d.time);
     if (!fin) fin = sumarMinutos(ini, d.durationMinutes || 45);
     if (!fecha(d.date) || !ini || !fin) throw new ErrorSincronizacion("La cita no tiene fecha u horario válido");
+    if (fin <= ini) throw new ErrorSincronizacion("La cita debe terminar después de empezar y dentro del mismo día (hasta las 11:59 PM)");
     await guardarFila(cx, "citas", "idcita", id, {
       servicio: d.serviceType === "physiotherapy" ? "fisioterapia" : d.serviceType === "nutrition" ? "nutricion" : "entrenamiento",
       idalumno: await idAlumno(cx, d.memberId),

@@ -14,6 +14,7 @@ import {
   sincronizarPendientes,
   detalleError,
   ORDEN_MODULOS,
+  ErrorSincronizacion,
 } from "../sincronizacion.js";
 
 const router = Router();
@@ -299,6 +300,8 @@ const guardarRegistro = async (req, res, next) => {
         return "ok";
       } catch (e) {
         if (e.sqlState === "45000") throw e;
+        // Una cita con horario imposible (termina antes de empezar) no se guarda
+        if (modulo === "citas" && e instanceof ErrorSincronizacion) throw new ErrorHttp(400, e.message);
         await cx.query("ROLLBACK TO SAVEPOINT copia_tabla");
         await cx.execute(
           "UPDATE registros_app SET sync_estado = 'error', sync_detalle = ?, sync_fecha = NOW() WHERE modulo = ? AND idregistro = ?",
