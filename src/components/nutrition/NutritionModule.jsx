@@ -120,7 +120,7 @@ const TdeeEnPlan = ({ alumno, objetivo, onUsar }) => {
   return (
     <div className="rounded-xl border border-blue-200 bg-blue-50/50">
       <button type="button" onClick={() => setAbierto(!abierto)} className="w-full flex items-center justify-between px-3 py-2 text-xs font-black text-blue-800 cursor-pointer">
-        <span>Calcular metas con TDEE (Mifflin-St Jeor) · {objetivoNutri(objetivo).label}</span>
+        <span><IconoEmoji e="🧮" /> Calcular metas con TDEE (Mifflin-St Jeor) · {objetivoNutri(objetivo).label}</span>
         <span>{abierto ? "Ocultar ▲" : `${r.kcal} kcal sugeridas ▼`}</span>
       </button>
       {abierto && (
@@ -755,7 +755,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-               Planes & Dietas ({nutritionPlans.length})
+              <IconoEmoji e="🥗" /> Planes & Dietas ({nutritionPlans.length})
             </button>
             <button
               onClick={() => setViewMode("calculator")}
@@ -774,7 +774,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                 viewMode === "guide" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-               Guía de porciones y platos
+              <IconoEmoji e="✋" /> Guía de porciones y platos
             </button>
             <button
               onClick={() => setViewMode("foods")}
@@ -782,7 +782,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                 viewMode === "foods" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-               Catálogo de alimentos
+              <IconoEmoji e="🥗" /> Catálogo de alimentos
             </button>
           </div>
 
@@ -821,7 +821,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                 onChange={(e) => setFilterObjective(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-hidden"
               >
-                <option value="all">Todos los objetivos</option>
+                <option value="all"><IconoEmoji e="🎯" /> Todos los objetivos</option>
                 {OBJETIVOS_NUTRI.map((o) => (
                   <option key={o.id} value={o.id}>
                     <IconoEmoji e={o.emoji} /> {o.label}
@@ -1161,7 +1161,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
       {viewMode === "guide" && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="font-extrabold text-slate-900 mb-1">Porciones con la mano</h3>
+            <h3 className="font-extrabold text-slate-900 mb-1"><IconoEmoji e="✋" /> Porciones con la mano</h3>
             <p className="text-xs text-slate-500 mb-4">Esta misma guía la ve el alumno en su portal (Mi Alimentación), junto con su plato.</p>
             <GuiaPorciones />
           </div>
@@ -1183,7 +1183,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h3 className="font-extrabold text-slate-900">Carbohidratos según el ejercicio</h3>
+                <h3 className="font-extrabold text-slate-900"><IconoEmoji e="⚡" /> Carbohidratos según el ejercicio</h3>
                 <p className="text-xs text-slate-500">Cuánto carbohidrato al día según las horas de entrenamiento.</p>
               </div>
               <label className="text-xs font-bold text-slate-600">

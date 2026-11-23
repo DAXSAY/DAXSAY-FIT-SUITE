@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Zap, Check, Plus, Trash2, Edit3, Sliders } from "lucide-react";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 export const DEFAULT_TREATMENT_ITEMS = [
   {
@@ -341,7 +342,7 @@ export const EditableTreatments = ({
                   </div>
 
                   <p className="text-xs text-amber-200/90 font-mono font-medium">
-                     {t.dosage}
+                    <IconoEmoji e="⚡" /> {t.dosage}
                   </p>
 
                   {t.notes && (

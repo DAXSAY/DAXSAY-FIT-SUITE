@@ -223,7 +223,7 @@ export const FormEjercicioPropio = ({ onClose, onGuardar, tipoInicial = "fuerza"
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(MUSCLE_LABELS).map(([k, l]) => (
                   <button key={k} type="button" onClick={() => set("zona", k)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${f.zona === k ? "bg-violet-600 text-white border-violet-600" : "bg-violet-50 text-violet-800 border-violet-200"}`}>
-                    {k === "otros" ? "Otra (escribir)" : l}
+                    {k === "otros" ? "✏️ Otra (escribir)" : l}
                   </button>
                 ))}
               </div>
@@ -245,7 +245,7 @@ export const FormEjercicioPropio = ({ onClose, onGuardar, tipoInicial = "fuerza"
 
             <Seccion n="5" titulo="Equipamiento" color="bg-slate-700">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                {[...EQUIPOS, ["", "Otro"]].map(([ic, l]) => (
+                {[...EQUIPOS, ["✏️", "Otro"]].map(([ic, l]) => (
                   <button key={l} type="button" onClick={() => set("equipment", l)} className={`px-2 py-2 rounded-xl border text-xs font-bold cursor-pointer flex items-center gap-1.5 text-left ${f.equipment === l ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"}`}>
                     <span className="text-base"><IconoEmoji e={ic} /></span> {l === "Otro" ? "Otro (escribir)" : l}
                   </button>
@@ -269,7 +269,7 @@ export const FormEjercicioPropio = ({ onClose, onGuardar, tipoInicial = "fuerza"
               <button type="button" onClick={() => set("pasos", [...f.pasos, ""])} className="px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold flex items-center gap-1 cursor-pointer">
                 <Plus className="w-3.5 h-3.5" /> Otro paso
               </button>
-              <input value={f.tips} onChange={(e) =>set("tips", e.target.value)} placeholder="Consejo del profesional (opcional), ej. mantén la espalda neutra"className={INP} />
+              <input value={f.tips} onChange={(e) => set("tips", e.target.value)} placeholder="💡 Consejo del profesional (opcional), ej. mantén la espalda neutra" className={INP} />
             </Seccion>
           </div>
 

@@ -10,7 +10,7 @@ import { api } from "../../api/cliente";
 import { useGym } from "../../context/GymContext";
 import { enlaceWhatsApp } from "./TelWhatsApp";
 import { SeccionProgramados, usePendientes } from "./Programados";
-import { ConIconos } from "./IconoEmoji";
+import { IconoEmoji, ConIconos } from "./IconoEmoji";
 
 const claveOcultos = (id) => `radical_avisos_ocultos_${id || "x"}`;
 const leerOcultos = (id) => {
@@ -281,7 +281,7 @@ export function RecordatorioPesos({ setActiveTab }) {
   if (!a) return null;
   return (
     <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3.5 flex flex-wrap items-center gap-3">
-      <span className="text-2xl"></span>
+      <span className="text-2xl"><IconoEmoji e="💪" /></span>
       <div className="flex-1 min-w-[200px]">
         <p className="text-sm font-black text-amber-900"><ConIconos texto={a.titulo} /></p>
         <p className="text-xs text-amber-800"><ConIconos texto={a.mensaje} /></p>

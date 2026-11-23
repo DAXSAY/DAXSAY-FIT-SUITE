@@ -15,17 +15,18 @@ import { Ticket, Phone, MessageCircle, CalendarClock, XCircle, CheckCircle2, Clo
 import { api } from "../../api/cliente";
 import { hoyISO } from "../../utils/fecha";
 import { TelWhatsApp, enlaceWhatsApp } from "../common/TelWhatsApp";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 export const MOTIVOS_PASE = [
-  ["viaje", "Viaje"],
-  ["vacaciones", "Vacaciones"],
-  ["no_interesa", "Ya no le interesa"],
-  ["salud", "Salud / lesión"],
-  ["trabajo", "Trabajo o estudios"],
-  ["horario", "No le acomoda el horario"],
-  ["precio", "Precio"],
-  ["no_contesta", "No contesta"],
-  ["otro_gimnasio", "Eligió otro gimnasio"],
+  ["viaje", "✈️ Viaje"],
+  ["vacaciones", "🏖️ Vacaciones"],
+  ["no_interesa", "🙅 Ya no le interesa"],
+  ["salud", "🩹 Salud / lesión"],
+  ["trabajo", "💼 Trabajo o estudios"],
+  ["horario", "🕒 No le acomoda el horario"],
+  ["precio", "💸 Precio"],
+  ["no_contesta", "📵 No contesta"],
+  ["otro_gimnasio", "🏋️ Eligió otro gimnasio"],
   ["otro", "📝 Otro motivo"],
 ];
 const fCorta = (iso) => (iso ? String(iso).slice(0, 10).split("-").reverse().join("/") : "");
@@ -132,7 +133,7 @@ export const PaseNoConcretado = ({ p, onHecho, onCancelar }) => {
                 Hora
                 <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="block mt-0.5 px-2 py-1.5 rounded-lg border border-blue-200 text-sm text-slate-800" />
               </label>
-              <span className="text-xs text-blue-800">Te avisaremos ese día, 30 minutos antes.</span>
+              <span className="text-xs text-blue-800"><IconoEmoji e="🔔" /> Te avisaremos ese día, 30 minutos antes.</span>
             </div>
           </div>
         )}
@@ -188,7 +189,7 @@ export const PanelPases = ({ onAbrirProspecto, gym = "RADICAL" }) => {
   if (!lista) return <p className="text-sm text-slate-500">Cargando pases…</p>;
   const FILTROS = [
     ["no_concretado", "No concretados", cuenta((x) => x.status === "no_concretado")],
-    ["no_vino", "No vinieron (vencidos)", cuenta(vencido)],
+    ["no_vino", "⚠️ No vinieron (vencidos)", cuenta(vencido)],
     ["pendiente", "Pendientes", cuenta((x) => x.status === "pendiente")],
     ["usado", "Vinieron", cuenta((x) => x.status === "usado")],
     ["todos", "Todos", lista.length],
@@ -411,7 +412,7 @@ export const ReporteCrm = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">mañana ·  tarde ·  noche</p>
+              <p className="text-[11px] text-slate-500 mt-1"><IconoEmoji e="🟠" /> mañana · <IconoEmoji e="🔵" /> tarde · <IconoEmoji e="🟣" /> noche</p>
             </Caja>
           </div>
 

@@ -81,14 +81,14 @@ export const calcularMes = (attendances, c, mes, hoy) => {
 };
 
 const GRUPOS = [
-  ["todos", "Todos", ""],
-  ["trainer", "Entrenadores", ""],
-  ["receptionist", "Recepción", ""],
-  ["nutritionist", "Nutrición", ""],
-  ["physiotherapist", "Fisioterapia", ""],
-  ["maintenance", "Mantenimiento", ""],
-  ["manager", "Coordinación", ""],
-  ["external", "Externos", ""],
+  ["todos", "Todos", "👥"],
+  ["trainer", "Entrenadores", "🏋️"],
+  ["receptionist", "Recepción", "🛎️"],
+  ["nutritionist", "Nutrición", "🥗"],
+  ["physiotherapist", "Fisioterapia", "🩺"],
+  ["maintenance", "Mantenimiento", "🧰"],
+  ["manager", "Coordinación", "📋"],
+  ["external", "Externos", "🤝"],
   ["otros", "Otros", "•"],
 ];
 const grupoDe = (c) => (c.external ? "external" : GRUPOS.some(([k]) => k === c.role) ? c.role : "otros");

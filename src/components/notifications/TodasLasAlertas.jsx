@@ -114,7 +114,7 @@ export const TodasLasAlertas = () => {
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1.5">
             <span>Por prioridad</span>
             <span>
-               {cuenta([...clientes, ...productos], "critica")} urgentes ·  {cuenta([...clientes, ...productos], "alta")} altas ·  {cuenta([...clientes, ...productos], "media")} medias
+              <IconoEmoji e="🔴" /> {cuenta([...clientes, ...productos], "critica")} urgentes · <IconoEmoji e="🟠" /> {cuenta([...clientes, ...productos], "alta")} altas · <IconoEmoji e="🟡" /> {cuenta([...clientes, ...productos], "media")} medias
             </span>
           </div>
           <div className="flex h-3 rounded-full overflow-hidden bg-slate-100">

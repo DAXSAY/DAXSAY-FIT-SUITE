@@ -643,7 +643,7 @@ const CerrarCaja = ({ turno, onVolver, onCerrada }) => {
           {hayDif && (
             <div className="bg-amber-50 rounded-2xl border-2 border-amber-300 p-4 space-y-3">
               <p className="text-sm font-black text-amber-900">
-                {difGrande ? "La diferencia es grande. " : ""}Confirma antes de cerrar
+                {difGrande ? "⚠️ La diferencia es grande. " : ""}Confirma antes de cerrar
               </p>
               <p className="text-xs text-amber-900">
                 El sistema esperaba {soles(esperado)} y escribiste {soles(contado)}. Si fue un error de tipeo (ej. un cero de más), corrígelo arriba.

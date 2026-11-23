@@ -85,7 +85,7 @@ export const MODELOS_PLATO = {
 
 export const COLORES_PLATO = { protein: "var(--color-rose-600)", veg: "var(--color-green-600)", carbs: "var(--color-amber-500)", fats: "var(--color-yellow-700)" };
 export const NOMBRES_PLATO = { protein: "Proteína", veg: "Verduras / ensalada", carbs: "Carbohidratos", fats: "Grasas" };
-const EMOJI_PLATO = { protein: "", veg: "", carbs: "", fats: "" };
+const EMOJI_PLATO = { protein: "🍗", veg: "🥗", carbs: "🍚", fats: "🥑" };
 
 /** Plato completo con valores por defecto (para planes antiguos sin plato) */
 export function normalizarPlato(p, sexo) {
@@ -469,10 +469,10 @@ export const GuiaPorciones = ({ oscuro = false, sexo }) => (
     </div>
     <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 text-sm ${oscuro ? "text-slate-200" : "text-slate-700"}`}>
       {[
-        ["Verduras", "Inclúyelas crudas o cocidas en cada comida y cambia de colores: cada verdura aporta nutrientes distintos."],
-        ["Proteína", "Elige proteínas magras (pollo, pescado, huevo, menestras, tofu) y evita embutidos y carnes muy grasosas."],
-        ["Carbohidratos", "Prefiere los ricos en fibra (avena, quinua, camote, arroz integral) sobre todo antes y después de entrenar; limita dulces y snacks."],
-        ["Grasas", "Palta, frutos secos, aceite de oliva o pescado azul; evita frituras y grasas trans."],
+        ["🥦 Verduras", "Inclúyelas crudas o cocidas en cada comida y cambia de colores: cada verdura aporta nutrientes distintos."],
+        ["🍗 Proteína", "Elige proteínas magras (pollo, pescado, huevo, menestras, tofu) y evita embutidos y carnes muy grasosas."],
+        ["🍠 Carbohidratos", "Prefiere los ricos en fibra (avena, quinua, camote, arroz integral) sobre todo antes y después de entrenar; limita dulces y snacks."],
+        ["🥑 Grasas", "Palta, frutos secos, aceite de oliva o pescado azul; evita frituras y grasas trans."],
       ].map(([t, x]) => (
         <div key={t} className={`rounded-xl p-3 border ${oscuro ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
           <b>{t}:</b> {x}
@@ -488,7 +488,7 @@ export const GuiaPorciones = ({ oscuro = false, sexo }) => (
       ))}
     </div>
     <div className={`overflow-x-auto rounded-2xl border ${oscuro ? "border-white/10" : "border-slate-200 bg-white"}`}>
-      <p className={`px-3 pt-3 text-xs font-black uppercase tracking-wider ${oscuro ? "text-amber-300" : "text-amber-700"}`}>Porciones por peso (para quien prefiere pesar)</p>
+      <p className={`px-3 pt-3 text-xs font-black uppercase tracking-wider ${oscuro ? "text-amber-300" : "text-amber-700"}`}><IconoEmoji e="⚖️" /> Porciones por peso (para quien prefiere pesar)</p>
       <table className="w-full text-sm">
         <thead>
           <tr className={`text-left text-[11px] uppercase ${oscuro ? "text-slate-300" : "text-slate-500"}`}>
@@ -664,7 +664,7 @@ export const EditorPlatos = ({ value, onChange, sexo, metas, comidas = [], setCo
                   {p.time || "sin hora"} · {(MODELOS_PLATO[p.model] || {}).nombre || "Personalizado"}
                 </span>
                 <span className={`mt-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-black ${kcal ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-400"}`}>{kcal ? `${kcal} kcal` : "sin alimentos"}</span>
-                <span className={`block mt-1 text-[10px] font-black ${on ? "text-emerald-700" : "text-blue-700"}`}>{on ? "▲ Cerrar" : "Programar"}</span>
+                <span className={`block mt-1 text-[10px] font-black ${on ? "text-emerald-700" : "text-blue-700"}`}>{on ? "▲ Cerrar" : "⚙ Programar"}</span>
               </button>
             );
           })}

@@ -110,7 +110,7 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
                 {(zonas.length > 0 || Number(f?.dolorEVA) > 0) && (
                   <div className="flex flex-wrap items-center gap-1.5">
                     {zonas.map((z) => (
-                      <Chip key={z}>{zona(z)}</Chip>
+                      <Chip key={z}><IconoEmoji e="🩹" /> {zona(z)}</Chip>
                     ))}
                     {Number(f?.dolorEVA) > 0 && <Chip tono="amber">Dolor {f.dolorEVA}/10</Chip>}
                     {f?.tonoMuscular && f.tonoMuscular !== "normotono" && <Chip tono="sky">Tono: {f.tonoMuscular}</Chip>}
@@ -128,7 +128,7 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
                 )}
                 {restricciones.map((t, i) => (
                   <p key={i} className="rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1.5 text-xs font-bold text-amber-900">
-                     {t}
+                    <IconoEmoji e="⚠️" /> {t}
                   </p>
                 ))}
                 {(indItems.length > 0 || indEval.length > 0) && (
@@ -233,7 +233,7 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
                   {d.objetivo ? ` · ${String(d.objetivo).replace(/_/g, " ")}` : ""}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {d.kcal >0 && <Chip tono="amber">{d.kcal} kcal</Chip>}
+                  {d.kcal > 0 && <Chip tono="amber"><IconoEmoji e="🔥" /> {d.kcal} kcal</Chip>}
                   {d.proteinas > 0 && <Chip tono="sky">P {d.proteinas} g</Chip>}
                   {d.carbohidratos > 0 && <Chip tono="sky">C {d.carbohidratos} g</Chip>}
                   {d.grasas > 0 && <Chip tono="sky">G {d.grasas} g</Chip>}
@@ -263,7 +263,7 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
                     <b>Hidratación:</b> {d.hidratacion}
                   </p>
                 )}
-                {d.recomendaciones && <p className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 text-xs text-emerald-900">{d.recomendaciones}</p>}
+                {d.recomendaciones && <p className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 text-xs text-emerald-900"><IconoEmoji e="💬" /> {d.recomendaciones}</p>}
               </>
             )}
           </div>

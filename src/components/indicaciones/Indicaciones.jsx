@@ -236,7 +236,7 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
                       >
                         {on && <Check className="w-3 h-3 inline -mt-0.5 mr-0.5" />}
                         {it.name.replace(/^Estiramiento de /, "").replace(/^Movilización de /, "Mov. ").replace(/^Movilidad de /, "")}
-                        {it.custom && <span className="opacity-60"> </span>}
+                        {it.custom && <span className="opacity-60"> <IconoEmoji e="★" /></span>}
                       </button>
                     );
                   })}
@@ -260,7 +260,7 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
         {subtitulo && <p className="text-[11px] text-slate-400">{subtitulo}</p>}
         {puede && sugeridos.length > 0 && (
           <button type="button" onClick={aplicarSugerencias} className="w-full text-left rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs text-cyan-900 cursor-pointer hover:bg-cyan-100">
-             <b>Sugerir según la evaluación</b> ({sugeridos.length}): {sugeridos.slice(0, 4).map((i) =>i.name.replace(/^Estiramiento de /, "Est. ")).join(", ")}
+            <IconoEmoji e="✨" /> <b>Sugerir según la evaluación</b> ({sugeridos.length}): {sugeridos.slice(0, 4).map((i) => i.name.replace(/^Estiramiento de /, "Est. ")).join(", ")}
             {sugeridos.length > 4 ? "…" : ""}
           </button>
         )}
@@ -382,7 +382,7 @@ function RecomendacionesEspecialistas({ member }) {
   );
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-      <Caja titulo="Fisioterapia indica"tono="bg-rose-50 border-rose-200 text-rose-900"vacio="Sin evaluación de fisioterapia.">
+      <Caja titulo="🩺 Fisioterapia indica" tono="bg-rose-50 border-rose-200 text-rose-900" vacio="Sin evaluación de fisioterapia.">
         {fis && (
           <div className="space-y-1.5 text-sm">
             {fis.restriccionesSala && <p><b>En sala:</b> {fis.restriccionesSala}</p>}
@@ -399,7 +399,7 @@ function RecomendacionesEspecialistas({ member }) {
           </div>
         )}
       </Caja>
-      <Caja titulo="Nutrición indica" tono="bg-emerald-50 border-emerald-200 text-emerald-900" quien={die ? `${die.titulo || "Plan de alimentación"}${die.nutricionista ? ` · ${die.nutricionista}` : ""}` : ""} vacio="Sin plan de alimentación activo.">
+      <Caja titulo="🥗 Nutrición indica" tono="bg-emerald-50 border-emerald-200 text-emerald-900" quien={die ? `${die.titulo || "Plan de alimentación"}${die.nutricionista ? ` · ${die.nutricionista}` : ""}` : ""} vacio="Sin plan de alimentación activo.">
         {die && (
           <div className="space-y-1.5 text-sm">
             {die.objetivo && <p><b>Objetivo:</b> {die.objetivo}</p>}
@@ -414,7 +414,7 @@ function RecomendacionesEspecialistas({ member }) {
         )}
       </Caja>
       {f.restriccionesFicha && !/^sin/i.test(f.restriccionesFicha) && (
-        <p className="lg:col-span-2 text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl p-3">Restricciones de su ficha: {f.restriccionesFicha}</p>
+        <p className="lg:col-span-2 text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl p-3"><IconoEmoji e="⚠️" /> Restricciones de su ficha: {f.restriccionesFicha}</p>
       )}
     </div>
   );
@@ -606,7 +606,7 @@ export function MisIndicaciones({ memberId }) {
           Desde el {fc(v.date)}{v.by ? ` · ${v.by}` : ""}. Toca cada ejercicio para marcarlo como hecho hoy.
         </p>
       </div>
-      {v.notes && <p className="text-sm text-slate-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">{v.notes}</p>}
+      {v.notes && <p className="text-sm text-slate-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2"><IconoEmoji e="💬" /> {v.notes}</p>}
       <div className="grid md:grid-cols-3 gap-3">
         {Object.entries(LUGARES).map(([lugar, L]) => {
           const lista = v.items.filter((i) => i.place === lugar);

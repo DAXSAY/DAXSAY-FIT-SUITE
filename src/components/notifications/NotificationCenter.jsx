@@ -30,7 +30,7 @@ import { PanelAlertasAdmin } from "../alerts/AlertasAdmin";
 import { MensajesCategorias } from "./MensajesCategorias";
 import { TodasLasAlertas } from "./TodasLasAlertas";
 import { ProgramadosCompleto, usePendientes } from "../common/Programados";
-import { ConIconos } from "../common/IconoEmoji";
+import { IconoEmoji, ConIconos } from "../common/IconoEmoji";
 
 // Color y emoji de cada tipo de regla
 const ESTILOS_REGLA = {
@@ -100,7 +100,7 @@ export const NotificationCenter = () => {
   const [campAudience, setCampAudience] = useState("all");
   const [campChannels, setCampChannels] = useState(["push", "whatsapp"]);
   const [campMessage, setCampMessage] = useState(
-    "¡Hola {{nombre}}!  Aprovecha esta semana un 20% de descuento en suplementos deportivos y renueva tu plan {{plan}} al mejor precio en recepción.",
+    "¡Hola {{nombre}}! 🌟 Aprovecha esta semana un 20% de descuento en suplementos deportivos y renueva tu plan {{plan}} al mejor precio en recepción.",
   );
   const [isSendingCampaign, setIsSendingCampaign] = useState(false);
 
@@ -203,8 +203,8 @@ export const NotificationCenter = () => {
     if (!member) return;
 
     const title = alert.isExpired
-      ? "Membresía Vencida - RADICAL"
-      : "Recordatorio de Renovación de Membresía";
+      ? "⚠️ Membresía Vencida - RADICAL"
+      : "⏰ Recordatorio de Renovación de Membresía";
     const msg = alert.isExpired
       ? `Hola ${member.fullName}, tu membresía de ${member.planName} venció el ${member.membershipEndDate}. ¡Renueva hoy en RADICAL y mantén tu disciplina!`
       : `Hola ${member.fullName}, tu membresía de ${member.planName} vencerá el ${member.membershipEndDate} (${alert.daysLeft} días restantes). ¡Te esperamos en recepción para renovar!`;
@@ -460,12 +460,12 @@ export const NotificationCenter = () => {
 
       {activeTab === "congelados" && (
         congelados.length === 0 ? (
-          <p className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-sm text-slate-500">No hay congelamientos en curso ni programados.</p>
+          <p className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-sm text-slate-500"><IconoEmoji e="❄️" /> No hay congelamientos en curso ni programados.</p>
         ) : (
         <div className="bg-sky-50 border border-sky-200 p-4 rounded-2xl">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
             <p className="text-xs font-black uppercase tracking-wider text-sky-800 flex items-center gap-2">
-               Congelamientos
+              <IconoEmoji e="❄️" /> Congelamientos
               <span className="px-2 py-0.5 rounded-full bg-sky-600 text-white normal-case tracking-normal">{congelados.filter((m) => m.freeze.current.status === "activo").length} congelados hoy</span>
               <span className="px-2 py-0.5 rounded-full bg-indigo-500 text-white normal-case tracking-normal">{congelados.filter((m) => m.freeze.current.status !== "activo").length} programados</span>
             </p>
@@ -635,7 +635,7 @@ export const NotificationCenter = () => {
                     : "bg-gray-100 text-gray-600 hover:text-slate-900"
                 }`}
               >
-                 Vencidos ({renewalAlerts.filter((a) =>a.isExpired).length})
+                <IconoEmoji e="⛔" /> Vencidos ({renewalAlerts.filter((a) => a.isExpired).length})
               </button>
               <button
                 onClick={() => setAlertFilter("urgent")}
@@ -645,7 +645,7 @@ export const NotificationCenter = () => {
                     : "bg-gray-100 text-gray-600 hover:text-slate-900"
                 }`}
               >
-                 Críticos 1-3 días (
+                <IconoEmoji e="⚠️" /> Críticos 1-3 días (
                 {
                   renewalAlerts.filter((a) => !a.isExpired && a.daysLeft <= 3)
                     .length
@@ -762,7 +762,7 @@ export const NotificationCenter = () => {
                       }}
                       className="w-full py-1 text-center bg-gray-100 hover:bg-gray-200 text-slate-800 text-xs font-semibold rounded cursor-pointer transition-colors"
                     >
-                       Renovar Plan 1-Clic
+                      <IconoEmoji e="⚡" /> Renovar Plan 1-Clic
                     </button>
                   </div>
                 </div>

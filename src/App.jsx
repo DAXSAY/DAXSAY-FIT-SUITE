@@ -17,6 +17,7 @@ import { AvisoStockBajo } from "./components/store/AvisoStockBajo";
 import GuardiaCambios from "./components/common/GuardiaCambios";
 import { hayVentanaAbierta, cerrarVentanaSuperior } from "./utils/controlesVentana";
 import { moduloDeLaDireccion } from "./utils/ventanas";
+import { IconoEmoji } from "./components/common/IconoEmoji";
 
 
 // Cada módulo se descarga solo cuando se abre (la primera carga es mucho más liviana,
@@ -329,7 +330,7 @@ function MainAppContent() {
         <main className="flex-1 p-3 sm:p-5 lg:p-6 overflow-y-auto min-w-0">
           {currentUser.mustChangePassword && !avisoClaveOculto && (
             <div className="rd-aviso-clave mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 text-amber-900">
-              <span>Usas la contraseña inicial: cámbiala por una propia.</span>
+              <span><IconoEmoji e="🔒" /> Usas la contraseña inicial: cámbiala por una propia.</span>
               <span className="flex gap-2">
                 <button
                   onClick={() => setCambiarClave(true)}

@@ -11,7 +11,7 @@ import { IconoEmoji } from "../common/IconoEmoji";
 const RecomendacionesPorciones = ({ sexo }) => (
   <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
     <div>
-      <h3 className="text-lg font-extrabold text-slate-900">Recomendaciones: mide tus porciones con la mano</h3>
+      <h3 className="text-lg font-extrabold text-slate-900"><IconoEmoji e="✋" /> Recomendaciones: mide tus porciones con la mano</h3>
       <p className="text-sm text-slate-500">
         Tu mano siempre está contigo y es proporcional a tu cuerpo. Úsala para servirte sin balanza.
       </p>
@@ -206,7 +206,7 @@ export const MiDieta = ({ plan, sexo }) => {
       {/* Tus platos (gráficos) */}
       {platos.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <h3 className="text-lg font-extrabold text-slate-900">Así se ven tus platos</h3>
+          <h3 className="text-lg font-extrabold text-slate-900"><IconoEmoji e="🍽️" /> Así se ven tus platos</h3>
           <p className="text-sm text-slate-500 mb-4">Tu nutricionista te asignó {platos.length} plato{platos.length === 1 ? "" : "s"}. Toca cada uno para ver cómo servirlo.</p>
           <VistaPlatos plates={platos} metas={{ proteinas: plan.proteinsTargetGrams, carbohidratos: plan.carbsTargetGrams, grasas: plan.fatsTargetGrams }} />
         </div>

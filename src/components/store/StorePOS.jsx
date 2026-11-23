@@ -31,6 +31,7 @@ import { filtrarAlumnos } from "../../utils/buscarPersona";
 import { BotonesDescarga } from "../common/BotonesDescarga";
 import { BotonVolver, BotonCerrar } from "../common/BarraVolver";
 import { api } from "../../api/cliente";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 export const PRESET_PRODUCT_IMAGES = [
   {
@@ -801,7 +802,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-sm"></span>
+                          <span className="text-sm"><IconoEmoji e="📦" /></span>
                         )}
                       </div>
 
@@ -860,8 +861,8 @@ export const StorePOS = ({ onAbrirCaja }) => {
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-slate-900 focus:outline-none focus:border-blue-600"
                   >
-                    <option value="efectivo">Efectivo</option>
-                    <option value="yape_plin">Yape / Plin</option>
+                    <option value="efectivo"><IconoEmoji e="💵" /> Efectivo</option>
+                    <option value="yape_plin"><IconoEmoji e="📱" /> Yape / Plin</option>
                   </select>
                 </div>
 
@@ -1416,8 +1417,8 @@ export const StorePOS = ({ onAbrirCaja }) => {
                       </div>
                       <ul className="mt-2.5 space-y-1 text-[11px] text-slate-600">
                         <li>{gan <= 0 ? "El precio de venta no cubre el costo: revisa los montos." : margen < 20 ? "Margen bajo: para suplementos se suele trabajar sobre 25–40 %." : "✓ Buen margen para este tipo de producto."}</li>
-                        <li>Te avisaremos cuando queden {Number(prodMinStock) || 0} unidades o menos (alerta de stock en la campana y en Ventas).</li>
-                        <li>Cada entrada, venta y anulación queda en el kárdex del producto.</li>
+                        <li><IconoEmoji e="🔔" /> Te avisaremos cuando queden {Number(prodMinStock) || 0} unidades o menos (alerta de stock en la campana y en Ventas).</li>
+                        <li><IconoEmoji e="📦" /> Cada entrada, venta y anulación queda en el kárdex del producto.</li>
                       </ul>
                     </div>
                   </div>

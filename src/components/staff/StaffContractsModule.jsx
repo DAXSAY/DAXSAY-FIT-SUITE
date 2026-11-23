@@ -24,6 +24,7 @@ import { DocumentoContrato } from "./DocumentoContrato";
 import { SelectorDuracion, SelectorFunciones, EditorHorario, ReglasTardanza, RenovarContrato } from "./CamposContrato";
 import { DURACIONES, FUNCIONES_POR_ROL, MODALIDADES, etiquetaDuracion, fechaFin, horasSemana, textoHorario } from "../../utils/contratos";
 import { coincidePersonal } from "../../utils/buscarPersona";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 const COLOR_CARGO = {
   trainer: "var(--rd-rol-naranja)",
@@ -506,7 +507,7 @@ export const StaffContractsModule = () => {
                   <div className="text-xs font-bold text-amber-800 bg-amber-100/80 px-2 py-1 rounded flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3 text-amber-600" />
                     <span>
-                       Contrato próximo a vencer. Requiere renovación.
+                      <IconoEmoji e="⚠️" /> Contrato próximo a vencer. Requiere renovación.
                     </span>
                   </div>
                 )}

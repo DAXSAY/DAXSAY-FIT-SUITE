@@ -34,6 +34,7 @@ import { hoyISO } from "../../utils/fecha";
 
 import { SelectorAlumno, coincideAlumno } from "../common/BuscarAlumno";
 import { BotonesDescarga } from "../common/BotonesDescarga";
+import { IconoEmoji } from "../common/IconoEmoji";
 const SECCION = "bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs";
 const TITULO = "text-base font-extrabold text-slate-900 flex items-center gap-2 mb-4";
 const SUB = "block text-xs font-black uppercase tracking-widest text-slate-500 mb-2";
@@ -779,13 +780,13 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                         ¿Está en rango? · {formMember?.gender === "F" ? "mujer" : "hombre"}
                         {edadDe(formMember?.birthDate) ? `, ${edadDe(formMember?.birthDate)} años` : ""}
                       </h4>
-                      <BarraRango compacto titulo="IMC"icono=""valor={computedFormMetrics.bmi || null} cfg={R0.imc} invertido />
-                      <BarraRango compacto titulo="Grasa corporal"icono=""valor={biaFatPct || null} unidad="%"cfg={R0.grasa} invertido />
-                      <BarraRango compacto titulo="Masa muscular"icono=""valor={biaMusclePct || (peso && computedFormMetrics.muscleKg ? (computedFormMetrics.muscleKg / peso) * 100 : null)} unidad="%"cfg={R0.musculo} />
-                      <BarraRango compacto titulo="Grasa visceral"icono=""valor={biaVisceral || null} unidad="nivel"cfg={R0.visceral} invertido decimales={0} />
-                      <BarraRango compacto titulo="Agua corporal"icono=""valor={biaWaterPct || null} unidad="%"cfg={R0.agua} />
-                      <BarraRango compacto titulo="Cintura"icono=""valor={perimWaist || null} unidad="cm"cfg={R0.cintura} invertido />
-                      <BarraRango compacto titulo="Cintura / talla"icono=""valor={computedFormMetrics.waistHeightRatio || null} cfg={R0.cinturaTalla} invertido decimales={2} />
+                      <BarraRango compacto titulo="IMC" icono="⚖️" valor={computedFormMetrics.bmi || null} cfg={R0.imc} invertido />
+                      <BarraRango compacto titulo="Grasa corporal" icono="🟠" valor={biaFatPct || null} unidad="%" cfg={R0.grasa} invertido />
+                      <BarraRango compacto titulo="Masa muscular" icono="💪" valor={biaMusclePct || (peso && computedFormMetrics.muscleKg ? (computedFormMetrics.muscleKg / peso) * 100 : null)} unidad="%" cfg={R0.musculo} />
+                      <BarraRango compacto titulo="Grasa visceral" icono="🫀" valor={biaVisceral || null} unidad="nivel" cfg={R0.visceral} invertido decimales={0} />
+                      <BarraRango compacto titulo="Agua corporal" icono="💧" valor={biaWaterPct || null} unidad="%" cfg={R0.agua} />
+                      <BarraRango compacto titulo="Cintura" icono="📐" valor={perimWaist || null} unidad="cm" cfg={R0.cintura} invertido />
+                      <BarraRango compacto titulo="Cintura / talla" icono="📏" valor={computedFormMetrics.waistHeightRatio || null} cfg={R0.cinturaTalla} invertido decimales={2} />
                     </div>
                   );
                 })()}
@@ -938,7 +939,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center space-x-1.5">
                       <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
                       <span>
-                        Evolución Temporal ({historicalDeltas.firstDate} {" "}
+                        Evolución Temporal ({historicalDeltas.firstDate} <IconoEmoji e="➔" />{" "}
                         {historicalDeltas.latestDate})
                       </span>
                     </h3>
@@ -1066,7 +1067,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                   </div>
                 ) : (
                   <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
-                     Registra al menos dos evaluaciones en el tiempo para que
+                    <IconoEmoji e="💡" /> Registra al menos dos evaluaciones en el tiempo para que
                     el sistema calcule los avances, reducción de grasa y
                     ganancia de masa magra de este alumno.
                   </div>

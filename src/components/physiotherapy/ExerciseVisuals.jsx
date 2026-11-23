@@ -1,5 +1,6 @@
 import React from "react";
 import { Dumbbell, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 export const PRESET_EXERCISES_WITH_VISUALS = [
   {
@@ -555,10 +556,10 @@ export const ExerciseVisuals = ({
                       {preset.name}
                     </h6>
                     <p className="text-xs text-cyan-300">
-                       {preset.targetZone}
+                      <IconoEmoji e="🎯" /> {preset.targetZone}
                     </p>
                     <p className="text-xs text-slate-400 font-medium">
-                       {preset.series} series × {preset.repsOrTime} (Desc:{" "}
+                      <IconoEmoji e="⏱" /> {preset.series} series × {preset.repsOrTime} (Desc:{" "}
                       {preset.restSeconds}s)
                     </p>
                   </div>
@@ -692,7 +693,7 @@ export const ExerciseVisuals = ({
                   {/* Tips */}
                   {ex.techniqueTips && (
                     <p className="text-xs text-slate-600 italic bg-white p-1.5 rounded-lg border border-slate-200">
-                       {ex.techniqueTips}
+                      <IconoEmoji e="💡" /> {ex.techniqueTips}
                     </p>
                   )}
                 </div>

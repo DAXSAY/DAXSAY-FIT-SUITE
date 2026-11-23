@@ -6,6 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Dumbbell, HeartPulse, Salad, CalendarCheck, AlertTriangle, ShieldCheck, Clock, ChevronDown } from "lucide-react";
 import { api } from "../../api/cliente";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 const sinTilde = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -80,7 +81,7 @@ export const FichaDeportiva = ({ member, onVerCalendario }) => {
               </p>
             )}
             {alertas.map((t, i) => (
-              <p key={i}>{t}</p>
+              <p key={i}><IconoEmoji e="⚠️" /> {t}</p>
             ))}
           </div>
         </div>
@@ -245,7 +246,7 @@ export const FichaDeportiva = ({ member, onVerCalendario }) => {
               onClick={onVerCalendario}
               className="mt-2 w-full px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold cursor-pointer"
             >
-               Ver calendario de asistencias y seguimiento
+              <IconoEmoji e="📅" /> Ver calendario de asistencias y seguimiento
             </button>
           )}
         </Bloque>

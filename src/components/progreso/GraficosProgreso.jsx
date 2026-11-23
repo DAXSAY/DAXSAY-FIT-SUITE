@@ -264,7 +264,7 @@ export default function GraficosProgreso({ datos, resumen }) {
                 <li key={s.nombre} className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-sm" style={{ background: s.color }} />
                   <span className="text-slate-700">
-                    {s.nombre === "Subió" ? ESTILO_TENDENCIA.sube.icono : s.nombre === "Bajó" ? ESTILO_TENDENCIA.baja.icono : s.nombre === "Se mantiene" ? "●" : ""} {s.nombre}
+                    {s.nombre === "Subió" ? ESTILO_TENDENCIA.sube.icono : s.nombre === "Bajó" ? ESTILO_TENDENCIA.baja.icono : s.nombre === "Se mantiene" ? "●" : "★"} {s.nombre}
                   </span>
                   <b className="text-slate-900">{s.valor}</b>
                 </li>

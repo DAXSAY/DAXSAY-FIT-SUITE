@@ -268,9 +268,9 @@ export const AttendanceModule = () => {
         checkInMethod: "qr_app",
         membershipPlan: foundMember.planName,
         notes: isFrozen
-          ? `Membresía congelada hasta ${fc(foundMember.freeze?.current?.endDate)}`
+          ? `❄️ Membresía congelada hasta ${fc(foundMember.freeze?.current?.endDate)}`
           : isExpired
-          ? "Membresía Vencida"
+          ? "⛔ Membresía Vencida"
           : "Ingreso regular a sala de entrenamiento",
       });
       mostrarIngreso({ ...avisoAlumno(foundMember, { visitasPrevias }), accion: reg?.record ? { texto: "¿Error? Corregir", fn: () => abrirCorreccion(reg.record) } : undefined });
@@ -281,7 +281,7 @@ export const AttendanceModule = () => {
         status: isFrozen ? "Congelado" : isExpired ? "Vencido" : "Autorizado",
         planOrRole: foundMember.planName,
         message: isFrozen
-          ? `${foundMember.fullName} tiene la membresía congelada hasta el ${fc(foundMember.freeze?.current?.endDate)}. Si regresó antes, termina el congelamiento en Alumnos.`
+          ? `❄️ ${foundMember.fullName} tiene la membresía congelada hasta el ${fc(foundMember.freeze?.current?.endDate)}. Si regresó antes, termina el congelamiento en Alumnos.`
           : isExpired
           ? `¡Atención! Membresía de ${foundMember.fullName} se encuentra vencida.`
           : `¡Acceso concedido a ${foundMember.fullName}!`,

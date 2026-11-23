@@ -473,7 +473,7 @@ export const INITIAL_NOTIFICATION_RULES = [
     channels: ["push", "email", "whatsapp"],
     triggerTiming: "7 días antes del vencimiento",
     timingValueDays: 7,
-    templateTitle: "¡Tu membresía vence pronto! ",
+    templateTitle: "¡Tu membresía vence pronto! 🏋️‍♂️",
     templateBody:
       "Hola {{nombre}}, te recordamos que tu plan {{plan}} vencerá en {{dias_restantes}} días (el {{fecha_vencimiento}}). Renueva con anticipación y mantén tu tarifa preferencial.",
     badgeTag: "Preventivo",
@@ -486,7 +486,7 @@ export const INITIAL_NOTIFICATION_RULES = [
     channels: ["push", "email", "whatsapp"],
     triggerTiming: "3 días antes del vencimiento",
     timingValueDays: 3,
-    templateTitle: "Quedan 3 días de tu membresía",
+    templateTitle: "⚠️ Quedan 3 días de tu membresía",
     templateBody:
       "Hola {{nombre}}, tu plan {{plan}} está a punto de vencer este {{fecha_vencimiento}}. ¡Evita interrupciones en tu rutina y renueva en recepción o en línea hoy mismo!",
     badgeTag: "Crítico",
@@ -499,7 +499,7 @@ export const INITIAL_NOTIFICATION_RULES = [
     channels: ["push", "whatsapp"],
     triggerTiming: "El día del vencimiento",
     timingValueDays: 0,
-    templateTitle: "Tu membresía ha vencido hoy ",
+    templateTitle: "Tu membresía ha vencido hoy ⛔",
     templateBody:
       "Hola {{nombre}}, tu plan {{plan}} venció el {{fecha_vencimiento}}. ¡Te extrañamos en el gym! Acércate a renovar para seguir entrenando sin perder tu racha.",
     badgeTag: "Vencido",
@@ -512,7 +512,7 @@ export const INITIAL_NOTIFICATION_RULES = [
     channels: ["push", "whatsapp"],
     triggerTiming: "2 horas antes del inicio de la clase",
     timingValueDays: 0,
-    templateTitle: "¡Tu clase comienza en 2 horas!",
+    templateTitle: "⏰ ¡Tu clase comienza en 2 horas!",
     templateBody:
       "Hola {{nombre}}, tienes reservada la clase de {{clase}} con el coach {{instructor}} a las {{hora}} en {{sala}}. ¡Prepara tu toalla y botella de agua!",
     badgeTag: "Clases",
@@ -525,7 +525,7 @@ export const INITIAL_NOTIFICATION_RULES = [
     channels: ["push", "email"],
     triggerTiming: "Disparo manual / Evento de clase",
     timingValueDays: 0,
-    templateTitle: "Masterclass Especial anunciada en RADICAL",
+    templateTitle: "🔥 Masterclass Especial anunciada en RADICAL",
     templateBody:
       "¡Hola {{nombre}}! Abrimos nuevas vacantes para la Masterclass de {{clase}} este fin de semana. ¡Reserva tu lugar antes de que se agoten los cupos!",
     badgeTag: "Especial",
@@ -538,7 +538,7 @@ export const INITIAL_NOTIFICATION_RULES = [
     channels: ["push", "email", "whatsapp"],
     triggerTiming: "Campañas programadas / Fin de mes",
     timingValueDays: 0,
-    templateTitle: "¡Oferta Flash: 20% OFF en Suplementos & Planes!",
+    templateTitle: "🎉 ¡Oferta Flash: 20% OFF en Suplementos & Planes!",
     templateBody:
       "Hola {{nombre}}, por ser socio activo te regalamos 20% de descuento en proteínas ISO Whey, creatinas y renovación semestral. ¡Válido por 48 horas en recepción!",
     badgeTag: "Promoción",
@@ -551,9 +551,9 @@ export const INITIAL_NOTIFICATION_RULES = [
     channels: ["push", "email", "whatsapp"],
     triggerTiming: "El día del cumpleaños del alumno",
     timingValueDays: 0,
-    templateTitle: "¡Feliz Cumpleaños de parte del equipo RADICAL!",
+    templateTitle: "🎂 ¡Feliz Cumpleaños de parte del equipo RADICAL!",
     templateBody:
-      "¡Feliz día {{nombre}}!  Pasa hoy por la barra de nutrición para reclamar tu Protein Smoothie de regalo y un pase libre para tu mejor amigo.",
+      "¡Feliz día {{nombre}}! 🎉 Pasa hoy por la barra de nutrición para reclamar tu Protein Smoothie de regalo y un pase libre para tu mejor amigo.",
     badgeTag: "Fidelización",
   },
 ];

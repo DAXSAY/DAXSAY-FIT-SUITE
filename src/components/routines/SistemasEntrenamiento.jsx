@@ -378,30 +378,30 @@ export const DESCANSOS = [30, 45, 60, 90, 120];
 
 // Tipo de sesión por día (ej. sábado funcional)
 export const TIPOS_DIA = [
-  ["fuerza", "", "Fuerza", "indigo"],
-  ["hipertrofia", "", "Hipertrofia", "violet"],
-  ["potencia", "", "Potencia", "amber"],
-  ["pliometria", "", "Pliometría", "amber"],
-  ["halterofilia", "", "Halterofilia", "sky"],
-  ["powerlifting", "", "Powerlifting", "indigo"],
-  ["calistenia", "", "Calistenia", "violet"],
-  ["funcional", "", "Funcional", "orange"],
-  ["cross", "", "Entrenamiento cruzado (WOD)", "rose"],
+  ["fuerza", "💪", "Fuerza", "indigo"],
+  ["hipertrofia", "🏋️", "Hipertrofia", "violet"],
+  ["potencia", "⚡", "Potencia", "amber"],
+  ["pliometria", "🦘", "Pliometría", "amber"],
+  ["halterofilia", "🏅", "Halterofilia", "sky"],
+  ["powerlifting", "🔩", "Powerlifting", "indigo"],
+  ["calistenia", "🤸‍♂️", "Calistenia", "violet"],
+  ["funcional", "🤸", "Funcional", "orange"],
+  ["cross", "🔥", "Entrenamiento cruzado (WOD)", "rose"],
   ["hiit", "⏱️", "HIIT / Metabólico", "rose"],
-  ["circuito", "", "Circuito", "amber"],
-  ["resistencia", "", "Resistencia muscular", "pink"],
-  ["cardio", "", "Cardio", "pink"],
-  ["velocidad", "", "Velocidad y agilidad", "sky"],
-  ["deportivo", "", "Específico deportivo", "emerald"],
+  ["circuito", "🔄", "Circuito", "amber"],
+  ["resistencia", "🔋", "Resistencia muscular", "pink"],
+  ["cardio", "❤️", "Cardio", "pink"],
+  ["velocidad", "💨", "Velocidad y agilidad", "sky"],
+  ["deportivo", "⚽", "Específico deportivo", "emerald"],
   ["core", "🎯", "Core", "teal"],
-  ["movilidad", "", "Movilidad", "teal"],
-  ["flexibilidad", "", "Flexibilidad / estiramiento", "teal"],
-  ["equilibrio", "", "Equilibrio / propiocepción", "sky"],
-  ["postura", "", "Postura", "emerald"],
-  ["prevencion", "", "Prevención de lesiones", "emerald"],
-  ["rehabilitacion", "", "Rehabilitación", "emerald"],
-  ["recuperacion", "", "Recuperación activa", "slate"],
-  ["adulto_mayor", "", "Adulto mayor", "emerald"],
+  ["movilidad", "🧘", "Movilidad", "teal"],
+  ["flexibilidad", "🤲", "Flexibilidad / estiramiento", "teal"],
+  ["equilibrio", "⚖️", "Equilibrio / propiocepción", "sky"],
+  ["postura", "🧍", "Postura", "emerald"],
+  ["prevencion", "🛡️", "Prevención de lesiones", "emerald"],
+  ["rehabilitacion", "🩺", "Rehabilitación", "emerald"],
+  ["recuperacion", "🛌", "Recuperación activa", "slate"],
+  ["adulto_mayor", "👵", "Adulto mayor", "emerald"],
 ];
 export const tipoDia = (k) => TIPOS_DIA.find((t) => t[0] === k);
 
@@ -617,7 +617,7 @@ export const SelectorTipoDia = ({ valor, onChange, readOnly }) => (
           onClick={() => onChange(on ? "" : k)}
           className={`px-2 py-1 rounded-full border text-[11px] font-bold cursor-pointer transition-colors ${on ? COLOR[col].on : COLOR[col].chip}`}
         >
-          {ic} {l}
+          <IconoEmoji e={ic} /> {l}
         </button>
       );
     })}
@@ -837,7 +837,7 @@ export const ConfigEjercicio = ({
                   </div>
                 )}
                 <p className="text-[11px] rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-1">
-                   El alumno anotará en su portal: <b>{filasRegistro({ series: ex[campos.series], reps: ex[campos.reps], metodo }).anota}</b>. El peso no se fija aquí.
+                  <IconoEmoji e="✍️" /> El alumno anotará en su portal: <b>{filasRegistro({ series: ex[campos.series], reps: ex[campos.reps], metodo }).anota}</b>. El peso no se fija aquí.
                 </p>
                 {sis.agrupa && (
                   <div className="space-y-1">

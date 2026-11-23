@@ -17,6 +17,7 @@ import { useGym } from "../../context/GymContext";
 import { mensajeWhatsApp, mensajeReprogramar } from "./mensajesCrm";
 import { enlaceWhatsApp } from "../common/TelWhatsApp";
 import { CLASE_PANEL } from "../common/PanelLateral";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 const DURACION = 3500; // milisegundos que cada tarjeta se queda en pantalla
 const MAX_TARJETAS = 2;
@@ -356,7 +357,7 @@ const FilaPanel = ({ tipo, p, setActiveTab, onCerrar }) => {
             </p>
             <div className="flex flex-wrap gap-1 mt-1.5">
               {p.planName && <span className={`text-[10px] font-bold border rounded-full px-1.5 py-px ${c.chip}`}>{p.planName}</span>}
-              {p.passCode && <span className="text-[10px] font-mono font-bold border rounded-full px-1.5 py-px bg-slate-50 text-slate-600 border-slate-200">{p.passCode}</span>}
+              {p.passCode && <span className="text-[10px] font-mono font-bold border rounded-full px-1.5 py-px bg-slate-50 text-slate-600 border-slate-200"><IconoEmoji e="🎟️" /> {p.passCode}</span>}
               {p.owner && <span className="text-[10px] font-bold text-slate-400">· {p.owner.split(" ")[0]}</span>}
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { TarjetaKpi } from "../common/TarjetaKpi";
-import { Activity as CitaActiva, UserX as CitaFalta } from "lucide-react";
+import { Activity as CitaActiva, UserX as CitaFalta , CalendarClock } from "lucide-react";
 import React, { useState, useMemo } from "react";
 import {
   Calendar as CalendarIcon,
@@ -21,12 +21,15 @@ import { useGym } from "../../context/GymContext";
 import { hoyISO } from "../../utils/fecha";
 
 import { SelectorAlumno, coincideAlumno } from "../common/BuscarAlumno";
-import { AgendaEspecialistas, useHorasAtencion } from "./AgendaEspecialistas";
-import { aMin, deMin, corta, turnos, rangoCita, seCruzan, horaDeMin, HORAS_DIA } from "../../utils/horario";
+import { AgendaEspecialistas, useHorasAtencion, PARTES_DIA } from "./AgendaEspecialistas";
+import { aMin, deMin, corta, rangoCita, seCruzan, HORAS_DIA, rangoTexto, parteDelDia } from "../../utils/horario";
+import { IconoEmoji } from "../common/IconoEmoji";
 // La agenda muestra siempre el mismo día que el horario de atención de fisioterapia
 // y nutrición: de 5 AM a 11 PM, cada hora con sus 4 bloques de 15 minutos.
 const HORAS_BASE = HORAS_DIA;
 const CUARTOS = [0, 15, 30, 45];
+// Estados que dejan libre el turno (no vino, cancelada o pasada a otra fecha)
+const LIBERAN = ["falta", "cancelled", "pospuesto"];
 const DURACION_LIBRE = 45; // días sin horario configurado: citas de 45 min cada hora
 
 const NOMBRES_DIA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -71,31 +74,27 @@ export const AppointmentsScheduleModule = () => {
   } = useGym();
   const horasAtencion = useHorasAtencion();
   const serviciosDe = (srv) => (srv === "all" || !srv ? ["physiotherapy", "nutrition"] : [srv]);
-  // ¿El especialista atiende en esa hora (algún bloque de 15 min dentro)? null = día sin configurar (se permite todo)
-  const atiende = (srv, fecha, hora) => {
-    const lista = serviciosDe(srv).map((x) => horasAtencion(x, fecha));
-    if (lista.some((l) => l === null)) return true;
-    const h = aMin(hora);
-    return lista.some((l) => l.bloques.some((b) => aMin(b) >= h && aMin(b) < h + 60));
+  // Turnos que publicó el especialista ese día (cada uno con su inicio y su fin).
+  // Si no publicó horario, no hay turnos: recepción solo agenda en lo que el especialista abrió.
+  const turnosDia = (srv, fecha) => horasAtencion(srv, fecha)?.turnos || [];
+  const turnoEn = (srv, fecha, inicio) => {
+    const m = aMin(inicio);
+    return turnosDia(srv, fecha).find((t) => t.ini === m) || null;
   };
-  // Duración de cada cita ese día (la que eligió el especialista)
-  const duracionDe = (srv, fecha) => horasAtencion(srv, fecha)?.duracion || DURACION_LIBRE;
-  // Turnos que se pueden agendar ese día: inicio de cada cita
-  const horasDelDia = (srv, fecha) => {
-    const l = horasAtencion(srv, fecha);
-    if (l === null) return [...HORAS_BASE, ...extrasDe(fecha)].filter((h, i, a) => a.indexOf(h) === i).sort((x, y) => aMin(x) - aMin(y));
-    return turnos(l.bloques, l.duracion).map((t) => t.inicio);
-  };
-  // Horas fuera del rango base que abrió algún especialista ese día
-  const extrasDe = (fecha) => {
-    const out = new Set();
-    ["physiotherapy", "nutrition"].forEach((x) => horasAtencion(x, fecha)?.bloques.forEach((b) => out.add(horaDeMin(aMin(b)))));
-    return [...out];
+  // Duración de una cita: la del turno elegido (o la más común del día)
+  const duracionDe = (srv, fecha, inicio) => turnoEn(srv, fecha, inicio)?.dur || horasAtencion(srv, fecha)?.duracion || DURACION_LIBRE;
+  // Inicio de cada turno que se puede agendar ese día
+  const horasDelDia = (srv, fecha) => turnosDia(srv, fecha).map((t) => t.inicio);
+  const primerLibre = (srv, fecha) => {
+    const f = new Date(Date.now() - 5 * 3600e3);
+    const ahora = fecha === hoyISO() ? f.getUTCHours() * 60 + f.getUTCMinutes() : -1;
+    return turnosDia(srv, fecha).find((t) => t.ini >= ahora && !ocupanTurno(srv, fecha, t.inicio).length)?.inicio || "";
   };
   // Citas que ocupan un turno (las faltas y canceladas lo liberan)
   const ocupanTurno = (srv, fecha, inicio) => {
-    const r = { ini: aMin(inicio), fin: aMin(inicio) + duracionDe(srv, fecha) };
-    return appointments.filter((a) => a.date === fecha && a.serviceType === srv && a.status !== "falta" && a.status !== "cancelled" && seCruzan(rangoCita(a), r));
+    const t = turnoEn(srv, fecha, inicio);
+    const r = t ? { ini: t.ini, fin: t.fin } : { ini: aMin(inicio), fin: aMin(inicio) + duracionDe(srv, fecha, inicio) };
+    return appointments.filter((a) => a.date === fecha && a.serviceType === srv && !LIBERAN.includes(a.status) && seCruzan(rangoCita(a), r));
   };
 
   // Mode: Staff/Specialist Schedule vs Member/User Portal View
@@ -104,18 +103,6 @@ export const AppointmentsScheduleModule = () => {
   // Calendar Selection State
   const [weekOffset, setWeekOffset] = useState(0);
   const DAYS_OF_WEEK = useMemo(() => construirSemana(weekOffset), [weekOffset]);
-  // Filas de la agenda: 7 AM–7 PM más cualquier hora que abran los especialistas o que tenga citas
-  const HOURS = (() => {
-    const set = new Set(HORAS_BASE);
-    DAYS_OF_WEEK.forEach((d) => {
-      extrasDe(d.date).forEach((h) => set.add(h));
-      appointments.filter((a) => a.date === d.date).forEach((a) => {
-        const r = rangoCita(a);
-        if (r) set.add(horaDeMin(r.ini));
-      });
-    });
-    return [...set].sort((a, b) => aMin(a) - aMin(b));
-  })();
   const [selectedDate, setSelectedDate] = useState(hoyISO());
   const selectedDay = DAYS_OF_WEEK.find((d) => d.date === selectedDate)?.key || "";
   const setSelectedDay = () => {};
@@ -175,7 +162,7 @@ export const AppointmentsScheduleModule = () => {
   );
 
   // Abre el formulario de cita con fecha y hora ya elegidas
-  const openBooking = (date, hour, service) => {
+  const openBooking = (date, hour, service, memberId) => {
     // Sin tipo preseleccionado: solo fisioterapia o nutrición abren en su propio servicio
     const srv = service || (currentUser?.role === "physio" ? "physiotherapy" : currentUser?.role === "nutritionist" ? "nutrition" : "");
     const d = date || selectedDate;
@@ -185,9 +172,10 @@ export const AppointmentsScheduleModule = () => {
     // Primer turno libre dentro de esa hora (si el especialista abrió turnos de 15, 20… min)
     const exacto = srv && horasDelDia(srv, d).find((t) => aMin(t) === aMin(h));
     const enHora = srv ? horasDelDia(srv, d).filter((t) => aMin(t) >= aMin(h) && aMin(t) < aMin(h) + 60) : [];
-    setFormSlot(exacto || enHora.find((t) => !ocupanTurno(srv, d, t).length) || enHora[0] || h);
+    setFormSlot(exacto || enHora.find((t) => !ocupanTurno(srv, d, t).length) || (srv ? primerLibre(srv, d) : ""));
     setFormReason("");
     setFormNotes("");
+    setFormMemberId(memberId || "");
     setFormStaffName(srv ? specialistsFor(srv)[0] || "" : "");
     setFormRoom(srv === "nutrition" ? "Consultorio de Nutrición" : srv ? "Consultorio de Fisioterapia" : "");
     setConflictWarning(null);
@@ -200,6 +188,7 @@ export const AppointmentsScheduleModule = () => {
     setFormStaffName(specialistsFor(service)[0] || "");
     setFormRoom(service === "nutrition" ? "Consultorio de Nutrición" : "Consultorio de Fisioterapia");
     setFormReason("");
+    setFormSlot(turnoEn(service, formDate, formSlot) ? formSlot : primerLibre(service, formDate));
   };
 
   // Helper to extract standard hour string from timeSlot
@@ -245,15 +234,14 @@ export const AppointmentsScheduleModule = () => {
 
   // Conflict Detection function
   const checkScheduleConflict = (memberId, date, hour, excludeAptId, srv = formService) => {
-    const r = { ini: aMin(hour), fin: aMin(hour) + duracionDe(srv, date) };
+    const r = { ini: aMin(hour), fin: aMin(hour) + duracionDe(srv, date, hour) };
     return appointments.find(
       (a) =>
         a.id !== excludeAptId &&
         a.memberId === memberId &&
         a.date === date &&
         seCruzan(rangoCita(a), r) &&
-        a.status !== "falta" &&
-        a.status !== "cancelled",
+        !LIBERAN.includes(a.status),
     );
   };
 
@@ -288,7 +276,7 @@ export const AppointmentsScheduleModule = () => {
     }
     setConflictWarning(null);
 
-    const dur = duracionDe(formService, formDate);
+    const dur = duracionDe(formService, formDate, formSlot);
     const slotFull = `${formSlot} - ${deMin(aMin(formSlot) + dur)}`;
 
     addAppointment({
@@ -321,8 +309,8 @@ export const AppointmentsScheduleModule = () => {
   const sendWhatsAppReminder = (apt) => {
     const serviceName =
       apt.serviceType === "nutrition"
-        ? "Nutrición Deportiva"
-        : "Fisioterapia & Rehabilitación";
+        ? "🥗 Nutrición Deportiva"
+        : "🩺 Fisioterapia & Rehabilitación";
     const statusLabels = {
       por_atender: "Por Atender (En Espera)",
       atendiendo: "En Atención Ahora",
@@ -400,7 +388,7 @@ export const AppointmentsScheduleModule = () => {
       ) || members[0];
     const specialist = specialistsFor(portalSelectedService)[0] || "Por asignar";
 
-    const durP = duracionDe(portalSelectedService, portalSelectedDate);
+    const durP = duracionDe(portalSelectedService, portalSelectedDate, portalSelectedSlot);
     const slotFull = `${portalSelectedSlot} - ${deMin(aMin(portalSelectedSlot) + durP)}`;
 
     addAppointment({
@@ -478,7 +466,7 @@ export const AppointmentsScheduleModule = () => {
               Horarios y citas
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm mt-1 max-w-2xl">
-              Toca el + de una hora libre para agendar, o una hora con citas para ver a los pacientes y cambiar su estado.
+              Solo se muestran los turnos que publicaron fisioterapia y nutrición. Toca un turno libre para agendar, o una cita para ver al paciente y cambiar su estado.
             </p>
           </div>
 
@@ -500,7 +488,7 @@ export const AppointmentsScheduleModule = () => {
               className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Agendar en {selectedHour}</span>
+              <span>Agendar cita</span>
             </button>
           </div>
         </div>
@@ -656,13 +644,10 @@ export const AppointmentsScheduleModule = () => {
             {/* LEFT / CENTER: GOOGLE CALENDAR GRID (7 COLUMNS) */}
             <div className="lg:col-span-12 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               {/* Encabezado y horas dentro del mismo contenedor con scroll: columnas siempre alineadas */}
-              <div className="max-h-[74vh] overflow-auto rd-agenda-semana">
-              <div className="min-w-[880px]">
-              {/* Calendar Days Header */}
-              <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] bg-slate-900 text-white border-b border-slate-800 text-center text-xs font-bold sticky top-0 z-10">
-                <div className="p-2 bg-slate-950 text-slate-400 border-r border-slate-800 flex items-center justify-center">
-                  <Clock className="w-4 h-4" />
-                </div>
+              <div className="max-h-[78vh] overflow-auto rd-agenda-semana">
+              <div className="min-w-[980px]">
+              {/* Días de la semana */}
+              <div className="grid grid-cols-7 bg-slate-900 text-white border-b border-slate-800 text-center text-xs font-bold sticky top-0 z-10">
                 {DAYS_OF_WEEK.map((day) => {
                   const isDaySelected = selectedDay === day.key;
                   return (
@@ -673,17 +658,11 @@ export const AppointmentsScheduleModule = () => {
                         setSelectedDate(day.date);
                       }}
                       className={`px-1 py-1.5 transition-colors text-center flex flex-col items-center justify-center cursor-pointer border-r border-slate-800 last:border-r-0 ${
-                        isDaySelected
-                          ? "bg-blue-600 text-white"
-                          : "hover:bg-slate-800 text-slate-300"
+                        isDaySelected ? "bg-blue-600 text-white" : "hover:bg-slate-800 text-slate-300"
                       }`}
                     >
-                      <span className="text-xs font-semibold uppercase tracking-wider">
-                        {day.esHoy ? "Hoy" : day.label}
-                      </span>
-                      <span
-                        className={`text-xs mt-0.5 px-1.5 py-0.2 rounded-full font-extrabold ${isDaySelected ? "bg-white text-blue-900" : "text-slate-400"}`}
-                      >
+                      <span className="text-xs font-semibold uppercase tracking-wider">{day.esHoy ? "Hoy" : day.label}</span>
+                      <span className={`text-xs mt-0.5 px-1.5 rounded-full font-extrabold ${isDaySelected ? "bg-white text-blue-900" : "text-slate-400"}`}>
                         {day.dia} {day.mes}
                       </span>
                     </button>
@@ -691,128 +670,125 @@ export const AppointmentsScheduleModule = () => {
                 })}
               </div>
 
-              {/* Filas: cada hora de 5 AM a 10 PM, dividida en sus 4 bloques de 15 minutos,
-                  igual que el horario de atención de fisioterapia y nutrición */}
-              <div className="divide-y divide-slate-100">
-                {(() => {
-                  const srvCal = serviceFilter !== "all" ? serviceFilter : currentUser?.role === "physio" ? "physiotherapy" : currentUser?.role === "nutritionist" ? "nutrition" : "all";
-                  const servicios = serviciosDe(srvCal);
-                  const hoy = hoyISO();
-                  const ahora = (() => {
-                    const f = new Date(Date.now() - 5 * 3600e3);
-                    return f.getUTCHours() * 60 + f.getUTCMinutes();
-                  })();
-                  // Turnos de cada servicio y día (se calculan una vez por pantalla)
-                  const cache = {};
-                  const turnosDe = (srv, fecha) => (cache[`${srv}|${fecha}`] ||= horasDelDia(srv, fecha).map((t) => ({ t, m: aMin(t) })));
-                  const abiertoEn = (srv, fecha, q) => {
-                    const l = horasAtencion(srv, fecha);
-                    if (l === null) return turnosDe(srv, fecha).some((x) => q >= x.m && q < x.m + DURACION_LIBRE);
-                    return l.bloques.some((b) => aMin(b) === q);
-                  };
-                  return HOURS.map((hour) => {
-                    const h = aMin(hour);
-                    return (
-                      <div key={hour} className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] group">
-                        <div className="px-1 py-1.5 bg-slate-50 border-r border-slate-200 text-slate-600 font-black text-xs flex items-center justify-center text-center select-none">
-                          {hour.replace(":00 ", " ").replace(/^0/, "")}
-                        </div>
-                        {DAYS_OF_WEEK.map((day) => {
-                          const citasDia = appointments.filter(
-                            (a) => a.date === day.date && a.status !== "cancelled" && (serviceFilter === "all" || a.serviceType === serviceFilter),
-                          );
-                          const isCellSelected = selectedDate === day.date && aMin(selectedHour) >= h && aMin(selectedHour) < h + 60;
-                          return (
-                            <div
-                              key={`${day.key}-${hour}`}
-                              className={`rd-celda-agenda p-1 border-r border-slate-100 last:border-r-0 grid grid-cols-4 gap-0.5 ${isCellSelected ? "bg-blue-50/70" : ""}`}
-                            >
-                              {CUARTOS.map((d) => {
-                                const q = h + d;
-                                const pasado = day.date < hoy || (day.date === hoy && q + 15 <= ahora);
-                                // Citas que ocupan este bloque
-                                const enBloque = citasDia.filter((a) => {
-                                  const r = rangoCita(a);
-                                  return r && r.ini < q + 15 && r.fin > q;
-                                });
-                                const empieza = enBloque.filter((a) => {
-                                  const r = rangoCita(a);
-                                  return r.ini >= q && r.ini < q + 15;
-                                });
-                                if (enBloque.length && !(onlyAvailableFilter && enBloque.every((a) => a.status !== "falta"))) {
-                                  const a = empieza[0] || enBloque[0];
-                                  const fisio = a.serviceType === "physiotherapy";
-                                  const falta = a.status === "falta";
-                                  const badge = getStatusBadge(a.status);
-                                  return (
-                                    <button
-                                      type="button"
-                                      key={d}
-                                      title={`${a.timeSlot} · ${a.memberName} · ${fisio ? "Fisioterapia" : "Nutrición"} · ${badge.label}`}
-                                      onClick={() => {
-                                        setSelectedDate(day.date);
-                                        setSelectedHour(hour);
-                                        setDetalleHora(true);
-                                      }}
-                                      className={`rd-bloque rd-bloque-cita h-8 min-w-0 rounded-md border text-[10px] font-extrabold leading-none px-0.5 flex flex-col items-center justify-center cursor-pointer ${
-                                        falta ? "bg-rose-50 border-rose-200 text-rose-800" : fisio ? "bg-cyan-100 border-cyan-300 text-cyan-950" : "bg-emerald-100 border-emerald-300 text-emerald-950"
-                                      } ${empieza.length ? "" : "opacity-70"}`}
-                                    >
-                                      {empieza.length ? (
-                                        <>
-                                          <span className="truncate max-w-full">{a.memberName.split(" ")[0]}</span>
-                                          <span className="text-[9px] font-bold opacity-75">{corta(rangoCita(a).ini)}</span>
-                                        </>
-                                      ) : (
-                                        <span className="text-[9px] font-bold opacity-75">{corta(q)}</span>
-                                      )}
-                                    </button>
-                                  );
-                                }
-                                // Turnos libres que empiezan en este bloque (según la duración que eligió cada especialista)
-                                const libres = servicios
-                                  .map((srv) => ({ srv, t: turnosDe(srv, day.date).find((x) => x.m >= q && x.m < q + 15) }))
-                                  .filter((x) => x.t && !ocupanTurno(x.srv, day.date, x.t.t).length);
-                                const abierto = servicios.some((srv) => abiertoEn(srv, day.date, q));
-                                if (libres.length && !pasado) {
-                                  const solo = libres.length === 1 ? libres[0] : null;
-                                  const hora = libres[0].t.t;
-                                  return (
-                                    <button
-                                      type="button"
-                                      key={d}
-                                      title={`Agendar ${solo ? (solo.srv === "nutrition" ? "nutrición" : "fisioterapia") : "cita"} · ${hora}`}
-                                      onClick={() => {
-                                        setSelectedDate(day.date);
-                                        setSelectedHour(hora);
-                                        openBooking(day.date, hora, solo ? solo.srv : srvCal !== "all" ? srvCal : undefined);
-                                      }}
-                                      className={`rd-bloque rd-bloque-libre h-8 min-w-0 rounded-md border border-dashed text-[10px] font-bold leading-none flex items-center justify-center cursor-pointer transition-colors ${
-                                        solo?.srv === "nutrition" ? "rd-libre-nutri" : solo?.srv === "physiotherapy" ? "rd-libre-fisio" : "rd-libre-ambos"
-                                      }`}
-                                    >
-                                      {corta(libres[0].t.m)}
-                                    </button>
-                                  );
-                                }
-                                return (
-                                  <span
-                                    key={d}
-                                    title={pasado ? "Horario pasado" : abierto ? "Dentro de una cita en curso" : "El especialista no atiende a esta hora"}
-                                    className={`rd-bloque h-8 min-w-0 rounded-md text-[9px] font-semibold leading-none flex items-center justify-center select-none ${abierto && !pasado ? "rd-bloque-encurso" : "rd-bloque-cerrado"}`}
-                                  >
-                                    {corta(q)}
-                                  </span>
-                                );
-                              })}
+              {/* Turnos publicados por fisioterapia y nutrición: solo esos se pueden agendar */}
+              {(() => {
+                const srvCal = serviceFilter !== "all" ? serviceFilter : currentUser?.role === "physio" ? "physiotherapy" : currentUser?.role === "nutritionist" ? "nutrition" : "all";
+                const servicios = serviciosDe(srvCal);
+                const hoy = hoyISO();
+                const ahora = (() => {
+                  const f = new Date(Date.now() - 5 * 3600e3);
+                  return f.getUTCHours() * 60 + f.getUTCMinutes();
+                })();
+                const q = searchTerm.trim().toLowerCase();
+                return (
+                  <div className="grid grid-cols-7 divide-x divide-slate-100 items-start">
+                    {DAYS_OF_WEEK.map((day) => {
+                      const citas = appointments.filter(
+                        (a) => a.date === day.date && a.status !== "cancelled" && servicios.includes(a.serviceType),
+                      );
+                      // Cada turno publicado, con su cita si ya está tomado
+                      const items = [];
+                      servicios.forEach((srv) =>
+                        turnosDia(srv, day.date).forEach((t) => {
+                          const c = citas.find((a) => a.serviceType === srv && !LIBERAN.includes(a.status) && seCruzan(rangoCita(a), t));
+                          items.push({ srv, ini: t.ini, fin: t.fin, cita: c || null });
+                        }),
+                      );
+                      // Citas fuera de los turnos publicados (antiguas o faltas): también se muestran
+                      citas.forEach((a) => {
+                        if (items.some((x) => x.cita?.id === a.id)) return;
+                        const r = rangoCita(a);
+                        if (r) items.push({ srv: a.serviceType, ini: r.ini, fin: r.fin, cita: a });
+                      });
+                      items.sort((x, y) => x.ini - y.ini || (x.srv === "physiotherapy" ? -1 : 1));
+                      const visibles = items.filter((x) => {
+                        if (onlyAvailableFilter && x.cita) return false;
+                        if (q && x.cita) {
+                          const mem = members.find((m) => m.id === x.cita.memberId);
+                          return String(x.cita.memberName || "").toLowerCase().includes(q) || (mem && coincideAlumno(mem, q)) || String(x.cita.staffName || "").toLowerCase().includes(q);
+                        }
+                        return !q;
+                      });
+                      const libres = items.filter((x) => !x.cita && !(day.date < hoy || (day.date === hoy && x.ini < ahora))).length;
+                      return (
+                        <div key={day.key} className={`rd-columna-dia p-1.5 min-h-[260px] ${selectedDate === day.date ? "bg-blue-50/40" : ""}`}>
+                          <p className="rd-resumen-dia text-[10px] font-bold text-center text-slate-500 mb-1.5">
+                            {items.length ? `${libres} ${libres === 1 ? "libre" : "libres"} · ${items.length - libres} ${items.length - libres === 1 ? "tomado" : "tomados"}` : "Sin horario publicado"}
+                          </p>
+                          {visibles.length === 0 && items.length === 0 && (
+                            <div className="rd-sin-turnos rounded-lg border border-dashed border-slate-200 text-[11px] text-slate-400 text-center px-2 py-6 leading-snug">
+                              {srvCal === "nutrition" ? "Nutrición" : srvCal === "physiotherapy" ? "Fisioterapia" : "Los especialistas"} no publicaron turnos este día
                             </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
+                          )}
+                          {PARTES_DIA.map(([clave, nombre]) => {
+                            const deParte = visibles.filter((x) => parteDelDia(x.ini) === clave);
+                            if (!deParte.length) return null;
+                            return (
+                              <div key={clave} className="mb-2">
+                                <p className="rd-parte-dia text-[9px] font-black uppercase tracking-wider text-slate-400 px-0.5 mb-1">{nombre}</p>
+                                <div className="space-y-1">
+                                  {deParte.map((x) => {
+                                    const fisio = x.srv === "physiotherapy";
+                                    const pasado = day.date < hoy || (day.date === hoy && x.fin <= ahora);
+                                    if (x.cita) {
+                                      const badge = getStatusBadge(x.cita.status);
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={`${x.srv}-${x.ini}-${x.cita.id}`}
+                                          onClick={() => {
+                                            setSelectedDate(day.date);
+                                            setSelectedHour(deMin(x.ini));
+                                            setDetalleHora(true);
+                                          }}
+                                          title={`${x.cita.timeSlot} · ${x.cita.memberName} · ${badge.label}`}
+                                          className={`rd-turno-cita w-full text-left rounded-lg border-l-4 border px-1.5 py-1 cursor-pointer ${
+                                            x.cita.status === "falta" ? "bg-rose-50 border-rose-200 border-l-rose-400 opacity-80" : x.cita.status === "pospuesto" ? "bg-amber-50 border-amber-200 border-l-amber-400 opacity-80" : fisio ? "bg-cyan-50 border-cyan-200 border-l-cyan-500" : "bg-emerald-50 border-emerald-200 border-l-emerald-500"
+                                          }`}
+                                        >
+                                          <span className="flex items-center justify-between gap-1">
+                                            <span className="text-[10px] font-extrabold tabular-nums text-slate-600">{rangoTexto(x.ini, x.fin)}</span>
+                                            <span className={`w-2 h-2 rounded-full shrink-0 ${badge.dot === "bg-white" ? "bg-emerald-500 animate-pulse" : badge.dot}`} />
+                                          </span>
+                                          <span className="block text-xs font-extrabold text-slate-900 truncate">{String(x.cita.memberName || "").split(" ").slice(0, 2).join(" ")}</span>
+                                          <span className="block text-[10px] font-semibold text-slate-500 truncate">{badge.label}</span>
+                                        </button>
+                                      );
+                                    }
+                                    if (pasado) {
+                                      return (
+                                        <div key={`${x.srv}-${x.ini}`} className="rd-turno-pasado rounded-lg border border-slate-100 px-1.5 py-1 text-[10px] font-bold tabular-nums text-slate-400 line-through decoration-slate-300">
+                                          {rangoTexto(x.ini, x.fin)}
+                                        </div>
+                                      );
+                                    }
+                                    return (
+                                      <button
+                                        type="button"
+                                        key={`${x.srv}-${x.ini}`}
+                                        onClick={() => {
+                                          setSelectedDate(day.date);
+                                          setSelectedHour(deMin(x.ini));
+                                          openBooking(day.date, deMin(x.ini), x.srv);
+                                        }}
+                                        title={`Agendar ${fisio ? "fisioterapia" : "nutrición"} · ${rangoTexto(x.ini, x.fin)}`}
+                                        className={`rd-turno-libre w-full rounded-lg border border-dashed px-1.5 py-1 flex items-center justify-between gap-1 cursor-pointer transition-colors ${fisio ? "rd-libre-fisio" : "rd-libre-nutri"}`}
+                                      >
+                                        <span className="text-[11px] font-extrabold tabular-nums">{rangoTexto(x.ini, x.fin)}</span>
+                                        <span className="text-[9px] font-black uppercase opacity-80">{srvCal === "all" ? (fisio ? "Fisio" : "Nutri") : `${x.fin - x.ini}′`}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
               </div>
               </div>
             </div>
@@ -1045,8 +1021,22 @@ export const AppointmentsScheduleModule = () => {
                             </div>
                           </div>
 
-                          {/* Delete option */}
-                          <div className="pt-1 flex justify-end">
+                          {/* Reprogramar y cancelar */}
+                          <div className="pt-1 flex items-center justify-between gap-2">
+                            {apt.status !== "atendido" && apt.status !== "atendiendo" ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateAppointmentStatus(apt.id, "pospuesto");
+                                  setDetalleHora(false);
+                                  openBooking(apt.date, "", apt.serviceType, apt.memberId);
+                                }}
+                                className="rd-reprogramar text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
+                              >
+                                <CalendarClock className="w-3.5 h-3.5" />
+                                <span>Reprogramar a otro turno</span>
+                              </button>
+                            ) : <span />}
                             <button
                               onClick={() => deleteAppointment(apt.id)}
                               className="text-slate-400 hover:text-rose-600 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
@@ -1287,7 +1277,7 @@ export const AppointmentsScheduleModule = () => {
 
               <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
                 <div className="font-bold text-slate-800">
-                   Reglas de Atención al Alumno:
+                  <IconoEmoji e="📌" /> Reglas de Atención al Alumno:
                 </div>
                 <div>
                   • Cada cita dura {duracionDe(portalSelectedService, portalSelectedDate)} minutos.
@@ -1411,55 +1401,119 @@ export const AppointmentsScheduleModule = () => {
                   </div>
                 </section>
 
-                {/* 3. Fecha y hora */}
+                {/* 3. Fecha y hora: solo los turnos que publicó el especialista */}
                 <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
-                  <h4 className="text-base font-extrabold text-slate-900 mb-4">3. Fecha y hora</h4>
-                  <div className="flex flex-wrap items-end gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1.5">Fecha *</label>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <h4 className="text-base font-extrabold text-slate-900">3. Fecha y hora</h4>
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                      Otra fecha
                       <input
                         type="date"
                         value={formDate}
                         min={hoyISO()}
                         onChange={(e) => setFormDate(e.target.value)}
                         required
-                        className="text-sm p-3 rounded-xl border border-slate-300 bg-white"
+                        className="text-xs p-2 rounded-lg border border-slate-300 bg-white"
                       />
-                    </div>
-                    <span className="text-sm text-slate-500 pb-3">{fechaLarga(formDate)}</span>
+                    </label>
                   </div>
-                  {formService && horasDelDia(formService, formDate).length === 0 && (
-                    <div className="mb-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
-                      Ese día el especialista no atiende. Elija otra fecha.
+                  {!formService ? (
+                    <div className="p-4 rounded-xl bg-slate-50 border border-dashed border-slate-300 text-sm text-slate-500 text-center">
+                      Elige primero el tipo de cita para ver los turnos de atención.
                     </div>
+                  ) : (
+                    <>
+                      {/* Próximos 14 días con sus turnos libres */}
+                      <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1">
+                        {Array.from({ length: 14 }, (_, k) => {
+                          const [y, m, d] = hoyISO().split("-").map(Number);
+                          const fd = new Date(Date.UTC(y, m - 1, d + k));
+                          const iso = fd.toISOString().slice(0, 10);
+                          const lista = turnosDia(formService, iso);
+                          const ahoraMin = (() => {
+                            const f = new Date(Date.now() - 5 * 3600e3);
+                            return f.getUTCHours() * 60 + f.getUTCMinutes();
+                          })();
+                          const libres = lista.filter((t) => !ocupanTurno(formService, iso, t.inicio).length && !(k === 0 && t.ini < ahoraMin)).length;
+                          const sel = iso === formDate;
+                          return (
+                            <button
+                              type="button"
+                              key={iso}
+                              onClick={() => {
+                                setFormDate(iso);
+                                setFormSlot("");
+                              }}
+                              className={`rd-dia-cita shrink-0 w-[4.6rem] rounded-xl border-2 px-1 py-1.5 text-center cursor-pointer transition ${
+                                sel ? "bg-blue-600 border-blue-600 text-white shadow" : libres ? "bg-white border-slate-200 text-slate-700 hover:border-blue-400" : "bg-slate-50 border-slate-100 text-slate-400"
+                              }`}
+                            >
+                              <span className="block text-[10px] font-bold uppercase">{k === 0 ? "Hoy" : NOMBRES_DIA[(fd.getUTCDay() + 6) % 7].slice(0, 3)}</span>
+                              <span className="block text-lg font-extrabold leading-tight">{fd.getUTCDate()}</span>
+                              <span className={`block text-[10px] font-bold ${sel ? "text-white/85" : libres ? "text-emerald-600" : ""}`}>
+                                {lista.length ? (libres ? `${libres} ${libres === 1 ? "libre" : "libres"}` : "lleno") : "sin turnos"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-sm font-bold text-slate-700 mt-2 mb-2">{fechaLarga(formDate)}</p>
+                      {horasDelDia(formService, formDate).length === 0 ? (
+                        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
+                          {formService === "nutrition" ? "Nutrición" : "Fisioterapia"} no publicó turnos para este día. Elige un día con turnos libres arriba.
+                        </div>
+                      ) : (
+                        <div className="grid sm:grid-cols-3 gap-3">
+                          {PARTES_DIA.map(([clave, nombre, IconoParte, grad]) => {
+                            const ahoraMin = (() => {
+                              const f = new Date(Date.now() - 5 * 3600e3);
+                              return f.getUTCHours() * 60 + f.getUTCMinutes();
+                            })();
+                            const deParte = turnosDia(formService, formDate).filter((t) => parteDelDia(t.ini) === clave);
+                            return (
+                              <div key={clave} className="rd-parte-turnos rounded-xl border border-slate-200 bg-slate-50 p-2">
+                                <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slate-600 mb-1.5">
+                                  <span className={`w-5 h-5 rounded-md bg-gradient-to-br ${grad} text-white flex items-center justify-center`}>
+                                    <IconoParte className="w-3 h-3" />
+                                  </span>
+                                  {nombre}
+                                </p>
+                                {deParte.length === 0 ? (
+                                  <p className="text-[11px] text-slate-400 py-2 text-center">Sin turnos</p>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {deParte.map((t) => {
+                                      const ocupada = ocupanTurno(formService, formDate, t.inicio).length > 0;
+                                      const pasado = formDate === hoyISO() && t.ini < ahoraMin;
+                                      const sel = aMin(formSlot) === t.ini;
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={t.ini}
+                                          disabled={ocupada || pasado}
+                                          onClick={() => setFormSlot(t.inicio)}
+                                          className={`rd-turno-elegir w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg border-2 text-left transition ${
+                                            sel
+                                              ? "bg-blue-600 border-blue-600 text-white shadow cursor-pointer"
+                                              : ocupada || pasado
+                                                ? "bg-slate-100 border-slate-100 text-slate-400 cursor-not-allowed"
+                                                : "bg-white border-slate-200 text-slate-800 hover:border-blue-400 cursor-pointer"
+                                          }`}
+                                        >
+                                          <span className={`text-sm font-extrabold tabular-nums ${ocupada || pasado ? "line-through" : ""}`}>{rangoTexto(t.ini, t.fin)}</span>
+                                          <span className={`text-[10px] font-bold shrink-0 ${sel ? "text-white/85" : ""}`}>{ocupada ? "Ocupado" : pasado ? "Pasó" : `${t.dur} min`}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
                   )}
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {(formService ? horasDelDia(formService, formDate) : HORAS_BASE).map((h) => {
-                      const ocupadas = formService ? ocupanTurno(formService, formDate, h).length : 0;
-                      const sel = formSlot === h;
-                      const fin = deMin(aMin(h) + (formService ? duracionDe(formService, formDate) : DURACION_LIBRE));
-                      return (
-                        <button
-                          type="button"
-                          key={h}
-                          disabled={!!ocupadas}
-                          onClick={() => setFormSlot(h)}
-                          className={`py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${
-                            sel
-                              ? "bg-blue-600 border-blue-600 text-white shadow cursor-pointer"
-                              : ocupadas
-                                ? "bg-slate-100 border-slate-200 text-slate-400 line-through cursor-not-allowed"
-                                : "bg-white border-slate-200 text-slate-700 hover:border-blue-400 cursor-pointer"
-                          }`}
-                        >
-                          {h}
-                          <span className={`block text-[11px] font-semibold ${sel ? "text-white/80" : "text-slate-500"}`}>
-                            {ocupadas ? "Ocupado" : `hasta ${fin}`}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
                   {detectedFormConflict && (
                     <div className="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-sm text-rose-800 flex gap-2">
                       <AlertCircle className="w-5 h-5 shrink-0" />
@@ -1517,8 +1571,14 @@ export const AppointmentsScheduleModule = () => {
                     className={`p-5 text-white ${formService === "nutrition" ? "bg-emerald-600" : formService ? "bg-cyan-700" : "bg-slate-700"}`}
                   >
                     <span className="text-xs font-bold uppercase tracking-widest text-white">Resumen</span>
-                    <p className="text-3xl font-black mt-1">{formSlot}</p>
-                    <p className="text-sm font-bold text-white/85">hasta {deMin(aMin(formSlot) + (formService ? duracionDe(formService, formDate) : DURACION_LIBRE))}</p>
+                    {formService && turnoEn(formService, formDate, formSlot) ? (
+                      <>
+                        <p className="text-3xl font-black mt-1">{formSlot}</p>
+                        <p className="text-sm font-bold text-white/85">hasta {turnoEn(formService, formDate, formSlot).final}</p>
+                      </>
+                    ) : (
+                      <p className="text-xl font-black mt-1">Elige un turno</p>
+                    )}
                     <p className="text-sm">{fechaLarga(formDate)}</p>
                   </div>
                   <dl className="p-5 space-y-3 text-sm">
@@ -1527,7 +1587,7 @@ export const AppointmentsScheduleModule = () => {
                       ["Alumno", members.find((m) => m.id === formMemberId)?.fullName || "—"],
                       ["Especialista", formStaffName || "—"],
                       ["Lugar", formRoom],
-                      ["Duración", `${formService ? duracionDe(formService, formDate) : DURACION_LIBRE} minutos`],
+                      ["Duración", formService && turnoEn(formService, formDate, formSlot) ? `${turnoEn(formService, formDate, formSlot).dur} minutos` : "—"],
                       ["Motivo", formReason || "—"],
                     ].map(([k, v]) => (
                       <div key={k} className="flex justify-between gap-3">

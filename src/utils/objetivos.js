@@ -8,7 +8,7 @@ export const listaObjetivos = (v) =>
     .map((x) => x.trim())
     .map((x) => (x === "salud_rehabilitacion" ? "rehabilitacion" : x))
     .filter((x) => OBJETIVOS_ALUMNO.some(([k]) => k === x));
-/** "Ganancia muscular ·  Pérdida de grasa" */
+/** "💪 Ganancia muscular · 🔥 Pérdida de grasa" */
 export const textoObjetivos = (v, corto = false) => {
   const l = listaObjetivos(v);
   if (!l.length) return "—";

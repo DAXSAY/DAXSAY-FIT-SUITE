@@ -38,25 +38,79 @@ export const BLOQUES = Array.from({ length: (FIN_DIA - INICIO_DIA) / PASO }, (_,
 /** Horas (inicio de cada hora) que cubre el día */
 export const HORAS_DIA = Array.from({ length: (FIN_DIA - INICIO_DIA) / 60 }, (_, i) => deMin(INICIO_DIA + i * 60));
 
+/** "05:15 AM" o "05:15" (24 h) → minutos; acepta también números */
+const minDe = (v) => (typeof v === "number" ? v : aMin(v));
+
 /**
- * Lleva un registro de agenda al formato de 15 minutos.
- * Los registros antiguos guardaban horas completas ("08:00 PM" = de 8 a 9):
- * cada una se convierte en sus 4 bloques, sin perder nada.
+ * Lleva un registro de agenda al formato actual.
+ * Formato actual (modelo 2): turnos con inicio y fin libres, p. ej.
+ *   5:00–5:15 (15 min), 5:15–5:35 (20 min), 5:35–6:05 (30 min).
+ * Formatos anteriores: bloques de 15 min + una duración fija, u horas completas.
+ * Todo se convierte a { turnos: [{ini, fin}], bloques, duracion } sin perder nada.
  */
 export const normalizarAgenda = (reg) => {
   if (!reg) return null;
-  const horas = reg.horas || [];
-  let bloques;
-  if (reg.paso === PASO) bloques = horas;
-  else bloques = horas.flatMap((h) => {
-    const ini = aMin(h);
-    return ini == null ? [] : [0, 15, 30, 45].map((d) => deMin(ini + d));
+  let lista;
+  if (Array.isArray(reg.turnos)) {
+    lista = reg.turnos
+      .map((t) => ({ ini: minDe(t.inicio ?? t.ini), fin: minDe(t.fin) }))
+      .filter((t) => t.ini != null && t.fin != null && t.fin > t.ini);
+  } else {
+    const horas = reg.horas || [];
+    const bloques0 =
+      reg.paso === PASO
+        ? horas
+        : horas.flatMap((h) => {
+            const ini = aMin(h);
+            return ini == null ? [] : [0, 15, 30, 45].map((d) => deMin(ini + d));
+          });
+    const dur = DURACIONES.includes(Number(reg.duracion)) ? Number(reg.duracion) : reg.paso === PASO ? DURACION_POR_DEFECTO : 45;
+    lista = turnos(bloques0, dur).map((t) => ({ ini: t.min, fin: t.min + dur }));
+  }
+  // ordenados y sin repetidos
+  const vistos = new Set();
+  lista = lista
+    .sort((a, b) => a.ini - b.ini || a.fin - b.fin)
+    .filter((t) => {
+      const k = `${t.ini}-${t.fin}`;
+      if (vistos.has(k)) return false;
+      vistos.add(k);
+      return true;
+    });
+  const bloques = [];
+  lista.forEach((t) => {
+    for (let m = Math.floor(t.ini / PASO) * PASO; m < t.fin; m += PASO) bloques.push(deMin(m));
   });
-  const set = new Set(bloques.filter((b) => aMin(b) != null));
+  const durs = lista.map((t) => t.fin - t.ini);
+  const duracion = durs.length ? durs.sort((a, b) => durs.filter((x) => x === b).length - durs.filter((x) => x === a).length)[0] : DURACION_POR_DEFECTO;
   return {
-    bloques: [...set].sort((a, b) => aMin(a) - aMin(b)),
-    duracion: DURACIONES.includes(Number(reg.duracion)) ? Number(reg.duracion) : reg.paso === PASO ? DURACION_POR_DEFECTO : 45,
+    turnos: lista.map((t) => ({ ...t, inicio: deMin(t.ini), final: deMin(t.fin), dur: t.fin - t.ini })),
+    bloques: [...new Set(bloques)].sort((a, b) => aMin(a) - aMin(b)),
+    duracion,
   };
+};
+
+/** Minutos totales de atención de una lista de turnos */
+export const minutosTurnos = (lista) => (lista || []).reduce((a, t) => a + (t.fin - t.ini), 0);
+
+/** "5:00 – 5:15 AM" (mismo AM/PM) o "11:45 AM – 12:15 PM" */
+export const rangoTexto = (ini, fin) => {
+  const a = deMin(ini), b = deMin(fin);
+  return a.slice(-2) === b.slice(-2) ? `${corta(ini)} – ${corta(fin)} ${b.slice(-2)}` : `${corta(ini)} ${a.slice(-2)} – ${corta(fin)} ${b.slice(-2)}`;
+};
+
+/** Parte del día de un minuto: mañana (antes de 12), tarde (12–18) o noche */
+export const parteDelDia = (min) => (min < 720 ? "manana" : min < 1080 ? "tarde" : "noche");
+
+/** Turnos que se cruzan entre sí (para avisar antes de guardar) */
+export const cruces = (lista) => {
+  const out = new Set();
+  const l = [...(lista || [])].sort((a, b) => a.ini - b.ini);
+  for (let i = 0; i < l.length; i++) for (let j = i + 1; j < l.length && l[j].ini < l[i].fin; j++) {
+    out.add(i);
+    out.add(j);
+  }
+  return [...out].map((i) => l[i]);
 };
 
 /** Bloques seguidos → ventanas [{ini, fin}] en minutos */

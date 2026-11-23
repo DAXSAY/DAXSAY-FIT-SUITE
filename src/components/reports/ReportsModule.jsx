@@ -34,6 +34,7 @@ import { crearExcel, crearPDF, descargar, enviarPorWhatsApp } from "../../utils/
 import { TelWhatsApp } from "../common/TelWhatsApp";
 import { coincideFila } from "../../utils/buscarPersona";
 import { BotonesDescarga } from "../common/BotonesDescarga";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 const soles = (n) => `S/ ${Number(n || 0).toFixed(2)}`;
 const fCorta = (f) => (f ? `${String(f).slice(8, 10)}/${String(f).slice(5, 7)}/${String(f).slice(0, 4)}` : "");
@@ -1105,7 +1106,7 @@ const ReporteDeudas = () => {
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Deuda por estado</h4>
           {porEstado.length === 0 ? (
-            <p className="text-sm text-slate-500 py-16 text-center">Sin deudas pendientes </p>
+            <p className="text-sm text-slate-500 py-16 text-center">Sin deudas pendientes <IconoEmoji e="🎉" /></p>
           ) : (
             <div style={{ height: 240 }}>
               <ResponsiveContainer width="100%" height="100%">

@@ -48,6 +48,7 @@ import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
 import { useRecordado } from "../../utils/subPestana";
 import { GuiaSesion } from "./GuiaSesion";
 import { SaludAlumno } from "./SaludAlumno";
+import { IconoEmoji } from "../common/IconoEmoji";
 export const RoutinesAndExercises = () => {
   const {
     exercises,
@@ -428,11 +429,11 @@ export const RoutinesAndExercises = () => {
                   <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 mr-1">Nivel</span>
-                      {[["todas", "", "Todas"], ...NIVELES_RUTINA].map(([k, ic, l]) =>{
+                      {[["todas", "📋", "Todas"], ...NIVELES_RUTINA].map(([k, ic, l]) => {
                         const n = k === "todas" ? porEntrenador.length : porEntrenador.filter((r) => (r.level || "intermedio") === k).length;
                         return (
                           <button key={k} type="button" onClick={() => setFiltroRut(k)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${filtroRut === k ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-700 hover:border-blue-300"}`}>
-                            {ic} {l} <span className="opacity-70">{n}</span>
+                            <IconoEmoji e={ic} /> {l} <span className="opacity-70">{n}</span>
                           </button>
                         );
                       })}
@@ -526,7 +527,7 @@ export const RoutinesAndExercises = () => {
                                             title="Ver su rutina"
                                           >
                                             {a.nombre.split(" ").slice(0, 2).join(" ")}
-                                            {a.copia?.personalizada ? " " : ""}
+                                            {a.copia?.personalizada ? " ✎" : ""}
                                           </button>
                                         ))}
                                       </div>
@@ -773,7 +774,7 @@ export const RoutinesAndExercises = () => {
                 >
                   {OBJETIVOS_RUTINA.map(([k, ic, l]) => (
                     <option key={k} value={k}>
-                      {ic} {l}
+                      <IconoEmoji e={ic} /> {l}
                     </option>
                   ))}
                 </select>
@@ -792,7 +793,7 @@ export const RoutinesAndExercises = () => {
                       onClick={() => setRoutineLevel(k)}
                       className={`min-w-0 px-1.5 py-1.5 rounded-lg border text-[10.5px] leading-tight font-bold cursor-pointer flex items-center justify-center gap-1 ${routineLevel === k ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-gray-300 text-slate-700 hover:border-blue-400"}`}
                     >
-                      <span className="shrink-0">{ic}</span>
+                      <span className="shrink-0"><IconoEmoji e={ic} /></span>
                       <span className="truncate tracking-tight">{l}</span>
                     </button>
                   ))}
@@ -1155,7 +1156,7 @@ export const RoutinesAndExercises = () => {
                             {ex.sets} series x {ex.reps}
                           </span>
                           <span className="text-gray-500 text-xs ml-2">
-                             {ex.restSeconds}s descanso
+                            <IconoEmoji e="⏱" /> {ex.restSeconds}s descanso
                           </span>
                           {ex.rir && (
                             <span className="text-amber-700 text-xs ml-2 font-semibold">

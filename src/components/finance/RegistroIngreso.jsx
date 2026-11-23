@@ -43,8 +43,8 @@ const MONTOS_PASE = [5, 8, 10, 15, 20];
 const OTROS_RAPIDOS = ["Aporte / fondo para caja", "Alquiler de espacio", "Evento / clase especial", "Carnet o tarjeta", "Casillero", "Toalla / candado", "Donación o patrocinio"];
 
 const METODOS = [
-  ["efectivo", "", "Efectivo"],
-  ["yape_plin", "", "Yape / Plin"],
+  ["efectivo", "💵", "Efectivo"],
+  ["yape_plin", "📱", "Yape / Plin"],
 ];
 
 const soles = (n) => `S/ ${Number(n || 0).toFixed(2)}`;
@@ -504,7 +504,7 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
                 onClick={() => setMetodo(k)}
                 className={`rounded-xl border-2 px-3 py-2 text-sm font-bold cursor-pointer ${metodo === k ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300"}`}
               >
-                {ic} {l}
+                <IconoEmoji e={ic} /> {l}
               </button>
             ))}
           </div>

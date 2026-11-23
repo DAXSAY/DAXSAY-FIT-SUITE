@@ -11,6 +11,7 @@ import { textoNivelRutina, textoObjetivoRutina } from "../../utils/rutinas";
 import { SaludAlumno } from "./SaludAlumno";
 import { BotonProgramar } from "../common/Programados";
 import { TONO, TONO_NIVEL } from "./FormEjercicioPropio";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 const sinT = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const puntaje = (m, q) => {
@@ -218,7 +219,7 @@ export const RutinasAsignadas = ({
                         {pers ? "Personalizada" : "✓ Con rutina"}
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full border text-[11px] font-bold bg-rose-50 border-rose-200 text-rose-800">Sin rutina</span>
+                      <span className="px-2 py-0.5 rounded-full border text-[11px] font-bold bg-rose-50 border-rose-200 text-rose-800"><IconoEmoji e="⚠" /> Sin rutina</span>
                     )}
                   </span>
                   <span onClick={(e) => e.stopPropagation()}>

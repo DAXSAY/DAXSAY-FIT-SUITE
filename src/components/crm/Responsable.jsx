@@ -7,6 +7,7 @@
 import React, { useEffect, useState } from "react";
 import { ShieldCheck, UserRound, Unlock, Clock } from "lucide-react";
 import { api } from "../../api/cliente";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 export const LUCES = [
   ["datos", "Datos"],
@@ -38,7 +39,7 @@ export const situacion = (p) => {
   return null;
 };
 
-/** Chip para listas:  David · Turno mañana  [Asegurado] */
+/** Chip para listas: <IconoEmoji e="👤" /> David · Turno mañana  [Asegurado] */
 export const ChipResponsable = ({ p }) => {
   if (!p?.owner) return null;
   const s = situacion(p);

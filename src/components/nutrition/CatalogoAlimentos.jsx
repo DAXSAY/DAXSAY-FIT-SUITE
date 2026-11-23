@@ -8,6 +8,7 @@ import React, { useMemo, useState } from "react";
 import { Search, X, Plus, Pencil, EyeOff, Check, Drumstick, Milk, Wheat, Carrot, Bean, LeafyGreen, Apple, Nut, CupSoda, Pill, Soup, Utensils, Lightbulb } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { userCan } from "../../config/roles";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 export const CATEGORIAS = {
   proteinas: { icono: Drumstick, nombre: "Proteínas", emoji: "🍗", chip: "bg-rose-50 text-rose-700 border-rose-200", activo: "bg-rose-600 text-white border-rose-600", barra: "#e11d48" },
@@ -299,7 +300,7 @@ export const CatalogoAlimentos = () => {
       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="font-extrabold text-slate-900">Catálogo de alimentos</h3>
+            <h3 className="font-extrabold text-slate-900"><IconoEmoji e="🍽️" /> Catálogo de alimentos</h3>
             <p className="text-xs text-slate-500">
               {foods.length} alimentos · valores por 100 g (Tablas Peruanas de Composición de Alimentos CENAN/INS 2017 y USDA)
             </p>

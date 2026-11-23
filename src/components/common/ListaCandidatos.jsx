@@ -4,6 +4,7 @@
 // Se dibuja flotando sobre la página (portal), así ninguna tarjeta la recorta.
 import React, { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { IconoEmoji } from "./IconoEmoji";
 
 const ESTILO = {
   alumno: "bg-blue-100 text-blue-800",
@@ -37,7 +38,7 @@ export const ListaCandidatos = ({ candidatos = [], indice = 0, onIndice, onElegi
       className="rd-lista-checkin rounded-xl border shadow-xl overflow-hidden text-left"
     >
       {pase ? (
-        <p className="px-3 py-2 text-xs font-semibold text-violet-700">Pase libre: presiona Enter para validarlo</p>
+        <p className="px-3 py-2 text-xs font-semibold text-violet-700"><IconoEmoji e="🎟️" /> Pase libre: presiona Enter para validarlo</p>
       ) : candidatos.length === 0 ? (
         <p className="px-3 py-2 text-xs text-slate-500">Nadie tiene ese código. Escribe el número exacto, el DNI completo o el nombre.</p>
       ) : (

@@ -642,7 +642,7 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
                           </td>
                           <td className="py-1.5 pr-2 text-slate-700">{se}</td>
                           <td className="py-1.5 pr-2 font-bold text-blue-700">{re}</td>
-                          <td className="py-1.5 pr-2 text-slate-600">{de}</td>
+                          <td className="py-1.5 pr-2 text-slate-600"><IconoEmoji e="⏱" /> {de}</td>
                           <td className="py-1.5 pr-2 text-slate-600">{inten}</td>
                           <td className="py-1.5 text-slate-500">{tempo}</td>
                         </tr>

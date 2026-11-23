@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { api } from "../../api/cliente";
 import { fechaBonita } from "../../utils/progreso";
 import ProgresoPesos from "./ProgresoPesos";
+import { IconoEmoji } from "../common/IconoEmoji";
 
 export default function PanelProgresoAlumnos() {
   const [lista, setLista] = useState(null);
@@ -73,7 +74,7 @@ export default function PanelProgresoAlumnos() {
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-wrap items-center gap-3">
         <div className="flex-1 min-w-[220px]">
-          <p className="text-base font-black text-slate-900">Progreso de pesos de los alumnos</p>
+          <p className="text-base font-black text-slate-900"><IconoEmoji e="💪" /> Progreso de pesos de los alumnos</p>
           <p className="text-xs text-slate-500">Busca por nombre o código (DF-1) y entra para ver si sube, se mantiene o baja.</p>
         </div>
         <input

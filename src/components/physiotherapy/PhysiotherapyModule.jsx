@@ -1530,12 +1530,12 @@ export const PhysiotherapyModule = () => {
                           }`}
                         >
                           {progressStats.overallStatus === "notable_mejora"
-                            ? "Notable Mejoría"
+                            ? "🎉 Notable Mejoría"
                             : progressStats.overallStatus === "mejora_leve"
-                              ? "Mejoría Leve"
+                              ? "👍 Mejoría Leve"
                               : progressStats.overallStatus === "estable"
-                                ? "Condición Estable"
-                                : "En Seguimiento Inicial"}
+                                ? "⚖️ Condición Estable"
+                                : "🔍 En Seguimiento Inicial"}
                         </span>
                       </div>
                     </div>
@@ -2118,10 +2118,10 @@ export const PhysiotherapyModule = () => {
                                                 {ex.series}x{ex.repsOrTime}
                                               </span>
                                             </div>
-                                            {ex.metodo?.resumen && <p className="text-[11px] font-bold text-violet-700 mt-0.5">{ex.metodo.resumen}</p>}
+                                            {ex.metodo?.resumen && <p className="text-[11px] font-bold text-violet-700 mt-0.5"><IconoEmoji e="⚙" /> {ex.metodo.resumen}</p>}
                                             {ex.techniqueTips && (
                                               <p className="text-xs text-slate-500 italic mt-0.5">
-                                                 {ex.techniqueTips}
+                                                <IconoEmoji e="💡" /> {ex.techniqueTips}
                                               </p>
                                             )}
                                           </div>
@@ -2467,8 +2467,8 @@ export const PhysiotherapyModule = () => {
                 <div className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-3">
                     {[
-                      [false, "", "Solo evaluación", "Hoy se evaluó y no se aplicó tratamiento. Completa abajo las indicaciones para el entrenador y pasa al paso 5."],
-                      [true, "", "Sí, apliqué tratamiento", "Registra las técnicas, los ejercicios terapéuticos y el protocolo de Williams."],
+                      [false, "📋", "Solo evaluación", "Hoy se evaluó y no se aplicó tratamiento. Completa abajo las indicaciones para el entrenador y pasa al paso 5."],
+                      [true, "🩺", "Sí, apliqué tratamiento", "Registra las técnicas, los ejercicios terapéuticos y el protocolo de Williams."],
                     ].map(([v, ic, t, d]) => {
                       const on = formPlanEnabled === v;
                       return (
@@ -2480,7 +2480,7 @@ export const PhysiotherapyModule = () => {
                             on ? (v ? "bg-blue-600 border-blue-600 text-white" : "bg-slate-800 border-slate-800 text-white") : "bg-white border-slate-200 hover:border-blue-300"
                           }`}
                         >
-                          <span className="text-2xl leading-none">{ic}</span>
+                          <span className="text-2xl leading-none"><IconoEmoji e={ic} /></span>
                           <span className="flex-1">
                             <span className="flex items-center gap-2 text-sm font-black">
                               {t}
@@ -2710,7 +2710,7 @@ export const PhysiotherapyModule = () => {
                         <div className={`mb-4 rounded-xl border px-3 py-2 text-sm flex flex-wrap items-center gap-3 ${dif > 0 ? "bg-emerald-50 border-emerald-200 text-emerald-900" : dif < 0 ? "bg-rose-50 border-rose-200 text-rose-900" : "bg-slate-50 border-slate-200 text-slate-700"}`}>
                           <span>Sesión anterior ({previa.date}): dolor <b>{previa.painLevelEVA ?? "—"}/10</b></span>
                           <span>→ hoy <b>{ahora}/10</b></span>
-                          <span className="font-bold">{dif > 0 ? `Bajó ${dif} punto(s)` : dif < 0 ? `Subió ${-dif} punto(s)` : "Igual"}</span>
+                          <span className="font-bold">{dif > 0 ? `Bajó ${dif} punto(s) 👏` : dif < 0 ? `Subió ${-dif} punto(s)` : "Igual"}</span>
                         </div>
                       );
                     })()}
