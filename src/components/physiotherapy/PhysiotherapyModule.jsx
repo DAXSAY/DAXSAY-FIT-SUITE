@@ -1358,8 +1358,6 @@ export const PhysiotherapyModule = () => {
                   opciones={[
                     { k: "todos", emoji: "👥", texto: "Todos", n: members.length },
                     { k: "lesiones", emoji: "⚠️", texto: "Con lesión", n: members.filter(conLesion).length },
-                    { k: "con_sesiones", emoji: "📋", texto: "Evaluados", n: members.filter((m) => ultimaSesion.has(m.id)).length },
-                    { k: "sin_eval", emoji: "⏳", texto: "Sin evaluación", n: members.filter((m) => !ultimaSesion.has(m.id)).length },
                     { k: "dolor_alto", emoji: "🔥", texto: "Dolor alto (EVA 6+)", n: members.filter((m) => Number(ultimaSesion.get(m.id)?.painLevelEVA) >= 6).length },
                   ]}
                 />

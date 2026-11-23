@@ -17,7 +17,7 @@ import { ChipsFiltro, PanelFiltros, BuscadorFiltro } from "../common/ChipsFiltro
 export const DietasYMedidas = ({ pedirCrear = 0 }) => {
   const { members, nutritionPlans = [], bodyAssessments = [] } = useGym();
   const [q, setQ] = useRecordado("dym_q", "");
-  const [objetivo, setObjetivo] = useRecordado("dym_obj", "all");
+  const [objetivo, setObjetivo] = useRecordado("dym_obj", "all", ["con_dieta", "sin_dieta"]);
   const [alumnoId, setAlumnoId] = useRecordado("dym_alumno", "");
   const [paso, setPaso] = useRecordado("dym_paso", "dieta");
 
@@ -42,8 +42,6 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
     return members.filter((m) => {
       if (q.trim() && !coincideAlumno(m, q)) return false;
       if (objetivo === "todos" || objetivo === "all") return true;
-      if (objetivo === "con_dieta") return planDe.has(String(m.id));
-      if (objetivo === "sin_dieta") return !planDe.has(String(m.id));
       return planDe.get(String(m.id))?.objective === objetivo;
       return true;
     });
@@ -65,26 +63,12 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
     <PanelFiltros
       filas={[
         {
-          etiqueta: "Filtro",
-          contenido: (
-            <ChipsFiltro
-              valor={["todos", "con_dieta", "sin_dieta"].includes(objetivo) ? objetivo : ""}
-              onCambio={(k) => setObjetivo(k || "all")}
-              opciones={[
-                { k: "todos", emoji: "👥", texto: "Todos", n: members.length },
-                { k: "con_dieta", emoji: "🥗", texto: "Con dieta", n: members.filter((m) => planDe.has(String(m.id))).length },
-                { k: "sin_dieta", emoji: "⏳", texto: "Sin dieta", n: members.filter((m) => !planDe.has(String(m.id))).length },
-              ]}
-            />
-          ),
-        },
-        {
           etiqueta: "Objetivo",
           contenido: (
             <ChipsFiltro
               valor={objetivo}
               onCambio={(k) => setObjetivo(k || "all")}
-              opciones={OBJETIVOS_NUTRI.map((o) => ({ k: o.id, emoji: o.emoji, texto: o.label, n: members.filter((m) => planDe.get(String(m.id))?.objective === o.id).length })).filter((o) => o.n > 0)}
+              opciones={[{ k: "todos", emoji: "👥", texto: "Todos", n: members.length }, ...OBJETIVOS_NUTRI.map((o) => ({ k: o.id, emoji: o.emoji, texto: o.label, n: members.filter((m) => planDe.get(String(m.id))?.objective === o.id).length })).filter((o) => o.n > 0)]}
             />
           ),
         },
