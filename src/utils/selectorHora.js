@@ -1,3 +1,4 @@
+import { ubicarDebajo } from "./ubicarVentanita";
 // Selector de hora propio para TODOS los campos de hora del sistema
 // (input type="time"): reemplaza la ruedita gris del navegador por una ventanita
 // con el diseño del sistema (mismo estilo que el calendario), en modo claro y oscuro.
@@ -37,16 +38,8 @@ function cerrar() {
   campo = null;
 }
 
-function ubicar() {
-  if (!caja || !campo) return;
-  const r = campo.getBoundingClientRect();
-  const w = caja.offsetWidth;
-  const h = caja.offsetHeight;
-  const left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
-  let top = r.bottom + 6;
-  if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
-  caja.style.left = `${left}px`;
-  caja.style.top = `${top}px`;
+function ubicar(alAbrir = false) {
+  ubicarDebajo(caja, campo, alAbrir);
 }
 
 const permitido = (min) => {
@@ -177,6 +170,7 @@ function abrir(input) {
   meridiano = v != null ? (v < 720 ? "AM" : "PM") : "AM";
   dibujar();
   caja.classList.add("rd-cal-visible");
+  ubicar(true);
 }
 
 let instalado = false;
@@ -222,6 +216,6 @@ export function instalarSelectorHora() {
       dibujar();
     }
   });
-  window.addEventListener("scroll", ubicar, true);
-  window.addEventListener("resize", ubicar);
+  window.addEventListener("scroll", () => ubicar(), true);
+  window.addEventListener("resize", () => ubicar());
 }

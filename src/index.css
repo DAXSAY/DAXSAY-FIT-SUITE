@@ -3787,3 +3787,4 @@ html.dark .rd-campo-hora { background: #0b1a2c; color: #e6fbff; border-color: rg
 }
 .rd-velo-hoja{background:#e8eef1}
 .dark .rd-velo-hoja{background:#060b16}
+@media (max-width: 767.98px){ header [data-campana-escritorio]{display:none!important} }

@@ -1,3 +1,4 @@
+import { ubicarDebajo } from "./ubicarVentanita";
 // Calendario propio para TODOS los campos de fecha y de mes del sistema
 // (input type="date" y type="month"): reemplaza el cuadro gris del navegador
 // por uno con el diseño del sistema, en español, en modo claro y oscuro.
@@ -32,16 +33,8 @@ function cerrar() {
   campo = null;
 }
 
-function ubicar() {
-  if (!caja || !campo) return;
-  const r = campo.getBoundingClientRect();
-  const w = caja.offsetWidth;
-  const h = caja.offsetHeight;
-  let left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
-  let top = r.bottom + 6;
-  if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
-  caja.style.left = `${left}px`;
-  caja.style.top = `${top}px`;
+function ubicar(alAbrir = false) {
+  ubicarDebajo(caja, campo, alAbrir);
 }
 
 function dentroDeLimites(valor) {
@@ -161,6 +154,7 @@ function abrir(input) {
   vista = { y: Number(base.slice(0, 4)) || new Date().getFullYear(), m: (Number(base.slice(5, 7)) || 1) - 1 };
   dibujar();
   caja.classList.add("rd-cal-visible");
+  ubicar(true);
 }
 
 let instalado = false;
@@ -206,6 +200,6 @@ export function instalarSelectorFecha() {
       dibujar();
     }
   });
-  window.addEventListener("scroll", ubicar, true);
-  window.addEventListener("resize", ubicar);
+  window.addEventListener("scroll", () => ubicar(), true);
+  window.addEventListener("resize", () => ubicar());
 }

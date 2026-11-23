@@ -262,13 +262,15 @@ export const Header = ({
             {!can("alerts") && <CampanaAvisos setActiveTab={setActiveTab} />}
             {can("alerts") && (
             <button
-              onClick={() => setActiveTab("alerts")}
-              className="relative p-1.5 rounded-lg bg-gray-100 text-slate-700 hover:bg-gray-200"
+              type="button"
+              onClick={() => setShowNotifications(true)}
+              title="Alertas del gimnasio"
+              className="relative p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow hover:brightness-110 cursor-pointer"
             >
               <Bell className="w-4 h-4" />
               {totalUrgentAlerts > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center animate-pulse">
-                  {totalUrgentAlerts}
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-emerald-700 text-[10px] font-black flex items-center justify-center ring-2 ring-emerald-500">
+                  {totalUrgentAlerts > 99 ? "99+" : totalUrgentAlerts}
                 </span>
               )}
             </button>
@@ -436,6 +438,7 @@ export const Header = ({
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
+              data-campana-escritorio
               className="relative p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow hover:brightness-110 cursor-pointer"
               title="Alertas del gimnasio (vencimientos, deudas, stock)"
             >
