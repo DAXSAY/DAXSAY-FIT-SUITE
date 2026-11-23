@@ -25,6 +25,9 @@ export const alPerderSesion = (fn) => {
   alExpirarSesion = fn;
 };
 
+// Identificador de esta pestaña: el aviso en tiempo real de un guardado propio se ignora
+export const ORIGEN = Math.random().toString(36).slice(2, 12);
+
 export async function api(ruta, { method = "GET", body } = {}) {
   const token = obtenerToken();
   let respuesta;
@@ -33,6 +36,7 @@ export async function api(ruta, { method = "GET", body } = {}) {
       method,
       headers: {
         "Content-Type": "application/json",
+        "X-Origen": ORIGEN,
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,

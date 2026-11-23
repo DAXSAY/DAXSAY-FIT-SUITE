@@ -101,6 +101,33 @@ async function asegurarBorrados() {
 }
 asegurarBorrados();
 
+// GET /api/registros/ocupacion?desde=AAAA-MM-DD&dias=N
+// Qué turnos de fisioterapia y nutrición están tomados, en atención o libres.
+// Sin nombres ni datos del alumno: lo pueden ver todos (también el alumno y el entrenador).
+router.get("/ocupacion", async (req, res, next) => {
+  try {
+    const desde = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.desde || "")) ? req.query.desde : null;
+    const dias = Math.min(Math.max(Number(req.query.dias) || 14, 1), 31);
+    const filas = await consultar(
+      `SELECT datos FROM registros_app
+        WHERE modulo = 'citas'
+          AND JSON_UNQUOTE(JSON_EXTRACT(datos, '$.date')) >= COALESCE(?, DATE_FORMAT(NOW(), '%Y-%m-%d'))
+          AND JSON_UNQUOTE(JSON_EXTRACT(datos, '$.date')) < DATE_FORMAT(DATE_ADD(COALESCE(?, NOW()), INTERVAL ? DAY), '%Y-%m-%d')`,
+      [desde, desde, dias],
+    );
+    const citas = filas.map(parsear).map((c) => ({
+      serviceType: c.serviceType,
+      date: c.date,
+      timeSlot: c.timeSlot,
+      durationMinutes: c.durationMinutes,
+      status: c.status || "por_atender",
+    }));
+    res.json({ citas });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // GET /api/registros  -> todos los módulos que el usuario puede ver
 //   { modulo: { registros: [...], editar: bool } }
 router.get("/", async (req, res, next) => {

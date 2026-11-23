@@ -1,3 +1,4 @@
+import { escucharCambios } from "../utils/tiempoReal";
 import React, {
   createContext,
   useContext,
@@ -338,11 +339,22 @@ export const GymProvider = ({ children }) => {
         loadServerData(true);
       }, 500);
     });
+    // Otro equipo (recepción, fisio, nutri, alumno...) guardó algo: aviso del servidor al instante
+    let esperaServidor = null;
+    const quitarTiempoReal = escucharCambios(() => {
+      clearTimeout(esperaServidor);
+      esperaServidor = setTimeout(() => {
+        ultima = Date.now();
+        loadServerData(true);
+      }, 350);
+    });
     window.addEventListener("focus", refrescar);
     document.addEventListener("visibilitychange", refrescar);
     return () => {
       clearInterval(t);
       quitarCanal();
+      quitarTiempoReal();
+      clearTimeout(esperaServidor);
       clearTimeout(espera);
       window.removeEventListener("focus", refrescar);
       document.removeEventListener("visibilitychange", refrescar);
@@ -1412,12 +1424,18 @@ export const GymProvider = ({ children }) => {
       id: `apt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     };
     setAppointments((prev) => [newAppointment, ...prev]);
+    return newAppointment.id;
   };
 
-  const updateAppointmentStatus = (id, status) => {
+  // Cambio de estado (atendiendo, atendido, reprogramada…): queda quién y cuándo
+  const updateAppointmentStatus = (id, status, extra = {}) => {
+    const marca = { estadoPor: currentUser?.fullName || "", estadoRol: currentUser?.role || "", estadoEn: new Date().toISOString() };
     setAppointments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status } : a)),
+      prev.map((a) => (a.id === id ? { ...a, status, ...marca, ...extra } : a)),
     );
+  };
+  const updateAppointment = (id, cambios) => {
+    setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, ...cambios } : a)));
   };
 
   const deleteAppointment = (id) => {
@@ -1636,6 +1654,7 @@ export const GymProvider = ({ children }) => {
         deletePhysioTemplate,
         addAppointment,
         updateAppointmentStatus,
+        updateAppointment,
         deleteAppointment,
         addPayrollEntry,
         payStaffSalary,

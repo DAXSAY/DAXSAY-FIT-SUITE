@@ -220,11 +220,10 @@ const Carril = ({ titulo, icono, tono, items, vacio, onAbrir }) => {
           className="flex-1 min-w-0 overflow-hidden rd-cinta-mascara select-none cursor-grab active:cursor-grabbing"
           style={{ touchAction: "pan-y" }}
         >
-          <div className="inline-flex gap-1.5 py-0.5">
-            {items.map((it) => chip(it, "a"))}
-            <span className="w-6 shrink-0" />
-            {items.map((it) => chip(it, "b"))}
-            <span className="w-6 shrink-0" />
+          {/* Dos copias iguales, cada una con el mismo espacio al final: la vuelta no deja hueco */}
+          <div className="inline-flex py-0.5">
+            <span className="inline-flex gap-1.5 pr-1.5 shrink-0">{items.map((it) => chip(it, "a"))}</span>
+            <span className="inline-flex gap-1.5 pr-1.5 shrink-0">{items.map((it) => chip(it, "b"))}</span>
           </div>
         </div>
       ) : (

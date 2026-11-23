@@ -38,6 +38,7 @@ import { MisIndicaciones } from "../indicaciones/Indicaciones";
 
 import { textoObjetivos } from "../../utils/objetivos";
 import { IconoEmoji } from "../common/IconoEmoji";
+import { DisponibilidadTurnos } from "../appointments/DisponibilidadTurnos";
 // Lectura segura de los datos de cada evaluación corporal
 const fatPct = (a) => a?.bioimpedance?.bodyFatPercentage ?? a?.bodyFatPercentage;
 const muscleKg = (a) => a?.bioimpedance?.muscleMassKg ?? a?.muscleMassKg;
@@ -47,8 +48,18 @@ const thighCm = (a) => a?.perimeters?.thighMid ?? a?.measurements?.thighsCm;
 
 const ESTADOS_CITA = {
   por_atender: "Por atender", atendiendo: "En atención", atendido: "Atendida",
-  pospuesto: "Pospuesta", falta: "No asistió", cancelada: "Cancelada",
+  pospuesto: "Cita reprogramada", falta: "No asistió", cancelada: "Cancelada", cancelled: "Cancelada",
 };
+const COLOR_CITA = {
+  por_atender: "bg-blue-100 text-blue-800 border-blue-300",
+  atendiendo: "bg-emerald-500 text-white border-emerald-600 animate-pulse",
+  atendido: "bg-slate-100 text-slate-700 border-slate-300",
+  pospuesto: "bg-amber-100 text-amber-800 border-amber-300",
+  falta: "bg-rose-100 text-rose-800 border-rose-300",
+  cancelada: "bg-rose-100 text-rose-800 border-rose-300",
+  cancelled: "bg-rose-100 text-rose-800 border-rose-300",
+};
+const QUIEN_ROL = { physio: "tu fisioterapeuta", nutritionist: "tu nutricionista", reception: "recepción", admin: "el gimnasio" };
 const num = (v) => (v === null || v === undefined || v === "" || isNaN(Number(v)) ? null : Number(v));
 const dif = (a, b) => (num(a) != null && num(b) != null ? Math.round((num(a) - num(b)) * 10) / 10 : null);
 const difTexto = (d, unidad, sufijo) =>
@@ -186,13 +197,16 @@ export const StudentPortalModule = ({
   // Current Member's Appointments
   const memberAppointments = useMemo(() => {
     if (!currentMember) return [];
-    return appointments.filter(
-      (a) =>
-        a.memberId === currentMember.id ||
-        a.memberName
-          .toLowerCase()
-          .includes(currentMember.fullName.toLowerCase()),
-    );
+    const orden = { atendiendo: 0, por_atender: 1, pospuesto: 2 };
+    return appointments
+      .filter(
+        (a) =>
+          a.memberId === currentMember.id ||
+          String(a.memberName || "")
+            .toLowerCase()
+            .includes(currentMember.fullName.toLowerCase()),
+      )
+      .sort((a, b) => (orden[a.status] ?? 3) - (orden[b.status] ?? 3) || String(a.date).localeCompare(String(b.date)));
   }, [currentMember, appointments]);
 
   // Days left calculation
@@ -327,7 +341,7 @@ export const StudentPortalModule = ({
                 Citas Activas
               </span>
               <span className="text-base sm:text-lg font-black text-purple-300">
-                {memberAppointments.filter((a) => !a.status || ["por_atender", "atendiendo", "pospuesto"].includes(a.status)).length}
+                {memberAppointments.filter((a) => !a.status || ["por_atender", "atendiendo"].includes(a.status)).length}
               </span>
             </div>
           </div>
@@ -752,6 +766,7 @@ export const StudentPortalModule = ({
           ========================================================================= */}
       {activeTab === "appointments" && (
         <div className="space-y-6">
+          <DisponibilidadTurnos titulo="Horarios de fisioterapia y nutrición" />
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2.5">
@@ -823,10 +838,22 @@ export const StudentPortalModule = ({
                         </div>
                       </div>
 
-                      <span className="px-2 py-0.5 rounded-full text-xs font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-black uppercase border ${COLOR_CITA[app.status] || COLOR_CITA.por_atender}`}>
                         {ESTADOS_CITA[app.status] || app.status || "Programada"}
                       </span>
                     </div>
+
+                    {app.status === "pospuesto" && (
+                      <div className="rd-aviso-reprog text-xs rounded-lg border border-amber-200 bg-amber-50 text-amber-900 px-3 py-2">
+                        <strong>Tu cita fue reprogramada</strong>
+                        {app.estadoRol && QUIEN_ROL[app.estadoRol] ? ` por ${QUIEN_ROL[app.estadoRol]}` : ""}.
+                        <span className="block mt-0.5">
+                          {app.reprogramadaFecha
+                            ? <>Nuevo horario: <b>{fechaCorta(app.reprogramadaFecha)} · {app.reprogramadaHora}</b></>
+                            : "Recepción te confirmará el nuevo horario."}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-200">
                       <div>

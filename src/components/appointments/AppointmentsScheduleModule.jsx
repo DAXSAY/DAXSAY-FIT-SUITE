@@ -1,4 +1,5 @@
 import { TarjetaKpi } from "../common/TarjetaKpi";
+import { DisponibilidadTurnos } from "./DisponibilidadTurnos";
 import { Activity as CitaActiva, UserX as CitaFalta , CalendarClock } from "lucide-react";
 import React, { useState, useMemo } from "react";
 import {
@@ -66,6 +67,7 @@ export const AppointmentsScheduleModule = () => {
     appointments,
     addAppointment,
     updateAppointmentStatus,
+    updateAppointment,
     deleteAppointment,
     members,
     staffContracts,
@@ -102,6 +104,7 @@ export const AppointmentsScheduleModule = () => {
 
   // Calendar Selection State
   const [weekOffset, setWeekOffset] = useState(0);
+  const [reprogramandoId, setReprogramandoId] = useState(null);
   const DAYS_OF_WEEK = useMemo(() => construirSemana(weekOffset), [weekOffset]);
   const [selectedDate, setSelectedDate] = useState(hoyISO());
   const selectedDay = DAYS_OF_WEEK.find((d) => d.date === selectedDate)?.key || "";
@@ -162,7 +165,8 @@ export const AppointmentsScheduleModule = () => {
   );
 
   // Abre el formulario de cita con fecha y hora ya elegidas
-  const openBooking = (date, hour, service, memberId) => {
+  const openBooking = (date, hour, service, memberId, origenId = null) => {
+    setReprogramandoId(origenId);
     // Sin tipo preseleccionado: solo fisioterapia o nutrición abren en su propio servicio
     const srv = service || (currentUser?.role === "physio" ? "physiotherapy" : currentUser?.role === "nutritionist" ? "nutrition" : "");
     const d = date || selectedDate;
@@ -279,7 +283,8 @@ export const AppointmentsScheduleModule = () => {
     const dur = duracionDe(formService, formDate, formSlot);
     const slotFull = `${formSlot} - ${deMin(aMin(formSlot) + dur)}`;
 
-    addAppointment({
+    const nuevoId = addAppointment({
+      ...(reprogramandoId ? { reprogramadaDe: reprogramandoId } : {}),
       serviceType: formService,
       memberId: mem.id,
       memberName: mem.fullName,
@@ -301,7 +306,11 @@ export const AppointmentsScheduleModule = () => {
       reminderSent: false,
       dayOfWeek: fechaLarga(formDate).split(",")[0],
     });
-
+    // La cita anterior queda como «reprogramada» y apunta a la nueva
+    if (reprogramandoId && nuevoId) {
+      updateAppointment(reprogramandoId, { status: "pospuesto", reprogramadaA: nuevoId, reprogramadaFecha: formDate, reprogramadaHora: slotFull });
+    }
+    setReprogramandoId(null);
     setIsBookingModalOpen(false);
   };
 
@@ -315,7 +324,7 @@ export const AppointmentsScheduleModule = () => {
       por_atender: "Por Atender (En Espera)",
       atendiendo: "En Atención Ahora",
       atendido: "Atendido",
-      pospuesto: "Pospuesto / Reprogramado",
+      pospuesto: "Cita reprogramada",
       falta: "Inasistencia Registrada",
     };
 
@@ -362,7 +371,7 @@ export const AppointmentsScheduleModule = () => {
       case "pospuesto":
         return {
           bg: "bg-amber-100 text-amber-800 border border-amber-300",
-          label: "Pospuesto",
+          label: "Reprogramada",
           dot: "bg-amber-500",
         };
       case "falta":
@@ -498,10 +507,13 @@ export const AppointmentsScheduleModule = () => {
           <TarjetaKpi titulo="Atendiendo ahora" valor={atendiendoCount} sub="en consulta" icono={CitaActiva} tono="verde" pulso={atendiendoCount > 0} />
           <TarjetaKpi titulo="Por atender" valor={porAtenderCount} sub="citas pendientes" icono={Clock} tono="azul" />
           <TarjetaKpi titulo="Atendidos" valor={atendidoCount} sub="citas cerradas" icono={CheckCircle2} tono="teal" />
-          <TarjetaKpi titulo="Pospuestos" valor={pospuestoCount} sub="para otra fecha" icono={AlertCircle} tono="ambar" />
+          <TarjetaKpi titulo="Reprogramadas" valor={pospuestoCount} sub="movidas a otro turno" icono={AlertCircle} tono="ambar" />
           <TarjetaKpi titulo="Faltas (liberados)" valor={faltaCount} sub="no vinieron" icono={CitaFalta} tono="rojo" />
         </div>
       </div>
+
+      {/* Entrenador: turnos en vivo (libres, por atender, en atención) */}
+      {currentUser?.role === "trainer" && <DisponibilidadTurnos titulo="Turnos de hoy en vivo" />}
 
       {/* Cross Conflict Warning Banner if triggered */}
       {conflictWarning && (
@@ -939,6 +951,14 @@ export const AppointmentsScheduleModule = () => {
                             </div>
                           </div>
 
+                          {apt.status === "pospuesto" && (
+                            <div className="rd-aviso-reprog text-xs rounded-lg border border-amber-200 bg-amber-50 text-amber-800 px-2.5 py-1.5">
+                              <strong>Cita reprogramada</strong>
+                              {apt.reprogramadaFecha ? ` → ${fechaLarga(apt.reprogramadaFecha)} · ${apt.reprogramadaHora || ""}` : " · falta elegir el nuevo turno"}
+                              {apt.estadoPor && <span className="block text-[11px] opacity-80">Por {apt.estadoPor}{apt.estadoRol === "physio" ? " (fisioterapia)" : apt.estadoRol === "nutritionist" ? " (nutrición)" : apt.estadoRol === "reception" ? " (recepción)" : ""}</span>}
+                            </div>
+                          )}
+
                           {/* INTERACTIVE STATUS ASSIGNMENT BUTTONS (Nutricionista / Fisio asigna estado actual) */}
                           <div>
                             <span className="text-xs font-bold text-slate-500 uppercase block mb-1">
@@ -994,7 +1014,7 @@ export const AppointmentsScheduleModule = () => {
                                     : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
                                 }`}
                               >
-                                Pospuesto
+                                Reprogramada
                               </button>
 
                               <button
@@ -1029,7 +1049,7 @@ export const AppointmentsScheduleModule = () => {
                                 onClick={() => {
                                   updateAppointmentStatus(apt.id, "pospuesto");
                                   setDetalleHora(false);
-                                  openBooking(apt.date, "", apt.serviceType, apt.memberId);
+                                  openBooking(apt.date, "", apt.serviceType, apt.memberId, apt.id);
                                 }}
                                 className="rd-reprogramar text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
                               >

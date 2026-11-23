@@ -9,6 +9,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { pool } from "./db.js";
 import { ErrorHttp, requiereSesion, limitarIntentos } from "./seguridad.js";
+import { abrirCanal, avisarCambio } from "./eventos.js";
 import autenticacion from "./rutas/autenticacion.js";
 import alumnos from "./rutas/alumnos.js";
 import { planes, entrenadores, caja, personal } from "./rutas/catalogos.js";
@@ -67,6 +68,29 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json({ limit: "3mb" }));
+
+// Tiempo real: después de cada guardado correcto se avisa a todas las pantallas
+app.use((req, res, next) => {
+  if (req.method !== "GET" && req.path.startsWith("/api/") && !req.path.startsWith("/api/auth") && !req.path.startsWith("/api/eventos")) {
+    res.on("finish", () => {
+      if (res.statusCode < 400) {
+        const partes = req.path.split("/").filter(Boolean); // api, registros, citas, id
+        avisarCambio(partes[1] === "registros" && partes[2] ? partes[2] : partes[1] || "", String(req.headers["x-origen"] || "").slice(0, 40));
+      }
+    });
+  }
+  next();
+});
+// EventSource no puede mandar cabeceras: el token llega en la dirección
+app.get(
+  "/api/eventos",
+  (req, res, next) => {
+    if (req.query.t && !req.headers.authorization) req.headers.authorization = `Bearer ${String(req.query.t)}`;
+    next();
+  },
+  requiereSesion,
+  abrirCanal,
+);
 
 // Comprobación rápida de que la API y la base responden
 app.get("/api/salud", async (req, res) => {
