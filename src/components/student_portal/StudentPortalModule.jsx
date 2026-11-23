@@ -410,11 +410,6 @@ export const StudentPortalModule = ({
           >
             <Calendar className="w-4 h-4 text-purple-300" />
             <span>2. Notificaciones & Citas (Fisio / Nutri)</span>
-            {memberAppointments.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-purple-500 text-white text-xs font-black">
-                {memberAppointments.length}
-              </span>
-            )}
           </button>
 
           <button
