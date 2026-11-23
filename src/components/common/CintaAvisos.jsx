@@ -8,7 +8,7 @@
 // Tocar un aviso abre su panel (CRM o alertas).
 // =====================================================================
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { BellRing, Users } from "lucide-react";
+import { AlarmClock, BellRing, CalendarDays, Hourglass, Package, RefreshCw, UserX, Users } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { useAvisosCrm } from "../crm/CrmAvisos";
 import { ConIconos } from "./IconoEmoji";
@@ -26,12 +26,12 @@ export const CintaAvisos = ({ fila = false, verCrm = true, verGym = true }) => {
     const l = [];
     if (verCrm) {
       d.ahora.forEach((p) =>
-        l.push({ k: `a${p.id}`, tipo: "crm", fuerte: true, texto: `⏰ ${p.contactTime || "Ahora"} · ${ACCION[p.contactType] || "Contactar a"} ${primer(p.fullName)}${p.passCode ? ` · pase ${p.passCode}` : ""}` }),
+        l.push({ k: `a${p.id}`, tipo: "crm", fuerte: true, icono: AlarmClock, texto: `${p.contactTime || "Ahora"} · ${ACCION[p.contactType] || "Contactar a"} ${primer(p.fullName)}${p.passCode ? ` · pase ${p.passCode}` : ""}` }),
       );
-      d.noVinieron.forEach((p) => l.push({ k: `n${p.id}`, tipo: "crm", texto: `❗ ${primer(p.fullName)} no vino con su pase · reprogramar` }));
+      d.noVinieron.forEach((p) => l.push({ k: `n${p.id}`, tipo: "crm", icono: UserX, texto: `${primer(p.fullName)} no vino con su pase · reprogramar` }));
       d.hoy
         .filter((p) => !p.reminderSeen && p.status !== "matriculado" && !d.ahora.some((x) => x.id === p.id))
-        .forEach((p) => l.push({ k: `h${p.id}`, tipo: "crm", texto: `📅 ${p.contactTime || "Hoy"} · ${primer(p.fullName)}${p.passCode ? ` · pase libre` : ""}` }));
+        .forEach((p) => l.push({ k: `h${p.id}`, tipo: "crm", icono: CalendarDays, texto: `${p.contactTime || "Hoy"} · ${primer(p.fullName)}${p.passCode ? ` · pase libre` : ""}` }));
     }
     if (verGym) {
       [...renewalAlerts]
@@ -41,10 +41,11 @@ export const CintaAvisos = ({ fila = false, verCrm = true, verGym = true }) => {
           l.push({
             k: `r${a.memberId}`,
             tipo: "gym",
-            texto: a.daysLeft < 0 ? `🔁 ${primer(a.memberName)} venció hace ${Math.abs(a.daysLeft)}d · renovar` : a.daysLeft === 0 ? `⏳ ${primer(a.memberName)} vence hoy` : `⏳ ${primer(a.memberName)} vence en ${a.daysLeft}d`,
+            icono: a.daysLeft < 0 ? RefreshCw : Hourglass,
+            texto: a.daysLeft < 0 ? `${primer(a.memberName)} venció hace ${Math.abs(a.daysLeft)}d · renovar` : a.daysLeft === 0 ? `${primer(a.memberName)} vence hoy` : `${primer(a.memberName)} vence en ${a.daysLeft}d`,
           }),
         );
-      lowStockProducts.slice(0, 4).forEach((p) => l.push({ k: `s${p.id}`, tipo: "gym", texto: `📦 Poco stock: ${p.name} (quedan ${p.stock})` }));
+      lowStockProducts.slice(0, 4).forEach((p) => l.push({ k: `s${p.id}`, tipo: "gym", icono: Package, texto: `Poco stock: ${p.name} (quedan ${p.stock})` }));
     }
     return l;
   }, [d, renewalAlerts, lowStockProducts, verCrm, verGym]);
@@ -194,6 +195,11 @@ const Carril = ({ titulo, icono, tono, items, vacio, onAbrir }) => {
         it.fuerte ? "bg-gradient-to-r from-rose-600 to-orange-500 text-white" : tono === "crm" ? "rd-chip-crm" : "rd-chip-gym"
       }`}
     >
+      {it.icono && (
+        <span className="rd-cinta-ico mr-1 -ml-0.5 w-[1.15rem] h-[1.15rem] rounded-full flex items-center justify-center shrink-0">
+          <it.icono className="w-3 h-3" strokeWidth={2.4} />
+        </span>
+      )}
       <ConIconos texto={it.texto} />
     </button>
   );

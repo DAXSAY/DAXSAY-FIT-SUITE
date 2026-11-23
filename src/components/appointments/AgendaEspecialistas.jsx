@@ -55,6 +55,11 @@ export function useHorasAtencion() {
 }
 
 function CampoHora({ valor, onCambio, disabled, etiqueta }) {
+  // Copia local: mientras se escribe con el teclado la hora pasa por estados
+  // incompletos ("" para el navegador) que no deben borrar lo ya escrito.
+  const externo = valor == null ? "" : aCampo(valor);
+  const [texto, setTexto] = useState(externo);
+  useEffect(() => setTexto(externo), [externo]);
   return (
     <label className="block">
       <span className="block text-[11px] font-bold text-slate-500 mb-1">{etiqueta}</span>
@@ -63,9 +68,14 @@ function CampoHora({ valor, onCambio, disabled, etiqueta }) {
         step={300}
         min={aCampo(INICIO_DIA)}
         max={aCampo(FIN_DIA)}
-        value={valor == null ? "" : aCampo(valor)}
+        value={texto}
         disabled={disabled}
-        onChange={(e) => onCambio(deCampo(e.target.value))}
+        onChange={(e) => {
+          const v = e.target.value;
+          setTexto(v);
+          if (v) onCambio(deCampo(v));
+        }}
+        onBlur={(e) => !e.target.value && onCambio(null)}
         className="rd-campo-hora w-full px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-sm font-extrabold tabular-nums text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </label>
@@ -328,7 +338,7 @@ export function AgendaEspecialistas({ servicioInicial, fijo = false }) {
                 <p className="text-[11px] font-black uppercase tracking-wide text-slate-600 flex items-center gap-1.5 mb-2">
                   <Plus className="w-3.5 h-3.5" /> Agregar un turno
                 </p>
-                <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-2 items-start">
+                <div className="grid grid-cols-[8.6rem_minmax(0,1fr)] gap-2 items-start">
                   <CampoHora etiqueta="Empieza" valor={inicio} onCambio={setInicio} />
                   <ElegirDuracion valor={dur} onCambio={setDur} />
                 </div>

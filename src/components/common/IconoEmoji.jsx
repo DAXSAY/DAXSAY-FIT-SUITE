@@ -3,10 +3,20 @@
 // sistemas de entrenamiento, porciones con la mano): aquí se dibuja su ícono.
 import React from "react";
 import {
-  AlarmClock, Apple, Armchair, ArrowDown, ArrowLeftRight, ArrowRight, ArrowUp, Axe, BadgeCheck, Ban, Banana, Bandage, Banknote, BatteryFull, BatteryLow, Bean, BedDouble, Beef, Bell, BellRing, BicepsFlexed, Bike, Bird, Bone, Brain, BrickWall, Briefcase, Brush, Cable, Cake, Calculator, Calendar, CalendarDays, Camera, Carrot, ChartColumn, Check, Cherry, Circle, CircleCheck, CircleDot, CircleX, ClipboardList, Clock, Coffee, Coins, Cookie, CreditCard, CupSoda, Disc, Droplet, Drumstick, Dumbbell, Egg, EggFried, Eye, FastForward, FileText, Fish, Flag, Flame, Footprints, Gift, GraduationCap, Grape, Hand, HandFist, HandHeart, Handshake, Hash, Heart, HeartCrack, HeartPulse, Hospital, Hourglass, House, Infinity, Landmark, Layers, Leaf, Lightbulb, Link, Lock, Mars, Medal, Megaphone, Menu, MessageCircle, Milk, Minus, Moon, Mountain, MountainSnow, MoveUp, NotebookPen, Nut, Package, Paperclip, PartyPopper, Pause, PenLine, Pencil, PersonStanding, PhoneOff, Pin, Pizza, Plane, Play, Plus, Pointer, Puzzle, RefreshCw, Repeat, Repeat1, Rewind, Ribbon, Rocket, Ruler, Salad, Sandwich, Scale, School, Scissors, Search, Settings, Shield, Shirt, Shuffle, Signal, Skull, Smartphone, Smile, Snail, Snowflake, Soup, Sparkles, Spool, Sprout, Star, Stethoscope, Sun, Swords, Tag, Target, Thermometer, ThumbsUp, Ticket, Timer, TrendingDown, TrendingUp, Triangle, TriangleAlert, Trophy, Turtle, Umbrella, Undo2, User, Users, Utensils, Venus, Volleyball, Waves, Wheat, Wind, Wrench, X, Zap,
+  AlarmClock, Apple, Armchair, ArrowDown, ArrowLeftRight, ArrowRight, ArrowUp, Axe, BadgeCheck, Ban, Banana, Bandage, Banknote, BatteryFull, BatteryLow, Bean, BedDouble, Beef, Bell, BellRing, BicepsFlexed, Bike, Bird, Bone, Brain, BrickWall, Briefcase, Brush, Cable, Cake, Calculator, Calendar, CalendarDays, Camera, Carrot, ChartColumn, Check, Cherry, Circle, CircleAlert, CircleCheck, CircleDot, CircleHelp, CircleX, ClipboardList, Clock, Coffee, Coins, Cookie, CreditCard, CupSoda, Disc, Droplet, Drumstick, Dumbbell, Egg, EggFried, Eye, FastForward, FileText, Fish, Flag, Flame, Footprints, Gift, GraduationCap, Grape, Hand, HandFist, HandHeart, Handshake, Hash, Heart, HeartCrack, HeartPulse, Hospital, Hourglass, House, Infinity, KeyRound, Landmark, Layers, Leaf, Lightbulb, Link, Lock, MapPin, Mars, Medal, Megaphone, Menu, MessageCircle, Microscope, Milk, Minus, Moon, Mountain, MountainSnow, MoveUp, NotebookPen, Nut, Package, Paperclip, PartyPopper, Pause, PenLine, Pencil, PersonStanding, Phone, PhoneOff, Pill, Pin, Pizza, Plane, Play, Plus, Pointer, Puzzle, RefreshCw, Repeat, Repeat1, Rewind, Ribbon, Rocket, Ruler, Salad, Sandwich, Scale, School, Scissors, Search, Settings, Shield, Shirt, Shuffle, Signal, Skull, Smartphone, Smile, Snail, Snowflake, Soup, Sparkles, Spool, Sprout, Star, Stethoscope, Sun, Swords, Tag, Target, Thermometer, ThumbsUp, Ticket, Timer, TrendingDown, TrendingUp, Triangle, TriangleAlert, Trophy, Turtle, Umbrella, Undo2, User, Users, Utensils, Venus, Volleyball, Waves, Wheat, Wind, Wrench, X, Zap,
 } from "lucide-react";
 
 const MAPA = {
+  "⚕": Stethoscope,
+  "💊": Pill,
+  "📆": CalendarDays,
+  "📍": MapPin,
+  "📞": Phone,
+  "🔑": KeyRound,
+  "🔬": Microscope,
+  "❗": CircleAlert,
+  "❕": CircleAlert,
+  "❓": CircleHelp,
   "💪": BicepsFlexed,
   "🏋": Dumbbell,
   "🩺": Stethoscope,

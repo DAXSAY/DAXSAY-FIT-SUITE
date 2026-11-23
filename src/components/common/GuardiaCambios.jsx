@@ -78,6 +78,7 @@ export default function GuardiaCambios() {
     };
     const alTecla = (e) => {
       if (e.key !== "Escape" || permitir.current || !e.isTrusted) return;
+      if (document.querySelector(".rd-cal-visible")) return; // Esc cierra primero el calendario o el selector de hora
       const abiertas = [...document.querySelectorAll(VENTANA)].filter((v) => v.querySelector("input, select, textarea"));
       const v = abiertas[abiertas.length - 1];
       if (!v || !sucia(v)) return;

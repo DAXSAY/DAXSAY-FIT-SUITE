@@ -7,6 +7,7 @@ import { instalarResaltadoGraficos } from "./utils/graficos";
 import { instalarControlesVentanas } from "./utils/controlesVentana";
 import { instalarTooltipGlobal } from "./utils/tooltipGlobal";
 import { instalarSelectorFecha } from "./utils/selectorFecha";
+import { instalarSelectorHora } from "./utils/selectorHora";
 
 // Aplica el modo claro/oscuro guardado antes de pintar (evita parpadeo)
 aplicarTema(temaGuardado());
@@ -14,6 +15,7 @@ instalarResaltadoGraficos();
 instalarControlesVentanas();
 instalarTooltipGlobal();
 instalarSelectorFecha();
+instalarSelectorHora();
 
 // Campos numéricos: al entrar se selecciona el valor (escribir lo reemplaza)
 // y se quitan los ceros a la izquierda (evita "012").

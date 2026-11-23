@@ -3388,6 +3388,46 @@ input[type="month"]:not(:disabled):not([readonly]) {
   background-size: 16px;
 }
 html.dark input[type="date"], html.dark input[type="month"] { color-scheme: dark; }
+
+/* ===== Selector de hora propio (campos de hora) ===== */
+input[type="time"]::-webkit-calendar-picker-indicator { display: none; }
+input[type="time"] { min-width: 8.2rem; font-variant-numeric: tabular-nums; }
+input[type="time"]:not(:disabled):not([readonly]) {
+  cursor: pointer;
+  padding-right: 2.1rem !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364a7ad' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 16px;
+}
+input[type="time"]::-webkit-datetime-edit { padding: 0; }
+input[type="time"]::-webkit-datetime-edit-fields-wrapper { white-space: nowrap; }
+/* La parte que se edita (hora, minutos, AM/PM) con el color del sistema, no el azul del navegador */
+input[type="time"]::-webkit-datetime-edit-hour-field:focus,
+input[type="time"]::-webkit-datetime-edit-minute-field:focus,
+input[type="time"]::-webkit-datetime-edit-ampm-field:focus,
+input[type="date"]::-webkit-datetime-edit-day-field:focus,
+input[type="date"]::-webkit-datetime-edit-month-field:focus,
+input[type="date"]::-webkit-datetime-edit-year-field:focus { background: #d6efed; color: #1f6f75; border-radius: 5px; outline: none; }
+html.dark input[type="time"]::-webkit-datetime-edit-hour-field:focus,
+html.dark input[type="time"]::-webkit-datetime-edit-minute-field:focus,
+html.dark input[type="time"]::-webkit-datetime-edit-ampm-field:focus,
+html.dark input[type="date"]::-webkit-datetime-edit-day-field:focus,
+html.dark input[type="date"]::-webkit-datetime-edit-month-field:focus,
+html.dark input[type="date"]::-webkit-datetime-edit-year-field:focus { background: rgba(64, 200, 210, .28); color: #e6fbff; }
+html.dark input[type="time"] { color-scheme: dark; }
+.rd-hora { width: min(300px, calc(100vw - 16px)); }
+.rd-hora-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.rd-hora-prev { font-size: 22px; font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.rd-hora-ampm { display: flex; gap: 4px; padding: 3px; border-radius: 11px; }
+.rd-hora-mer { height: 28px; padding: 0 10px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; }
+.rd-hora-etiqueta { margin: 8px 2px 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; opacity: .6; }
+.rd-hora-6 { grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.rd-hora .rd-cal-celda { height: 34px; font-variant-numeric: tabular-nums; }
+html:not(.dark) .rd-hora-ampm { background: #f4efe6; }
+html:not(.dark) .rd-hora-mer { color: #6b6355; }
+html.dark .rd-hora-ampm { background: rgba(120, 170, 220, .08); }
+html.dark .rd-hora-mer { color: #94a3b8; }
 .rd-cal { position: fixed; z-index: 10000; width: 272px; padding: 10px; border-radius: 16px; opacity: 0; pointer-events: none; transform: translateY(-4px) scale(.98); transition: opacity .14s, transform .14s; font-family: inherit; }
 .rd-cal-visible { opacity: 1; pointer-events: auto; transform: none; }
 .rd-cal-cab { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
@@ -3635,3 +3675,96 @@ html.dark .rd-campo-hora { background: #0b1a2c; color: #e6fbff; border-color: rg
   unicode-range: U+1f6d9,U+1fa8b-1fa8d,U+1facc,U+1fadd,U+1faeb;
 }
 .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Noto Emoji Variable", monospace; }
+
+/* Cinta de avisos: ícono en una pastilla del mismo tono */
+.rd-cinta-ico { background: rgba(255,255,255,.22); }
+.rd-chip-crm .rd-cinta-ico, .rd-chip-gym .rd-cinta-ico { background: color-mix(in srgb, currentColor 16%, transparent); }
+
+/* Menú en pantallas angostas: se abre por encima de todo, a la altura de la pantalla, aunque la página esté desplazada */
+@media (max-width: 767.98px) {
+  .rd-menu.rd-menu-movil { position: fixed !important; top: 0; bottom: 0; left: 0; height: 100dvh; max-height: 100dvh; animation: rd-menu-entra .22s cubic-bezier(.2,.7,.2,1); }
+}
+@keyframes rd-menu-entra { from { transform: translateX(-100%); } to { transform: none; } }
+
+/* ===== Hoja de rutina (imprimir / PDF / foto) ===== */
+.rd-hr-barra{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:.5rem;padding:.6rem max(.75rem,env(safe-area-inset-left));background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid #e2e8f0;color:#0f172a}
+.dark .rd-hr-barra{background:rgba(10,14,28,.92);border-color:rgba(64,200,210,.25);color:#e2f6f8}
+.rd-hr-btn{display:inline-flex;align-items:center;gap:.35rem;padding:.45rem .7rem;border-radius:.6rem;border:1px solid #e2e8f0;background:#fff;color:#334155;font-weight:700;font-size:.78rem;cursor:pointer}
+.rd-hr-btn:hover{background:#f1f5f9}
+.dark .rd-hr-btn{background:rgba(20,28,48,.9);border-color:rgba(64,200,210,.3);color:#bdeff3}
+.rd-hoja-rutina{max-width:820px;margin:0 auto;background:#fff;color:#1e293b;border-radius:14px;box-shadow:0 10px 30px rgba(15,23,42,.12);padding:28px 30px 22px;font-size:12.5px;line-height:1.45}
+.rd-hr-cab{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-bottom:14px;border-bottom:3px solid #1f6f75}
+.rd-hr-gym{font-family:Outfit,sans-serif;font-weight:900;font-size:20px;letter-spacing:.04em;color:#0f172a;line-height:1.1}
+.rd-hr-doc{font-weight:900;font-size:11px;letter-spacing:.14em;color:#1f6f75}
+.rd-hr-sub{font-size:11px;color:#64748b}
+.rd-hr-intro{padding:16px 0 6px}
+.rd-hr-chip{display:inline-block;padding:2px 10px;border-radius:999px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.rd-hr-chip-a{background:#e0f2f1;color:#1f6f75}
+.rd-hr-chip-b{background:#fef3c7;color:#92400e}
+.rd-hr-titulo{font-family:Outfit,sans-serif;font-size:24px;font-weight:900;color:#0f172a;line-height:1.15}
+.rd-hr-desc{margin-top:4px;color:#475569}
+.rd-hr-datos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.rd-hr-dato{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;color:#1f6f75}
+.rd-hr-dato-et{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8}
+.rd-hr-dato-val{font-weight:800;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd-hr-dia{margin-top:18px;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+.rd-hr-dia-cab{display:flex;align-items:center;gap:10px;padding:10px 12px;background:linear-gradient(90deg,#e6f4f3,#f8fafc)}
+.rd-hr-dia-num{width:30px;height:30px;border-radius:9px;background:#1f6f75;color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rd-hr-dia-tit{font-family:Outfit,sans-serif;font-size:15px;font-weight:900;color:#0f172a}
+.rd-hr-dia-foco{font-size:11px;color:#64748b}
+.rd-hr-scroll{overflow-x:auto}
+.rd-hr-tabla{width:100%;border-collapse:collapse;min-width:620px}
+.rd-hr-tabla th{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#64748b;text-align:left;padding:7px 8px;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+.rd-hr-tabla td{padding:7px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle;color:#334155}
+.rd-hr-tabla tbody tr:nth-child(even) td{background:#fcfdfd}
+.rd-hr-tabla tbody tr:last-child td{border-bottom:0}
+.rd-hr-ej{font-weight:800;color:#0f172a;font-size:13px}
+.rd-hr-nota{font-size:11px;color:#64748b}
+.rd-hr-num{font-weight:900;color:#1f6f75;font-size:14px}
+.rd-hr-check{display:inline-block;width:16px;height:16px;border:2px solid #94a3b8;border-radius:4px}
+.rd-hr-indic{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}
+.rd-hr-indic>div{padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px dashed #cbd5e1;color:#475569;font-size:11px}
+.rd-hr-indic-tit{display:flex;align-items:center;gap:5px;font-weight:800;color:#1f6f75;margin-bottom:2px;font-size:11.5px}
+.rd-hr-pie{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-top:22px;padding-top:12px;border-top:1px solid #e2e8f0}
+.rd-hr-firma span{display:block;width:190px;border-bottom:1.5px solid #334155;height:34px}
+.rd-hr-firma p{font-size:10.5px;color:#64748b;margin-top:3px}
+@media (max-width:640px){
+  .rd-hoja-rutina{padding:16px 12px;border-radius:10px}
+  .rd-hr-cab{flex-direction:column;align-items:flex-start}
+  .rd-hr-cab>div:last-child{text-align:left}
+  .rd-hr-datos{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rd-hr-indic{grid-template-columns:1fr}
+  .rd-hr-titulo{font-size:20px}
+}
+@media print{
+  body *{visibility:hidden}
+  .rd-hoja-rutina,.rd-hoja-rutina *{visibility:visible}
+  .rd-hoja-rutina{position:absolute;left:0;top:0;width:100%;max-width:none;box-shadow:none;border-radius:0;padding:0}
+  .rd-hr-dia,.rd-hr-tabla tr{break-inside:avoid}
+  .rd-hr-barra{display:none!important}
+}
+/* La hoja siempre en claro, también con el modo oscuro activo */
+.dark .rd-hoja-rutina .rd-hr-tabla td{background:#fff!important;color:#334155!important}
+.dark .rd-hoja-rutina .rd-hr-tabla tbody tr:nth-child(even) td{background:#fcfdfd!important}
+.dark .rd-hoja-rutina .rd-hr-tabla th{background:#f8fafc!important;color:#64748b!important}
+.dark .rd-hoja-rutina .rd-hr-ej,.dark .rd-hoja-rutina .rd-hr-titulo,.dark .rd-hoja-rutina .rd-hr-gym,.dark .rd-hoja-rutina .rd-hr-dia-tit,.dark .rd-hoja-rutina .rd-hr-dato-val{color:#0f172a!important}
+.dark .rd-hoja-rutina .rd-hr-num{color:#1f6f75!important}
+.dark .rd-hoja-rutina .rd-hr-tabla tr{background:#fff!important}
+.dark .rd-hoja-rutina{box-shadow:0 0 0 1px rgba(64,200,210,.25),0 10px 40px rgba(0,0,0,.5)}
+/* En celular cada ejercicio es una tarjeta: datos en una fila debajo del nombre */
+@media (max-width:640px){
+  .rd-hr-tabla{min-width:0}
+  .rd-hr-tabla thead{display:none}
+  .rd-hr-tabla tbody tr{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:.35rem;padding:.6rem .7rem;border-bottom:1px solid #f1f5f9}
+  .rd-hr-tabla tbody tr td{padding:0;border:0;background:transparent!important}
+  .rd-hr-c-n{grid-column:1/2;grid-row:1;align-self:center}
+  .rd-hr-c-img{grid-column:2/4;grid-row:1}
+  .rd-hr-c-img>*{width:3.4rem!important;height:3.4rem!important}
+  .rd-hr-c-ej{grid-column:4/12;grid-row:1;align-self:center;padding-left:.35rem!important}
+  .rd-hr-c-ok{grid-column:12/13;grid-row:1;align-self:center}
+  .rd-hoja-rutina .rd-hr-tabla tbody tr,.dark .rd-hoja-rutina .rd-hr-tabla tbody tr{background:#fff!important}
+  .dark .rd-hoja-rutina .rd-hr-tabla tbody tr td{background:transparent!important}
+  .dark .rd-hoja-rutina .rd-hr-tabla tbody tr td.rd-hr-c-d{background:#f1f7f7!important}
+  .rd-hr-c-d{grid-column:span 3;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-top:.5rem;padding:.3rem .2rem!important;border-radius:.5rem;background:#f1f7f7!important;font-size:12px}
+  .rd-hr-c-d::before{content:attr(data-et);font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:1px}
+}
