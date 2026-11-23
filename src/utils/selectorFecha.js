@@ -30,6 +30,7 @@ function poner(valor) {
 
 function cerrar() {
   if (caja) caja.classList.remove("rd-cal-visible");
+  campo?.classList.remove("rd-campo-activo");
   campo = null;
 }
 
@@ -148,7 +149,9 @@ function abrir(input) {
     caja.addEventListener("mousedown", (e) => e.preventDefault());
     document.body.appendChild(caja);
   }
+  campo?.classList.remove("rd-campo-activo");
   campo = input;
+  input.classList.add("rd-campo-activo");
   modoAnios = false;
   const base = input.value || (input.type === "month" ? hoyISO().slice(0, 7) : hoyISO());
   vista = { y: Number(base.slice(0, 4)) || new Date().getFullYear(), m: (Number(base.slice(5, 7)) || 1) - 1 };
@@ -161,6 +164,18 @@ let instalado = false;
 export function instalarSelectorFecha() {
   if (instalado || typeof document === "undefined") return;
   instalado = true;
+  // Al tocar el campo no se marca la parte de la hora/fecha en color:
+  // el navegador no deja cambiar ese sombreado, así que no se le da el foco
+  // por clic y se elige en la ventanita (con Tab se sigue pudiendo escribir).
+  document.addEventListener(
+    "mousedown",
+    (e) => {
+      if (!esCampo(e.target)) return;
+      e.preventDefault();
+      if (document.activeElement === e.target) e.target.blur();
+    },
+    true,
+  );
   document.addEventListener(
     "click",
     (e) => {
