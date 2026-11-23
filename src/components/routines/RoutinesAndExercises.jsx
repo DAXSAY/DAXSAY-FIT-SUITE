@@ -434,6 +434,8 @@ export const RoutinesAndExercises = () => {
                       <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 mr-1">Nivel</span>
                       {[["todas", "📋", "Todas"], ...NIVELES_RUTINA].map(([k, ic, l]) => {
                         const n = k === "todas" ? porEntrenador.length : porEntrenador.filter((r) => (r.level || "intermedio") === k).length;
+                        // Solo los niveles que tienen rutinas (como en Nutrición y Fisioterapia)
+                        if (k !== "todas" && n === 0 && filtroRut !== k) return null;
                         return (
                           <button key={k} type="button" onClick={() => setFiltroRut(k)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${filtroRut === k ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-700 hover:border-blue-300"}`}>
                             <IconoEmoji e={ic} /> {l} <span className="opacity-70">{n}</span>

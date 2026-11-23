@@ -9,6 +9,8 @@ export function ChipsFiltro({ opciones, valor, onCambio, alternar = true }) {
     <>
       {opciones.map((o) => {
         const on = valor === o.k;
+        // Solo las opciones que tienen alumnos («Todos» siempre se muestra)
+        if (o.n === 0 && !on && o.k !== "todos") return null;
         return (
           <button
             key={o.k}
