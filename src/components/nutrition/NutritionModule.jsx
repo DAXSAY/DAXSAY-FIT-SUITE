@@ -363,6 +363,8 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
   const [calcGoal, setCalcGoal] = useState("hipertrofia");
   const [calcSelectedStudentId, setCalcSelectedStudentId] = useState("");
 
+  // Control de nutrición: fecha de la dieta anterior que se precargó (null = dieta nueva desde cero)
+  const [controlNutriDe, setControlNutriDe] = useState(null);
   // Selected Plan Object
   const selectedPlan = useMemo(() => {
     if (alumnoFijo) {
@@ -447,6 +449,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
   // Open modal for new plan
   const handleOpenCreateModal = (fromCalculator = false) => {
     setEditingPlanId(null);
+    setControlNutriDe(null);
     setPasoCrear("dieta");
     setDietaGuardada(false);
     if (fromCalculator) {
@@ -725,8 +728,17 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
   useEffect(() => {
     if (pedirCrear > pedidoAtendido) {
       pedidoAtendido = pedirCrear;
-      handleOpenCreateModal(false);
-      if (alumnoFijo) setFormStudentId(alumnoFijo);
+      // Control: si el alumno ya tiene una dieta, se precarga la última (como copia nueva) y solo se ajusta lo que cambió
+      const previo = alumnoFijo ? selectedPlan : null;
+      if (previo) {
+        handleOpenEditModal(previo);
+        setEditingPlanId(null);
+        setControlNutriDe(previo.createdDate || previo.startDate || "");
+      } else {
+        setControlNutriDe(null);
+        handleOpenCreateModal(false);
+        if (alumnoFijo) setFormStudentId(alumnoFijo);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedirCrear]);
@@ -1456,6 +1468,11 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
 
             {/* Pasos: 1 Dieta · 2 Medidas */}
             <div className="px-4 sm:px-5 pt-3 w-full max-w-[1200px] mx-auto">
+              {controlNutriDe !== null && !editingPlanId && (
+                <p className="rd-sugerido mb-2 rounded-xl border px-3 py-2 text-xs font-semibold">
+                  <IconoEmoji e="📋" /> Control: se precargó su dieta anterior{controlNutriDe ? ` (${String(controlNutriDe).slice(0, 10).split("-").reverse().join("/")})` : ""}. Cambia solo lo que varió; al guardar queda como su dieta vigente y la anterior queda guardada.
+                </p>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 {[
                   ["dieta", Utensils, "Paso 1 · Dieta", dietaGuardada ? "Guardada" : "Calorías, macros y comidas"],

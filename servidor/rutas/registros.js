@@ -102,6 +102,32 @@ async function asegurarBorrados() {
 }
 asegurarBorrados();
 
+// GET /api/registros/fisio-avisos
+// Alumnos cuya ÚLTIMA sesión de fisioterapia quedó en recaída, empeoramiento o derivado a médico.
+// Solo lo mínimo (alumno, estado y fecha; sin datos clínicos) para que el entrenador ajuste la rutina.
+const ESTADOS_AVISO = ["recaida", "empeoramiento", "derivacion"];
+router.get("/fisio-avisos", async (req, res, next) => {
+  try {
+    const id = req.usuario.idusuario;
+    if (!(await tienePermiso(id, ["routines", "physiotherapy", "members"], "ver"))) return res.json([]);
+    const filas = await consultar("SELECT datos FROM registros_app WHERE modulo = 'fisioterapia'");
+    const ultima = new Map();
+    for (const d of filas.map(parsear)) {
+      if (!d?.memberId) continue;
+      const k = String(d.memberId);
+      const clave = `${d.date || ""}${d.time || ""}`;
+      if (!ultima.has(k) || clave > ultima.get(k).clave) ultima.set(k, { clave, d });
+    }
+    res.json(
+      [...ultima.values()]
+        .filter(({ d }) => ESTADOS_AVISO.includes(d.improvementStatus))
+        .map(({ d }) => ({ memberId: String(d.memberId), estado: d.improvementStatus, fecha: d.date || null })),
+    );
+  } catch (e) {
+    next(e);
+  }
+});
+
 // GET /api/registros/ocupacion?desde=AAAA-MM-DD&dias=N
 // Qué turnos de fisioterapia y nutrición están tomados, en atención o libres.
 // Sin nombres ni datos del alumno: lo pueden ver todos (también el alumno y el entrenador).

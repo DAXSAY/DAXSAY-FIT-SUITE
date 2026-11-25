@@ -262,7 +262,11 @@ router.post("/alumno/:id", soloPersonal, async (req, res, next) => {
     const lista = Array.isArray(d.items) ? d.items.slice(0, 80) : [];
     const notas = texto(d.notes, 500);
     if (!lista.length && !notas) throw new ErrorHttp(400, "Elige al menos una indicación");
-    const items = lista.map((it, i) => {
+    // Fichas antiguas usan otros nombres: se traducen en vez de rechazar todo
+    const ALIAS_LUGAR = { gimnasio: "despues", gym: "despues", "después": "despues", antes_entrenar: "antes", hogar: "casa" };
+    const ALIAS_CAT = { cuidados: "cuidado", estiramientos: "estiramiento", movilidades: "movilidad" };
+    const items = lista.map((it0, i) => {
+      const it = { ...it0, place: ALIAS_LUGAR[it0?.place] || it0?.place, category: ALIAS_CAT[it0?.category] || it0?.category };
       const nombre = texto(it.name, 80);
       if (!nombre) throw new ErrorHttp(400, "Hay una indicación sin nombre");
       if (!CATEGORIAS.includes(it.category)) throw new ErrorHttp(400, `Tipo inválido en "${nombre}"`);

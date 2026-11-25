@@ -343,6 +343,8 @@ export const PhysiotherapyModule = () => {
 
   // 6. EXPLICACIÓN ENTENDIBLE PARA EL ALUMNO Y EVOLUCIÓN
   const [formPatientFriendlySummary, setFormPatientFriendlySummary] = useState("");
+  // Sesión de control: se precarga la ficha anterior y solo se actualiza lo que cambió
+  const [formControlDe, setFormControlDe] = useState(null); // { date, painLevelEVA, improvementStatus } de la sesión anterior
   const [formImprovementStatus, setFormImprovementStatus] =
     useState("en_evaluacion");
   const [formGymRestrictions, setFormGymRestrictions] = useState("");
@@ -472,11 +474,7 @@ export const PhysiotherapyModule = () => {
     if (!selectedMember) return [];
     return physioRecords
       .filter((r) => r.memberId === selectedMember.id)
-      .sort(
-        (a, b) =>
-          new Date(`${b.date} ${b.time}`).getTime() -
-          new Date(`${a.date} ${a.time}`).getTime(),
-      );
+      .sort((a, b) => `${b.date || ""}${b.time || ""}`.localeCompare(`${a.date || ""}${a.time || ""}`));
   }, [selectedMember, physioRecords]);
 
   // CLINICAL PROGRESS COMPUTATION FOR ACTIVE MEMBER
@@ -894,6 +892,7 @@ export const PhysiotherapyModule = () => {
 
   const handleOpenNewSession = (targetMember) => {
     setEditingSessionId(null);
+    setFormControlDe(null);
     const mem = targetMember || selectedMember || null;
     setFormMemberId(mem ? mem.id : "");
     setFormReason("");
@@ -949,6 +948,7 @@ export const PhysiotherapyModule = () => {
   // Open modal for EDITING existing session
   const handleEditSession = (session) => {
     setEditingSessionId(session.id);
+    setFormControlDe(session.sessionType === "control" ? { date: null } : null);
     setFormMemberId(session.memberId);
     setFormDate(session.date);
     setFormTime(session.time);
@@ -1062,7 +1062,14 @@ export const PhysiotherapyModule = () => {
     setFormHomeIndications(session.homeIndications || "");
     setFormEvolutionNotes(session.evolutionNotes || "");
     setFormNextAppt(session.nextAppointmentDate || "");
-    setFormIndicaciones(session.studentIndications || []);
+    // Fichas antiguas: lugar «gimnasio» = después de entrenar; «cuidados» = cuidado
+    setFormIndicaciones(
+      (session.studentIndications || []).map((x) => ({
+        ...x,
+        place: { gimnasio: "despues", gym: "despues", hogar: "casa" }[x.place] || x.place,
+        category: { cuidados: "cuidado", estiramientos: "estiramiento" }[x.category] || x.category,
+      })),
+    );
     setFormAdherencia(session.followUp?.adherence || "primera");
     setFormFrecuenciaSesiones(session.followUp?.sessionFrequency || "");
     setFormSesionesEstimadas(session.followUp?.estimatedSessions ?? "");
@@ -1074,6 +1081,23 @@ export const PhysiotherapyModule = () => {
 
     setActiveModalTab("anamnesis");
     setIsNewSessionModalOpen(true);
+  };
+
+  // Sesión de control: copia la última ficha (zonas, diagnóstico, antecedentes, medicación,
+  // postura, plan e indicaciones) y abre en «Evolución» para registrar solo lo que cambió.
+  const handleControlSession = (previa) => {
+    if (!previa) return;
+    handleEditSession(previa);
+    setEditingSessionId(null);
+    setFormControlDe({ date: previa.date, painLevelEVA: previa.painLevelEVA, improvementStatus: previa.improvementStatus || "en_evaluacion" });
+    setFormDate(hoyISO());
+    setFormTime(new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", timeZone: "America/Lima" }));
+    if (currentUser?.fullName) setFormPhysioName(currentUser.fullName);
+    setFormImprovementStatus("reevaluacion");
+    setFormEvolutionNotes("");
+    setFormNextAppt("");
+    setFormAdherencia(previa.followUp?.adherence && previa.followUp.adherence !== "primera" ? previa.followUp.adherence : "completa");
+    setActiveModalTab("evolucion");
   };
 
   // Save session record (Create or Edit)
@@ -1264,6 +1288,7 @@ export const PhysiotherapyModule = () => {
       additionalObservations: formAdditionalObservations,
       patientFriendlySummary: formPatientFriendlySummary.trim(),
       improvementStatus: formImprovementStatus,
+      sessionType: formControlDe ? "control" : "evaluacion",
       followUp: {
         adherence: formAdherencia,
         sessionFrequency: formFrecuenciaSesiones,
@@ -1573,15 +1598,66 @@ export const PhysiotherapyModule = () => {
                       </button>
                     )}
 
-                    <button
-                      onClick={() => handleOpenNewSession(selectedMember)}
-                      className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl font-bold text-xs transition-colors shadow-sm cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Nueva Sesión con Imágenes</span>
-                    </button>
+                    {memberSessions.length > 0 ? (
+                      <>
+                        <button
+                          onClick={() => handleOpenNewSession(selectedMember)}
+                          title="Ficha nueva desde cero (otra lesión o reevaluación completa)"
+                          className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded-xl font-bold text-xs cursor-pointer"
+                        >
+                          <IconoEmoji e="🩺" /> Evaluación completa
+                        </button>
+                        <button
+                          onClick={() => handleControlSession(memberSessions[0])}
+                          title="Trae su última ficha y abre en Evolución: registra el dolor de hoy y cómo va"
+                          className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl font-bold text-xs shadow-sm cursor-pointer"
+                        >
+                          <IconoEmoji e="📋" /> Sesión de control
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenNewSession(selectedMember)}
+                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl font-bold text-xs shadow-sm cursor-pointer"
+                      >
+                        <IconoEmoji e="🩺" /> Primera evaluación
+                      </button>
+                    )}
                   </div>
                 </div>
+
+                {/* LÍNEA DE EVOLUCIÓN: cada sesión con su dolor y cómo iba */}
+                {memberSessions.length > 0 && (
+                  <div className="rd-evolucion rounded-xl border p-3">
+                    <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
+                      Evolución · {memberSessions.length} sesión(es)
+                    </p>
+                    <ol className="flex items-stretch gap-1.5 overflow-x-auto pb-1">
+                      {[...memberSessions].reverse().map((ses, i, arr) => {
+                        const e = estadoEvolucion(ses.improvementStatus);
+                        const eva = Number(ses.painLevelEVA);
+                        const ant = i > 0 ? Number(arr[i - 1].painLevelEVA) : null;
+                        return (
+                          <li key={ses.id} className="flex items-center gap-1.5 shrink-0">
+                            {i > 0 && <span className="text-slate-400 text-xs">→</span>}
+                            <button type="button" onClick={() => setReportModalSession(ses)} title={`${e.l} · ver ficha`} className={`rd-evo-paso ${e.clase} border rounded-xl px-2.5 py-1.5 text-left cursor-pointer`}>
+                              <span className="block text-[10px] font-bold opacity-75">{String(ses.date || "").split("-").reverse().join("/")}{ses.sessionType === "control" ? " · control" : ""}</span>
+                              <span className="block text-xs font-black whitespace-nowrap">
+                                <IconoEmoji e={e.emoji} /> EVA {Number.isFinite(eva) ? eva : "—"}/10
+                                {ant != null && Number.isFinite(ant) && Number.isFinite(eva) && eva !== ant && <span className="ml-1">{eva < ant ? "▼" : "▲"}</span>}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                    {["recaida", "empeoramiento", "derivacion"].includes(memberSessions[0]?.improvementStatus) && (
+                      <p className="rd-alerta-evo mt-2 rounded-lg px-2.5 py-1.5 text-xs font-bold">
+                        <IconoEmoji e="⚠️" /> Última sesión: {estadoEvolucion(memberSessions[0].improvementStatus).l}. El entrenador lo ve en Rutinas asignadas para ajustar la rutina.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* MEDICAL RESTRICTIONS HIGHLIGHT BANNER */}
                 <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-rose-500/10 border-l-4 border-amber-500 p-4 rounded-xl space-y-1.5">
@@ -2267,8 +2343,11 @@ export const PhysiotherapyModule = () => {
                 </div>
                 <div className="min-w-0">
                   <span className="text-xs font-bold text-cyan-300 uppercase tracking-widest block">
-                    {editingSessionId ? "Editar registro clínico" : "Ficha de valoración fisioterapéutica"}
+                    {editingSessionId ? "Editar registro clínico" : formControlDe ? "Sesión de control" : "Ficha de valoración fisioterapéutica"}
                   </span>
+                  {!editingSessionId && formControlDe?.date && (
+                    <span className="block text-[11px] text-slate-300">📋 Precargada de su ficha del {String(formControlDe.date).split("-").reverse().join("/")}: cambia solo lo que varió.</span>
+                  )}
                   <h3 className="text-lg font-extrabold text-white truncate">
                     {members.find((m) => m.id === formMemberId)?.fullName || "Nueva evaluación"}
                     <span className="text-slate-400 font-semibold text-sm ml-2">
@@ -2791,7 +2870,6 @@ export const PhysiotherapyModule = () => {
                   <div className="space-y-2 bg-white rounded-2xl border border-slate-200 p-4">
                     <PasoPlan n="1" titulo="Ejercicios e indicaciones para casa" ayuda="Estiramientos 3 × 30 s, movilidad 2 × 15, postura y cuidados. Arriba lo indicado, abajo el catálogo. El alumno lo ve en Mi Rutina y el entrenador en Rutinas asignadas." />
                     <SelectorIndicaciones
-                      horizontal
                       items={formIndicaciones}
                       onChange={setFormIndicaciones}
                       sinNotas
@@ -2825,26 +2903,73 @@ export const PhysiotherapyModule = () => {
                           <span>Sesión anterior ({previa.date}): dolor <b>{previa.painLevelEVA ?? "—"}/10</b></span>
                           <span>→ hoy <b>{ahora}/10</b></span>
                           <span className="font-bold">{dif > 0 ? `Bajó ${dif} punto(s) 👏` : dif < 0 ? `Subió ${-dif} punto(s)` : "Igual"}</span>
+                          <span className="basis-full flex flex-wrap items-center gap-1">
+                            <span className="text-xs font-bold mr-1">Dolor de hoy (EVA):</span>
+                            {Array.from({ length: 11 }, (_, v) => (
+                              <button
+                                key={v}
+                                type="button"
+                                onClick={() => {
+                                  setFormPainEVA(v);
+                                  setFormClinicalScales((prev) => ({ ...prev, pain: { ...(prev?.pain || {}), actual: v } }));
+                                }}
+                                className={`rd-eva-btn ${Number(ahora) === v ? "rd-eva-on" : ""}`}
+                                style={{ "--k": v >= 7 ? "#c2525d" : v >= 4 ? "#c08a3a" : "#4f8a64" }}
+                              >
+                                {v}
+                              </button>
+                            ))}
+                          </span>
                         </div>
                       );
                     })()}
-                    <label className={LBL}>Estado respecto a la sesión anterior</label>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {ESTADOS_EVOLUCION.map((e) => (
-                        <button
-                          key={e.v}
-                          type="button"
-                          onClick={() => setFormImprovementStatus(e.v)}
-                          title={e.d}
-                          className={`px-3 py-1.5 rounded-full border text-sm font-semibold cursor-pointer transition-colors ${
-                            formImprovementStatus === e.v ? `${e.clase} ring-2 ring-offset-1 ring-blue-400` : "bg-white border-slate-200 text-slate-600 hover:border-slate-400"
-                          }`}
-                        >
-                          <IconoEmoji e={e.emoji} /> {e.l}
-                          {e.d && <span className="opacity-70 font-normal"> · {e.d}</span>}
-                        </button>
-                      ))}
-                    </div>
+                    {(() => {
+                      // Estado sugerido según cuánto cambió el dolor respecto a la sesión anterior
+                      const previa = physioRecords
+                        .filter((r) => r.memberId === formMemberId && r.id !== editingSessionId)
+                        .sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`))[0];
+                      const antes = Number(previa?.painLevelEVA);
+                      const ahora = Number(formClinicalScales?.pain?.actual ?? formPainEVA ?? 0);
+                      let sugerido = null;
+                      if (previa && Number.isFinite(antes) && Number.isFinite(ahora)) {
+                        const venia = ["notable_mejora", "mejora_moderada", "mejora_leve", "alta"].includes(previa.improvementStatus);
+                        if (antes > 0 && ahora < antes) {
+                          const baja = (antes - ahora) / antes;
+                          sugerido = baja > 0.5 ? "notable_mejora" : baja >= 0.3 ? "mejora_moderada" : "mejora_leve";
+                        } else if (ahora > antes) sugerido = venia ? "recaida" : "empeoramiento";
+                        else sugerido = antes === 0 && ahora === 0 ? "alta" : "estable";
+                      }
+                      return (
+                        <>
+                          <label className={LBL}>Estado respecto a la sesión anterior</label>
+                          {sugerido && formImprovementStatus !== sugerido && (
+                            <button
+                              type="button"
+                              onClick={() => setFormImprovementStatus(sugerido)}
+                              className="rd-sugerido mb-2 w-full text-left rounded-xl border px-3 py-2 text-sm cursor-pointer"
+                            >
+                              <IconoEmoji e="💡" /> Según el dolor ({antes}/10 → {ahora}/10) se sugiere: <b><IconoEmoji e={estadoEvolucion(sugerido).emoji} /> {estadoEvolucion(sugerido).l}</b> · toca para usarlo
+                            </button>
+                          )}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {ESTADOS_EVOLUCION.map((e) => (
+                              <button
+                                key={e.v}
+                                type="button"
+                                onClick={() => setFormImprovementStatus(e.v)}
+                                title={e.d}
+                                className={`px-3 py-1.5 rounded-full border text-sm font-semibold cursor-pointer transition-colors ${
+                                  formImprovementStatus === e.v ? `${e.clase} ring-2 ring-offset-1 ring-blue-400` : "bg-white border-slate-200 text-slate-600 hover:border-slate-400"
+                                } ${sugerido === e.v && formImprovementStatus !== e.v ? "rd-chip-sugerido" : ""}`}
+                              >
+                                <IconoEmoji e={e.emoji} /> {e.l}
+                                {e.d && <span className="opacity-70 font-normal"> · {e.d}</span>}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      );
+                    })()}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div>
                         <label className={LBL}>¿Cumple los ejercicios en casa?</label>

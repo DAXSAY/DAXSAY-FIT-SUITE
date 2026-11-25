@@ -12,6 +12,8 @@ import { SaludAlumno } from "./SaludAlumno";
 import { BotonProgramar, BotonPerfil, EstadoSeguimiento, CabeceraSeguimiento, COLUMNAS_SEG } from "../common/Programados";
 import { TONO, TONO_NIVEL } from "./FormEjercicioPropio";
 import { IconoEmoji } from "../common/IconoEmoji";
+import { api } from "../../api/cliente";
+import { escucharCambios } from "../../utils/tiempoReal";
 
 const sinT = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const puntaje = (m, q) => {
@@ -45,6 +47,22 @@ export const RutinasAsignadas = ({
   useEffect(() => {
     if (seleccionInicial) setSel(String(seleccionInicial));
   }, [seleccionInicial]);
+  // Avisos de fisioterapia: recaída, empeoramiento o derivación (para ajustar la rutina)
+  const [avisosFisio, setAvisosFisio] = useState(new Map());
+  useEffect(() => {
+    let vivo = true;
+    const cargar = () =>
+      api("/registros/fisio-avisos")
+        .then((l) => vivo && setAvisosFisio(new Map((l || []).map((x) => [String(x.memberId), x]))))
+        .catch(() => {});
+    cargar();
+    const quitar = escucharCambios((mods) => (!mods?.length || mods.includes("fisioterapia")) && cargar());
+    return () => {
+      vivo = false;
+      quitar?.();
+    };
+  }, []);
+  const TXT_AVISO = { recaida: ["🔁", "Fisio: recaída"], empeoramiento: ["⚠️", "Fisio: empeoró"], derivacion: ["🏥", "Fisio: derivado a médico"] };
   useEffect(() => {
     setRIdx(0);
     setDia(0);
@@ -203,7 +221,14 @@ export const RutinasAsignadas = ({
                   <span>
                     <CodigoAlumno m={m} />
                   </span>
-                  <span className="text-sm font-bold text-slate-900 truncate">{m.fullName}</span>
+                  <span className="text-sm font-bold text-slate-900 truncate">
+                    {m.fullName}
+                    {avisosFisio.has(String(m.id)) && (
+                      <span className="rd-aviso-fisio ml-1.5" title="Ajusta la rutina según la indicación de fisioterapia">
+                        {TXT_AVISO[avisosFisio.get(String(m.id)).estado]?.[0]} {TXT_AVISO[avisosFisio.get(String(m.id)).estado]?.[1]}
+                      </span>
+                    )}
+                  </span>
                   <span className="text-xs text-slate-600 truncate">
                     {rs.length ? rs.map((r) => String(r.title || "").replace(/\s*·\s*[^·]+$/, "")).join(" · ") : "—"}
                   </span>
@@ -235,6 +260,12 @@ export const RutinasAsignadas = ({
                   <CodigoAlumno m={alumno} />
                   <span className="text-lg font-black text-slate-900">{alumno.fullName}</span>
                 </p>
+                {avisosFisio.has(String(alumno.id)) && (
+                  <p className="rd-aviso-fisio-banda mt-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold">
+                    {TXT_AVISO[avisosFisio.get(String(alumno.id)).estado]?.[0]} {TXT_AVISO[avisosFisio.get(String(alumno.id)).estado]?.[1]}
+                    {avisosFisio.get(String(alumno.id)).fecha ? ` (${String(avisosFisio.get(String(alumno.id)).fecha).split("-").reverse().join("/")})` : ""} · revisa las indicaciones de fisioterapia y ajusta la carga de la rutina.
+                  </p>
+                )}
                 {rutina && (
                   <p className="text-xs text-slate-500 mt-0.5">
                     {base ? (

@@ -4080,3 +4080,22 @@ html.dark .rd-kpi-alerta{background:linear-gradient(105deg,#1d0f1b 0%,#1d0f1b 45
 .rd-fila-filtro-et{padding-top:.4rem;font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:#7a7266}
 html.dark .rd-fila-filtro-et{color:#8fa6c0}
 @media (max-width:640px){.rd-fila-filtro{grid-template-columns:1fr}.rd-fila-filtro-et{padding-top:0}}
+
+/* ---------- Fisio: control, estado sugerido, línea de evolución y aviso al entrenador ---------- */
+.rd-sugerido{background:#fbf3e3;border-color:#ead3a6;color:#5b4520}
+.rd-sugerido:hover{background:#f7ead0}
+html.dark .rd-sugerido{background:rgba(255,194,102,.09);border-color:rgba(255,194,102,.4);color:#ffe0ad}
+.rd-chip-sugerido{outline:2px dashed #c79a4a;outline-offset:2px}
+html.dark .rd-chip-sugerido{outline-color:#ffc266}
+.rd-evolucion{background:#f8f5ee;border-color:#e4ddd0}
+html.dark .rd-evolucion{background:#0b1828;border-color:rgba(95,219,226,.22)}
+.rd-evo-paso{min-width:6.5rem;transition:transform .15s}
+.rd-evo-paso:hover{transform:translateY(-1px)}
+.rd-alerta-evo,.rd-aviso-fisio-banda{background:#f8e7e8;color:#8a3a44;border:1px solid #ecc9cd}
+html.dark .rd-alerta-evo,html.dark .rd-aviso-fisio-banda{background:rgba(255,125,140,.1);color:#ffb3bd;border-color:rgba(255,125,140,.4)}
+.rd-aviso-fisio{display:inline-flex;align-items:center;gap:.2rem;padding:.05rem .45rem;border-radius:999px;font-size:10.5px;font-weight:800;background:#f8e7e8;color:#8a3a44;border:1px solid #ecc9cd;vertical-align:middle}
+html.dark .rd-aviso-fisio{background:rgba(255,125,140,.12);color:#ffb3bd;border-color:rgba(255,125,140,.45)}
+.rd-eva-btn{width:1.9rem;height:1.9rem;border-radius:9px;border:1px solid color-mix(in srgb,var(--k) 45%,transparent);background:#fffdf8;color:var(--k);font-weight:900;font-size:12px;cursor:pointer}
+.rd-eva-on,.rd-eva-btn:hover{background:var(--k);color:#fff}
+html.dark .rd-eva-btn{background:#08121f}
+html.dark .rd-eva-on,html.dark .rd-eva-btn:hover{background:var(--k);color:#06101c;box-shadow:0 0 10px -3px var(--k)}
