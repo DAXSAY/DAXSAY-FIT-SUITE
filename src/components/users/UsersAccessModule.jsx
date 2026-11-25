@@ -5,7 +5,7 @@
 // quién cerró. Las cuentas de alumnos se crean desde su ficha.
 // ============================================================
 import { TarjetaKpi } from "../common/TarjetaKpi";
-import { ShieldCheck as IcShield, User as IcUser, Dumbbell as IcDumbbell, HeartPulse as IcHeart, Apple as IcApple, KeyRound as IcKey, Building2 as IcBuilding, Phone as IcPhone, Clock as IcClock, Users as IcUsers, Plus as IcPlus, Info as IcInfo } from "lucide-react";
+import { ShieldCheck as IcShield, User as IcUser, Dumbbell as IcDumbbell, HeartPulse as IcHeart, Apple as IcApple, KeyRound as IcKey, Building2 as IcBuilding, Phone as IcPhone, Clock as IcClock, Users as IcUsers, Plus as IcPlus, Info as IcInfo, CalendarClock as IcCalendario } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ShieldCheck,
@@ -323,6 +323,7 @@ const ConfiguracionGimnasio = () => {
     admin_whatsapp: gymConfig.admin_whatsapp || "",
     gym_direccion: gymConfig.gym_direccion || "",
     gym_ruc: gymConfig.gym_ruc || "",
+    dias_exalumno: gymConfig.dias_exalumno || "30",
   });
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
@@ -362,6 +363,30 @@ const ConfiguracionGimnasio = () => {
               <input value={f.admin_whatsapp} onChange={set("admin_whatsapp")} placeholder="9XX XXX XXX" inputMode="tel" className={campo} />
               <span className="text-xs text-slate-500">A este número se envían los reportes.</span>
             </label>
+          </div>
+        </Seccion>
+        <Seccion icono={IcCalendario} titulo="Vencimientos" sub="Desde cuándo un alumno que no renueva cuenta como exalumno (para reportes y avisos).">
+          <div className="grid grid-cols-1 sm:grid-cols-[200px_minmax(0,1fr)] gap-4 items-start">
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">Días sin renovar</span>
+              <div className="mt-1 flex items-center gap-2">
+                <input type="number" min="1" max="365" value={f.dias_exalumno} onChange={set("dias_exalumno")} className={`${campo} !mt-0 w-24 text-center font-black`} />
+                <span className="text-sm text-slate-600">días</span>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {[15, 30, 60, 90].map((n) => (
+                  <button key={n} type="button" onClick={() => setF({ ...f, dias_exalumno: String(n) })} className={`px-2 py-0.5 rounded-full border text-[11px] font-bold cursor-pointer ${String(f.dias_exalumno) === String(n) ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
+                    {n} d
+                  </button>
+                ))}
+              </div>
+            </label>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1.5">
+              <p><b>✅ Activo:</b> su membresía está vigente.</p>
+              <p><b>⏳ Vencido:</b> del día siguiente al vencimiento hasta {f.dias_exalumno || 30} días. Si renueva aquí, cuenta como <b>renovación</b>.</p>
+              <p><b>🔁 Exalumno:</b> más de {f.dias_exalumno || 30} días sin renovar. Si vuelve, cuenta como <b>exalumno recuperado</b>.</p>
+              <p className="text-slate-500">En los dos casos se renueva con el <b>mismo código</b> del alumno: el DNI lo identifica y nunca se crea otro.</p>
+            </div>
           </div>
         </Seccion>
         <div className="flex flex-wrap items-center gap-3">

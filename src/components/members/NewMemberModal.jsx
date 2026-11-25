@@ -74,6 +74,27 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
     return () => clearTimeout(t);
   }, [isOpen, inicial?.prospectId, dni, phone]);
 
+  // El DNI identifica al alumno: si ya estuvo inscrito (activo, vencido, exalumno o de baja)
+  // no se crea otro código; se renueva su membresía con el MISMO código.
+  const [yaInscrito, setYaInscrito] = useState(null);
+  useEffect(() => {
+    const d = dni.trim();
+    if (!isOpen || !/^\d{8}$/.test(d)) return setYaInscrito(null);
+    const t = setTimeout(() => {
+      api(`/alumnos/por-dni/${d}`)
+        .then((r) => setYaInscrito(r?.existe ? r : null))
+        .catch(() => setYaInscrito(null));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [isOpen, dni]);
+  const irARenovar = () => {
+    const datos = yaInscrito;
+    onClose?.();
+    window.__rdRenovar = datos;
+    window.dispatchEvent(new CustomEvent("radical:ir-modulo", { detail: "members" }));
+    setTimeout(() => window.dispatchEvent(new CustomEvent("radical:renovar-alumno", { detail: datos })), 60);
+  };
+
   // Los planes llegan desde la base de datos: elegir uno por defecto al cargar
   // Si el plan elegido se da de baja o cambia en Planes y tarifas, se suelta
   useEffect(() => {
@@ -98,6 +119,10 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (yaInscrito) {
+      setErrorForm(`Este DNI ya es del alumno ${yaInscrito.codeLabel}. Usa «Renovar membresía»: se mantiene su mismo código.`);
+      return;
+    }
 
     if (!fullName.trim() || !dni.trim() || !phone.trim() || !currentPlan) {
       alert(
@@ -300,6 +325,32 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
                   className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-slate-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:bg-white"
                 />
               </div>
+
+              {yaInscrito && (() => {
+                const st = yaInscrito.memberState;
+                const ex = st === "exalumno" || yaInscrito.deBaja;
+                const titulo = ex ? "🔁 Exalumno" : st === "vencido" ? "⏳ Alumno con membresía vencida" : st === "sin_matricula" ? "📇 Ya registrado" : "✅ Alumno activo";
+                const detalle =
+                  st === "activo" || st === "por_vencer"
+                    ? `Su membresía (${yaInscrito.planName}) está vigente hasta el ${String(yaInscrito.membershipEndDate || "").split("-").reverse().join("/")}.`
+                    : yaInscrito.daysExpired
+                      ? `Su última membresía (${yaInscrito.planName}) venció hace ${yaInscrito.daysExpired} día${yaInscrito.daysExpired === 1 ? "" : "s"}, el ${String(yaInscrito.membershipEndDate || "").split("-").reverse().join("/")}.`
+                      : "No tiene membresías registradas.";
+                return (
+                  <div className={`sm:col-span-2 rd-aviso-dni rounded-xl border p-3 ${ex ? "bg-slate-50 border-slate-300" : st === "vencido" ? "bg-amber-50 border-amber-200" : "bg-emerald-50 border-emerald-200"}`}>
+                    <p className="text-sm font-black text-slate-900">
+                      {titulo} · <span className="font-mono">{yaInscrito.codeLabel}</span> · {yaInscrito.fullName}
+                    </p>
+                    <p className="text-xs text-slate-700 mt-0.5">
+                      {detalle} {yaInscrito.deBaja ? "Estaba dado de baja: al renovar se reactiva. " : ""}
+                      Este DNI ya está en el sistema: se renueva con su <b>mismo código</b>, sin crear otro alumno.
+                    </p>
+                    <button type="button" onClick={irARenovar} className="mt-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black cursor-pointer">
+                      🔄 Renovar membresía de {String(yaInscrito.fullName).split(" ")[0]}
+                    </button>
+                  </div>
+                );
+              })()}
 
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
@@ -625,7 +676,9 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-xs transition-all cursor-pointer"
+              disabled={!!yaInscrito}
+              title={yaInscrito ? "Este DNI ya está inscrito: usa «Renovar membresía»" : undefined}
+              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Completar Inscripción
             </button>

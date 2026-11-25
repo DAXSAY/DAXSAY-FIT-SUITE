@@ -109,7 +109,11 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
           ? member.debtStatus === "vencida"
           : statusFilter === "frozen"
             ? !!member.freeze?.current
-            : member.status === statusFilter);
+            : statusFilter === "exalumno"
+              ? member.memberState === "exalumno"
+              : statusFilter === "expired"
+                ? member.status === "expired" && member.memberState !== "exalumno"
+                : member.status === statusFilter);
     const matchesTrainer =
       trainerFilter === "all" || member.assignedTrainerId === trainerFilter;
 
@@ -137,6 +141,19 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
 
   const renewTotal = Math.max(0, (plans.find((p) => p.id === selectedPlanId)?.price || 0) - discountAmount);
   const renewLeavesDebt = renewPaid !== "" && Number(renewPaid) < renewTotal - 0.004;
+
+  // Otra pantalla (Nuevo alumno) pide renovar a un alumno que ya existe: mismo código
+  useEffect(() => {
+    const abrir = (datos) => {
+      if (!datos?.id) return;
+      setRenewingMember(members.find((m) => String(m.id) === String(datos.id)) || datos);
+      window.__rdRenovar = null;
+    };
+    if (window.__rdRenovar) abrir(window.__rdRenovar);
+    const alPedir = (e) => abrir(e.detail);
+    window.addEventListener("radical:renovar-alumno", alPedir);
+    return () => window.removeEventListener("radical:renovar-alumno", alPedir);
+  }, [members]);
 
   const handleRenewSubmit = async (e) => {
     e.preventDefault();
@@ -246,7 +263,18 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
             }`}
           >
-            Vencidos ({members.filter((m) => m.status === "expired").length})
+            Vencidos ({members.filter((m) => m.status === "expired" && m.memberState !== "exalumno").length})
+          </button>
+          <button
+            onClick={() => setStatusFilter("exalumno")}
+            title={`Más de ${members[0]?.exAlumnoDays || 30} días sin renovar (lo fija gerencia en Usuarios › Configuración)`}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+              statusFilter === "exalumno"
+                ? "bg-slate-700 text-white"
+                : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-300"
+            }`}
+          >
+            🔁 Exalumnos ({members.filter((m) => m.memberState === "exalumno").length})
           </button>
           <button
             onClick={() => setStatusFilter("debt")}
@@ -448,8 +476,11 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                               ? "bg-green-50 text-green-700 border border-green-200"
                               : member.status === "expiring_soon"
                                 ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                : "bg-red-50 text-red-700 border border-red-200"
+                                : member.memberState === "exalumno"
+                                  ? "bg-slate-100 text-slate-700 border border-slate-300"
+                                  : "bg-red-50 text-red-700 border border-red-200"
                           }`}
+                          title={member.status === "expired" && member.daysExpired ? `Vencida hace ${member.daysExpired} días` : undefined}
                         >
                           {member.status === "active" && (
                             <UserCheck className="w-3 h-3" />
@@ -469,8 +500,13 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                             ? "Vigente"
                             : member.status === "expiring_soon"
                               ? "Por Vencer"
-                              : "Vencido"}
+                              : member.memberState === "exalumno"
+                                ? "Exalumno"
+                                : "Vencido"}
                         </span>
+                        {member.status === "expired" && member.daysExpired > 0 && (
+                          <span className="block text-[10px] text-slate-500 mt-0.5">hace {member.daysExpired} d</span>
+                        )}
                       </td>
 
                       {/* Action buttons */}
@@ -979,6 +1015,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Alumno: {renewingMember.fullName}
+                  {renewingMember.codeLabel && <> · Código <b className="font-mono">{renewingMember.codeLabel}</b> (se mantiene)</>}
                 </p>
               </div>
               <button
@@ -988,6 +1025,26 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 ✕
               </button>
             </div>
+
+            {/* Qué tipo de ingreso será: renovación (dentro del plazo) o exalumno recuperado */}
+            {(() => {
+              const dias = renewingMember.memberState === "activo" || renewingMember.memberState === "por_vencer" ? 0 : Number(renewingMember.daysExpired || 0);
+              const plazo = Number(renewingMember.exAlumnoDays || 30);
+              const ex = dias > plazo;
+              return (
+                <div className={`mt-3 rounded-xl border px-3 py-2.5 text-xs ${ex ? "rd-aviso-exalumno bg-slate-50 border-slate-300 text-slate-800" : "bg-emerald-50 border-emerald-200 text-emerald-900"}`}>
+                  <p className="font-black text-sm">
+                    {ex ? "🔁 Exalumno recuperado" : dias > 0 ? "🔄 Renovación" : "🔄 Renovación anticipada"}
+                  </p>
+                  <p className="mt-0.5">
+                    {dias > 0
+                      ? `Su membresía venció hace ${dias} día${dias === 1 ? "" : "s"}${renewingMember.membershipEndDate ? ` (${fechaCorta(renewingMember.membershipEndDate)})` : ""}. ${ex ? `Pasó el plazo de ${plazo} días: cuenta como exalumno que vuelve.` : `Está dentro del plazo de ${plazo} días: cuenta como renovación.`}`
+                      : "Su membresía sigue vigente: la nueva empieza al día siguiente de que termine."}
+                    {" "}Se renueva con su mismo código; no se crea otro alumno.
+                  </p>
+                </div>
+              );
+            })()}
 
             <form onSubmit={handleRenewSubmit} className="space-y-3.5 my-4">
               <div>

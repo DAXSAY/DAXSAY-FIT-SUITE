@@ -1,4 +1,5 @@
 // Alumnos, matrículas y renovaciones
+import { tipoIngreso, soporte } from "../actualizaciones.js";
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { consultar, transaccion, enFila } from "../db.js";
@@ -35,11 +36,13 @@ export const SQL_VENCE_DEUDA = `(SELECT MIN(IFNULL(mv.fecha_limite_pago, mv.fech
    WHERE mv.idalumno = a.idalumno AND mv.estado <> 'anulada' AND ${saldoMatricula("mv")} > 0.004)`;
 
 // Última matrícula (no anulada) de cada alumno
-const SQL_ALUMNOS = `
+const SQL_ALUMNOS_BASE = `
   SELECT a.*, m.idmatricula, m.idplan, m.fecha_inicio, m.fecha_fin, m.monto, m.precio_total, m.estado AS estado_matricula,
          DATE(m.fecha_registro) AS fecha_pago, p.nombre AS plan,
          ua.usuario AS usuario_acceso, ua.activo AS usuario_activo,
          (SELECT COUNT(*) FROM matriculas mc WHERE mc.idalumno = a.idalumno AND mc.estado <> 'anulada') AS num_matriculas,
+         __REINGRESOS__
+         CAST(IFNULL((SELECT cf.valor FROM configuracion cf WHERE cf.clave = 'dias_exalumno'), '30') AS UNSIGNED) AS plazo_exalumno,
          ${SQL_DEUDA} AS deuda, ${SQL_VENCE_DEUDA} AS vence_deuda,
          IFNULL(mg.fecha_fin, m.fecha_fin) AS cong_fin_membresia,
          COALESCE(mg.congelamiento_dias, pg.congelamiento_dias, m.congelamiento_dias, p.congelamiento_dias, 0) AS cong_total,
@@ -66,6 +69,15 @@ const SQL_ALUMNOS = `
           ORDER BY m3.fecha_inicio LIMIT 1)
     LEFT JOIN planes pg ON pg.idplan = mg.idplan
    WHERE a.activo = 1`;
+
+// Cuántas veces volvió como exalumno (solo si la base ya tiene el script 36)
+const sqlAlumnos = () =>
+  SQL_ALUMNOS_BASE.replace(
+    "__REINGRESOS__",
+    soporte.tipoIngreso
+      ? "(SELECT COUNT(*) FROM matriculas mr WHERE mr.idalumno = a.idalumno AND mr.estado <> 'anulada' AND mr.tipo_ingreso = 'reingreso') AS num_reingresos,"
+      : "0 AS num_reingresos,",
+  );
 
 // hoy() = fecha de hoy en Lima (en caché, ver congelamiento.js)
 
@@ -141,7 +153,27 @@ function aAlumno(f) {
     freeze: resumenCongelamiento(f),
     code: f.codigo != null ? Number(f.codigo) : null,
     codeLabel: codigoAlumno(f.codigo, f.nombres, f.apellidos),
+    // Activo · por vencer · vencido (dentro del plazo) · exalumno (pasó el plazo que fija gerencia)
+    ...situacionAlumno(f.fecha_fin, Number(f.plazo_exalumno) || 30),
+    comebacks: Number(f.num_reingresos || 0),
   };
+}
+
+/** Situación del alumno según el fin de su última membresía y el plazo de exalumno */
+export function situacionAlumno(fechaFin, plazo = 30) {
+  if (!fechaFin) return { memberState: "sin_matricula", daysExpired: null, exAlumnoDays: plazo };
+  const vencido = diasEntre(fechaFin, hoy());
+  let memberState = "activo";
+  if (vencido > plazo) memberState = "exalumno";
+  else if (vencido > 0) memberState = "vencido";
+  else if (vencido >= -7) memberState = "por_vencer";
+  return { memberState, daysExpired: vencido > 0 ? vencido : 0, exAlumnoDays: plazo };
+}
+
+async function plazoExalumno(cx) {
+  const q = "SELECT valor FROM configuracion WHERE clave = 'dias_exalumno'";
+  const [f] = cx ? (await cx.execute(q))[0] : await consultar(q);
+  return Number(f?.valor) || 30;
 }
 
 
@@ -262,7 +294,7 @@ export async function crearOCambiarCuenta(cx, idalumno, dni, creadoPor) {
 }
 
 async function obtener(id) {
-  const filas = await consultar(`${SQL_ALUMNOS} AND a.idalumno = ?`, [id]);
+  const filas = await consultar(`${sqlAlumnos()} AND a.idalumno = ?`, [id]);
   if (!filas.length) throw new ErrorHttp(404, "Alumno no encontrado");
   return aAlumno(filas[0]);
 }
@@ -275,8 +307,42 @@ router.get("/", async (req, res, next) => {
       if (!u?.idalumno) return res.json([]);
       return res.json([await obtener(u.idalumno)]);
     }
-    const filas = await consultar(`${SQL_ALUMNOS} ORDER BY a.idalumno DESC`);
+    const filas = await consultar(`${sqlAlumnos()} ORDER BY a.idalumno DESC`);
     res.json(filas.map(aAlumno));
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET /api/alumnos/por-dni/:dni  -> ¿ya estuvo inscrito? (también si está de baja)
+// Recepción lo usa al matricular: si existe, se renueva con su MISMO código.
+router.get("/por-dni/:dni", requierePermiso("members", "ver"), async (req, res, next) => {
+  try {
+    const dni = String(req.params.dni || "").trim();
+    if (!/^\d{8}$/.test(dni)) return res.json({ existe: false });
+    const [a] = await consultar(
+      `SELECT a.idalumno, a.codigo, a.nombres, a.apellidos, a.activo, a.telefono,
+              (SELECT DATE_FORMAT(MAX(m.fecha_fin), '%Y-%m-%d') FROM matriculas m WHERE m.idalumno = a.idalumno AND m.estado <> 'anulada') AS fin,
+              (SELECT p.nombre FROM matriculas m JOIN planes p ON p.idplan = m.idplan
+                WHERE m.idalumno = a.idalumno AND m.estado <> 'anulada' ORDER BY m.fecha_fin DESC, m.idmatricula DESC LIMIT 1) AS plan,
+              (SELECT COUNT(*) FROM matriculas m WHERE m.idalumno = a.idalumno AND m.estado <> 'anulada') AS matriculas
+         FROM alumnos a WHERE a.dni = ?`,
+      [dni],
+    );
+    if (!a) return res.json({ existe: false });
+    const sit = situacionAlumno(a.fin, await plazoExalumno());
+    res.json({
+      existe: true,
+      id: String(a.idalumno),
+      codeLabel: codigoAlumno(a.codigo, a.nombres, a.apellidos),
+      fullName: `${a.nombres} ${a.apellidos}`.trim(),
+      phone: a.telefono || "",
+      deBaja: !a.activo,
+      membershipEndDate: a.fin,
+      planName: a.plan || "",
+      enrollmentsCount: Number(a.matriculas || 0),
+      ...sit,
+    });
   } catch (e) {
     next(e);
   }
@@ -300,6 +366,11 @@ router.post("/", requierePermiso("members", "crear"), async (req, res, next) => 
     const limite = pagado < precio - 0.004 ? validarFechaLimite(d.debtDueDate) : null;
     const [nombres, apellidos] = separarNombre(d.fullName);
     const correo = vacio(d.email);
+    // El DNI identifica al alumno: si ya estuvo inscrito no se crea otro código, se renueva
+    const [ya] = await consultar("SELECT idalumno, codigo, nombres, apellidos FROM alumnos WHERE dni = ?", [dni]);
+    if (ya) {
+      throw new ErrorHttp(409, `Este DNI ya es del alumno ${codigoAlumno(ya.codigo, ya.nombres, ya.apellidos)} (${ya.nombres} ${ya.apellidos}). Usa «Renovar membresía»: se mantiene su mismo código.`);
+    }
 
     await exigirCajaAbierta(req);
     let crm = null;
@@ -420,6 +491,13 @@ router.post("/:id/renovar", requierePermiso(["members", "alerts"], "crear"), sol
     const { planId, paymentMethod, discount = 0, amountPaid, debtDueDate } = req.body || {};
     const [plan] = await consultar("SELECT idplan, precio, congelamiento_dias, congelamiento_partes, congelamiento_min_dias FROM planes WHERE idplan = ? AND activo = 1", [planId]);
     if (!plan) throw new ErrorHttp(400, "El plan no existe");
+    // Un exalumno dado de baja vuelve con su mismo código: se reactiva
+    const [baja] = await consultar("SELECT activo FROM alumnos WHERE idalumno = ?", [req.params.id]);
+    if (!baja) throw new ErrorHttp(404, "Alumno no encontrado");
+    if (!baja.activo) {
+      await consultar("UPDATE alumnos SET activo = 1 WHERE idalumno = ?", [req.params.id]);
+      await consultar("UPDATE usuarios SET activo = 1 WHERE idalumno = ?", [req.params.id]);
+    }
     const actual = await obtener(req.params.id);
 
     // Si la membresía sigue vigente, la nueva empieza al día siguiente del fin
@@ -436,15 +514,24 @@ router.post("/:id/renovar", requierePermiso(["members", "alerts"], "crear"), sol
     }
     const limite = monto < precio - 0.004 ? validarFechaLimite(debtDueDate) : null;
     await exigirCajaAbierta(req);
+    // ¿Renovación (volvió dentro del plazo) o exalumno recuperado (después del plazo)?
+    const [prev] = await consultar(
+      "SELECT DATE_FORMAT(MAX(fecha_fin), '%Y-%m-%d') AS fin FROM matriculas WHERE idalumno = ? AND estado <> 'anulada'",
+      [req.params.id],
+    );
+    const ingreso = tipoIngreso(prev?.fin, inicio, await plazoExalumno());
+    const tipo = ingreso.tipo === "nuevo" ? "renovacion" : ingreso.tipo;
+    const extra = soporte.tipoIngreso ? ", tipo_ingreso, dias_sin_membresia" : "";
     await consultar(
-      `INSERT INTO matriculas (idalumno, idplan, identrenador, fecha_inicio, monto, precio_total, fecha_limite_pago, es_renovacion, metodo_pago, idusuario_registro,
-                              congelamiento_dias, congelamiento_partes, congelamiento_min_dias)
-       VALUES (?,?,?,?,?,?,?,1,?,?,?,?,?)`,
+      `INSERT INTO matriculas (idalumno, idplan, identrenador, fecha_inicio, monto, precio_total, fecha_limite_pago, es_renovacion${extra},
+                              metodo_pago, idusuario_registro, congelamiento_dias, congelamiento_partes, congelamiento_min_dias)
+       VALUES (?,?,?,?,?,?,?,1${soporte.tipoIngreso ? ",?,?" : ""},?,?,?,?,?)`,
       [req.params.id, plan.idplan, vacio(actual.assignedTrainerId), inicio, Math.round(monto * 100) / 100, Math.round(precio * 100) / 100, limite,
+       ...(soporte.tipoIngreso ? [tipo, ingreso.dias] : []),
        METODOS.includes(paymentMethod) ? paymentMethod : "efectivo", req.usuario.idusuario,
        plan.congelamiento_dias, plan.congelamiento_partes, plan.congelamiento_min_dias],
     );
-    res.json(await obtener(req.params.id));
+    res.json({ ...(await obtener(req.params.id)), ingreso: { ...ingreso, reactivado: !baja.activo } });
   } catch (e) {
     next(e);
   }

@@ -2,6 +2,7 @@
 // REPORTES (administración): datos completos para filtrar en pantalla y
 // exportar a Excel/PDF. Cada consulta sale de las tablas reales.
 // =====================================================================
+import { soporte } from "../actualizaciones.js";
 import { Router } from "express";
 import { readFile } from "node:fs/promises";
 import { consultar } from "../db.js";
@@ -148,6 +149,8 @@ router.get("/congelamientos", async (req, res, next) => {
 // GET /api/reportes/alumnos  -> todos los alumnos con su situación actual
 router.get("/alumnos", async (req, res, next) => {
   try {
+    const [cfg] = await consultar("SELECT valor FROM configuracion WHERE clave = 'dias_exalumno'");
+    const plazo = Number(cfg?.valor) || 30;
     const filas = await consultar(
       `SELECT a.idalumno, a.codigo, a.dni, a.nombres, a.apellidos, a.sexo, a.fecha_nacimiento, a.telefono, a.correo, a.direccion,
               a.objetivo, a.restricciones_medicas, a.fecha_registro, a.activo,
@@ -180,7 +183,8 @@ router.get("/alumnos", async (req, res, next) => {
         let estado = "Sin matrícula";
         if (!f.activo) estado = "De baja";
         else if (f.congelado_hasta || f.estado_matricula === "congelada") estado = "Congelado";
-        else if (f.fecha_fin) estado = f.dias_restantes < 0 ? "Vencido" : f.dias_restantes <= 7 ? "Por vencer" : "Activo";
+        else if (f.fecha_fin)
+          estado = f.dias_restantes < -plazo ? "Exalumno" : f.dias_restantes < 0 ? "Vencido" : f.dias_restantes <= 7 ? "Por vencer" : "Activo";
         return {
           id: String(f.idalumno),
           codigo: codigoAlumno(f.codigo, f.nombres, f.apellidos),
@@ -227,7 +231,8 @@ router.get("/matriculas", async (req, res, next) => {
     const [desde, hasta] = rango(req);
     const filas = await consultar(
       `SELECT m.idmatricula, m.fecha_registro, m.fecha_inicio, m.fecha_fin, m.monto, IFNULL(m.precio_total, m.monto) AS precio,
-              m.metodo_pago, m.estado, m.es_renovacion, p.nombre AS plan, p.idplan,
+              m.metodo_pago, m.estado, m.es_renovacion, ${soporte.tipoIngreso ? "m.tipo_ingreso, m.dias_sin_membresia" : "NULL AS tipo_ingreso, NULL AS dias_sin_membresia"},
+              p.nombre AS plan, p.idplan,
               a.idalumno, a.dni, CONCAT(a.nombres, ' ', a.apellidos) AS alumno, a.sexo,
               TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) AS edad,
               u.usuario AS registro_usuario,
@@ -256,7 +261,9 @@ router.get("/matriculas", async (req, res, next) => {
           edad: f.edad != null ? Number(f.edad) : null,
           planId: String(f.idplan),
           plan: f.plan,
-          tipo: f.es_renovacion ? "Renovación" : "Nueva",
+          // Nueva · Renovación (volvió dentro del plazo) · Exalumno recuperado (después del plazo)
+          tipo: f.tipo_ingreso === "reingreso" ? "Exalumno recuperado" : f.es_renovacion ? "Renovación" : "Nueva",
+          diasSinMembresia: f.dias_sin_membresia != null ? Number(f.dias_sin_membresia) : null,
           inicio: f.fecha_inicio,
           vence: f.fecha_fin,
           precio: Number(f.precio),

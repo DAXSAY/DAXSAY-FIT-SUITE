@@ -10,6 +10,8 @@ const CLAVES = [
   "pct_gym_entrenamiento", "pct_gym_fisioterapia", "pct_gym_nutricion",
   // Reglas de descuento por tardanza del personal (JSON)
   "reglas_tardanza",
+  // Días sin renovar para que un alumno cuente como exalumno (gerencia)
+  "dias_exalumno",
 ];
 
 // GET /api/configuracion  -> todos los usuarios conectados (el portal usa el WhatsApp)
@@ -36,6 +38,11 @@ router.put("/", requierePermiso("users", "editar"), async (req, res, next) => {
         const n = Number(valor);
         if (!Number.isFinite(n) || n < 0 || n > 100) throw new ErrorHttp(400, "El porcentaje debe estar entre 0 y 100");
         valor = String(Math.round(n * 10) / 10);
+      }
+      if (clave === "dias_exalumno") {
+        const n = Math.round(Number(valor));
+        if (!Number.isFinite(n) || n < 1 || n > 365) throw new ErrorHttp(400, "Los días para exalumno deben estar entre 1 y 365");
+        valor = String(n);
       }
       if (clave === "reglas_tardanza" && valor) {
         try {

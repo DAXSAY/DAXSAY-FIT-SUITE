@@ -233,6 +233,7 @@ const ESTILO_ESTADO = {
   Activa: ["bg-emerald-100 text-emerald-800 border-emerald-200", "border-l-emerald-500"],
   "Por vencer": ["bg-amber-100 text-amber-800 border-amber-200", "border-l-amber-500"],
   Vencido: ["bg-rose-100 text-rose-800 border-rose-200", "border-l-rose-500"],
+  Exalumno: ["bg-violet-100 text-violet-800 border-violet-200", "border-l-violet-500"],
   Vencida: ["bg-rose-100 text-rose-800 border-rose-200", "border-l-rose-500"],
   Congelado: ["bg-sky-100 text-sky-800 border-sky-200", "border-l-sky-500"],
   Congelada: ["bg-sky-100 text-sky-800 border-sky-200", "border-l-sky-500"],
@@ -449,7 +450,7 @@ const ReporteAlumnos = () => {
       key: "estado",
       label: "Estado",
       clase: (a) =>
-        `font-bold ${a.estado === "Vencido" ? "text-rose-600" : a.estado === "Por vencer" ? "text-amber-600" : a.estado === "Activo" ? "text-emerald-600" : a.estado === "Congelado" ? "text-sky-600" : "text-slate-500"}`,
+        `font-bold ${a.estado === "Vencido" ? "text-rose-600" : a.estado === "Por vencer" ? "text-amber-600" : a.estado === "Activo" ? "text-emerald-600" : a.estado === "Congelado" ? "text-sky-600" : a.estado === "Exalumno" ? "text-violet-600" : "text-slate-500"}`,
     },
     {
       key: "congelamiento",
@@ -504,6 +505,7 @@ const ReporteAlumnos = () => {
         {/* Atajos */}
         <Atajos>
           <Chip activo={f.estado === "Vencido"} onClick={() => rapido({ estado: "Vencido" })}>Vencidos</Chip>
+          <Chip activo={f.estado === "Exalumno"} onClick={() => rapido({ estado: "Exalumno" })}>🔁 Exalumnos</Chip>
           <Chip activo={f.estado === "Por vencer"} onClick={() => rapido({ estado: "Por vencer" })}>Por vencer (7 días)</Chip>
           <Chip activo={f.deuda === "si"} onClick={() => rapido({ deuda: "si" })}>Con deuda</Chip>
           <Chip activo={f.registro === "hoy"} onClick={() => rapido({ registro: "hoy" })}>Matriculados hoy</Chip>
@@ -523,7 +525,7 @@ const ReporteAlumnos = () => {
           <Grupo titulo="Membresía" color="blue">
             <div className="grid grid-cols-2 gap-2">
               <Sel label="Estado" value={f.estado} onChange={(v) => set("estado", v)}>
-                {["todos", "Activo", "Por vencer", "Vencido", "Congelado", "Sin matrícula", "De baja"].map((x) => (
+                {["todos", "Activo", "Por vencer", "Vencido", "Exalumno", "Congelado", "Sin matrícula", "De baja"].map((x) => (
                   <option key={x} value={x}>{x === "todos" ? "Todos" : x}</option>
                 ))}
               </Sel>
@@ -700,10 +702,16 @@ const ReporteMatriculas = () => {
       key: "tipo",
       label: "Tipo",
       ver: (m) => (
-        <span className={`inline-block px-2 py-0.5 rounded-full border text-xs font-bold ${m.tipo === "Renovación" ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
-          {m.tipo}
+        <span className={`inline-block px-2 py-0.5 rounded-full border text-xs font-bold ${m.tipo === "Renovación" ? "bg-indigo-50 text-indigo-700 border-indigo-200" : m.tipo === "Exalumno recuperado" ? "bg-violet-50 text-violet-700 border-violet-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+          {m.tipo === "Renovación" ? "🔄 " : m.tipo === "Exalumno recuperado" ? "🔁 " : "🆕 "}{m.tipo}
         </span>
       ),
+    },
+    {
+      key: "diasSinMembresia",
+      label: "Días sin membresía",
+      excel: (m) => (m.diasSinMembresia == null ? "" : m.diasSinMembresia),
+      ver: (m) => (m.diasSinMembresia == null ? "—" : m.diasSinMembresia === 0 ? "Sin pausa" : `${m.diasSinMembresia} d`),
     },
     { key: "inicio", label: "Inicio", excel: (m) => fCorta(m.inicio) },
     { key: "vence", label: "Vence", excel: (m) => fCorta(m.vence) },
@@ -718,6 +726,7 @@ const ReporteMatriculas = () => {
     ["Matrículas", filas.length],
     ["Nuevas", filas.filter((m) => m.tipo === "Nueva").length],
     ["Renovaciones", filas.filter((m) => m.tipo === "Renovación").length],
+    ["Exalumnos recuperados", filas.filter((m) => m.tipo === "Exalumno recuperado").length],
     ["Vendido", soles(t.precio)],
     ["Cobrado", soles(t.pagado)],
     ["Saldo pendiente", soles(t.saldo)],
@@ -730,6 +739,7 @@ const ReporteMatriculas = () => {
             ["Todas", {}],
             ["Solo nuevas", { tipo: "Nueva" }],
             ["Renovaciones", { tipo: "Renovación" }],
+            ["🔁 Exalumnos recuperados", { tipo: "Exalumno recuperado" }],
             ["Con saldo pendiente", { saldo: "si" }],
             ["Pagadas completas", { saldo: "no" }],
             ["Pagadas en efectivo", { metodo: "efectivo" }],
@@ -753,9 +763,10 @@ const ReporteMatriculas = () => {
             {plans.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </Sel>
           <Sel label="Tipo" value={f.tipo} onChange={(v) => set("tipo", v)}>
-            <option value="">Nuevas y renovaciones</option>
+            <option value="">Todas</option>
             <option value="Nueva">Solo nuevas</option>
             <option value="Renovación">Solo renovaciones</option>
+            <option value="Exalumno recuperado">Solo exalumnos recuperados</option>
           </Sel>
           <Sel label="Método de pago" value={f.metodo} onChange={(v) => set("metodo", v)}>
             <option value="">Todos</option>
@@ -777,7 +788,7 @@ const ReporteMatriculas = () => {
           </Sel>
         </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
         {totales.map(([k, v]) => <Kpi key={k} label={k} value={v} tone={k === "Saldo pendiente" ? "text-rose-600" : k === "Cobrado" ? "text-emerald-600" : "text-slate-900"} />)}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -4947,3 +4947,72 @@ ALTER TABLE rutinas MODIFY objetivo
 SELECT 'Listo: objetivos ampliados en alumnos y rutinas' AS resultado;
 
 DELIMITER ;
+
+
+-- #####################################################################
+-- 36_renovaciones_y_exalumnos.sql
+-- #####################################################################
+-- =====================================================================
+-- 36 · Renovaciones y exalumnos
+-- Ejecutar UNA VEZ en MySQL Workbench (root). Se puede repetir sin problema.
+--
+-- El DNI identifica al alumno: si vuelve, se renueva con su MISMO código
+-- (nunca se crea otro). Cada matrícula guarda cómo entró:
+--   nuevo      = primera vez en el gimnasio
+--   renovacion = volvió dentro del plazo (al día siguiente, a la semana…)
+--   reingreso  = exalumno recuperado: volvió después del plazo
+-- El plazo lo fija gerencia (configuración «dias_exalumno», 30 por defecto).
+-- Estados del alumno (vista v_estado_alumnos):
+--   activo · por_vencer (últimos 7 días) · vencido (1 a N días) · exalumno (más de N días)
+-- =====================================================================
+USE gestion_radicalgym;
+DELIMITER ;
+
+INSERT IGNORE INTO configuracion (clave, valor, descripcion)
+VALUES ('dias_exalumno', '30', 'Días sin renovar para que un alumno cuente como exalumno (gerencia)');
+
+SET @hay := (SELECT COUNT(*) FROM information_schema.COLUMNS
+              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'matriculas' AND COLUMN_NAME = 'tipo_ingreso');
+SET @sql := IF(@hay = 0,
+  "ALTER TABLE matriculas
+     ADD COLUMN tipo_ingreso ENUM('nuevo','renovacion','reingreso') NOT NULL DEFAULT 'nuevo'
+         COMMENT 'nuevo = primera vez · renovacion = volvió dentro del plazo · reingreso = exalumno recuperado' AFTER es_renovacion,
+     ADD COLUMN dias_sin_membresia SMALLINT NULL
+         COMMENT 'Días que estuvo sin membresía antes de esta matrícula (0 = sin pausa)' AFTER tipo_ingreso",
+  'SELECT 1');
+PREPARE p FROM @sql; EXECUTE p; DEALLOCATE PREPARE p;
+
+-- Se clasifican las matrículas que ya existían (en orden, alumno por alumno)
+SET @plazo := CAST(IFNULL((SELECT valor FROM configuracion WHERE clave = 'dias_exalumno'), '30') AS UNSIGNED);
+UPDATE matriculas m
+  JOIN (SELECT idmatricula,
+               MAX(fecha_fin) OVER (PARTITION BY idalumno ORDER BY fecha_inicio, idmatricula
+                                    ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS fin_anterior
+          FROM matriculas WHERE estado <> 'anulada') x ON x.idmatricula = m.idmatricula
+   SET m.dias_sin_membresia = IF(x.fin_anterior IS NULL, NULL, GREATEST(DATEDIFF(m.fecha_inicio, x.fin_anterior) - 1, 0)),
+       m.tipo_ingreso = CASE
+                          WHEN x.fin_anterior IS NULL THEN 'nuevo'
+                          WHEN DATEDIFF(m.fecha_inicio, x.fin_anterior) > @plazo THEN 'reingreso'
+                          ELSE 'renovacion'
+                        END,
+       m.es_renovacion = IF(x.fin_anterior IS NULL, 0, 1);
+
+-- Estado de cada alumno según el fin de su última membresía y el plazo de gerencia
+CREATE OR REPLACE VIEW v_estado_alumnos AS
+SELECT a.idalumno, a.codigo, a.dni, CONCAT_WS(' ', a.nombres, a.apellidos) AS alumno, a.activo,
+       u.fecha_fin AS vence,
+       DATEDIFF(CURDATE(), u.fecha_fin) AS dias_vencido,
+       CAST(IFNULL((SELECT c.valor FROM configuracion c WHERE c.clave = 'dias_exalumno'), '30') AS UNSIGNED) AS plazo_exalumno,
+       CASE
+         WHEN u.fecha_fin IS NULL THEN 'sin_matricula'
+         WHEN u.fecha_fin >= CURDATE() + INTERVAL 8 DAY THEN 'activo'
+         WHEN u.fecha_fin >= CURDATE() THEN 'por_vencer'
+         WHEN DATEDIFF(CURDATE(), u.fecha_fin) <= CAST(IFNULL((SELECT c.valor FROM configuracion c WHERE c.clave = 'dias_exalumno'), '30') AS UNSIGNED) THEN 'vencido'
+         ELSE 'exalumno'
+       END AS estado
+  FROM alumnos a
+  LEFT JOIN (SELECT idalumno, MAX(fecha_fin) AS fecha_fin FROM matriculas WHERE estado <> 'anulada' GROUP BY idalumno) u
+         ON u.idalumno = a.idalumno;
+
+SELECT tipo_ingreso, COUNT(*) AS matriculas FROM matriculas GROUP BY tipo_ingreso;
+SELECT 'Listo: renovaciones con el mismo código, estados y exalumnos' AS resultado;
