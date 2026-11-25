@@ -218,7 +218,11 @@ export const PhysiotherapyModule = () => {
   } = useGym();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [filtroFisio, setFiltroFisio] = useState(""); // todos · lesiones · con_sesiones · sin_eval · dolor_alto
+  // Filtros de pacientes (se combinan): estado de la atención · nivel de dolor · diagnóstico · parte del cuerpo
+  const [filtroFisio, setFiltroFisio] = useState(""); // estado: con_sesiones · sin_eval · lesion_sin_eval · control · vencidos
+  const [dolorF, setDolorF] = useState(""); // alto · moderado · leve
+  const [diagF, setDiagF] = useState(""); // diagnóstico presuntivo de su última evaluación
+  const [parteF, setParteF] = useState(""); // parte del cuerpo con dolor (id de zona)
   const [selectedMemberId, setSelectedMemberId] = useState(null);
   // Modals state
   const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false);
@@ -425,29 +429,43 @@ export const PhysiotherapyModule = () => {
   }, [physioRecords, searchTerm]);
 
   const hoyFisio = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
-  // Zonas que aparecen en la última evaluación de cada alumno (para filtrar por zona)
-  const zonasFisio = useMemo(() => {
-    const c = {};
-    members.forEach((m) => (ultimaSesion.get(m.id)?.affectedZones || []).forEach((z) => (c[z] = (c[z] || 0) + 1)));
-    return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  // Estado de la atención de cada paciente
+  const ESTADO_FISIO = {
+    con_sesiones: (m, u) => !!u,
+    sin_eval: (m, u) => !u,
+    lesion_sin_eval: (m, u) => !u && conLesion(m),
+    control: (m, u) => !!u?.nextAppointmentDate && String(u.nextAppointmentDate) <= hoyFisio,
+    vencidos: (m) => m.status === "expired",
+  };
+  // Nivel de dolor según la EVA de su última evaluación
+  const nivelDolor = (u) => {
+    const e = Number(u?.painLevelEVA);
+    if (!u || !Number.isFinite(e) || e <= 0) return "";
+    return e >= 6 ? "alto" : e >= 4 ? "moderado" : "leve";
+  };
+  // Lo que aparece en las últimas evaluaciones (solo se muestran etiquetas con al menos 1 paciente)
+  const { diagnosticosFisio, partesFisio } = useMemo(() => {
+    const d = {}, z = {};
+    members.forEach((m) => {
+      const u = ultimaSesion.get(m.id);
+      (u?.pathologies || []).forEach((x) => (d[x] = (d[x] || 0) + 1));
+      (u?.affectedZones || []).forEach((x) => (z[x] = (z[x] || 0) + 1));
+    });
+    const orden = (o) => Object.entries(o).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    return { diagnosticosFisio: orden(d).slice(0, 14), partesFisio: orden(z).slice(0, 14) };
   }, [members, ultimaSesion]);
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
-      if (!searchTerm.trim() && !filtroFisio) return false; // nada cargado hasta buscar o filtrar
+      if (!searchTerm.trim() && !filtroFisio && !dolorF && !diagF && !parteF) return false; // nada cargado hasta buscar o filtrar
       if (!coincideAlumno(m, searchTerm) && !coincidenciaFicha.has(String(m.id))) return false;
       const ult = ultimaSesion.get(m.id);
-      if (filtroFisio === "lesiones") return conLesion(m);
-      if (filtroFisio === "con_sesiones") return !!ult;
-      if (filtroFisio === "sin_eval") return !ult;
-      if (filtroFisio === "dolor_alto") return Number(ult?.painLevelEVA) >= 6;
-      if (filtroFisio === "dolor_medio") return Number(ult?.painLevelEVA) >= 4 && Number(ult?.painLevelEVA) < 6;
-      if (filtroFisio === "lesion_sin_eval") return !ult && conLesion(m);
-      if (filtroFisio === "control") return !!ult?.nextAppointmentDate && String(ult.nextAppointmentDate) <= hoyFisio;
-      if (filtroFisio === "vencidos") return m.status === "expired";
-      if (filtroFisio.startsWith("zona:")) return (ult?.affectedZones || []).includes(filtroFisio.slice(5));
+      if (filtroFisio && filtroFisio !== "todos" && !ESTADO_FISIO[filtroFisio]?.(m, ult)) return false;
+      if (dolorF && nivelDolor(ult) !== dolorF) return false;
+      if (diagF && !(ult?.pathologies || []).includes(diagF)) return false;
+      if (parteF && !(ult?.affectedZones || []).includes(parteF)) return false;
       return true;
     });
-  }, [members, searchTerm, filtroFisio, ultimaSesion, coincidenciaFicha]);
+  }, [members, searchTerm, filtroFisio, dolorF, diagF, parteF, ultimaSesion, coincidenciaFicha]);
 
   // Selected member object
   const selectedMember = useMemo(() => {
@@ -1362,33 +1380,57 @@ export const PhysiotherapyModule = () => {
         <PanelFiltros
           filas={[
             {
-              etiqueta: "Filtro",
+              etiqueta: "Pacientes",
               contenido: (
                 <ChipsFiltro
                   valor={filtroFisio}
                   onCambio={setFiltroFisio}
                   opciones={[
                     { k: "todos", emoji: "👥", texto: "Todos", n: members.length },
-                    { k: "lesiones", emoji: "⚠️", texto: "Con lesión", n: members.filter(conLesion).length },
-                    { k: "con_sesiones", emoji: "🩺", texto: "Evaluados", n: members.filter((m) => ultimaSesion.has(m.id)).length },
-                    { k: "sin_eval", emoji: "📋", texto: "Sin evaluación", n: members.filter((m) => !ultimaSesion.has(m.id)).length },
-                    { k: "lesion_sin_eval", emoji: "🚑", texto: "Lesión sin evaluar", n: members.filter((m) => !ultimaSesion.has(m.id) && conLesion(m)).length },
-                    { k: "dolor_alto", emoji: "🔥", texto: "Dolor alto (EVA 6+)", n: members.filter((m) => Number(ultimaSesion.get(m.id)?.painLevelEVA) >= 6).length },
-                    { k: "dolor_medio", emoji: "🟠", texto: "Dolor moderado (EVA 4–5)", n: members.filter((m) => { const e = Number(ultimaSesion.get(m.id)?.painLevelEVA); return e >= 4 && e < 6; }).length },
-                    { k: "control", emoji: "📅", texto: "Control pendiente", n: members.filter((m) => { const u = ultimaSesion.get(m.id); return !!u?.nextAppointmentDate && String(u.nextAppointmentDate) <= hoyFisio; }).length },
-                    { k: "vencidos", emoji: "⏳", texto: "Membresía vencida", n: members.filter((m) => m.status === "expired").length },
+                    { k: "con_sesiones", emoji: "🩺", texto: "Con evaluación", n: members.filter((m) => ESTADO_FISIO.con_sesiones(m, ultimaSesion.get(m.id))).length },
+                    { k: "lesion_sin_eval", emoji: "🚑", texto: "Lesión declarada sin evaluar", n: members.filter((m) => ESTADO_FISIO.lesion_sin_eval(m, ultimaSesion.get(m.id))).length },
+                    { k: "control", emoji: "📅", texto: "Control pendiente", n: members.filter((m) => ESTADO_FISIO.control(m, ultimaSesion.get(m.id))).length },
+                    { k: "vencidos", emoji: "⏳", texto: "Membresía vencida", n: members.filter((m) => ESTADO_FISIO.vencidos(m)).length },
                   ]}
                 />
               ),
             },
-            ...(zonasFisio.length
+            ...(members.some((m) => nivelDolor(ultimaSesion.get(m.id)))
               ? [{
-                  etiqueta: "Zona",
+                  etiqueta: "Dolor (EVA)",
                   contenido: (
                     <ChipsFiltro
-                      valor={filtroFisio}
-                      onCambio={setFiltroFisio}
-                      opciones={zonasFisio.map(([z, n]) => ({ k: `zona:${z}`, emoji: "📍", texto: z, n }))}
+                      valor={dolorF}
+                      onCambio={setDolorF}
+                      opciones={[
+                        { k: "alto", emoji: "🔴", texto: "Intenso (6–10)", n: members.filter((m) => nivelDolor(ultimaSesion.get(m.id)) === "alto").length },
+                        { k: "moderado", emoji: "🟠", texto: "Moderado (4–5)", n: members.filter((m) => nivelDolor(ultimaSesion.get(m.id)) === "moderado").length },
+                        { k: "leve", emoji: "🟢", texto: "Leve (1–3)", n: members.filter((m) => nivelDolor(ultimaSesion.get(m.id)) === "leve").length },
+                      ]}
+                    />
+                  ),
+                }]
+              : []),
+            ...(diagnosticosFisio.length
+              ? [{
+                  etiqueta: "Diagnóstico",
+                  contenido: (
+                    <ChipsFiltro valor={diagF} onCambio={setDiagF} opciones={diagnosticosFisio.map(([d, n]) => ({ k: d, emoji: "🩻", texto: d, n }))} />
+                  ),
+                }]
+              : []),
+            ...(partesFisio.length
+              ? [{
+                  etiqueta: "Dolor en",
+                  contenido: (
+                    <ChipsFiltro
+                      valor={parteF}
+                      onCambio={setParteF}
+                      opciones={partesFisio.map(([z, n]) => {
+                        const det = ZONE_DETAILS.find((x) => x.id === z);
+                        const t = det ? det.short || det.label : String(z);
+                        return { k: z, emoji: "📍", texto: t.charAt(0).toUpperCase() + t.slice(1), n };
+                      })}
                     />
                   ),
                 }]
@@ -1400,7 +1442,7 @@ export const PhysiotherapyModule = () => {
                   valor={searchTerm}
                   onCambio={setSearchTerm}
                   placeholder="Código, nombre, DNI… o lo que dice la ficha (hernia, L4, ibuprofeno)"
-                  total={searchTerm.trim() || filtroFisio ? filteredMembers.length : null}
+                  total={searchTerm.trim() || filtroFisio || dolorF || diagF || parteF ? filteredMembers.length : null}
                 />
               ),
             },
@@ -1412,7 +1454,7 @@ export const PhysiotherapyModule = () => {
             <div className="space-y-2.5 max-h-[720px] lg:max-h-[calc(100vh-9rem)] overflow-y-auto pr-1">
               {filteredMembers.length === 0 ? (
                 <div className="bg-white p-8 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
-                  {searchTerm.trim() || filtroFisio ? "No hay alumnos con los filtros aplicados." : "Escribe un código, nombre o DNI — o algo de la ficha (diagnóstico, medicamento, postura) — o elige un filtro."}
+                  {searchTerm.trim() || filtroFisio || dolorF || diagF || parteF ? "No hay pacientes con los filtros elegidos." : "Escribe un código, nombre o DNI — o algo de la ficha (diagnóstico, medicamento, postura) — o elige un filtro."}
                 </div>
               ) : (
                 filteredMembers.map((member) => {

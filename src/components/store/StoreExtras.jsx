@@ -231,10 +231,7 @@ export const KardexScreen = ({ product, onVolver }) => {
           ["Vendido", resumen.ventas],
           ["Mermas", resumen.mermas],
         ].map(([l, v]) => (
-          <div key={l} className="bg-white rounded-2xl border border-slate-200 p-4">
-            <span className="text-xs font-bold text-slate-400 uppercase block">{l}</span>
-            <span className="text-xl font-black text-slate-900">{v}</span>
-          </div>
+          <TarjetaKpi key={l} titulo={l} texto={String(v ?? 0)} emoji={{ "Stock actual": "📦", Ingresado: "📥", Vendido: "🛒", Mermas: "📉" }[l]} tono={{ "Stock actual": "teal", Ingresado: "azul", Vendido: "verde", Mermas: "rojo" }[l]} />
         ))}
       </div>
       <div className="bg-white rounded-2xl border border-slate-200 p-5 overflow-x-auto">

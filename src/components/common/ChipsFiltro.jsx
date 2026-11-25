@@ -32,9 +32,9 @@ export function PanelFiltros({ filas }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2">
       {filas.filter(Boolean).map((f) => (
-        <div key={f.etiqueta} className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 mr-1">{f.etiqueta}</span>
-          {f.contenido}
+        <div key={f.etiqueta} className="rd-fila-filtro">
+          <span className="rd-fila-filtro-et">{f.etiqueta}</span>
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">{f.contenido}</div>
         </div>
       ))}
     </div>

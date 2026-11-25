@@ -165,11 +165,11 @@ const Kpi = ({ label, value, tone = "text-slate-900", emoji }) => {
   const e = emoji || (String(label).match(/^\p{Extended_Pictographic}\uFE0F?/u) || [])[0] || EMOJI_KPI.find(([r]) => r.test(limpio))?.[1] || "📊";
   return (
     <div className={`rd-kpi rd-kpi-${TONO_KPI[color]} rd-kpi-rep`}>
-      <span className="rd-kpi-ico" aria-hidden><span className="rd-emoji">{e}</span></span>
-      <span className="min-w-0 flex-1">
-        <span className="rd-kpi-titulo line-clamp-2">{limpio}</span>
+      <span className="rd-kpi-cuerpo">
+        <span className="rd-kpi-titulo">{limpio}</span>
         <span className="rd-kpi-valor">{value}</span>
       </span>
+      <span className="rd-kpi-ico" aria-hidden><span className="rd-emoji">{e}</span></span>
     </div>
   );
 };

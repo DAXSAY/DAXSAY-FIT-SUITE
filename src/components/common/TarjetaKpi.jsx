@@ -67,33 +67,32 @@ const serieUtil = (serie) => Array.isArray(serie) && serie.length >= 3 && Math.m
 export const TarjetaKpi = ({ titulo, valor = 0, decimales = 0, prefijo = "", sufijo = "", sub, icono: I, emoji, tono = "teal", serie, progreso, activo = false, alerta = false, pulso = false, onClick, title, texto }) => {
   const k = alerta ? "rojo" : TONOS[tono] ? tono : "teal";
   const Comp = onClick ? "button" : "div";
+  const pct = progreso != null && Number.isFinite(Number(progreso)) ? Math.max(0, Math.min(100, Number(progreso))) : null;
   return (
     <Comp
       type={onClick ? "button" : undefined}
       onClick={onClick}
       title={title}
-      className={`rd-kpi rd-kpi-${k} @container rd-aparece w-full text-left ${onClick ? "rd-kpi-boton" : ""} ${activo ? "rd-kpi-activo" : ""} ${alerta ? "rd-kpi-alerta" : ""}`}
+      className={`rd-kpi rd-kpi-${k} rd-aparece w-full text-left ${onClick ? "rd-kpi-boton" : ""} ${activo ? "rd-kpi-activo" : ""} ${alerta ? "rd-kpi-alerta" : ""}`}
     >
+      <span className="rd-kpi-cuerpo">
+        <span className="rd-kpi-titulo">{titulo}</span>
+        <span className="rd-kpi-valor">
+          {texto != null ? texto : <NumeroAnimado valor={Number(valor) || 0} decimales={decimales} prefijo={prefijo} />}
+          {sufijo}
+        </span>
+        {sub && <span className="rd-kpi-sub" title={typeof sub === "string" ? sub : undefined}>{sub}</span>}
+        {pct != null && (
+          <span className="rd-kpi-barra" title={`${Math.round(pct)} %`}>
+            <span style={{ width: `${pct}%` }} />
+          </span>
+        )}
+      </span>
       {(I || emoji) && (
         <span className={`rd-kpi-ico ${pulso ? "animate-pulse" : ""}`} aria-hidden>
           {emoji ? <span className="rd-emoji">{emoji}</span> : <I className="w-5 h-5" />}
         </span>
       )}
-      <span className="min-w-0 flex-1">
-        <span className="rd-kpi-titulo line-clamp-2">{titulo}</span>
-        <span className="rd-kpi-valor">
-          {texto != null ? texto : <NumeroAnimado valor={Number(valor) || 0} decimales={decimales} prefijo={prefijo} />}
-          {sufijo}
-        </span>
-        {sub && <span className="rd-kpi-sub line-clamp-2" title={typeof sub === "string" ? sub : undefined}>{sub}</span>}
-      </span>
-      {progreso != null ? (
-        <span className="rd-kpi-extra hidden @[13rem]:block shrink-0"><Anillo pct={progreso} clase="rd-kpi-anillo" /></span>
-      ) : serieUtil(serie) ? (
-        <span className="rd-kpi-extra hidden @[16rem]:block shrink-0 pl-1">
-          <MiniGrafico serie={serie} color="var(--k)" ancho={56} alto={24} />
-        </span>
-      ) : null}
     </Comp>
   );
 };

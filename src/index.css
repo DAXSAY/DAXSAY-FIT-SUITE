@@ -3929,11 +3929,7 @@ html.dark .rd-pat-t8{--k:#93a0ff;--kf:rgba(147,160,255,.11);--kb:rgba(147,160,25
 .rd-kpi-sub{display:block;font-size:11px;font-weight:600;color:#8b8376;line-height:1.25;margin-top:1px}
 .rd-kpi-anillo{color:var(--k)}
 .rd-kpi{container-type:inline-size}
-@container (max-width:175px){
-  .rd-kpi .rd-kpi-ico{position:absolute;right:.45rem;top:.45rem;width:1.7rem;height:1.7rem;border-radius:9px}
-  .rd-kpi .rd-kpi-ico .rd-emoji{font-size:.95rem !important}
-  .rd-kpi .rd-kpi-titulo{padding-right:1.9rem;min-height:1.7rem;display:flex;align-items:center}
-}
+
 html.dark .rd-kpi{background:linear-gradient(160deg,#0f2034 0%,#0b1828 100%);border-color:var(--kb);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 22px -16px rgba(0,0,0,.8)}
 html.dark .rd-kpi::before{box-shadow:0 0 8px var(--k)}
 html.dark .rd-kpi-boton:hover{border-color:var(--k);box-shadow:0 0 0 1px var(--kb),0 0 14px -6px var(--k)}
@@ -4035,3 +4031,52 @@ html.dark .rd-post-dibujo{background:#0a1626}
 html.dark .rd-cajon-velo{background:rgba(2,6,14,.68) !important}
 html.dark .rd-ind-lugar button.bg-slate-900{background:#5fdbe2 !important;color:#06101c !important}
 html:not(.dark) .rd-ind-lugar button.bg-slate-900{background:#3f8f96 !important;color:#fff !important}
+
+/* =====================================================================
+   TARJETA DE INFORMACIÓN · diseño final (todas las tarjetas del sistema)
+   Texto a la izquierda (título, número, detalle y barra de avance si aplica),
+   ficha del emoji a la derecha y un velo del color del tono hacia la derecha:
+   la tarjeta nunca se ve vacía, sea angosta o ancha.
+   ===================================================================== */
+.rd-kpi{display:flex;align-items:center;justify-content:space-between;gap:.75rem;min-height:4.7rem;padding:.75rem .9rem .75rem 1.05rem;border-radius:16px;
+  background:linear-gradient(105deg,#fcfaf6 0%,#fcfaf6 45%,var(--kf) 100%);border:1px solid #e6dfd2}
+.rd-kpi::before{top:12px;bottom:12px;width:4px}
+.rd-kpi-cuerpo{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.rd-kpi-titulo{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:10.5px;letter-spacing:.07em}
+.rd-kpi-valor{font-size:1.3rem;line-height:1.15;overflow:hidden;text-overflow:ellipsis}
+.rd-kpi-sub{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rd-kpi-barra{display:block;height:5px;margin-top:.45rem;border-radius:99px;background:var(--kb);overflow:hidden;max-width:16rem}
+.rd-kpi-barra>span{display:block;height:100%;border-radius:99px;background:var(--k);transition:width .6s ease}
+.rd-kpi-ico{width:2.75rem;height:2.75rem;border-radius:14px;background:#fffdf9;border:1px solid var(--kb);box-shadow:0 4px 12px -8px var(--k);order:2}
+.rd-kpi-ico .rd-emoji,.rd-kpi-ico .rd-emoji-icono{font-size:1.35rem !important}
+@container (max-width:170px){
+  .rd-kpi .rd-kpi-ico{width:2.1rem;height:2.1rem;border-radius:11px}
+  .rd-kpi .rd-kpi-ico .rd-emoji,.rd-kpi .rd-kpi-ico .rd-emoji-icono{font-size:1.05rem !important}
+  .rd-kpi .rd-kpi-valor{font-size:1.1rem}
+}
+html.dark .rd-kpi{background:linear-gradient(105deg,#0e1d31 0%,#0e1d31 45%,color-mix(in srgb,var(--k) 13%,#0e1d31) 100%);border-color:var(--kb)}
+html.dark .rd-kpi-ico{background:#07111e;border-color:var(--kb);box-shadow:0 0 14px -5px var(--k)}
+html.dark .rd-kpi-barra{background:color-mix(in srgb,var(--k) 18%,transparent)}
+html.dark .rd-kpi-barra>span{box-shadow:0 0 8px var(--k)}
+.rd-kpi-alerta{background:linear-gradient(105deg,#fbf1f1 0%,#fbf1f1 45%,#f3dfe1 100%)}
+html.dark .rd-kpi-alerta{background:linear-gradient(105deg,#1d0f1b 0%,#1d0f1b 45%,#2c1222 100%)}
+
+/* Filas de tarjetas: columnas según cuántas tarjetas hay, y la última fila se estira (nunca quedan huecos) */
+.grid:has(> .rd-kpi):not(:has(> :not(.rd-kpi))){display:flex !important;flex-wrap:wrap;gap:.75rem !important;--n:4}
+.grid:has(> .rd-kpi):not(:has(> :not(.rd-kpi)))>.rd-kpi{flex:1 1 calc((100% - (var(--n) - 1) * .75rem) / var(--n));width:auto;max-width:100%;min-width:0}
+.grid:has(> .rd-kpi:nth-child(1):last-child){--n:1}
+.grid:has(> .rd-kpi:nth-child(2):last-child){--n:2}
+.grid:has(> .rd-kpi:nth-child(3):last-child){--n:3}
+.grid:has(> .rd-kpi:nth-child(5):last-child){--n:5}
+.grid:has(> .rd-kpi:nth-child(6):last-child){--n:6}
+.grid:has(> .rd-kpi:nth-child(9):last-child),.grid:has(> .rd-kpi:nth-child(10):last-child){--n:5}
+@media (max-width:1180px){
+  .grid:has(> .rd-kpi:nth-child(5):last-child),.grid:has(> .rd-kpi:nth-child(6):last-child),.grid:has(> .rd-kpi:nth-child(9):last-child){--n:3}
+  .grid:has(> .rd-kpi:nth-child(10):last-child){--n:4}
+}
+@media (max-width:700px){.grid:has(> .rd-kpi):not(:has(> :not(.rd-kpi))){--n:2 !important}.grid:has(> .rd-kpi:nth-child(1):last-child){--n:1 !important}}
+/* Filas del panel de filtros: etiqueta de ancho fijo y opciones alineadas */
+.rd-fila-filtro{display:grid;grid-template-columns:7.2rem minmax(0,1fr);align-items:start;gap:.35rem .6rem}
+.rd-fila-filtro-et{padding-top:.4rem;font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:#7a7266}
+html.dark .rd-fila-filtro-et{color:#8fa6c0}
+@media (max-width:640px){.rd-fila-filtro{grid-template-columns:1fr}.rd-fila-filtro-et{padding-top:0}}

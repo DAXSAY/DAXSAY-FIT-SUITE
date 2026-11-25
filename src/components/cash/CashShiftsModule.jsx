@@ -191,18 +191,14 @@ const TablaMovimientos = ({ movimientos }) =>
 const ResumenMetodos = ({ resumen }) => (
   <div className="grid grid-cols-2 gap-3 rd-metodos-caja">
     {Object.entries(METODOS).filter(([k, m]) => !m.antiguo || (resumen.ingresos[k] || 0) + (resumen.egresos[k] || 0) > 0).map(([k, { label, icon: Icono }]) => (
-      <div key={k} className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
-        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${k === "efectivo" ? "from-emerald-500 to-teal-600" : k === "yape" || k === "yape_plin" ? "from-violet-500 to-fuchsia-600" : k === "tarjeta" ? "from-amber-500 to-orange-500" : "from-blue-500 to-indigo-600"} text-white flex items-center justify-center shadow-lg`}>
-          <Icono className="w-6 h-6" />
-        </div>
-        <div>
-          <span className="text-xs font-bold text-slate-400 uppercase block">{label}</span>
-          <span className="text-base font-black text-slate-900">{soles(resumen?.ingresos?.[k])}</span>
-          {resumen?.egresos?.[k] > 0 && (
-            <span className="text-xs font-bold text-rose-600 block">− {soles(resumen.egresos[k])} gastos</span>
-          )}
-        </div>
-      </div>
+      <TarjetaKpi
+        key={k}
+        titulo={label}
+        texto={soles(resumen?.ingresos?.[k])}
+        sub={resumen?.egresos?.[k] > 0 ? `− ${soles(resumen.egresos[k])} en gastos` : undefined}
+        icono={Icono}
+        tono={k === "efectivo" ? "verde" : k === "yape" || k === "yape_plin" ? "violeta" : k === "tarjeta" ? "ambar" : "azul"}
+      />
     ))}
   </div>
 );
