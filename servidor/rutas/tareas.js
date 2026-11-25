@@ -208,6 +208,9 @@ export async function revisarTareasAutomaticas(forzar = false) {
 }
 
 async function crearAuto(t) {
+  // Nunca nace atrasada: si su fecha ya pasó, se programa para hoy
+  const hoy = hoyLima();
+  if (t.fecha < hoy) t = { ...t, fecha: hoy, hora: null };
   const r = await consultar(
     `INSERT IGNORE INTO tareas (tipo, titulo, nota, destino_tipo, idturno_recepcion, rol_codigo, idusuario_destino, idalumno, idprospecto,
                                 fecha, hora, origen, clave_auto, referencia)
