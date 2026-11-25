@@ -212,8 +212,8 @@ const ILUSTRACIONES = {
 /** Pantalla vacía al entrar a un módulo: ilustración del tema con el logo del gimnasio, tenue */
 export const SinSeleccion = ({ tema = "reportes", texto = "Elige una opción de arriba para empezar." }) => (
   <div className="rd-aparece rd-sin-seleccion relative overflow-hidden rounded-2xl border border-slate-200 bg-white/60 px-6 py-10 flex flex-col items-center justify-center min-h-[22rem]">
-    <img src="/logo-radical.png" alt="" aria-hidden className="pointer-events-none select-none absolute -right-10 -bottom-12 w-72 h-72 opacity-[0.06] rounded-full" />
-    <img src="/logo-radical.png" alt="" aria-hidden className="pointer-events-none select-none absolute -left-16 -top-16 w-56 h-56 opacity-[0.04] rounded-full" />
+    <img src="/logo-daxsay.svg" alt="" aria-hidden className="rd-logo pointer-events-none select-none absolute -right-10 -bottom-12 w-72 h-72 opacity-[0.06] rounded-full" />
+    <img src="/logo-daxsay.svg" alt="" aria-hidden className="rd-logo pointer-events-none select-none absolute -left-16 -top-16 w-56 h-56 opacity-[0.04] rounded-full" />
     <svg viewBox="0 0 300 190" className="rd-ilu relative w-80 max-w-full h-auto" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       {ILUSTRACIONES[tema] || ILUSTRACIONES.reportes}
     </svg>

@@ -401,7 +401,7 @@ const ConfiguracionGimnasio = () => {
         <div className="bg-white rounded-2xl border border-slate-200 p-5">
           <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Así se ve en tickets y mensajes</p>
           <div className="rounded-xl border border-dashed border-slate-300 p-4 text-center">
-            <img src="/logo-radical.png" alt="" className="w-14 h-14 rounded-full mx-auto mb-2" />
+            <img src="/logo-daxsay.svg" alt="" className="rd-logo w-14 h-14 mx-auto mb-2" />
             <p className="text-base font-black text-slate-900 tracking-wide">{f.gym_nombre || "Nombre del gimnasio"}</p>
             <p className="text-xs text-slate-500">{f.gym_ruc ? `RUC ${f.gym_ruc}` : "RUC sin registrar"}</p>
             <p className="text-xs text-slate-500 mt-0.5">{f.gym_direccion || "Dirección sin registrar"}</p>

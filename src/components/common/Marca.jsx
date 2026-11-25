@@ -2,23 +2,27 @@ import React from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTema } from "../../utils/tema";
 
-// Logo circular de RADICAL
+// Logo de DAXSAY Fit Suite: lobo de contorno (neón suave en oscuro, pastel en claro)
 export const LogoRadical = ({ size = 36, className = "" }) => (
   <img
-    src="/logo-radical.png"
-    alt="RADICAL"
+    src="/logo-daxsay.svg"
+    alt="DAXSAY Fit Suite"
     width={size}
     height={size}
-    className={`rounded-full shrink-0 select-none ${className}`}
+    className={`rd-logo shrink-0 select-none ${className.replace(/\bring-\S+/g, "")}`}
     style={{ width: size, height: size }}
     draggable={false}
   />
 );
+export const LogoDaxsay = LogoRadical;
 
-// Nombre de la marca en turquesa
+// Nombre de la marca: DAXSAY Fit Suite
 export const NombreRadical = ({ className = "text-base" }) => (
-  <span className={`rd-marca font-extrabold ${className}`}>RADICAL</span>
+  <span className={`rd-marca font-extrabold ${className}`}>
+    DAXSAY<span className="rd-marca-fs"> Fit Suite</span>
+  </span>
 );
+export const NombreDaxsay = NombreRadical;
 
 // Botón sol / luna para cambiar entre modo claro y oscuro (perilla centrada).
 // vertical: interruptor de pie (ocupa poco ancho en la barra superior)

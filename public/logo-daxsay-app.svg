@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-80 -78 160 160" role="img" aria-label="DAXSAY Fit Suite">
+  <defs>
+    <linearGradient id="dxg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f9fe0"/>
+      <stop offset="1" stop-color="#6f5fd6"/>
+    </linearGradient>
+  </defs>
+  <rect x="-80" y="-78" width="160" height="160" rx="34" fill="#0c1624"/>
+  <path d="M0,66 L-24,46 L-42,24 L-62,8 L-46,2 L-58,-14 L-46,-16 L-50,-58 L-22,-28 L0,-32 L22,-28 L50,-58 L46,-16 L58,-14 L46,2 L62,8 L42,24 L24,46 Z" fill="none" stroke="url(#dxg)" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M-42,-40 L-30,-20 L-40,-12 Z M42,-40 L30,-20 L40,-12 Z" fill="url(#dxg)"/>
+  <path d="M-30,-1 L-11,6 L-25,9 Z M30,-1 L11,6 L25,9 Z" fill="#7fd0e6"/>
+  <path d="M-34,14 L-20,24 L-22,14 L-8,30 M34,14 L20,24 L22,14 L8,30" fill="none" stroke="url(#dxg)" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M-9,34 L9,34 L4,44 L-4,44 Z" fill="url(#dxg)"/>
+</svg>

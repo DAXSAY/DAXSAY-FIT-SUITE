@@ -33,7 +33,7 @@ export const AvisoStockBajo = ({ onAbrir }) => {
         if ("Notification" in window && Notification.permission === "granted") {
           new Notification("RADICAL · Stock mínimo", {
             body: nuevos.map((p) => `${p.name}: ${Number(p.stock) <= 0 ? "sin stock" : `quedan ${p.stock}`}`).join("\n"),
-            icon: "/logo-radical.png",
+            icon: "/icono-192.png",
           });
         }
       } catch {

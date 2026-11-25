@@ -4132,3 +4132,11 @@ html:not(.dark) .rd-pat-chip:hover{color:var(--kt)}
 /* Emojis: pastel en modo claro (más suaves) · neón medio en oscuro (vivos, sin encandilar) */
 html:not(.dark) .rd-emoji,html:not(.dark) .rd-emoji-icono{filter:saturate(.62) brightness(1.07) contrast(.96) !important}
 html.dark .rd-emoji,html.dark .rd-emoji-icono{filter:saturate(1.18) brightness(1.04) drop-shadow(0 0 2px rgba(160,240,255,.18)) !important}
+
+/* ---------- Marca DAXSAY Fit Suite (logo de lobo) ---------- */
+.rd-logo{object-fit:contain;border-radius:0 !important;background:transparent}
+html:not(.dark) .rd-logo{filter:saturate(.78) brightness(1.06)}
+html.dark .rd-logo{filter:drop-shadow(0 0 6px rgba(111,95,214,.35))}
+.rd-marca{letter-spacing:.14em;background:linear-gradient(90deg,#5a8fcf,#7a6cc9);-webkit-background-clip:text;background-clip:text;color:transparent !important;-webkit-text-fill-color:transparent}
+html.dark .rd-marca{text-shadow:none;background:linear-gradient(90deg,#7fb6ec,#a497ee);-webkit-background-clip:text;background-clip:text}
+.rd-marca-fs{font-size:.52em;letter-spacing:.2em;font-weight:800;text-transform:uppercase;margin-left:.15em;vertical-align:.2em}

@@ -200,8 +200,8 @@ function MainAppContent() {
   if (!authChecked) {
     return (
       <div className="min-h-screen rd-fondo flex flex-col items-center justify-center gap-3 text-slate-500 text-sm font-semibold">
-        <img src="/logo-radical.png" alt="RADICAL" className="w-16 h-16 rounded-full animate-pulse" />
-        <span className="rd-marca text-lg">RADICAL</span>
+        <img src="/logo-daxsay.svg" alt="DAXSAY Fit Suite" className="rd-logo w-16 h-16 animate-pulse" />
+        <span className="rd-marca text-lg">DAXSAY<span className="rd-marca-fs"> Fit Suite</span></span>
         <span className="text-xs">Cargando...</span>
       </div>
     );

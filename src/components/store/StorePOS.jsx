@@ -1500,7 +1500,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
               <div className="w-11 h-11 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center mb-1.5">
                 <Check className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-black text-slate-900 tracking-wide">RADICAL</h3>
+              <h3 className="text-base font-black text-slate-900 tracking-wide">DAXSAY Fit Suite</h3>
               <p className="text-xs text-gray-500">Ticket de venta (uso interno)</p>
               <p className="text-sm font-mono text-blue-700 font-bold mt-0.5">{lastReceipt.receiptNumber}</p>
             </div>

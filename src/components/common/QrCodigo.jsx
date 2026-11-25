@@ -46,7 +46,7 @@ function dibujarTarjetaQR({ texto, titulo = "PASE LIBRE", nombre = "", detalle =
   g.fillStyle = "#fff";
   g.textAlign = "center";
   g.font = "900 44px Arial, sans-serif";
-  g.fillText("RADICAL", W / 2, 64);
+  g.fillText("DAXSAY", W / 2, 64);
   g.font = "700 22px Arial, sans-serif";
   g.fillStyle = "#5eead4";
   g.fillText(titulo, W / 2, 98);

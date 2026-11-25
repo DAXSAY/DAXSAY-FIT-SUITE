@@ -38,7 +38,7 @@ export function HojaRutina({ rutina }) {
       {/* Cabecera del gimnasio */}
       <header className="rd-hr-cab" data-salto>
         <div className="flex items-center gap-3 min-w-0">
-          <img src="/logo-radical.png" alt="" className="w-14 h-14 rounded-full object-cover bg-white shrink-0" crossOrigin="anonymous" />
+          <img src="/logo-daxsay.svg" alt="" className="w-14 h-14 rounded-2xl bg-[#0c1624] p-1.5 shrink-0" crossOrigin="anonymous" />
           <div className="min-w-0">
             <p className="rd-hr-gym">{gym}</p>
             <p className="rd-hr-sub">Plan de entrenamiento personalizado</p>

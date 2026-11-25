@@ -528,12 +528,12 @@ export const StudentPortalModule = ({
           {/* Digital Member Card */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-gradient-to-br from-marino-800 via-marino-950 to-blue-950 text-white rounded-3xl p-6 shadow-xl border border-white/10 relative overflow-hidden [&>*:not(img)]:relative">
-              <img src="/logo-radical.png" alt="" className="absolute -right-10 -bottom-10 w-44 opacity-10 rounded-full pointer-events-none" />
+              <img src="/logo-daxsay.svg" alt="" className="rd-logo absolute -right-10 -bottom-10 w-44 opacity-10 pointer-events-none" />
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-2">
-                  <img src="/logo-radical.png" alt="RADICAL" className="w-8 h-8 rounded-full" />
+                  <img src="/logo-daxsay.svg" alt="DAXSAY Fit Suite" className="rd-logo w-8 h-8" />
                   <span className="rd-marca text-sm">
-                    RADICAL
+                    DAXSAY<span className="rd-marca-fs"> Fit Suite</span>
                   </span>
                 </div>
                 <span className="text-xs uppercase font-bold tracking-widest text-cyan-400">

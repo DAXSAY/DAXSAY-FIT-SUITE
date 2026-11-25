@@ -33,7 +33,7 @@ export const LoginScreen = () => {
       {/* Panel izquierdo: marca */}
       <div className="rd-panel-marca hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-marino-800 via-marino-950 to-[#04101e] p-12 flex-col justify-between">
         <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)", backgroundSize: "42px 42px" }} />
-        <img src="/logo-radical.png" alt="" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[28rem] max-w-[80%] opacity-[0.07] rounded-full pointer-events-none" />
+        <img src="/logo-daxsay.svg" alt="" className="rd-logo absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[28rem] max-w-[80%] opacity-[0.07] rounded-full pointer-events-none" />
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-blue-400/25 blur-3xl" />
         <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full bg-orange-500/15 blur-3xl" />
 
@@ -55,7 +55,7 @@ export const LoginScreen = () => {
         </div>
 
         <div className="relative flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-slate-400/70">© {new Date().getFullYear()} RADICAL</p>
+          <p className="text-xs text-slate-400/70">© {new Date().getFullYear()} DAXSAY Fit Suite</p>
           <FirmaDaxsay claro />
         </div>
       </div>

@@ -63,7 +63,7 @@ const claveDe = (tipo, p) => (tipo === "noVino" ? `nv-${p.id}-${p.passDate}` : `
 
 const notificar = (titulo, cuerpo) => {
   try {
-    if ("Notification" in window && Notification.permission === "granted") new Notification(titulo, { body: cuerpo, icon: "/logo-radical.png" });
+    if ("Notification" in window && Notification.permission === "granted") new Notification(titulo, { body: cuerpo, icon: "/icono-192.png" });
   } catch {
     /* sin notificaciones del navegador */
   }

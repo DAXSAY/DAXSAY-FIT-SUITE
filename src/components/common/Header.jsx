@@ -240,12 +240,8 @@ export const Header = ({
             onClick={() => setActiveTab(role.defaultTab)}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <span
-              className="rounded-full p-[2px] shrink-0 transition-transform group-hover:scale-105"
-              style={{ background: roleColors?.hex || "var(--color-blue-500)", boxShadow: `0 0 12px -2px ${roleColors?.hex || "var(--color-blue-500)"}` }}
-              title={`Conectado como ${role.label}`}
-            >
-              <LogoRadical size={36} className="ring-2 ring-white/80" />
+            <span className="shrink-0 transition-transform group-hover:scale-105" title={`Conectado como ${role.label}`}>
+              <LogoRadical size={38} />
             </span>
             <div className="leading-none">
               <NombreRadical className="text-lg" />
