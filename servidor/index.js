@@ -28,6 +28,7 @@ import archivos, { CARPETA_UPLOADS } from "./rutas/archivos.js";
 import prospectos from "./rutas/prospectos.js";
 import progreso from "./rutas/progreso.js";
 import avisos from "./rutas/avisos.js";
+import tareas, { marcarCambioTareas } from "./rutas/tareas.js";
 import { verificarSincronizacion, sincronizarPendientes } from "./sincronizacion.js";
 import { aplicarActualizaciones } from "./actualizaciones.js";
 import { programarRespaldos, estadoRespaldos, hacerRespaldo } from "./respaldo.js";
@@ -74,6 +75,7 @@ app.use((req, res, next) => {
   if (req.method !== "GET" && req.path.startsWith("/api/") && !req.path.startsWith("/api/auth") && !req.path.startsWith("/api/eventos")) {
     res.on("finish", () => {
       if (res.statusCode < 400) {
+        marcarCambioTareas(); // un guardado puede cerrar o crear tareas automáticas
         const partes = req.path.split("/").filter(Boolean); // api, registros, citas, id
         avisarCambio(partes[1] === "registros" && partes[2] ? partes[2] : partes[1] || "", String(req.headers["x-origen"] || "").slice(0, 40));
       }
@@ -134,6 +136,7 @@ app.use("/api/archivos", requiereSesion, archivos);
 app.use("/api/prospectos", requiereSesion, prospectos);
 app.use("/api/progreso", requiereSesion, progreso);
 app.use("/api/avisos", requiereSesion, avisos);
+app.use("/api/tareas", requiereSesion, tareas);
 
 // Imágenes subidas (públicas por enlace, nombres imposibles de adivinar)
 app.use("/uploads", express.static(CARPETA_UPLOADS, { maxAge: "30d" }));

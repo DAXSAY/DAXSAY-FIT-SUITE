@@ -23,6 +23,7 @@ import {
   Trophy,
   CalendarCheck,
   Contact,
+  ClipboardList,
 } from "lucide-react";
 
 // Catálogo de módulos (pestañas) del sistema
@@ -44,6 +45,7 @@ export const MODULES = {
   finance: { label: "Finanzas", code: "FN", icon: BadgeDollarSign },
   alerts: { label: "Notificaciones", code: "NT", icon: BellRing },
   crm: { label: "Interesados (CRM)", code: "CR", icon: Contact },
+  tasks: { label: "Tareas entre turnos", code: "TA", icon: ClipboardList },
   // Portal del alumno
   mi_membresia: { label: "Mi membresía", code: "MB", icon: CreditCard },
   mis_citas: { label: "Avisos y citas", code: "CT", icon: Calendar },
@@ -64,7 +66,7 @@ export const ROLES = {
     groups: [
       { title: "Gestión & Clientes", tabs: ["dashboard", "reports", "members", "crm", "memberships", "goals"] },
       { title: "Salud & Entrenamiento", tabs: ["routines", "nutrition", "physiotherapy", "appointments"] },
-      { title: "Operativo & Caja", tabs: ["cash", "store", "attendances", "finance", "alerts"] },
+      { title: "Operativo & Caja", tabs: ["tasks", "cash", "store", "attendances", "finance", "alerts"] },
       { title: "Personal & Accesos", tabs: ["staff", "users"] },
     ],
   },
@@ -74,7 +76,7 @@ export const ROLES = {
     color: "orange",
     defaultTab: "routines",
     groups: [
-      { title: "Entrenamiento", tabs: ["routines", "appointments", "goals"] },
+      { title: "Entrenamiento", tabs: ["routines", "tasks", "appointments", "goals"] },
       { title: "Alumnos & Asistencia", tabs: ["members", "attendances"] },
     ],
   },
@@ -84,7 +86,7 @@ export const ROLES = {
     color: "azul",
     defaultTab: "physiotherapy",
     groups: [
-      { title: "Gabinete de Fisioterapia", tabs: ["physiotherapy", "appointments"] },
+      { title: "Gabinete de Fisioterapia", tabs: ["physiotherapy", "tasks", "appointments"] },
       { title: "Alumnos", tabs: ["members", "goals"] },
     ],
   },
@@ -94,7 +96,7 @@ export const ROLES = {
     color: "rojo",
     defaultTab: "nutrition",
     groups: [
-      { title: "Consultorio de Nutrición", tabs: ["nutrition", "appointments"] },
+      { title: "Consultorio de Nutrición", tabs: ["nutrition", "tasks", "appointments"] },
       { title: "Alumnos", tabs: ["members", "goals"] },
     ],
   },
@@ -105,7 +107,7 @@ export const ROLES = {
     defaultTab: "cash",
     groups: [
       { title: "Clientes", tabs: ["members", "crm", "memberships", "goals"] },
-      { title: "Operativo & Caja", tabs: ["cash", "store", "attendances"] },
+      { title: "Operativo & Caja", tabs: ["tasks", "cash", "store", "attendances"] },
       { title: "Servicios & Avisos", tabs: ["appointments", "alerts"] },
     ],
   },
@@ -148,8 +150,9 @@ export const canAccess = (role, tab) => getAllowedTabs(role).includes(tab);
 
 // Permiso real del usuario conectado: el menú de su rol, filtrado por los
 // módulos que la base de datos le permite ver (rol_permisos / usuario_permisos)
+// «Tareas entre turnos» la usa todo el personal (aunque la base aún no tenga el módulo)
 export const userCanAccess = (user, tab) =>
-  !!user && canAccess(user.role, tab) && (!Array.isArray(user.modules) || user.modules.includes(tab));
+  !!user && canAccess(user.role, tab) && (tab === "tasks" ? user.role !== "student" : !Array.isArray(user.modules) || user.modules.includes(tab));
 
 // Permiso de acción: ver | crear | editar | eliminar
 export const userCan = (user, tab, accion = "ver") =>

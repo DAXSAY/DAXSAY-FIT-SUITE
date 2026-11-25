@@ -5,6 +5,7 @@
 // quién cerró. Las cuentas de alumnos se crean desde su ficha.
 // ============================================================
 import { TarjetaKpi } from "../common/TarjetaKpi";
+import { nombreTurno } from "../../utils/turnos";
 import { ShieldCheck as IcShield, User as IcUser, Dumbbell as IcDumbbell, HeartPulse as IcHeart, Apple as IcApple, KeyRound as IcKey, Building2 as IcBuilding, Phone as IcPhone, Clock as IcClock, Users as IcUsers, Plus as IcPlus, Info as IcInfo, CalendarClock as IcCalendario } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -444,7 +445,7 @@ const COLORES_TURNO = ["from-amber-400 to-orange-500", "from-sky-500 to-blue-600
 
 const TurnosRecepcion = () => {
   const [turnos, setTurnos] = useState([]);
-  const [nuevo, setNuevo] = useState({ name: "", start: "", end: "" });
+  const [nuevo, setNuevo] = useState({ name: "", start: "", end: "", whatsapp: "" });
   const [error, setError] = useState("");
   const [guardado, setGuardado] = useState("");
   const cargar = () => api("/metas/turnos-recepcion").then(setTurnos).catch((e) => setError(e.message));
@@ -467,7 +468,7 @@ const TurnosRecepcion = () => {
     setError("");
     try {
       await api("/metas/turnos-recepcion", { method: "POST", body: nuevo });
-      setNuevo({ name: "", start: "", end: "" });
+      setNuevo({ name: "", start: "", end: "", whatsapp: "" });
       cargar();
     } catch (er) {
       setError(er.message);
@@ -523,6 +524,10 @@ const TurnosRecepcion = () => {
                   Hasta
                   <input type="time" value={t.end} onChange={(e) => cambiar(i, "end", e.target.value)} className={`${campo} block mt-0.5`} />
                 </label>
+                <label className="text-xs font-bold text-slate-500">
+                  WhatsApp del turno
+                  <input value={t.whatsapp || ""} onChange={(e) => cambiar(i, "whatsapp", e.target.value)} placeholder="9XX XXX XXX" inputMode="tel" className={`${campo} block mt-0.5 w-36`} title="Número al que escriben los alumnos en este horario (anuncio de renovación)" />
+                </label>
                 <label className="flex items-center gap-2 text-xs font-bold text-slate-600 pb-2.5 cursor-pointer">
                   <input type="checkbox" checked={t.active} onChange={(e) => cambiar(i, "active", e.target.checked)} className="w-4 h-4" /> Activo
                 </label>
@@ -570,6 +575,7 @@ const TurnosRecepcion = () => {
             <label className="block text-xs font-bold text-slate-600">Desde<input type="time" value={nuevo.start} onChange={(e) => setNuevo({ ...nuevo, start: e.target.value })} className={`${campo} w-full mt-0.5`} /></label>
             <label className="block text-xs font-bold text-slate-600">Hasta<input type="time" value={nuevo.end} onChange={(e) => setNuevo({ ...nuevo, end: e.target.value })} className={`${campo} w-full mt-0.5`} /></label>
           </div>
+          <label className="block text-xs font-bold text-slate-600">WhatsApp del turno (opcional)<input value={nuevo.whatsapp} onChange={(e) => setNuevo({ ...nuevo, whatsapp: e.target.value })} placeholder="9XX XXX XXX" inputMode="tel" className={`${campo} w-full mt-0.5`} /></label>
           <button className="w-full px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-black cursor-pointer">Agregar turno</button>
         </form>
         <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-2 text-sm text-slate-600">
@@ -577,6 +583,8 @@ const TurnosRecepcion = () => {
           <p>Cada recepcionista pertenece a un turno; se elige en su usuario.</p>
           <p>Las metas de recepción se asignan por turno y suman todo lo cobrado en las cajas que abren las personas de ese turno.</p>
           <p>En Arqueo de caja cada quien ve solo la meta de su turno.</p>
+          <p>Las <b>tareas entre turnos</b> funcionan con todos los turnos activos: si agregas un 3.º, 4.º o 5.º turno, aparece solo para recibir y pasar tareas.</p>
+          <p>Se muestran como «Turno Mañana · nombre de la recepcionista».</p>
         </div>
       </aside>
     </div>
@@ -944,7 +952,7 @@ export const UsersAccessModule = () => {
                       <span className="rd-chip-rol px-2 py-0.5 rounded-full text-xs font-black" style={{ "--c": COLOR_ROL[u.role] || "var(--color-slate-400)" }}>
                         {ROLES[u.role]?.label || u.roleName}
                       </span>
-                      {u.receptionShift && <span className="block text-xs text-slate-500 mt-0.5">{u.receptionShift}</span>}
+                      {u.receptionShift && <span className="block text-xs text-slate-500 mt-0.5">{nombreTurno(u.receptionShift)}</span>}
                     </td>
                     <td className="py-3 pr-3 text-slate-500">{fecha(u.lastAccess)}</td>
                     <td className="py-3 pr-3">

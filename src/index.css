@@ -4160,3 +4160,39 @@ html.dark .rd-pago-opcion-on{background:rgba(136,208,240,.12);border-color:#88d0
 .rd-pago-sin-saldo{background:#e4f5f0;border-color:#ceece2;color:#47987d}
 html.dark .rd-pago-saldo{background:rgba(232,94,117,.1);border-color:rgba(240,136,154,.4);color:#f0889a}
 html.dark .rd-pago-sin-saldo{background:rgba(94,232,186,.08);border-color:rgba(136,240,206,.3);color:#88f0ce}
+
+/* =====================================================================
+   TAREAS ENTRE TURNOS (usa las variables de tono --k/--kt/--kf/--kb:
+   pastel en modo claro y neón suave en modo oscuro)
+   ===================================================================== */
+.rd-chip-t{background:var(--kf);color:var(--kt,var(--k));border:1px solid var(--kb)}
+.rd-texto-k{color:var(--kt,var(--k))}
+.rd-opcion-t{background:var(--rd-surface);color:var(--kt,var(--k));border:1.5px solid var(--kb);transition:background .15s,transform .15s,box-shadow .15s}
+.rd-opcion-t:hover{background:var(--kf);transform:translateY(-1px)}
+.rd-opcion-on{background:var(--kf);border-color:var(--k);box-shadow:0 0 0 3px color-mix(in srgb,var(--k) 18%,transparent)}
+.rd-boton-t{background:#4f9a95;color:#fff;border:1px solid #47908b;transition:filter .15s,transform .15s}
+.rd-boton-t:hover{filter:brightness(1.07);transform:translateY(-1px)}
+html.dark .rd-boton-t{background:rgba(94,232,216,.16);color:#9ff3ea;border-color:rgba(94,232,216,.45)}
+.rd-boton-suave{background:var(--kf);color:var(--kt,var(--k));border:1px solid var(--kb);transition:filter .15s,transform .15s}
+.rd-boton-suave:hover{filter:brightness(.97);transform:translateY(-1px)}
+html.dark .rd-boton-suave:hover{filter:brightness(1.25)}
+.rd-tarea{background:var(--rd-surface);border-color:var(--kb);border-left:4px solid var(--k);box-shadow:0 1px 2px rgba(15,40,70,.05)}
+.rd-tarea-cerrada{opacity:.78}
+.rd-tarea-ico{background:var(--kf);border:1px solid var(--kb)}
+.rd-error-t{color:#b7606f}
+html.dark .rd-error-t{color:#f0889a}
+.rd-aviso-t{background:var(--kf);border-color:var(--kb);color:var(--kt,var(--k))}
+.rd-tareas-hoy-cab{background:linear-gradient(135deg,var(--kf),color-mix(in srgb,var(--kf) 40%,var(--rd-surface)));color:var(--kt,var(--k));border-bottom:1px solid var(--kb)}
+/* Calendario */
+.rd-cal-dia{background:var(--rd-surface);border-color:#e3e8ee;color:#334155;transition:border-color .15s,background .15s}
+.rd-cal-dia:hover{border-color:#9fc9c5;background:#f4faf9}
+.rd-cal-pasado{opacity:.8}
+.rd-cal-hoy{border-color:#60b7ae;box-shadow:inset 0 0 0 1px #60b7ae}
+.rd-cal-on{background:#e4f5f3;border-color:#47988f;box-shadow:inset 0 0 0 2px #47988f}
+html.dark .rd-cal-dia{border-color:rgba(148,163,184,.18);color:#cbd5e1}
+html.dark .rd-cal-dia:hover{border-color:rgba(94,232,216,.45);background:rgba(94,232,216,.06)}
+html.dark .rd-cal-hoy{border-color:rgba(94,232,216,.6);box-shadow:inset 0 0 0 1px rgba(94,232,216,.6)}
+html.dark .rd-cal-on{background:rgba(94,232,216,.12);border-color:#88f0e5;box-shadow:inset 0 0 0 2px rgba(136,240,229,.7)}
+.rd-cal-n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;border-radius:999px;font-size:10px;font-weight:900;background:var(--kf);color:var(--kt,var(--k));border:1px solid var(--kb)}
+.rd-barra-t{background:color-mix(in srgb,var(--k) 14%,transparent);flex:1;min-width:60px}
+.rd-barra-t>span{background:var(--k)}

@@ -5,6 +5,7 @@
 // cierra. El siguiente turno ve lo que dejó el anterior y continúa.
 // ============================================================
 import { CampoNumero } from "../common/CampoNumero";
+import { nombreTurno } from "../../utils/turnos";
 import { TarjetaKpi, Anillo } from "../common/TarjetaKpi";
 import { Wallet as CjWallet, Coins as CjCoins, TrendingDown as CjDown, Vault as CjVault, ShoppingBag as CjBag, UserPlus as CjUser, Scale as CjScale, Receipt as CjReceipt, Target as CjTarget } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
@@ -277,7 +278,7 @@ const AbrirCaja = ({ ultimo, onVolver, onAbierta }) => {
                 <option value="">Sin turno</option>
                 {turnos.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.name} {t.start && `(${t.start} - ${t.end})`}
+                    {nombreTurno(t.name, t.people)} {t.start && `(${t.start} - ${t.end})`}
                   </option>
                 ))}
               </select>

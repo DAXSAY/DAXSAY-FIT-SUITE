@@ -12,6 +12,7 @@ import { consultar, transaccion } from "../db.js";
 import { hoyLima } from "../congelamiento.js";
 import { ErrorHttp, requierePermiso, soloPersonal, tienePermiso } from "../seguridad.js";
 import { columnasCrm } from "../crmCredito.js";
+import { columnaWhatsappTurno } from "./tareas.js";
 
 const router = Router();
 router.use(soloPersonal);
@@ -54,8 +55,13 @@ const soloAdmin = async (req, res, next) => {
 };
 
 // ---------------------------------------------------------------------
-// TURNOS DE RECEPCIÓN
+// TURNOS DE RECEPCIÓN (se pueden agregar los que hagan falta: 3, 4, 5...)
 // ---------------------------------------------------------------------
+/** WhatsApp del turno: solo dígitos y + (opcional) */
+const telefonoTurno = (v) => {
+  const s = String(v ?? "").replace(/[^\d+]/g, "").slice(0, 20);
+  return s.replace(/\D/g, "").length >= 6 ? s : null;
+};
 router.get("/turnos-recepcion", requierePermiso(["goals", "cash"], "ver"), async (req, res, next) => {
   try {
     const turnos = await consultar("SELECT * FROM turnos_recepcion ORDER BY activo DESC, hora_inicio, nombre");
@@ -71,6 +77,7 @@ router.get("/turnos-recepcion", requierePermiso(["goals", "cash"], "ver"), async
         start: t.hora_inicio ? String(t.hora_inicio).slice(0, 5) : "",
         end: t.hora_fin ? String(t.hora_fin).slice(0, 5) : "",
         active: !!t.activo,
+        whatsapp: t.whatsapp || "",
         people: personas
           .filter((p) => p.idturno_recepcion === t.idturno_recepcion)
           .map((p) => ({ userId: String(p.idusuario), staffId: p.idempleado ? String(p.idempleado) : null, name: p.nombre })),
@@ -85,10 +92,12 @@ router.post("/turnos-recepcion", soloAdmin, async (req, res, next) => {
   try {
     const nombre = txt(req.body?.name, 60);
     if (!nombre) throw new ErrorHttp(400, "Escribe el nombre del turno");
-    await consultar("INSERT INTO turnos_recepcion (nombre, hora_inicio, hora_fin) VALUES (?,?,?)", [
+    const wa = await columnaWhatsappTurno();
+    await consultar(`INSERT INTO turnos_recepcion (nombre, hora_inicio, hora_fin${wa ? ", whatsapp" : ""}) VALUES (?,?,?${wa ? ",?" : ""})`, [
       nombre,
       txt(req.body?.start, 5),
       txt(req.body?.end, 5),
+      ...(wa ? [telefonoTurno(req.body?.whatsapp)] : []),
     ]);
     res.status(201).json({ ok: true });
   } catch (e) {
@@ -99,11 +108,14 @@ router.post("/turnos-recepcion", soloAdmin, async (req, res, next) => {
 
 router.put("/turnos-recepcion/:id(\\d+)", soloAdmin, async (req, res, next) => {
   try {
-    await consultar("UPDATE turnos_recepcion SET nombre = ?, hora_inicio = ?, hora_fin = ?, activo = ? WHERE idturno_recepcion = ?", [
+    if (!txt(req.body?.name, 60)) throw new ErrorHttp(400, "Escribe el nombre del turno");
+    const wa = await columnaWhatsappTurno();
+    await consultar(`UPDATE turnos_recepcion SET nombre = ?, hora_inicio = ?, hora_fin = ?, activo = ?${wa ? ", whatsapp = ?" : ""} WHERE idturno_recepcion = ?`, [
       txt(req.body?.name, 60),
       txt(req.body?.start, 5),
       txt(req.body?.end, 5),
       req.body?.active === false ? 0 : 1,
+      ...(wa ? [telefonoTurno(req.body?.whatsapp)] : []),
       req.params.id,
     ]);
     res.json({ ok: true });

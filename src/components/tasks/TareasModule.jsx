@@ -1,0 +1,1069 @@
+// =====================================================================
+// TAREAS ENTRE TURNOS
+// Calendario (primera pantalla), lista y reporte de cumplimiento.
+// Una tarea va a un turno de recepción, a un área o a una persona; la
+// primera persona que pulsa «Tomar» se queda con ella. Se puede pasar al
+// siguiente turno con un comentario o reprogramar, y todo queda en el
+// historial. Se actualiza sola en todas las pantallas (tiempo real).
+// =====================================================================
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ClipboardList, Plus, CalendarDays, ListChecks, BarChart3, X, ChevronLeft, ChevronRight, History, Search, MessageCircle } from "lucide-react";
+import { api } from "../../api/cliente";
+import { escucharCambios } from "../../utils/tiempoReal";
+import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
+import { TarjetaKpi } from "../common/TarjetaKpi";
+import {
+  TIPOS_TAREA, tipoDe, AREAS, textoTurno, textoDestino, emojiDestino, fechaCorta, cuandoTexto, sumarDiasISO, enlaceWhatsapp, ESTADOS, estadoVisible, primerNombre, diaSemana,
+} from "./tareasComun";
+
+const campo = "w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-800";
+
+/** Carga las tareas y se vuelve a cargar sola cuando alguien guarda algo */
+export function useTareas(desde, hasta) {
+  const [datos, setDatos] = useState(null);
+  const [error, setError] = useState("");
+  const [faltanTablas, setFaltanTablas] = useState(false);
+  const cargar = useCallback(async () => {
+    try {
+      const r = await api(`/tareas?desde=${desde}&hasta=${hasta}`);
+      setDatos(r);
+      setError("");
+      setFaltanTablas(false);
+    } catch (e) {
+      if (e.status === 503) setFaltanTablas(true);
+      setError(e.message);
+    }
+  }, [desde, hasta]);
+  useEffect(() => {
+    cargar();
+    let t = null;
+    const fuera = escucharCambios(() => {
+      clearTimeout(t);
+      t = setTimeout(cargar, 350);
+    });
+    const cada = setInterval(cargar, 60000); // para que «atrasada» cambie sola con la hora
+    return () => {
+      fuera();
+      clearTimeout(t);
+      clearInterval(cada);
+    };
+  }, [cargar]);
+  return { datos, error, faltanTablas, cargar };
+}
+
+// ---------------------------------------------------------------------
+// Pequeñas piezas
+// ---------------------------------------------------------------------
+const Chip = ({ tono = "plomo", children, className = "", title }) => (
+  <span title={title} className={`rd-kpi-${tono} rd-chip-t inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold whitespace-nowrap ${className}`}>
+    {children}
+  </span>
+);
+const Emo = ({ e }) => <span className="rd-emoji">{e}</span>;
+
+const Modal = ({ titulo, emoji, onCerrar, children, ancho = "max-w-lg" }) => (
+  <div className="fixed inset-0 z-[70] rd-velo items-start sm:items-center justify-center overflow-y-auto" onMouseDown={(e) => e.target === e.currentTarget && onCerrar()}>
+    <div className={`w-full ${ancho} bg-white rounded-2xl border border-slate-200 shadow-2xl rd-aparece`}>
+      <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-3 border-b border-slate-100">
+        <h3 className="font-black text-slate-900 flex items-center gap-2">
+          {emoji && <Emo e={emoji} />} {titulo}
+        </h3>
+        <button type="button" onClick={onCerrar} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 cursor-pointer" aria-label="Cerrar">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="p-5 space-y-4">{children}</div>
+    </div>
+  </div>
+);
+
+/** Botones grandes para elegir (en vez de listas desplegables) */
+const Opciones = ({ opciones, valor, onElegir, className = "" }) => (
+  <div className={`flex flex-wrap gap-2 ${className}`}>
+    {opciones.map((o) => {
+      const on = valor === o.k;
+      return (
+        <button
+          key={o.k}
+          type="button"
+          onClick={() => onElegir(o.k)}
+          title={o.title}
+          className={`rd-kpi-${o.tono || "teal"} rd-opcion-t ${on ? "rd-opcion-on" : ""} px-3 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-1.5 cursor-pointer text-left`}
+        >
+          {o.emoji && <Emo e={o.emoji} />}
+          <span>
+            {o.label}
+            {o.sub && <span className="block text-[10px] font-bold opacity-75">{o.sub}</span>}
+          </span>
+        </button>
+      );
+    })}
+  </div>
+);
+
+const Etiqueta = ({ children }) => <p className="text-[11px] font-black uppercase tracking-wide text-slate-500 mb-1.5">{children}</p>;
+
+// ---------------------------------------------------------------------
+// Elegir destino: turno / área / persona
+// ---------------------------------------------------------------------
+const ElegirDestino = ({ ctx, valor, onCambiar, excluir }) => {
+  const [modo, setModo] = useState(valor?.tipo || "turno");
+  const turnos = ctx.turnos.filter((t) => t.activo);
+  const personas = ctx.personas.filter((p) => String(p.id) !== String(ctx.yo.id) || modo !== "usuario");
+  return (
+    <div className="space-y-2">
+      <Opciones
+        valor={modo}
+        onElegir={(m) => {
+          setModo(m);
+          onCambiar(null);
+        }}
+        opciones={[
+          { k: "turno", emoji: "🕒", label: "Un turno", tono: "teal" },
+          { k: "rol", emoji: "👥", label: "Un área", tono: "violeta" },
+          { k: "usuario", emoji: "👤", label: "Una persona", tono: "azul" },
+        ]}
+      />
+      {modo === "turno" &&
+        (turnos.length ? (
+          <Opciones
+            valor={valor?.tipo === "turno" ? valor.turnoId : null}
+            onElegir={(k) => onCambiar({ tipo: "turno", turnoId: k })}
+            opciones={turnos
+              .filter((t) => !(excluir?.tipo === "turno" && excluir.turnoId === t.id))
+              .map((t, i) => ({
+                k: t.id,
+                emoji: t.id === ctx.turnoActualId ? "🟢" : "🕒",
+                label: `Turno ${t.corto}`,
+                sub: `${t.inicio || "?"}–${t.fin || "?"}${t.personas.length ? ` · ${t.personas.map((p) => primerNombre(p.nombre)).join(", ")}` : " · sin persona asignada"}`,
+                tono: ["teal", "ambar", "violeta", "azul", "rosa", "lima"][i % 6],
+              }))}
+          />
+        ) : (
+          <p className="text-xs text-slate-500">No hay turnos de recepción activos. Créalos en Usuarios › Turnos de recepción.</p>
+        ))}
+      {modo === "rol" && (
+        <Opciones
+          valor={valor?.tipo === "rol" ? valor.rol : null}
+          onElegir={(k) => onCambiar({ tipo: "rol", rol: k })}
+          opciones={Object.entries(AREAS).map(([k, a]) => ({ k, emoji: a.emoji, label: a.label, tono: "violeta" }))}
+        />
+      )}
+      {modo === "usuario" && (
+        <Opciones
+          valor={valor?.tipo === "usuario" ? valor.usuarioId : null}
+          onElegir={(k) => onCambiar({ tipo: "usuario", usuarioId: k })}
+          opciones={personas.map((p) => ({ k: p.id, emoji: AREAS[p.rol]?.emoji || "🛡️", label: p.nombre, sub: AREAS[p.rol]?.corto || "Administración", tono: "azul" }))}
+        />
+      )}
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------
+// Nueva tarea
+// ---------------------------------------------------------------------
+const BuscarPersona = ({ valor, onCambiar }) => {
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState([]);
+  useEffect(() => {
+    if (q.trim().length < 2) return setRes([]);
+    const t = setTimeout(() => api(`/tareas/buscar?q=${encodeURIComponent(q.trim())}`).then(setRes).catch(() => setRes([])), 250);
+    return () => clearTimeout(t);
+  }, [q]);
+  if (valor)
+    return (
+      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50">
+        <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <Emo e={valor.tipo === "alumno" ? "🧑‍🎓" : "🙋"} /> {valor.nombre}
+          <span className="text-xs font-semibold text-slate-500">{valor.detalle}</span>
+        </span>
+        <button type="button" onClick={() => onCambiar(null)} className="text-xs font-black text-rose-600 cursor-pointer">
+          Quitar
+        </button>
+      </div>
+    );
+  return (
+    <div className="relative">
+      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre, DNI o código del alumno o interesado (opcional)" className={`${campo} pl-9`} />
+      {res.length > 0 && (
+        <div className="absolute z-10 left-0 right-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-60 overflow-y-auto">
+          {res.map((r) => (
+            <button
+              key={`${r.tipo}${r.id}`}
+              type="button"
+              onClick={() => {
+                onCambiar(r);
+                setQ("");
+              }}
+              className="w-full text-left px-3 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2"
+            >
+              <Emo e={r.tipo === "alumno" ? "🧑‍🎓" : "🙋"} />
+              <span className="text-sm font-bold text-slate-800">{r.nombre}</span>
+              <span className="text-xs text-slate-500">{r.detalle}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const NuevaTarea = ({ ctx, fechaInicial, onCerrar, onListo }) => {
+  const hoy = ctx.hoy;
+  const [tipo, setTipo] = useState("llamada");
+  const [titulo, setTitulo] = useState("");
+  const [destino, setDestino] = useState(null);
+  const [sobre, setSobre] = useState(null);
+  const [fecha, setFecha] = useState(fechaInicial && fechaInicial >= hoy ? fechaInicial : hoy);
+  const [hora, setHora] = useState("");
+  const [nota, setNota] = useState("");
+  const [error, setError] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const tituloAuto = `${tipoDe(tipo).label}${sobre ? `: ${sobre.nombre}` : ""}`;
+  const guardar = async () => {
+    setError("");
+    if (!destino) return setError("Elige para quién es la tarea.");
+    setGuardando(true);
+    try {
+      await api("/tareas", {
+        method: "POST",
+        body: {
+          tipo,
+          titulo: titulo.trim() || tituloAuto,
+          nota,
+          destino,
+          fecha,
+          hora,
+          alumnoId: sobre?.tipo === "alumno" ? sobre.id : null,
+          prospectoId: sobre?.tipo === "prospecto" ? sobre.id : null,
+        },
+      });
+      onListo();
+    } catch (e) {
+      setError(e.message);
+      setGuardando(false);
+    }
+  };
+  return (
+    <Modal titulo="Nueva tarea" emoji="📝" onCerrar={onCerrar} ancho="max-w-2xl">
+      <div>
+        <Etiqueta>1. ¿Qué hay que hacer?</Etiqueta>
+        <Opciones valor={tipo} onElegir={setTipo} opciones={Object.entries(TIPOS_TAREA).map(([k, t]) => ({ k, emoji: t.emoji, label: t.label, tono: t.tono }))} />
+      </div>
+      <div>
+        <Etiqueta>2. ¿Sobre quién? (opcional)</Etiqueta>
+        <BuscarPersona valor={sobre} onCambiar={setSobre} />
+      </div>
+      <div>
+        <Etiqueta>3. ¿Para quién es?</Etiqueta>
+        <ElegirDestino ctx={ctx} valor={destino} onCambiar={setDestino} />
+      </div>
+      <div>
+        <Etiqueta>4. ¿Cuándo?</Etiqueta>
+        <div className="flex flex-wrap items-center gap-2">
+          <Opciones
+            valor={fecha}
+            onElegir={setFecha}
+            opciones={[
+              { k: hoy, emoji: "📍", label: "Hoy", tono: "teal" },
+              { k: sumarDiasISO(hoy, 1), emoji: "➡️", label: "Mañana", tono: "azul" },
+              { k: sumarDiasISO(hoy, 2), emoji: "📆", label: `${diaSemana(sumarDiasISO(hoy, 2))} ${fechaCorta(sumarDiasISO(hoy, 2))}`, tono: "violeta" },
+            ]}
+          />
+          <input type="date" min={hoy} value={fecha} onChange={(e) => setFecha(e.target.value)} className="px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm" aria-label="Otra fecha" />
+          <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm" aria-label="Hora (opcional)" title="Hora (opcional)" />
+        </div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="block">
+          <Etiqueta>Título</Etiqueta>
+          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder={tituloAuto} className={campo} maxLength={160} />
+        </label>
+        <label className="block">
+          <Etiqueta>Nota (opcional)</Etiqueta>
+          <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej. Pedir que traiga su DNI" className={campo} maxLength={500} />
+        </label>
+      </div>
+      {error && <p className="rd-error-t text-sm font-bold">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onCerrar} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">
+          Cancelar
+        </button>
+        <button type="button" disabled={guardando} onClick={guardar} className="rd-boton-t px-5 py-2 rounded-xl text-sm font-black cursor-pointer disabled:opacity-50">
+          {guardando ? "Guardando…" : "✅ Crear tarea"}
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
+// ---------------------------------------------------------------------
+// Acciones de una tarea: hecha, pasar, reprogramar, historial
+// ---------------------------------------------------------------------
+const RESULTADOS = {
+  llamada: ["Contestó y quedó en venir", "No contestó", "Pidió que lo llamen otro día"],
+  whatsapp: ["Respondió", "Se le escribió, sin respuesta"],
+  renovacion: ["Va a renovar", "No renovará", "No contestó"],
+  cobro: ["Pagó", "Pagará después", "No contestó"],
+  abandono: ["Vuelve esta semana", "Está de viaje / enfermo", "No contestó"],
+  _: ["Listo", "Se hizo con observaciones"],
+};
+
+const AccionHecha = ({ t, onCerrar, onListo }) => {
+  const [res, setRes] = useState("");
+  const [error, setError] = useState("");
+  const enviar = async () => {
+    try {
+      await api(`/tareas/${t.id}/hecha`, { method: "POST", body: { resultado: res } });
+      onListo();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+  return (
+    <Modal titulo="Marcar como hecha" emoji="✅" onCerrar={onCerrar}>
+      <p className="text-sm font-bold text-slate-800">{t.titulo}</p>
+      <Etiqueta>¿Cómo quedó?</Etiqueta>
+      <Opciones valor={res} onElegir={setRes} opciones={(RESULTADOS[t.tipo] || RESULTADOS._).map((x) => ({ k: x, label: x, tono: "verde" }))} />
+      <textarea value={res} onChange={(e) => setRes(e.target.value)} rows={2} placeholder="O escribe el resultado" className={campo} maxLength={500} />
+      {error && <p className="rd-error-t text-sm font-bold">{error}</p>}
+      <div className="flex justify-end">
+        <button type="button" onClick={enviar} className="rd-boton-t px-5 py-2 rounded-xl text-sm font-black cursor-pointer">
+          ✅ Guardar como hecha
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
+const AccionPasar = ({ t, ctx, onCerrar, onListo }) => {
+  // Por defecto: al siguiente turno (el que empieza después del actual)
+  const siguiente = useMemo(() => {
+    const act = ctx.turnos.filter((x) => x.activo).sort((a, b) => String(a.inicio).localeCompare(String(b.inicio)));
+    const i = act.findIndex((x) => x.id === (t.destino.turnoId || ctx.turnoActualId || ctx.yo.turnoId));
+    return i >= 0 && act.length > 1 ? act[(i + 1) % act.length] : null;
+  }, [ctx, t]);
+  const [destino, setDestino] = useState(siguiente ? { tipo: "turno", turnoId: siguiente.id } : null);
+  const [comentario, setComentario] = useState("");
+  const [manana, setManana] = useState(false);
+  const [error, setError] = useState("");
+  const enviar = async () => {
+    try {
+      await api(`/tareas/${t.id}/pasar`, { method: "POST", body: { destino, comentario, fecha: manana ? sumarDiasISO(ctx.hoy, 1) : undefined } });
+      onListo();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+  return (
+    <Modal titulo="Pasar a otro turno" emoji="↪️" onCerrar={onCerrar} ancho="max-w-2xl">
+      <p className="text-sm font-bold text-slate-800">{t.titulo}</p>
+      <div>
+        <Etiqueta>¿A quién se la pasas?</Etiqueta>
+        <ElegirDestino ctx={ctx} valor={destino} onCambiar={setDestino} excluir={t.destino} />
+      </div>
+      <label className="block">
+        <Etiqueta>Comentario (qué se hizo y qué falta)</Etiqueta>
+        <textarea value={comentario} onChange={(e) => setComentario(e.target.value)} rows={3} placeholder="Ej. Lo llamé a las 12, no contestó. Volver a llamar después de las 5 pm." className={campo} maxLength={400} />
+      </label>
+      <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
+        <input type="checkbox" checked={manana} onChange={(e) => setManana(e.target.checked)} className="w-4 h-4" /> Que lo haga mañana
+      </label>
+      {error && <p className="rd-error-t text-sm font-bold">{error}</p>}
+      <div className="flex justify-end">
+        <button type="button" disabled={!destino || !comentario.trim()} onClick={enviar} className="rd-boton-t px-5 py-2 rounded-xl text-sm font-black cursor-pointer disabled:opacity-50">
+          ↪️ Pasar tarea
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
+const AccionReprogramar = ({ t, ctx, onCerrar, onListo }) => {
+  const hoy = ctx.hoy;
+  const [fecha, setFecha] = useState(sumarDiasISO(hoy, 1));
+  const [hora, setHora] = useState(t.hora || "");
+  const [motivo, setMotivo] = useState("");
+  const [error, setError] = useState("");
+  const enviar = async () => {
+    try {
+      await api(`/tareas/${t.id}/reprogramar`, { method: "POST", body: { fecha, hora, motivo } });
+      onListo();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+  return (
+    <Modal titulo="Reprogramar" emoji="📅" onCerrar={onCerrar}>
+      <p className="text-sm font-bold text-slate-800">{t.titulo}</p>
+      <Etiqueta>Nueva fecha</Etiqueta>
+      <div className="flex flex-wrap items-center gap-2">
+        <Opciones
+          valor={fecha}
+          onElegir={setFecha}
+          opciones={[
+            { k: hoy, label: "Más tarde hoy", emoji: "🕐", tono: "teal" },
+            { k: sumarDiasISO(hoy, 1), label: "Mañana", emoji: "➡️", tono: "azul" },
+            { k: sumarDiasISO(hoy, 2), label: "En 2 días", emoji: "📆", tono: "violeta" },
+            { k: sumarDiasISO(hoy, 7), label: "En una semana", emoji: "🗓️", tono: "ambar" },
+          ]}
+        />
+        <input type="date" min={hoy} value={fecha} onChange={(e) => setFecha(e.target.value)} className="px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm" />
+        <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm" />
+      </div>
+      <label className="block">
+        <Etiqueta>Motivo</Etiqueta>
+        <Opciones valor={motivo} onElegir={setMotivo} className="mb-2" opciones={["No contestó", "Pidió otro día", "No hubo tiempo en el turno", "Falta información"].map((x) => ({ k: x, label: x, tono: "ambar" }))} />
+        <input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="O escribe el motivo" className={campo} maxLength={300} />
+      </label>
+      {error && <p className="rd-error-t text-sm font-bold">{error}</p>}
+      <div className="flex justify-end">
+        <button type="button" disabled={!motivo.trim()} onClick={enviar} className="rd-boton-t px-5 py-2 rounded-xl text-sm font-black cursor-pointer disabled:opacity-50">
+          📅 Reprogramar
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
+const ACCION_HIST = {
+  creada: ["🆕", "Creada"],
+  tomada: ["🙋", "La tomó"],
+  soltada: ["↩️", "La soltó"],
+  hecha: ["✅", "Hecha"],
+  cerrada_auto: ["🤖", "Se cerró sola"],
+  pasada: ["↪️", "Pasada"],
+  reprogramada: ["📅", "Reprogramada"],
+  comentario: ["💬", "Comentario"],
+  cancelada: ["🚫", "Anulada"],
+};
+const Historial = ({ t, onCerrar }) => {
+  const [filas, setFilas] = useState(null);
+  const [comentario, setComentario] = useState("");
+  const cargar = () => api(`/tareas/${t.id}/historial`).then(setFilas).catch(() => setFilas([]));
+  useEffect(() => {
+    cargar();
+  }, [t.id]);
+  const comentar = async () => {
+    if (!comentario.trim()) return;
+    await api(`/tareas/${t.id}/comentar`, { method: "POST", body: { comentario } }).catch(() => {});
+    setComentario("");
+    cargar();
+  };
+  return (
+    <Modal titulo="Historial de la tarea" emoji="🕓" onCerrar={onCerrar}>
+      <p className="text-sm font-bold text-slate-800">{t.titulo}</p>
+      {!filas ? (
+        <p className="text-sm text-slate-500">Cargando…</p>
+      ) : (
+        <ol className="space-y-2.5 border-l-2 border-slate-200 ml-2 pl-4">
+          {filas.map((h, i) => {
+            const [e, l] = ACCION_HIST[h.accion] || ["•", h.accion];
+            return (
+              <li key={i} className="relative">
+                <span className="absolute -left-[27px] top-0 w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[11px]">
+                  <Emo e={e} />
+                </span>
+                <p className="text-sm font-extrabold text-slate-800">
+                  {l} <span className="font-semibold text-slate-500">· {h.quien}</span>
+                </p>
+                {h.detalle && <p className="text-sm text-slate-600">{h.detalle}</p>}
+                <p className="text-[11px] text-slate-400">{String(h.fecha).slice(0, 16).replace("T", " ")}</p>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      <div className="flex gap-2">
+        <input value={comentario} onChange={(e) => setComentario(e.target.value)} onKeyDown={(e) => e.key === "Enter" && comentar()} placeholder="Agregar un comentario" className={campo} />
+        <button type="button" onClick={comentar} className="rd-boton-t px-4 rounded-xl text-sm font-black cursor-pointer">
+          Enviar
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
+// ---------------------------------------------------------------------
+// Tarjeta de una tarea
+// ---------------------------------------------------------------------
+export const TarjetaTarea = ({ t, ctx, onAccion, compacta = false }) => {
+  const tipo = tipoDe(t.tipo);
+  const est = ESTADOS[estadoVisible(t)];
+  const abierta = t.estado === "pendiente" || t.estado === "en_curso";
+  const mia = t.tomadaPor?.id === ctx.yo.id;
+  const tomadaOtro = t.tomadaPor && !mia;
+  const persona = t.alumno || t.prospecto;
+  const wa = persona ? enlaceWhatsapp(persona.telefono, `Hola ${primerNombre(persona.nombre)}, te escribimos de ${ctx.gimnasio || "RADICAL"}.`) : null;
+  const puedeAnular = abierta && (ctx.yo.rol === "admin" || t.creador?.id === ctx.yo.id);
+  const [error, setError] = useState("");
+  const accion = async (ruta) => {
+    setError("");
+    try {
+      await api(`/tareas/${t.id}/${ruta}`, { method: "POST", body: {} });
+      onAccion?.("recargar");
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+  return (
+    <div className={`rd-kpi-${t.atrasada ? "rojo" : tipo.tono} rd-tarea rd-aparece ${abierta ? "" : "rd-tarea-cerrada"} rounded-2xl border p-3 sm:p-3.5`}>
+      <div className="flex items-start gap-3">
+        <span className="rd-tarea-ico w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0">
+          <Emo e={tipo.emoji} />
+        </span>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className={`font-extrabold text-slate-900 text-sm sm:text-[15px] leading-snug ${t.estado === "hecha" ? "line-through decoration-2 opacity-70" : ""}`}>{t.titulo}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Chip tono={est.tono}>
+              <Emo e={est.emoji} /> {est.label}
+            </Chip>
+            <Chip tono="plomo">
+              🗓️ {cuandoTexto(t.fecha, ctx.hoy)}
+              {t.hora ? ` · ${t.hora}` : ""}
+            </Chip>
+            <Chip tono="teal" title="Para quién es">
+              <Emo e={emojiDestino(t.destino)} /> {textoDestino(t.destino, ctx.turnos)}
+            </Chip>
+            {t.origen === "auto" && <Chip tono="indigo">🤖 Automática</Chip>}
+            {t.reprogramaciones > 0 && <Chip tono="ambar">📅 Reprogramada {t.reprogramaciones}×</Chip>}
+            {t.pases > 0 && <Chip tono="violeta">↪️ Pasada {t.pases}×</Chip>}
+          </div>
+          {!compacta && t.nota && <p className="text-xs sm:text-sm text-slate-600 whitespace-pre-line">{t.nota}</p>}
+          {persona && (
+            <p className="text-xs font-bold text-slate-600 flex flex-wrap items-center gap-2">
+              <span>
+                <Emo e={t.alumno ? "🧑‍🎓" : "🙋"} /> {persona.nombre}
+                {t.alumno?.codigo ? ` · ${t.alumno.codigo}` : ""}
+              </span>
+              {persona.telefono && <span className="text-slate-500">📱 {persona.telefono}</span>}
+              {wa && abierta && (
+                <a href={wa} target="_blank" rel="noreferrer" className="rd-kpi-verde rd-chip-t inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold">
+                  <MessageCircle className="w-3 h-3" /> WhatsApp
+                </a>
+              )}
+            </p>
+          )}
+          {(t.tomadaPor || t.resultado) && (
+            <p className="text-xs text-slate-500">
+              {t.tomadaPor && abierta && (
+                <>
+                  🙋 La tiene <b className="text-slate-700">{mia ? "tú" : t.tomadaPor.nombre}</b>
+                </>
+              )}
+              {t.estado === "hecha" && (
+                <>
+                  ✅ {t.cierreAuto ? "Se cerró sola" : `Hecha por ${t.cerradaPor?.nombre || "—"}`}
+                  {t.aTiempo === false && " · fuera de fecha"}
+                </>
+              )}
+              {t.resultado && <span className="block text-slate-600 font-semibold">«{t.resultado}»</span>}
+            </p>
+          )}
+          {error && <p className="rd-error-t text-xs font-bold">{error}</p>}
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {abierta && !t.tomadaPor && (
+              <button type="button" onClick={() => accion("tomar")} className="rd-boton-t px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer">
+                🙋 Tomar
+              </button>
+            )}
+            {abierta && !tomadaOtro && (
+              <button type="button" onClick={() => onAccion?.("hecha", t)} className="rd-kpi-verde rd-boton-suave px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer">
+                ✅ Hecha
+              </button>
+            )}
+            {abierta && (
+              <button type="button" onClick={() => onAccion?.("pasar", t)} className="rd-kpi-violeta rd-boton-suave px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer">
+                ↪️ Pasar
+              </button>
+            )}
+            {abierta && (
+              <button type="button" onClick={() => onAccion?.("reprogramar", t)} className="rd-kpi-ambar rd-boton-suave px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer">
+                📅 Reprogramar
+              </button>
+            )}
+            {abierta && mia && (
+              <button type="button" onClick={() => accion("soltar")} className="rd-kpi-plomo rd-boton-suave px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer" title="Devolverla para que otra persona la tome">
+                ↩️ Soltar
+              </button>
+            )}
+            <button type="button" onClick={() => onAccion?.("historial", t)} className="rd-kpi-plomo rd-boton-suave px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer inline-flex items-center gap-1">
+              <History className="w-3.5 h-3.5" /> Historial
+            </button>
+            {puedeAnular && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm("¿Anular esta tarea?")) accion("anular");
+                }}
+                className="rd-kpi-rojo rd-boton-suave px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer"
+              >
+                🚫 Anular
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/** Ventanas de acción (se usan desde cualquier lista de tareas) */
+export const VentanasTarea = ({ abierta, ctx, onCerrar, onListo }) => {
+  if (!abierta) return null;
+  const { tipo, t } = abierta;
+  const p = { t, ctx, onCerrar, onListo };
+  if (tipo === "hecha") return <AccionHecha {...p} />;
+  if (tipo === "pasar") return <AccionPasar {...p} />;
+  if (tipo === "reprogramar") return <AccionReprogramar {...p} />;
+  if (tipo === "historial") return <Historial t={t} onCerrar={onCerrar} />;
+  return null;
+};
+
+// ---------------------------------------------------------------------
+// Calendario
+// ---------------------------------------------------------------------
+const NOMBRES_MES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const Calendario = ({ mes, setMes, tareas, hoy, dia, setDia }) => {
+  const [y, m] = mes.split("-").map(Number);
+  const primero = new Date(Date.UTC(y, m - 1, 1));
+  const offset = (primero.getUTCDay() + 6) % 7; // semana empieza lunes
+  const diasMes = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const celdas = [];
+  for (let i = 0; i < offset; i++) celdas.push(null);
+  for (let d = 1; d <= diasMes; d++) celdas.push(`${mes}-${String(d).padStart(2, "0")}`);
+  while (celdas.length % 7) celdas.push(null);
+  const porDia = useMemo(() => {
+    const o = {};
+    for (const t of tareas) {
+      const k = t.atrasada ? (t.fecha < hoy ? t.fecha : t.fecha) : t.fecha;
+      const x = (o[k] ||= { hechas: 0, pendientes: 0, atrasadas: 0, reprog: 0, total: 0 });
+      x.total += 1;
+      if (t.estado === "hecha") x.hechas += 1;
+      else if (t.estado === "cancelada") continue;
+      else if (t.atrasada) x.atrasadas += 1;
+      else x.pendientes += 1;
+      if (t.reprogramaciones) x.reprog += 1;
+    }
+    return o;
+  }, [tareas, hoy]);
+  const mover = (n) => {
+    const d = new Date(Date.UTC(y, m - 1 + n, 1));
+    setMes(d.toISOString().slice(0, 7));
+  };
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4">
+      <div className="flex items-center justify-between mb-3">
+        <button type="button" onClick={() => mover(-1)} className="w-9 h-9 rounded-xl hover:bg-slate-100 flex items-center justify-center cursor-pointer" aria-label="Mes anterior">
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div className="text-center">
+          <p className="font-black text-slate-900">
+            {NOMBRES_MES[m - 1]} {y}
+          </p>
+          <button type="button" onClick={() => (setMes(hoy.slice(0, 7)), setDia(hoy))} className="text-[11px] font-black text-slate-500 hover:underline cursor-pointer">
+            Ir a hoy
+          </button>
+        </div>
+        <button type="button" onClick={() => mover(1)} className="w-9 h-9 rounded-xl hover:bg-slate-100 flex items-center justify-center cursor-pointer" aria-label="Mes siguiente">
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center text-[10px] sm:text-[11px] font-black uppercase text-slate-400 mb-1">
+        {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((d) => (
+          <span key={d}>{d}</span>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {celdas.map((f, i) => {
+          if (!f) return <span key={i} />;
+          const x = porDia[f];
+          const on = f === dia;
+          return (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setDia(f)}
+              className={`rd-cal-dia ${on ? "rd-cal-on" : ""} ${f === hoy ? "rd-cal-hoy" : ""} ${f < hoy ? "rd-cal-pasado" : ""} min-h-[58px] sm:min-h-[74px] rounded-xl border p-1 sm:p-1.5 text-left flex flex-col cursor-pointer`}
+            >
+              <span className="text-xs sm:text-sm font-black">{Number(f.slice(8))}</span>
+              {x && (
+                <span className="mt-auto flex flex-wrap gap-0.5">
+                  {x.atrasadas > 0 && <span className="rd-kpi-rojo rd-cal-n">{x.atrasadas}</span>}
+                  {x.pendientes > 0 && <span className="rd-kpi-ambar rd-cal-n">{x.pendientes}</span>}
+                  {x.hechas > 0 && <span className="rd-kpi-verde rd-cal-n">{x.hechas}</span>}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex flex-wrap gap-3 mt-3 text-[11px] font-bold text-slate-500">
+        <span className="flex items-center gap-1">
+          <span className="rd-kpi-ambar rd-cal-n">n</span> Pendientes
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="rd-kpi-rojo rd-cal-n">n</span> Atrasadas
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="rd-kpi-verde rd-cal-n">n</span> Hechas
+        </span>
+      </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------
+// Reporte de cumplimiento
+// ---------------------------------------------------------------------
+const Barra = ({ pct }) => (
+  <span className="rd-barra-t block h-2 rounded-full overflow-hidden" title={pct == null ? "Sin datos" : `${pct} %`}>
+    <span className="block h-full rounded-full" style={{ width: `${pct || 0}%` }} />
+  </span>
+);
+const tonoPct = (p) => (p == null ? "plomo" : p >= 85 ? "verde" : p >= 60 ? "ambar" : "rojo");
+
+const Reporte = ({ hoy }) => {
+  const [rango, setRango] = useState("7");
+  const [r, setR] = useState(null);
+  const [error, setError] = useState("");
+  const desde = rango === "mes" ? `${hoy.slice(0, 7)}-01` : sumarDiasISO(hoy, -(Number(rango) - 1));
+  useEffect(() => {
+    const cargar = () => api(`/tareas/reporte?desde=${desde}&hasta=${hoy}`).then(setR).catch((e) => setError(e.message));
+    cargar();
+    let t = null;
+    const fuera = escucharCambios(() => {
+      clearTimeout(t);
+      t = setTimeout(cargar, 500);
+    });
+    return () => (fuera(), clearTimeout(t));
+  }, [desde, hoy]);
+  if (error) return <p className="rd-error-t font-bold text-sm">{error}</p>;
+  if (!r) return <p className="text-sm text-slate-500">Cargando reporte…</p>;
+  const g = r.general;
+  const Tabla = ({ titulo, emoji, filas, nombre }) => (
+    <div className="bg-white rounded-2xl border border-slate-200 p-4">
+      <h3 className="font-black text-slate-900 mb-3 flex items-center gap-2">
+        <Emo e={emoji} /> {titulo}
+      </h3>
+      {filas.length === 0 ? (
+        <p className="text-sm text-slate-500">Sin tareas en este periodo.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[11px] uppercase text-slate-400 text-left">
+                <th className="py-1.5 pr-3">{nombre}</th>
+                <th className="py-1.5 px-2 text-center">Total</th>
+                <th className="py-1.5 px-2 text-center">✅ Hechas</th>
+                <th className="py-1.5 px-2 text-center">A tiempo</th>
+                <th className="py-1.5 px-2 text-center">⏳ Pend.</th>
+                <th className="py-1.5 px-2 text-center">⏰ Atras.</th>
+                <th className="py-1.5 px-2 text-center">📅 Reprog.</th>
+                <th className="py-1.5 pl-2 w-36">Cumplimiento</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filas.map((f) => (
+                <tr key={f.k} className="border-t border-slate-100">
+                  <td className="py-2 pr-3 font-bold text-slate-800">{f.nombre}</td>
+                  <td className="py-2 px-2 text-center font-bold">{f.total}</td>
+                  <td className="py-2 px-2 text-center">{f.hechas}</td>
+                  <td className="py-2 px-2 text-center">{f.aTiempo}</td>
+                  <td className="py-2 px-2 text-center">{f.pendientes}</td>
+                  <td className="py-2 px-2 text-center">{f.atrasadas ? <Chip tono="rojo">{f.atrasadas}</Chip> : 0}</td>
+                  <td className="py-2 px-2 text-center">{f.reprogramadas}</td>
+                  <td className={`py-2 pl-2 rd-kpi-${tonoPct(f.cumplimiento)}`}>
+                    <span className="flex items-center gap-2">
+                      <Barra pct={f.cumplimiento} />
+                      <b className="rd-texto-k text-xs w-9 text-right">{f.cumplimiento == null ? "—" : `${f.cumplimiento}%`}</b>
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+  return (
+    <div className="space-y-4">
+      <Opciones
+        valor={rango}
+        onElegir={setRango}
+        opciones={[
+          { k: "1", label: "Hoy", emoji: "📍", tono: "teal" },
+          { k: "7", label: "Últimos 7 días", emoji: "🗓️", tono: "azul" },
+          { k: "30", label: "Últimos 30 días", emoji: "📆", tono: "violeta" },
+          { k: "mes", label: "Este mes", emoji: "🗂️", tono: "ambar" },
+        ]}
+      />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <TarjetaKpi titulo="Tareas del periodo" valor={g.total} sub={`${g.auto} se cerraron solas`} emoji="📋" tono="teal" />
+        <TarjetaKpi titulo="Hechas" valor={g.hechas} sub={`${g.aTiempo} a tiempo · ${g.tarde} tarde`} emoji="✅" tono="verde" />
+        <TarjetaKpi titulo="Atrasadas" valor={g.atrasadas} sub={`${g.pendientes} pendientes en fecha`} emoji="⏰" tono="rojo" alerta={g.atrasadas > 0} />
+        <TarjetaKpi titulo="Cumplimiento" valor={g.cumplimiento ?? 0} texto={g.cumplimiento == null ? "—" : undefined} sufijo={g.cumplimiento == null ? "" : "%"} sub={`${g.reprogramadas} reprogramadas · ${g.pasadas} pasadas`} emoji="🎯" tono={tonoPct(g.cumplimiento)} progreso={g.cumplimiento} />
+      </div>
+      <Tabla titulo="Por turno de recepción" emoji="🕒" nombre="Turno" filas={r.porTurno.map((t) => ({ ...t, k: t.turnoId, nombre: textoTurno({ corto: t.nombre, personas: t.personas }) }))} />
+      <Tabla titulo="Por área" emoji="👥" nombre="Área" filas={r.porRol.map((t) => ({ ...t, k: t.rol, nombre: AREAS[t.rol]?.corto || "Administración" }))} />
+      <div className="bg-white rounded-2xl border border-slate-200 p-4">
+        <h3 className="font-black text-slate-900 mb-3 flex items-center gap-2">
+          <Emo e="🙋" /> Por persona
+        </h3>
+        {r.porPersona.length === 0 ? (
+          <p className="text-sm text-slate-500">Nadie ha tomado tareas en este periodo.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[11px] uppercase text-slate-400 text-left">
+                  <th className="py-1.5 pr-3">Persona</th>
+                  <th className="py-1.5 px-2 text-center">Tomadas</th>
+                  <th className="py-1.5 px-2 text-center">✅ Hechas</th>
+                  <th className="py-1.5 px-2 text-center">A tiempo</th>
+                  <th className="py-1.5 px-2 text-center">⏰ Atras.</th>
+                  <th className="py-1.5 px-2 text-center">↪️ Pasó</th>
+                  <th className="py-1.5 px-2 text-center">📅 Reprog.</th>
+                  <th className="py-1.5 px-2 text-center">🆕 Creó</th>
+                </tr>
+              </thead>
+              <tbody>
+                {r.porPersona.map((p) => (
+                  <tr key={p.usuarioId} className="border-t border-slate-100">
+                    <td className="py-2 pr-3">
+                      <b className="text-slate-800">{p.nombre}</b>
+                      <span className="block text-[11px] text-slate-500">{p.turno ? `Turno ${p.turno}` : AREAS[p.rol]?.corto || "Administración"}</span>
+                    </td>
+                    <td className="py-2 px-2 text-center">{p.tomadas}</td>
+                    <td className="py-2 px-2 text-center font-bold">{p.hechas}</td>
+                    <td className="py-2 px-2 text-center">{p.aTiempo}</td>
+                    <td className="py-2 px-2 text-center">{p.atrasadas ? <Chip tono="rojo">{p.atrasadas}</Chip> : 0}</td>
+                    <td className="py-2 px-2 text-center">{p.pasadas}</td>
+                    <td className="py-2 px-2 text-center">{p.reprogramadas}</td>
+                    <td className="py-2 px-2 text-center">{p.creadas}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      <Tabla titulo="Por tipo de tarea" emoji="🏷️" nombre="Tipo" filas={r.porTipo.map((t) => ({ ...t, k: t.tipo, nombre: `${tipoDe(t.tipo).emoji} ${tipoDe(t.tipo).label}` }))} />
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------
+// Módulo
+// ---------------------------------------------------------------------
+const FILTROS = [
+  { k: "abiertas", label: "Por hacer", emoji: "⏳", tono: "ambar" },
+  { k: "atrasadas", label: "Atrasadas", emoji: "⏰", tono: "rojo" },
+  { k: "mias", label: "Tomadas por mí", emoji: "🙋", tono: "azul" },
+  { k: "hechas", label: "Hechas", emoji: "✅", tono: "verde" },
+  { k: "todas", label: "Todas", emoji: "📋", tono: "plomo" },
+];
+
+const TareasModule = () => {
+  const hoyLocal = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
+  const [vista, setVista] = useState("calendario");
+  const [mes, setMes] = useState(hoyLocal.slice(0, 7));
+  const [dia, setDia] = useState(hoyLocal);
+  const [filtro, setFiltro] = useState("abiertas");
+  const [tipoF, setTipoF] = useState("");
+  const [buscar, setBuscar] = useState("");
+  const [nueva, setNueva] = useState(false);
+  const [ventana, setVentana] = useState(null);
+  const desde = `${mes}-01`;
+  const hasta = sumarDiasISO(`${mes}-01`, 41);
+  const { datos, error, faltanTablas, cargar } = useTareas(sumarDiasISO(desde, -7), hasta);
+  const ctx = datos;
+  const hoy = datos?.hoy || hoyLocal;
+  const tareas = datos?.tareas || [];
+
+  const kpi = useMemo(() => {
+    const abiertas = tareas.filter((t) => t.estado === "pendiente" || t.estado === "en_curso");
+    return {
+      hoy: abiertas.filter((t) => t.fecha === hoy && !t.atrasada).length,
+      atrasadas: abiertas.filter((t) => t.atrasada).length,
+      enCurso: abiertas.filter((t) => t.estado === "en_curso").length,
+      hechasHoy: tareas.filter((t) => t.estado === "hecha" && String(t.cerradaEn || "").slice(0, 10) === hoy).length,
+      mias: abiertas.filter((t) => t.tomadaPor?.id === datos?.yo.id).length,
+    };
+  }, [tareas, hoy, datos]);
+
+  const filtrar = (lista) =>
+    lista.filter((t) => {
+      const abierta = t.estado === "pendiente" || t.estado === "en_curso";
+      if (filtro === "abiertas" && !abierta) return false;
+      if (filtro === "atrasadas" && !t.atrasada) return false;
+      if (filtro === "mias" && !(abierta && t.tomadaPor?.id === datos?.yo.id)) return false;
+      if (filtro === "hechas" && t.estado !== "hecha") return false;
+      if (tipoF && t.tipo !== tipoF) return false;
+      if (buscar.trim()) {
+        const q = buscar.trim().toLowerCase();
+        const txt = `${t.titulo} ${t.nota} ${t.alumno?.nombre || ""} ${t.prospecto?.nombre || ""} ${t.alumno?.codigo || ""}`.toLowerCase();
+        if (!txt.includes(q)) return false;
+      }
+      return true;
+    });
+
+  const onAccion = (tipo, t) => (tipo === "recargar" ? cargar() : setVentana({ tipo, t }));
+  const listo = () => {
+    setVentana(null);
+    setNueva(false);
+    cargar();
+  };
+
+  // Tareas del día elegido en el calendario (las atrasadas se ven en «hoy»)
+  const delDia = tareas
+    .filter((t) => t.fecha === dia || (dia === hoy && t.atrasada && t.fecha < hoy))
+    .sort((a, b) => Number(b.atrasada) - Number(a.atrasada) || String(a.hora || "99").localeCompare(String(b.hora || "99")));
+
+  const lista = filtrar(tareas).sort((a, b) => Number(b.atrasada) - Number(a.atrasada) || a.fecha.localeCompare(b.fecha) || String(a.hora || "99").localeCompare(String(b.hora || "99")));
+  const grupos = [
+    ["⏰ Atrasadas", lista.filter((t) => t.atrasada)],
+    ["📍 Hoy", lista.filter((t) => !t.atrasada && t.fecha === hoy)],
+    ["➡️ Próximos días", lista.filter((t) => !t.atrasada && t.fecha > hoy)],
+    ["🗂️ Días anteriores", lista.filter((t) => !t.atrasada && t.fecha < hoy)],
+  ].filter(([, l]) => l.length);
+
+  const miTurno = ctx?.yo.turnoId ? ctx.turnos.find((t) => t.id === ctx.yo.turnoId) : null;
+  const turnoAhora = ctx?.turnoActualId ? ctx.turnos.find((t) => t.id === ctx.turnoActualId) : null;
+
+  return (
+    <div className="space-y-5">
+      <CabeceraModulo
+        icono={ClipboardList}
+        etiqueta="Operativo"
+        titulo="Tareas entre turnos"
+        descripcion="Lo que hay que hacer hoy, quién lo tomó y qué pasa al siguiente turno. Se actualiza solo en todas las pantallas."
+        accion={ctx && <AccionCabecera icono={Plus} onClick={() => setNueva(true)}>Nueva tarea</AccionCabecera>}
+        activa={vista}
+        onCambiar={setVista}
+        pestanas={[
+          { k: "calendario", icono: CalendarDays, label: "Calendario", tono: "teal" },
+          { k: "lista", icono: ListChecks, label: "Lista", tono: "violet" },
+          { k: "reporte", icono: BarChart3, label: "Reporte de cumplimiento", tono: "amber" },
+        ]}
+      />
+
+      {faltanTablas ? (
+        <div className="rd-kpi-ambar rd-aviso-t rounded-2xl border p-5">
+          <p className="font-black">🛠️ Falta un paso en la base de datos</p>
+          <p className="text-sm mt-1">{error}</p>
+        </div>
+      ) : !ctx ? (
+        <p className="text-sm text-slate-500">{error || "Cargando tareas…"}</p>
+      ) : (
+        <>
+          {(miTurno || turnoAhora) && (
+            <div className="flex flex-wrap gap-2">
+              {miTurno && (
+                <Chip tono="teal" className="!text-xs !px-3 !py-1">
+                  🧑‍💼 Tu turno: {textoTurno(miTurno)} ({miTurno.inicio}–{miTurno.fin})
+                </Chip>
+              )}
+              {turnoAhora && (
+                <Chip tono="verde" className="!text-xs !px-3 !py-1">
+                  🟢 Ahora atiende: {textoTurno(turnoAhora)}
+                </Chip>
+              )}
+            </div>
+          )}
+
+          {vista !== "reporte" && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <TarjetaKpi titulo="Para hoy" valor={kpi.hoy} sub="pendientes en fecha" emoji="📍" tono="teal" onClick={() => (setVista("lista"), setFiltro("abiertas"))} />
+              <TarjetaKpi titulo="Atrasadas" valor={kpi.atrasadas} sub="pasó su fecha u hora" emoji="⏰" tono="rojo" alerta={kpi.atrasadas > 0} onClick={() => (setVista("lista"), setFiltro("atrasadas"))} />
+              <TarjetaKpi titulo="Tomadas por mí" valor={kpi.mias} sub={`${kpi.enCurso} en curso en total`} emoji="🙋" tono="azul" onClick={() => (setVista("lista"), setFiltro("mias"))} />
+              <TarjetaKpi titulo="Hechas hoy" valor={kpi.hechasHoy} sub="cerradas hoy" emoji="✅" tono="verde" onClick={() => (setVista("lista"), setFiltro("hechas"))} />
+            </div>
+          )}
+
+          {vista === "calendario" && (
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 items-start">
+              <div className="xl:col-span-3">
+                <Calendario mes={mes} setMes={setMes} tareas={tareas} hoy={hoy} dia={dia} setDia={setDia} />
+              </div>
+              <div className="xl:col-span-2 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-black text-slate-900">
+                    {cuandoTexto(dia, hoy)} · {fechaCorta(dia)}
+                    <span className="ml-2 text-xs font-bold text-slate-500">{delDia.length} tarea(s)</span>
+                  </h3>
+                  {dia >= hoy && (
+                    <button type="button" onClick={() => setNueva(dia)} className="rd-boton-t px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer">
+                      + Tarea este día
+                    </button>
+                  )}
+                </div>
+                {delDia.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
+                    <Emo e="🎉" /> No hay tareas para este día.
+                  </div>
+                ) : (
+                  delDia.map((t) => <TarjetaTarea key={t.id} t={t} ctx={ctx} onAccion={onAccion} />)
+                )}
+              </div>
+            </div>
+          )}
+
+          {vista === "lista" && (
+            <div className="space-y-3">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+                <Opciones valor={filtro} onElegir={setFiltro} opciones={FILTROS} />
+                <div className="relative lg:ml-auto lg:w-72">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar tarea o alumno" className={`${campo} pl-9`} />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <button type="button" onClick={() => setTipoF("")} className={`rd-kpi-plomo rd-opcion-t ${!tipoF ? "rd-opcion-on" : ""} px-2.5 py-1 rounded-lg text-xs font-extrabold cursor-pointer`}>
+                  Todos los tipos
+                </button>
+                {Object.entries(TIPOS_TAREA)
+                  .filter(([k]) => tareas.some((t) => t.tipo === k))
+                  .map(([k, t]) => (
+                    <button key={k} type="button" onClick={() => setTipoF(k === tipoF ? "" : k)} className={`rd-kpi-${t.tono} rd-opcion-t ${tipoF === k ? "rd-opcion-on" : ""} px-2.5 py-1 rounded-lg text-xs font-extrabold cursor-pointer`}>
+                      <Emo e={t.emoji} /> {t.label}
+                    </button>
+                  ))}
+              </div>
+              {grupos.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+                  <Emo e="🎉" /> No hay tareas con este filtro.
+                </div>
+              ) : (
+                grupos.map(([titulo, l]) => (
+                  <section key={titulo} className="space-y-2">
+                    <h3 className="font-black text-slate-700 text-sm">
+                      {titulo} <span className="text-slate-400">({l.length})</span>
+                    </h3>
+                    <div className="grid grid-cols-1 2xl:grid-cols-2 gap-2.5">
+                      {l.map((t) => (
+                        <TarjetaTarea key={t.id} t={t} ctx={ctx} onAccion={onAccion} />
+                      ))}
+                    </div>
+                  </section>
+                ))
+              )}
+            </div>
+          )}
+
+          {vista === "reporte" && <Reporte hoy={hoy} />}
+
+          {nueva && <NuevaTarea ctx={ctx} fechaInicial={typeof nueva === "string" ? nueva : null} onCerrar={() => setNueva(false)} onListo={listo} />}
+          <VentanasTarea abierta={ventana} ctx={ctx} onCerrar={() => setVentana(null)} onListo={listo} />
+        </>
+      )}
+    </div>
+  );
+};
+
+export default TareasModule;

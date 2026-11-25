@@ -1,4 +1,5 @@
 import { marcarNavegacion } from "./utils/subPestana";
+import { TareasDeHoy } from "./components/tasks/TareasDeHoy";
 import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from "react";
 import { GymProvider, useGym } from "./context/GymContext";
 import { Header } from "./components/common/Header";
@@ -42,6 +43,7 @@ const cargadores = {
   StudentPortalModule: () => import("./components/student_portal/StudentPortalModule").then((m) => ({ default: m.StudentPortalModule })),
   RoutinesAndExercises: () => import("./components/routines/RoutinesAndExercises").then((m) => ({ default: m.RoutinesAndExercises })),
   CrmModule: () => import("./components/crm/CrmModule").then((m) => ({ default: m.CrmModule })),
+  TareasModule: () => import("./components/tasks/TareasModule"),
 };
 const DashboardOverview = lazy(cargadores.DashboardOverview);
 const MembersManagement = lazy(cargadores.MembersManagement);
@@ -62,6 +64,7 @@ const AttendanceModule = lazy(cargadores.AttendanceModule);
 const StudentPortalModule = lazy(cargadores.StudentPortalModule);
 const RoutinesAndExercises = lazy(cargadores.RoutinesAndExercises);
 const CrmModule = lazy(cargadores.CrmModule);
+const TareasModule = lazy(cargadores.TareasModule);
 
 let precargado = false;
 function precargarModulos() {
@@ -305,6 +308,8 @@ function MainAppContent() {
         return <NotificationCenter />;
       case "crm":
         return <CrmModule />;
+      case "tasks":
+        return <TareasModule />;
       case "routines":
         return <RoutinesAndExercises />;
       default:
@@ -356,6 +361,9 @@ function MainAppContent() {
       <CorregirIngreso />
       <GuardiaCambios />
       {userCanAccess(currentUser, "store") && currentUser.role !== "student" && <AvisoStockBajo onAbrir={() => setActiveTab("store")} />}
+      {currentUser.role !== "student" && (
+        <TareasDeHoy usuarioId={currentUser.id} nombre={currentUser.fullName} onAbrir={() => setActiveTab("tasks")} />
+      )}
 
       {isNewMemberModalOpen && (
         <Suspense fallback={null}>

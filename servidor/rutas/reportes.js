@@ -3,6 +3,7 @@
 // exportar a Excel/PDF. Cada consulta sale de las tablas reales.
 // =====================================================================
 import { soporte } from "../actualizaciones.js";
+import { nombreCortoTurno } from "./tareas.js";
 import { Router } from "express";
 import { readFile } from "node:fs/promises";
 import { consultar } from "../db.js";
@@ -331,7 +332,7 @@ router.get("/ingresos", async (req, res, next) => {
         comprobante: f.comprobante || "",
         relacionado: f.nombre_relacionado || "",
         cajero: f.cajero || "Sin turno",
-        turnoRecepcion: f.turno_recepcion || "Sin turno",
+        turnoRecepcion: f.turno_recepcion ? `Turno ${nombreCortoTurno(f.turno_recepcion)}` : "Sin turno",
         // Membresías: nueva, renovación o exalumno recuperado · y cómo está hoy ese alumno
         tipoMatricula: f.tipo_ingreso ? TIPO_INGRESO[f.tipo_ingreso] : "",
         estadoAlumno: f.idalumno ? estadoTexto(f.fin_ultima, plazo) : "",
