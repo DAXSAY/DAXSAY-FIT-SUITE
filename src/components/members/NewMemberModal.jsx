@@ -617,42 +617,53 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
             </div>
           </div>
 
-          {/* Bottom Bar Summary */}
-          {currentPlan && (
-            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">
-                  Total a Pagar e Ingreso de Caja:
-                </p>
-                <p className="text-xs font-semibold text-slate-900">
-                  {currentPlan.name} • Vence: {String(calculatedEndDate || "").slice(0, 10).split("-").reverse().join("/")}
-                </p>
+          {/* Resumen del pago: total, cuánto paga hoy (pago completo o parcial) y saldo */}
+          {currentPlan && (() => {
+            const total = currentPlan?.price || 0;
+            const parcial = amountPaid !== "" && Number(amountPaid) < total - 0.004;
+            const pagaHoy = amountPaid === "" ? total : Number(amountPaid || 0);
+            const saldo = Math.max(0, total - pagaHoy);
+            return (
+              <div className="rd-pago-resumen rounded-2xl border p-4 space-y-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-wider text-slate-500"><IconoEmoji e="🧾" /> Total del plan</p>
+                    <p className="text-sm font-semibold text-slate-800">
+                      {currentPlan.name} · vence el {String(calculatedEndDate || "").slice(0, 10).split("-").reverse().join("/")}
+                    </p>
+                  </div>
+                  <span className="text-2xl font-black text-blue-700 font-mono">S/ {total.toFixed(2)}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setAmountPaid("")} className={`rd-pago-opcion ${!parcial ? "rd-pago-opcion-on" : ""}`}>
+                    <IconoEmoji e="✅" /> Paga todo hoy
+                  </button>
+                  <button type="button" onClick={() => setAmountPaid(parcial ? amountPaid : (total / 2).toFixed(2))} className={`rd-pago-opcion ${parcial ? "rd-pago-opcion-on" : ""}`}>
+                    <IconoEmoji e="💸" /> Paga una parte (queda saldo)
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="block">
+                    <span className="block text-xs font-bold text-slate-600 mb-1">Paga hoy (S/)</span>
+                    <CampoNumero
+                      type="number"
+                      min="0.1"
+                      step="0.10"
+                      max={total}
+                      placeholder={total.toFixed(2)}
+                      value={amountPaid}
+                      onChange={(e) => setAmountPaid(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-right font-mono font-black text-lg"
+                    />
+                  </label>
+                  <div className={`rounded-xl border px-3 py-2 ${saldo > 0 ? "rd-pago-saldo" : "rd-pago-sin-saldo"}`}>
+                    <span className="block text-xs font-bold mb-0.5">{saldo > 0 ? "Queda debiendo" : "Sin saldo pendiente"}</span>
+                    <span className="block text-lg font-black font-mono">S/ {saldo.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
-              <div className="text-right space-y-1">
-                <span className="text-lg font-bold text-blue-700 font-mono block">
-                  S/ {(currentPlan?.price || 0).toFixed(2)}
-                </span>
-                <label className="flex items-center gap-1.5 text-xs text-slate-600 justify-end">
-                  Paga hoy S/
-                  <CampoNumero
-                    type="number"
-                    min="0.1"
-                    step="0.10"
-                    max={currentPlan?.price || 0}
-                    placeholder={(currentPlan?.price || 0).toFixed(2)}
-                    value={amountPaid}
-                    onChange={(e) => setAmountPaid(e.target.value)}
-                    className="w-24 px-2 py-1 rounded-md border border-gray-300 text-right font-mono font-bold"
-                  />
-                </label>
-                {amountPaid !== "" && Number(amountPaid) < (currentPlan?.price || 0) && (
-                  <span className="text-xs font-bold text-rose-600 block">
-                    Queda debiendo S/ {((currentPlan?.price || 0) - Number(amountPaid || 0)).toFixed(2)}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
+            );
+          })()}
           {currentPlan && amountPaid !== "" && Number(amountPaid) < (currentPlan?.price || 0) && (
             <DebtDueDatePicker value={debtDueDate} onChange={setDebtDueDate} membershipEnd={calculatedEndDate} />
           )}

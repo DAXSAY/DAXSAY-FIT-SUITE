@@ -4140,3 +4140,23 @@ html.dark .rd-logo{filter:drop-shadow(0 0 6px rgba(111,95,214,.35))}
 .rd-marca{letter-spacing:.14em;background:linear-gradient(90deg,#5a8fcf,#7a6cc9);-webkit-background-clip:text;background-clip:text;color:transparent !important;-webkit-text-fill-color:transparent}
 html.dark .rd-marca{text-shadow:none;background:linear-gradient(90deg,#7fb6ec,#a497ee);-webkit-background-clip:text;background-clip:text}
 .rd-marca-fs{font-size:.52em;letter-spacing:.2em;font-weight:800;text-transform:uppercase;margin-left:.15em;vertical-align:.2em}
+
+/* ---------- Botón de tamaño de letra (Aa) ---------- */
+.rd-boton-tamano{position:relative;display:inline-flex;align-items:baseline;gap:1px;padding:.35rem .55rem;border-radius:10px;font-weight:900;line-height:1;cursor:pointer;
+  background:#f3efe7;border:1px solid #e0d8ca;color:#5a6f9e}
+.rd-boton-tamano:hover{border-color:#8eaedb}
+.rd-boton-tamano-nivel{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;border-radius:99px;font-size:9px;display:flex;align-items:center;justify-content:center;background:#8eaedb;color:#fff}
+html.dark .rd-boton-tamano{background:#0b1626;border-color:rgba(125,180,255,.3);color:#9fc3f5}
+html.dark .rd-boton-tamano-nivel{background:#7db4ff;color:#06101c}
+
+/* ---------- Matrícula: resumen de pago con saldo bien visible ---------- */
+.rd-pago-resumen{background:#f2f6fb;border-color:#d3e0ee}
+html.dark .rd-pago-resumen{background:#0b1828;border-color:rgba(125,180,255,.28)}
+.rd-pago-opcion{padding:.45rem .85rem;border-radius:12px;font-size:12.5px;font-weight:800;border:1px solid #d9d1c2;background:#fffdf8;color:#4a4a46;cursor:pointer}
+.rd-pago-opcion-on{background:#e4eef8;border-color:#609cb7;color:#2f5f78}
+html.dark .rd-pago-opcion{background:#08121f;border-color:rgba(125,180,255,.25);color:#c9d7ea}
+html.dark .rd-pago-opcion-on{background:rgba(136,208,240,.12);border-color:#88d0f0;color:#88d0f0}
+.rd-pago-saldo{background:#f5e4e7;border-color:#ecced4;color:#984755}
+.rd-pago-sin-saldo{background:#e4f5f0;border-color:#ceece2;color:#47987d}
+html.dark .rd-pago-saldo{background:rgba(232,94,117,.1);border-color:rgba(240,136,154,.4);color:#f0889a}
+html.dark .rd-pago-sin-saldo{background:rgba(94,232,186,.08);border-color:rgba(136,240,206,.3);color:#88f0ce}

@@ -22,7 +22,7 @@ import { mostrarIngreso, avisoAlumno } from "../attendances/AvisoIngreso";
 import { abrirCorreccion } from "../attendances/CorregirIngreso";
 import { hoyISO } from "../../utils/fecha";
 import { useAlertasAdmin, AlertaFechaPago } from "../alerts/AlertasAdmin";
-import { LogoRadical, NombreRadical, BotonTema } from "./Marca";
+import { LogoRadical, NombreRadical, BotonTema, BotonTamano } from "./Marca";
 import { CampanaAvisos, SeccionAvisos, useAvisos } from "./Avisos";
 import { CrmCampana } from "../crm/CrmAvisos";
 import { PanelLateral, CabeceraPanel, fechaHoyTexto } from "./PanelLateral";
@@ -613,7 +613,8 @@ export const Header = ({
           </div>
           )}
 
-          {/* Modo claro / oscuro: en la esquina, separado de los avisos */}
+          {/* Tamaño de letra (pantallas grandes) y modo claro / oscuro */}
+          <BotonTamano className="hidden sm:inline-flex" />
           <BotonTema vertical className="ml-1" />
         </div>
       </div>

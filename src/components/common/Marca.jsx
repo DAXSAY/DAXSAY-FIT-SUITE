@@ -1,6 +1,7 @@
 import React from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTema } from "../../utils/tema";
+import { TAMANOS, tamanoGuardado, cambiarTamano } from "../../utils/tamanoLetra";
 
 // Logo de DAXSAY Fit Suite: lobo de contorno (neón suave en oscuro, pastel en claro)
 export const LogoRadical = ({ size = 36, className = "" }) => (
@@ -94,3 +95,28 @@ export const FirmaDaxsay = ({ className = "", claro = false, apilada = false }) 
     <b className="text-[10px] font-black uppercase tracking-[0.14em] text-blue-400">DAXSAY Fit Suite</b>
   </span>
 );
+
+// Botón «Aa»: cambia el tamaño de letra de todo el sistema en este equipo
+// (útil en pantallas grandes de 32" o más). Recorre Normal → Mediano → Grande → Muy grande.
+export const BotonTamano = ({ className = "" }) => {
+  const [k, setK] = React.useState(tamanoGuardado());
+  const i = TAMANOS.findIndex((t) => t.k === k);
+  const sig = TAMANOS[(i + 1) % TAMANOS.length];
+  const actual = TAMANOS[i] || TAMANOS[0];
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        cambiarTamano(sig.k);
+        setK(sig.k);
+      }}
+      title={`Tamaño de letra: ${actual.etiqueta}. Toca para «${sig.etiqueta}»`}
+      aria-label={`Tamaño de letra: ${actual.etiqueta}`}
+      className={`rd-boton-tamano ${className}`}
+    >
+      <span style={{ fontSize: "0.8em" }}>A</span>
+      <span style={{ fontSize: "1.15em" }}>A</span>
+      <span className="rd-boton-tamano-nivel">{i + 1}</span>
+    </button>
+  );
+};

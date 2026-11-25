@@ -6,6 +6,9 @@ import { zoneLabel } from "../physiotherapy/BodyMapVisual";
 import { InsigniaMetodo, InsigniaTipoDia, etiquetasGrupo } from "../routines/SistemasEntrenamiento";
 import { GuiaPorciones, VistaPlatos, platosDePlan } from "../nutrition/PlatoNutricional";
 import { IconoEmoji } from "../common/IconoEmoji";
+import { HojaRutina } from "../routines/HojaRutina";
+import { BotonesDescarga } from "../common/BotonesDescarga";
+import { X as Cerrar } from "lucide-react";
 
 /** Recomendaciones de porciones con la mano (se ven aunque no tenga dieta) */
 const RecomendacionesPorciones = ({ sexo }) => (
@@ -33,6 +36,7 @@ export const MiRutina = ({ routines, memberId, assignedRoutineId }) => {
   const bank = useExerciseBank();
   const [detalle, setDetalle] = useState(null);
   const [dia, setDia] = useState(0);
+  const [hoja, setHoja] = useState(false); // hoja para imprimir / PDF / foto
 
   const misRutinas = useMemo(
     () =>
@@ -84,7 +88,28 @@ export const MiRutina = ({ routines, memberId, assignedRoutineId }) => {
         <h2 className="text-2xl font-extrabold mt-1">{rutina.title}</h2>
         {rutina.description && <p className="text-slate-300 mt-1">{rutina.description}</p>}
         {rutina.trainerName && <p className="text-sm text-slate-400 mt-2">Entrenador: {rutina.trainerName}</p>}
+        <button
+          type="button"
+          onClick={() => setHoja(true)}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 px-3.5 py-2 text-sm font-bold cursor-pointer"
+        >
+          <IconoEmoji e="🖨️" /> Imprimir o descargar mi rutina (PDF)
+        </button>
       </div>
+      {hoja && (
+        <div className="fixed inset-0 z-[80] overflow-y-auto rd-velo-hoja">
+          <div className="rd-hr-barra" data-no-captura="1">
+            <p className="flex-1 min-w-0 truncate text-sm font-bold">{rutina.title}</p>
+            <BotonesDescarga imprimir selector=".rd-hoja-rutina" nombre={`Mi_rutina_${rutina.title || ""}`} />
+            <button onClick={() => setHoja(false)} className="rd-hr-btn" title="Cerrar">
+              <Cerrar className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="px-2 sm:px-6 pb-10 pt-3">
+            <HojaRutina rutina={rutina} />
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {dias.map((x, i) => (

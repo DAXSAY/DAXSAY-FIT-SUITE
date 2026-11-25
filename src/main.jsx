@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
 import { aplicarTema, temaGuardado } from "./utils/tema";
+import { aplicarTamano, tamanoGuardado } from "./utils/tamanoLetra";
 import { instalarResaltadoGraficos } from "./utils/graficos";
 import { instalarControlesVentanas } from "./utils/controlesVentana";
 import { instalarTooltipGlobal } from "./utils/tooltipGlobal";
@@ -11,6 +12,7 @@ import { instalarSelectorHora } from "./utils/selectorHora";
 
 // Aplica el modo claro/oscuro guardado antes de pintar (evita parpadeo)
 aplicarTema(temaGuardado());
+aplicarTamano(tamanoGuardado());
 instalarResaltadoGraficos();
 instalarControlesVentanas();
 instalarTooltipGlobal();

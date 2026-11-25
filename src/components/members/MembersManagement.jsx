@@ -1118,31 +1118,41 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 </div>
               </div>
 
-              {selectedPlanId && (
-                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between text-xs">
-                  <span className="text-gray-500">Total a Cobrar:</span>
-                  <span className="text-sm font-bold text-green-700">
-                    S/{" "}
-                    {Math.max(
-                      0,
-                      (plans.find((p) => p.id === selectedPlanId)?.price || 0) -
-                        discountAmount,
-                    ).toFixed(2)}
-                  </span>
-                  <label className="flex items-center gap-1.5 text-gray-500">
-                    Paga hoy S/
-                    <CampoNumero
-                      type="number"
-                      min="0.1"
-                      step="0.10"
-                      value={renewPaid}
-                      placeholder="Todo"
-                      onChange={(e) => setRenewPaid(e.target.value)}
-                      className="w-20 px-2 py-1 rounded-md border border-gray-300 text-right font-mono font-bold text-slate-800"
-                    />
-                  </label>
-                </div>
-              )}
+              {selectedPlanId && (() => {
+                const total = Math.max(0, (plans.find((p) => p.id === selectedPlanId)?.price || 0) - discountAmount);
+                const parcial = renewPaid !== "" && Number(renewPaid) < total - 0.004;
+                const saldo = Math.max(0, total - (renewPaid === "" ? total : Number(renewPaid || 0)));
+                return (
+                  <div className="rd-pago-resumen rounded-2xl border p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500"><IconoEmoji e="🧾" /> Total a cobrar</span>
+                      <span className="text-2xl font-black text-blue-700 font-mono">S/ {total.toFixed(2)}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => setRenewPaid("")} className={`rd-pago-opcion ${!parcial ? "rd-pago-opcion-on" : ""}`}><IconoEmoji e="✅" /> Paga todo hoy</button>
+                      <button type="button" onClick={() => setRenewPaid(parcial ? renewPaid : (total / 2).toFixed(2))} className={`rd-pago-opcion ${parcial ? "rd-pago-opcion-on" : ""}`}><IconoEmoji e="💸" /> Paga una parte</button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className="block">
+                        <span className="block text-xs font-bold text-slate-600 mb-1">Paga hoy (S/)</span>
+                        <CampoNumero
+                          type="number"
+                          min="0.1"
+                          step="0.10"
+                          value={renewPaid}
+                          placeholder={total.toFixed(2)}
+                          onChange={(e) => setRenewPaid(e.target.value)}
+                          className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-right font-mono font-black text-lg text-slate-800"
+                        />
+                      </label>
+                      <div className={`rounded-xl border px-3 py-2 ${saldo > 0 ? "rd-pago-saldo" : "rd-pago-sin-saldo"}`}>
+                        <span className="block text-xs font-bold mb-0.5">{saldo > 0 ? "Queda debiendo" : "Sin saldo pendiente"}</span>
+                        <span className="block text-lg font-black font-mono">S/ {saldo.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
               {selectedPlanId && renewLeavesDebt && (
                 <DebtDueDatePicker
                   value={renewDueDate}
