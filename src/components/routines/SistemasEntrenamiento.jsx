@@ -667,9 +667,9 @@ export const ConfigEjercicio = ({
 
   return (
     <div className="space-y-2">
-      {/* Series · reps · esfuerzo */}
-      <div className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)_minmax(0,1fr)] gap-2">
-        <div>
+      {/* Series · reps · esfuerzo · descanso en una sola fila compacta */}
+      <div className="rd-ej-fila">
+        <div className="rd-ej-series">
           <span className="block text-[11px] font-bold text-slate-500 mb-0.5">Series</span>
           <div className="flex items-stretch rounded-lg border border-slate-300 bg-white overflow-hidden">
             <button type="button" disabled={readOnly || series <= 1} onClick={() => onPatch({ [campos.series]: Math.max(1, series - 1) })} className="px-2 text-slate-500 hover:bg-slate-100 cursor-pointer disabled:opacity-40" title="Una serie menos">
@@ -682,27 +682,26 @@ export const ConfigEjercicio = ({
               disabled={readOnly}
               value={ex[campos.series] ?? ""}
               onChange={(e) => onPatch({ [campos.series]: Number(e.target.value) })}
-              className="w-full min-w-0 text-center font-black text-sm text-slate-900 bg-transparent py-2 focus:outline-none"
+              className="w-full min-w-0 text-center font-black text-sm text-slate-900 bg-transparent py-1 focus:outline-none"
             />
             <button type="button" disabled={readOnly || series >= 20} onClick={() => onPatch({ [campos.series]: series + 1 })} className="px-2 text-slate-500 hover:bg-slate-100 cursor-pointer disabled:opacity-40" title="Una serie más">
               <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
-        <label className="block min-w-0">
-          <span className="block text-[11px] font-bold text-slate-500 mb-0.5">Repeticiones o tiempo</span>
-          <input disabled={readOnly} value={ex[campos.reps] ?? ""} placeholder="10-12" list={listId} onChange={(e) => onPatch({ [campos.reps]: e.target.value })} className={`${INP} text-center font-bold`} />
+        <label className="rd-ej-reps block min-w-0">
+          <span className="block text-[11px] font-bold text-slate-500 mb-0.5">Reps / tiempo</span>
+          <input disabled={readOnly} value={ex[campos.reps] ?? ""} placeholder="10-12" list={listId} onChange={(e) => onPatch({ [campos.reps]: e.target.value })} className={`${INP} rd-ej-inp text-center font-bold`} />
           <datalist id={listId}>{repsSugeridas.map((r) => <option key={r} value={r} />)}</datalist>
         </label>
-        <label className="block min-w-0">
-          <span className="block text-[11px] font-bold text-slate-500 mb-0.5">Esfuerzo (RIR / RPE)</span>
-          <input disabled={readOnly} value={ex[campos.esfuerzo] ?? ""} placeholder={placeholderEsfuerzo} onChange={(e) => onPatch({ [campos.esfuerzo]: e.target.value })} className={`${INP} text-center font-bold`} />
+        <label className="rd-ej-rir block min-w-0">
+          <span className="block text-[11px] font-bold text-slate-500 mb-0.5" title="Repeticiones en reserva / esfuerzo percibido">Esfuerzo RIR/RPE</span>
+          <input disabled={readOnly} value={ex[campos.esfuerzo] ?? ""} placeholder={placeholderEsfuerzo} onChange={(e) => onPatch({ [campos.esfuerzo]: e.target.value })} className={`${INP} rd-ej-inp text-center font-bold`} />
         </label>
-      </div>
 
       {/* Descanso con chips */}
-      <div>
-        <span className="block text-[11px] font-bold text-slate-500 mb-0.5">Descanso entre series</span>
+      <div className="rd-ej-descanso">
+        <span className="block text-[11px] font-bold text-slate-500 mb-0.5">Descanso</span>
         <div className="flex flex-wrap gap-1">
           {DESCANSOS.map((d) => (
             <button
@@ -710,7 +709,7 @@ export const ConfigEjercicio = ({
               type="button"
               disabled={readOnly}
               onClick={() => onPatch({ [campos.descanso]: d })}
-              className={`flex-1 min-w-[3rem] py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${descanso === d ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-slate-400"}`}
+              className={`px-2 py-1 rounded-lg border text-xs font-bold cursor-pointer ${descanso === d ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-slate-400"}`}
             >
               {d < 60 ? `${d}s` : d % 60 ? `${Math.floor(d / 60)}:${String(d % 60).padStart(2, "0")}` : `${d / 60} min`}
             </button>
@@ -729,6 +728,7 @@ export const ConfigEjercicio = ({
             <span className="text-[11px] text-slate-500">s</span>
           </label>
         </div>
+      </div>
       </div>
 
       {/* Sistema de entrenamiento */}

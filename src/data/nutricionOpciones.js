@@ -39,16 +39,50 @@ export const COLOR_OBJETIVO = {
   cyan: { bg: "bg-cyan-50", text: "text-cyan-700", border: "border-cyan-200" },
 };
 
-/** Mifflin-St Jeor + objetivo -> calorías y macros */
+/**
+ * Mifflin-St Jeor + objetivo -> calorías y macros (verificado):
+ *  - Basal (Mifflin-St Jeor 1990): 10·peso + 6.25·talla − 5·edad + 5 (hombre) / −161 (mujer)
+ *  - Gasto diario = basal × factor de actividad (1.2 … 1.9)
+ *  - Meta = gasto ± ajuste del objetivo, nunca por debajo del basal ni de 1200 (mujer) / 1500 (hombre) kcal
+ *  - Proteína en g/kg; con IMC ≥ 30 se calcula sobre el peso de referencia (IMC 25) para no sobreestimarla
+ *  - Grasa = % de la meta (mínimo 20 %); carbohidratos = lo que queda (4 kcal/g)
+ *  - Agua ≈ 35 ml por kg de peso
+ */
 export function calcularTdee({ sexo = "M", peso = 70, talla = 170, edad = 30, actividad = 1.55, objetivo = "salud_rehabilitacion" }) {
   const o = objetivoNutri(objetivo);
+  peso = Number(peso) || 0;
+  talla = Number(talla) || 0;
+  edad = Number(edad) || 0;
+  const avisos = [];
   const bmr = 10 * peso + 6.25 * talla - 5 * edad + (sexo === "F" ? -161 : 5);
   const tdee = Math.round(bmr * actividad);
-  const kcal = Math.max(1200, tdee + o.ajuste);
-  const proteinas = Math.round(peso * o.prot);
-  const grasas = Math.round((kcal * o.grasa) / 9);
-  const carbohidratos = Math.max(0, Math.round((kcal - proteinas * 4 - grasas * 9) / 4));
-  return { bmr: Math.round(bmr), tdee, kcal, proteinas, grasas, carbohidratos, agua: Number((peso * 0.035).toFixed(1)) };
+  const piso = Math.max(Math.round(bmr), sexo === "F" ? 1200 : 1500);
+  let kcal = tdee + o.ajuste;
+  if (kcal < piso) {
+    avisos.push(`Se subió la meta a ${piso} kcal: no conviene comer menos que el basal.`);
+    kcal = piso;
+  }
+  const imc = talla ? peso / (talla / 100) ** 2 : 0;
+  const pesoProt = imc >= 30 ? Math.round(25 * (talla / 100) ** 2) : peso;
+  if (imc >= 30) avisos.push(`IMC ${imc.toFixed(1)}: la proteína se calcula sobre ${pesoProt} kg (peso de referencia).`);
+  const proteinas = Math.round(pesoProt * o.prot);
+  let grasas = Math.round((kcal * Math.max(0.2, o.grasa)) / 9);
+  let carbohidratos = Math.round((kcal - proteinas * 4 - grasas * 9) / 4);
+  if (carbohidratos < 0) {
+    grasas = Math.max(0, Math.round((kcal - proteinas * 4) / 9));
+    carbohidratos = 0;
+  }
+  return { bmr: Math.round(bmr), tdee, kcal, proteinas, grasas, carbohidratos, agua: Number((peso * 0.035).toFixed(1)), imc: Number(imc.toFixed(1)), avisos };
+}
+
+/** Edad exacta (años cumplidos) a partir de la fecha de nacimiento AAAA-MM-DD */
+export function edadExacta(fecha, hoy = new Date()) {
+  const f = String(fecha || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) return null;
+  const [a, m, d] = f.split("-").map(Number);
+  let e = hoy.getFullYear() - a;
+  if (hoy.getMonth() + 1 < m || (hoy.getMonth() + 1 === m && hoy.getDate() < d)) e--;
+  return e;
 }
 
 export const ACTIVIDADES = [

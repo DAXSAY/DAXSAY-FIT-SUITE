@@ -83,6 +83,30 @@ export const MODELOS_PLATO = {
   post_entreno: { nombre: "Post-entreno", protein: 35, veg: 15, carbs: 45, fats: 5, nota: "Recarga después de entrenar: proteína + carbohidrato de fácil digestión." },
 };
 
+// Información de referencia de cada distribución (reparto de CALORÍAS P/C/G, para quién y la clave).
+// Fuentes de referencia: ISSN (proteína 1.4–2.2 g/kg; carbohidratos 5–7 g/kg en entreno intenso),
+// guía DASH (NIH, sodio < 2300 mg/día), dieta mediterránea (PREDIMED), cetogénica (< 50 g de carbohidratos/día),
+// OMS (grasa 20–35 % de la energía, azúcar libre < 10 %). Son rangos orientativos, no prescripción médica.
+export const INFO_MODELO = {
+  equilibrado: { para: "Mantenimiento y salud general", cal: "P 20–30 % · C 40–50 % · G 25–30 %", clave: "Base para la mayoría de alumnos sin una meta especial." },
+  mediterraneo: { para: "Salud cardiovascular y longevidad", cal: "P 15–20 % · C 45–50 % · G 30–35 %", clave: "La grasa viene del aceite de oliva, frutos secos y pescado azul." },
+  perdida_grasa: { para: "Bajar grasa conservando músculo", cal: "P 30–35 % · C 30–40 % · G 25–30 %", clave: "Déficit de 300–500 kcal/día y proteína de 1.6–2.2 g por kg de peso." },
+  masa_muscular: { para: "Ganar músculo (volumen)", cal: "P 25–30 % · C 45–55 % · G 20–25 %", clave: "Superávit de 250–500 kcal/día; proteína 1.6–2.2 g/kg repartida en 3–5 comidas." },
+  deportivo: { para: "Días de entrenamiento largo o doble", cal: "P 15–20 % · C 55–65 % · G 20–25 %", clave: "Carbohidratos de 5–7 g por kg en días de entreno intenso." },
+  cetogenico: { para: "Solo con supervisión (no en embarazo ni diabetes tipo 1)", cal: "P 15–20 % · C 5–10 % · G 70–75 %", clave: "Menos de 50 g de carbohidratos al día; el rendimiento en series intensas puede bajar." },
+  paleo: { para: "Comer sin ultraprocesados", cal: "P 25–35 % · C 25–35 % · G 30–40 %", clave: "Sin granos ni lácteos: cuidar el calcio y la fibra." },
+  alto_proteina: { para: "Saciedad y conservar músculo en déficit", cal: "P 30–40 % · C 30–40 % · G 25–30 %", clave: "1.8–2.4 g de proteína por kg; beber suficiente agua." },
+  bajo_carbo: { para: "Resistencia a la insulina o preferencia personal", cal: "P 25–35 % · C 10–25 % · G 40–50 %", clave: "Menos de 130 g de carbohidratos al día, sobre todo de verduras." },
+  recomposicion: { para: "Bajar grasa y ganar músculo a la vez", cal: "P 30–35 % · C 35–40 % · G 25–30 %", clave: "Déficit ligero (10–20 %), proteína 2.0–2.4 g/kg y entrenamiento de fuerza." },
+  grasa_visceral: { para: "Perímetro de cintura alto", cal: "P 25–30 % · C 35–40 % · G 25–30 %", clave: "Fibra de 25–30 g/día, sin azúcares añadidos ni alcohol; déficit moderado." },
+  vegetariano: { para: "Sin carnes (con huevo y lácteos)", cal: "P 15–20 % · C 50–55 % · G 25–30 %", clave: "Combinar cereales con menestras; vigilar hierro y B12." },
+  vegano: { para: "Sin ningún alimento animal", cal: "P 15–20 % · C 50–60 % · G 25–30 %", clave: "Suplementar vitamina B12; proteína de menestras, tofu y tempeh." },
+  dash: { para: "Presión arterial alta", cal: "P ≈18 % · C ≈55 % · G ≈27 %", clave: "Sodio < 2300 mg/día (ideal 1500); frutas, verduras y lácteos bajos en grasa." },
+  glucemico: { para: "Prediabetes o glucosa alta", cal: "P 25–30 % · C 35–45 % · G 30–35 %", clave: "Carbohidratos de índice glucémico bajo, siempre con proteína y fibra." },
+  antiinflamatorio: { para: "Dolor articular o recuperación de lesiones", cal: "P ≈20 % · C ≈45 % · G ≈35 %", clave: "Omega-3 (pescado azul), aceite de oliva, cúrcuma y vegetales de colores." },
+  post_entreno: { para: "La comida después de entrenar", cal: "Carbohidrato : proteína ≈ 3:1", clave: "20–40 g de proteína y 1–1.2 g de carbohidrato por kg en las 2 horas siguientes." },
+};
+
 export const COLORES_PLATO = { protein: "var(--color-rose-600)", veg: "var(--color-green-600)", carbs: "var(--color-amber-500)", fats: "var(--color-yellow-700)" };
 export const NOMBRES_PLATO = { protein: "Proteína", veg: "Verduras / ensalada", carbs: "Carbohidratos", fats: "Grasas" };
 const EMOJI_PLATO = { protein: "🍗", veg: "🥗", carbs: "🍚", fats: "🥑" };
@@ -287,6 +311,30 @@ export const ComparaMacros = ({ plates, metas, oscuro = false }) => {
 };
 
 /** Editor del plato para nutrición */
+/** Ficha de la distribución elegida + reparto REAL de calorías de este plato según sus porciones */
+const InfoDistribucion = ({ pl }) => {
+  const info = INFO_MODELO[pl.model];
+  const m = macrosPorManos(pl);
+  const kp = m.proteinas * 4, kc = m.carbohidratos * 4, kg = m.grasas * 9;
+  const total = kp + kc + kg;
+  const pct = (v) => (total ? Math.round((v / total) * 100) : 0);
+  return (
+    <div className="rd-info-plato rounded-xl border p-2.5 space-y-1.5 text-[11px]">
+      {info && (
+        <>
+          <p><b>🎯 Para:</b> {info.para}</p>
+          <p><b>📊 Calorías de referencia:</b> {info.cal}</p>
+          <p><b>💡 Clave:</b> {info.clave}</p>
+        </>
+      )}
+      <p className="pt-1 border-t border-current/10">
+        <b>🍽️ Este plato (según sus porciones):</b> ≈ {total} kcal · P {m.proteinas} g ({pct(kp)} %) · C {m.carbohidratos} g ({pct(kc)} %) · G {m.grasas} g ({pct(kg)} %)
+      </p>
+      <p className="opacity-75">Proteína y carbohidrato = 4 kcal/g · grasa = 9 kcal/g. Los gramos por porción de mano son aproximados.</p>
+    </div>
+  );
+};
+
 export const EditorPlato = ({ value, onChange, sexo }) => {
   const pl = normalizarPlato(value, sexo);
   const set = (k, v) => onChange({ ...pl, [k]: v });
@@ -308,6 +356,12 @@ export const EditorPlato = ({ value, onChange, sexo }) => {
       r[x] = Math.max(0, val);
       acumulado += r[x];
     });
+    // Siempre exactamente 100 %: el redondeo se corrige en la porción más grande
+    const dif = 100 - ["protein", "veg", "carbs", "fats"].reduce((a, x) => a + r[x], 0);
+    if (dif) {
+      const mayor = otros.reduce((a, x) => (r[x] > r[a] ? x : a), otros[0]);
+      r[mayor] = Math.max(0, r[mayor] + dif);
+    }
     onChange(r);
   };
   return (
@@ -345,8 +399,9 @@ export const EditorPlato = ({ value, onChange, sexo }) => {
               <input type="range" min="0" max="80" step="5" value={pl[k]} onChange={(e) => mover(k, e.target.value)} className="w-full" style={{ accentColor: COLORES_PLATO[k] }} />
             </label>
           ))}
-          {suma !== 100 && <p className="text-xs font-bold text-rose-600">El plato suma {suma}%.</p>}
+          {suma !== 100 && <p className="text-xs font-bold text-rose-600">El plato suma {suma}% (debe sumar 100 %).</p>}
           <p className="text-[11px] text-slate-600">{(MODELOS_PLATO[pl.model] || {}).nota || "Plato personalizado."}</p>
+          <InfoDistribucion pl={pl} />
         </div>
       </div>
 
@@ -597,7 +652,8 @@ export const EditorPlatos = ({ value, onChange, sexo, metas, comidas = [], setCo
   };
   const quitar = (pl) => {
     const k = comidaDe(pl);
-    if (k >= 0 && comidas[k].items?.length && !window.confirm(`¿Quitar "${pl.name}" con sus ${comidas[k].items.length} alimento(s)?`)) return;
+    const n = k >= 0 ? comidas[k].items?.length || 0 : 0;
+    if (!window.confirm(n ? `¿Eliminar «${pl.name}» con sus ${n} alimento(s)?` : `¿Eliminar la comida «${pl.name}»?`)) return;
     onChange(platos.filter((p) => p.id !== pl.id));
     if (k >= 0) setComidas?.((prev) => prev.filter((_, z) => z !== k));
     setAbierto(null);
@@ -649,23 +705,37 @@ export const EditorPlatos = ({ value, onChange, sexo, metas, comidas = [], setCo
             const on = abierto === p.id;
             const kcal = kcalDe(p);
             return (
-              <button
+              <div
                 key={p.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => programar(p)}
-                className={`relative text-left rounded-2xl border p-2 cursor-pointer transition-all ${on ? "bg-white border-emerald-500 ring-2 ring-emerald-200 shadow" : "bg-white/80 border-slate-200 hover:border-emerald-300"}`}
+                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), programar(p))}
+                className={`rd-plato-tarjeta relative text-left rounded-2xl border p-2 cursor-pointer transition-all ${on ? "bg-white border-emerald-500 ring-2 ring-emerald-200 shadow" : "bg-white/80 border-slate-200 hover:border-emerald-300"}`}
               >
                 <span className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center">{k + 1}</span>
+                <button
+                  type="button"
+                  title={`Eliminar «${p.name}»`}
+                  aria-label={`Eliminar ${p.name}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    quitar(p);
+                  }}
+                  className="rd-plato-quitar"
+                >
+                  <IconoEmoji e="🗑️" />
+                </button>
                 <div className="flex justify-center">
                   <PlatoSVG plate={p} size={70} sinCubiertos />
                 </div>
-                <span className="block text-xs font-extrabold text-slate-900 truncate mt-1">{p.name}</span>
+                <span className="block text-xs font-extrabold text-slate-900 mt-1 leading-tight">{p.name}</span>
                 <span className="block text-[10px] text-slate-500 truncate">
                   {p.time || "sin hora"} · {(MODELOS_PLATO[p.model] || {}).nombre || "Personalizado"}
                 </span>
                 <span className={`mt-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-black ${kcal ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-400"}`}>{kcal ? `${kcal} kcal` : "sin alimentos"}</span>
                 <span className={`block mt-1 text-[10px] font-black ${on ? "text-emerald-700" : "text-blue-700"}`}>{on ? "▲ Cerrar" : "⚙ Programar"}</span>
-              </button>
+              </div>
             );
           })}
         </div>

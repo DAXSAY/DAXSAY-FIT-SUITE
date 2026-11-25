@@ -501,16 +501,16 @@ const VISTAS_LATERAL = {
 function Grupo({ titulo, children, nivel }) {
   return (
     <div className="space-y-1.5">
-      <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+      <p className="rd-post-grupo text-xs font-black text-slate-700 flex items-center gap-1.5">
         <span className="w-2 h-2 rounded-full" style={{ background: COLOR[nivel || 0] }} />
         {titulo}
       </p>
-      <div className="flex flex-wrap gap-1.5">{children}</div>
+      <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
 }
 
-function Tarjeta({ activo, nivel, onClick, disabled, dibujo, titulo, desc, alto = "h-14", ancho = "w-[92px]" }) {
+function Tarjeta({ activo, nivel, onClick, disabled, dibujo, titulo, desc, alto = "h-20", ancho = "w-[112px]" }) {
   const borde = activo ? (nivel === 0 ? "border-emerald-500 bg-emerald-50" : nivel === 2 ? "border-rose-500 bg-rose-50" : "border-amber-500 bg-amber-50") : "border-slate-200 bg-white hover:border-slate-400";
   return (
     <button
@@ -518,14 +518,14 @@ function Tarjeta({ activo, nivel, onClick, disabled, dibujo, titulo, desc, alto 
       disabled={disabled}
       onClick={onClick}
       title={desc}
-      className={`relative ${ancho} rounded-xl border-2 p-1 pb-1.5 text-center transition-colors cursor-pointer disabled:cursor-default ${borde}`}
+      className={`rd-post-tarjeta relative ${ancho} rounded-xl border-2 p-1.5 pb-2 text-center transition-colors cursor-pointer disabled:cursor-default ${borde}`}
     >
       {activo && (
         <span className="absolute top-1 right-1 z-10 w-4 h-4 rounded-full bg-slate-900 text-white flex items-center justify-center">
           <Check className="w-3 h-3" />
         </span>
       )}
-      <div className={`${alto} flex items-center justify-center`}>{dibujo}</div>
+      <div className={`rd-post-dibujo ${alto} flex items-center justify-center rounded-lg`}>{dibujo}</div>
       <p className="text-[11px] font-bold leading-tight text-slate-800 mt-0.5">{titulo}</p>
       <p className="text-[10px] leading-tight text-slate-500">{desc}</p>
     </button>
@@ -649,8 +649,8 @@ export const PostureVisualSelector = ({
                     onClick={() => aplicarTipo(t)}
                     titulo={t.l}
                     desc={t.d}
-                    alto="h-24"
-                    dibujo={<div className="h-24 w-full"><SiluetaLateral lat={{ ...NORMAL_LATERAL, ...t.set }} viewBox="55 0 110 392" mini /></div>}
+                    alto="h-28"
+                    dibujo={<div className="h-28 w-full"><SiluetaLateral lat={{ ...NORMAL_LATERAL, ...t.set }} viewBox="55 0 110 392" mini /></div>}
                   />
                 ))}
               </div>
@@ -667,7 +667,7 @@ export const PostureVisualSelector = ({
                     titulo={o.l}
                     desc={o.d}
                     dibujo={
-                      <div className="h-14 w-full">
+                      <div className="h-20 w-full">
                         <SiluetaLateral lat={{ ...NORMAL_LATERAL, [campo]: o.v }} viewBox={VISTAS_LATERAL[campo]} mini foco={campo} />
                       </div>
                     }
@@ -716,7 +716,7 @@ export const PostureVisualSelector = ({
                       onClick={() => setK(campo, o.v)}
                       titulo={o.l}
                       desc={o.d}
-                      dibujo={<div className="h-14 w-full"><PiernasFrente kn={{ ...NORMAL_KNEES, [campo]: o.v }} mini viewBox={campo === "frontalAlignment" ? "40 10 140 270" : "45 95 130 90"} /></div>}
+                      dibujo={<div className="h-20 w-full"><PiernasFrente kn={{ ...NORMAL_KNEES, [campo]: o.v }} mini viewBox={campo === "frontalAlignment" ? "40 10 140 270" : "45 95 130 90"} /></div>}
                     />
                   ))}
                 </Grupo>

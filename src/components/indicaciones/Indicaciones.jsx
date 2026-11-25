@@ -281,18 +281,26 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
                   <Icono className="w-3.5 h-3.5" /> {L.label} ({lista.length})
                 </p>
                 {lista.map((x) => (
-                  <div key={x.id} className="flex items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-1.5">
-                    <span className="text-sm">{CATEGORIAS[x.category]?.emoji}</span>
-                    <span className="flex-1 min-w-0 text-sm text-slate-800 truncate" title={x.detail}>{x.name}</span>
+                  <div key={x.id} className="rd-ind-item">
+                    <div className="rd-ind-cab">
+                      <span className="rd-ind-emoji">{CATEGORIAS[x.category]?.emoji}</span>
+                      <span className="rd-ind-nombre" title={x.detail}>{x.name}</span>
+                      {puede && (
+                        <button type="button" onClick={() => setSel((s) => s.filter((y) => y.id !== x.id))} title="Quitar" className="rd-ind-quitar">
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="rd-ind-ctrl">
                     {x.category !== "cuidado" && (
-                      <span className="flex items-center gap-0.5 text-xs text-slate-500">
-                        <CampoNumero disabled={!puede} type="number" min="1" max="10" value={x.sets ?? ""} onChange={(e) => cambiar(x.id, "sets", e.target.value)} className="w-9 px-1 py-0.5 rounded border border-slate-200 text-center" />×
+                      <span className="rd-ind-dosis">
+                        <CampoNumero disabled={!puede} type="number" min="1" max="10" value={x.sets ?? ""} onChange={(e) => cambiar(x.id, "sets", e.target.value)} className="rd-ind-num" />×
                         {(() => {
                           const enSeg = x.seconds != null && x.seconds !== "" ? true : x.reps != null && x.reps !== "" ? false : x.category === "estiramiento";
                           const campo = enSeg ? "seconds" : "reps";
                           return (
                             <>
-                              <CampoNumero disabled={!puede} type="number" min="1" max={enSeg ? 600 : 100} value={x[campo] ?? ""} onChange={(e) => cambiar(x.id, campo, e.target.value)} className="w-11 px-1 py-0.5 rounded border border-slate-200 text-center" />
+                              <CampoNumero disabled={!puede} type="number" min="1" max={enSeg ? 600 : 100} value={x[campo] ?? ""} onChange={(e) => cambiar(x.id, campo, e.target.value)} className="rd-ind-num rd-ind-num-2" />
                               <button
                                 type="button"
                                 disabled={!puede}
@@ -307,7 +315,7 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
                         })()}
                       </span>
                     )}
-                    <span className="flex rounded-md border border-slate-200 overflow-hidden">
+                    <span className="rd-ind-lugar">
                       {Object.entries(LUGARES).map(([k, v]) => (
                         <button
                           key={k}
@@ -321,11 +329,7 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
                         </button>
                       ))}
                     </span>
-                    {puede && (
-                      <button type="button" onClick={() => setSel((s) => s.filter((y) => y.id !== x.id))} title="Quitar" className="text-slate-300 hover:text-rose-600 cursor-pointer">
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
+                    </div>
                   </div>
                 ))}
               </div>

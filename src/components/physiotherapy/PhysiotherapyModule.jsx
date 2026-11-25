@@ -424,6 +424,13 @@ export const PhysiotherapyModule = () => {
     return mapa;
   }, [physioRecords, searchTerm]);
 
+  const hoyFisio = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
+  // Zonas que aparecen en la última evaluación de cada alumno (para filtrar por zona)
+  const zonasFisio = useMemo(() => {
+    const c = {};
+    members.forEach((m) => (ultimaSesion.get(m.id)?.affectedZones || []).forEach((z) => (c[z] = (c[z] || 0) + 1)));
+    return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  }, [members, ultimaSesion]);
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
       if (!searchTerm.trim() && !filtroFisio) return false; // nada cargado hasta buscar o filtrar
@@ -433,6 +440,11 @@ export const PhysiotherapyModule = () => {
       if (filtroFisio === "con_sesiones") return !!ult;
       if (filtroFisio === "sin_eval") return !ult;
       if (filtroFisio === "dolor_alto") return Number(ult?.painLevelEVA) >= 6;
+      if (filtroFisio === "dolor_medio") return Number(ult?.painLevelEVA) >= 4 && Number(ult?.painLevelEVA) < 6;
+      if (filtroFisio === "lesion_sin_eval") return !ult && conLesion(m);
+      if (filtroFisio === "control") return !!ult?.nextAppointmentDate && String(ult.nextAppointmentDate) <= hoyFisio;
+      if (filtroFisio === "vencidos") return m.status === "expired";
+      if (filtroFisio.startsWith("zona:")) return (ult?.affectedZones || []).includes(filtroFisio.slice(5));
       return true;
     });
   }, [members, searchTerm, filtroFisio, ultimaSesion, coincidenciaFicha]);
@@ -1358,11 +1370,29 @@ export const PhysiotherapyModule = () => {
                   opciones={[
                     { k: "todos", emoji: "👥", texto: "Todos", n: members.length },
                     { k: "lesiones", emoji: "⚠️", texto: "Con lesión", n: members.filter(conLesion).length },
+                    { k: "con_sesiones", emoji: "🩺", texto: "Evaluados", n: members.filter((m) => ultimaSesion.has(m.id)).length },
+                    { k: "sin_eval", emoji: "📋", texto: "Sin evaluación", n: members.filter((m) => !ultimaSesion.has(m.id)).length },
+                    { k: "lesion_sin_eval", emoji: "🚑", texto: "Lesión sin evaluar", n: members.filter((m) => !ultimaSesion.has(m.id) && conLesion(m)).length },
                     { k: "dolor_alto", emoji: "🔥", texto: "Dolor alto (EVA 6+)", n: members.filter((m) => Number(ultimaSesion.get(m.id)?.painLevelEVA) >= 6).length },
+                    { k: "dolor_medio", emoji: "🟠", texto: "Dolor moderado (EVA 4–5)", n: members.filter((m) => { const e = Number(ultimaSesion.get(m.id)?.painLevelEVA); return e >= 4 && e < 6; }).length },
+                    { k: "control", emoji: "📅", texto: "Control pendiente", n: members.filter((m) => { const u = ultimaSesion.get(m.id); return !!u?.nextAppointmentDate && String(u.nextAppointmentDate) <= hoyFisio; }).length },
+                    { k: "vencidos", emoji: "⏳", texto: "Membresía vencida", n: members.filter((m) => m.status === "expired").length },
                   ]}
                 />
               ),
             },
+            ...(zonasFisio.length
+              ? [{
+                  etiqueta: "Zona",
+                  contenido: (
+                    <ChipsFiltro
+                      valor={filtroFisio}
+                      onCambio={setFiltroFisio}
+                      opciones={zonasFisio.map(([z, n]) => ({ k: `zona:${z}`, emoji: "📍", texto: z, n }))}
+                    />
+                  ),
+                }]
+              : []),
             {
               etiqueta: "Buscar",
               contenido: (

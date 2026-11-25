@@ -199,28 +199,12 @@ const TarjetaMeta = ({ meta, admin, onEditar, onEliminar, onBono }) => {
       </div>
 
       {dinero ? (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 text-sm">
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-100">
-            <span className="text-xs font-bold text-rose-500 uppercase block">Falta en el mes</span>
-            <strong className="text-lg text-rose-700">{soles(p.faltante)}</strong>
-          </div>
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-xs font-bold text-slate-400 uppercase block">Días que quedan</span>
-            <strong className="text-lg">{p.diasRestantes}</strong>
-          </div>
-          <div className="p-3 rounded-xl bg-blue-50 border border-blue-100">
-            <span className="text-xs font-bold text-blue-500 uppercase block">Necesario por día</span>
-            <strong className="text-lg text-blue-700">{soles(p.necesarioPorDia)}</strong>
-          </div>
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-xs font-bold text-slate-400 uppercase block">Esta semana</span>
-            <strong className="text-lg">{soles(p.semanaActual?.total)}</strong>
-            {p.semanaActual && <span className="text-xs text-slate-500 block">meta {soles(p.semanaActual.meta)}</span>}
-          </div>
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-xs font-bold text-slate-400 uppercase block">Hoy</span>
-            <strong className="text-lg text-emerald-700">{soles(p.hoy)}</strong>
-          </div>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+          <TarjetaKpi titulo="Falta en el mes" texto={soles(p.faltante)} emoji="🎯" tono={p.faltante > 0 ? "rojo" : "verde"} />
+          <TarjetaKpi titulo="Días que quedan" texto={String(p.diasRestantes)} emoji="📅" tono="plomo" />
+          <TarjetaKpi titulo="Necesario por día" texto={soles(p.necesarioPorDia)} emoji="📈" tono="azul" />
+          <TarjetaKpi titulo="Esta semana" texto={soles(p.semanaActual?.total)} sub={p.semanaActual ? `meta ${soles(p.semanaActual.meta)}` : undefined} emoji="🗓️" tono="violeta" />
+          <TarjetaKpi titulo="Hoy" texto={soles(p.hoy)} emoji="💵" tono="verde" />
         </div>
       ) : (
         <div className="space-y-2">

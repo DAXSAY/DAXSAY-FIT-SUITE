@@ -3928,11 +3928,11 @@ html.dark .rd-pat-t8{--k:#93a0ff;--kf:rgba(147,160,255,.11);--kb:rgba(147,160,25
 .rd-kpi-valor{display:block;font-size:1.2rem;font-weight:900;line-height:1.2;color:var(--k);white-space:nowrap;font-variant-numeric:tabular-nums}
 .rd-kpi-sub{display:block;font-size:11px;font-weight:600;color:#8b8376;line-height:1.25;margin-top:1px}
 .rd-kpi-anillo{color:var(--k)}
-.rd-kpi-rep{container-type:inline-size}
+.rd-kpi{container-type:inline-size}
 @container (max-width:175px){
-  .rd-kpi-rep .rd-kpi-ico{position:absolute;right:.45rem;top:.45rem;width:1.7rem;height:1.7rem;border-radius:9px}
-  .rd-kpi-rep .rd-kpi-ico .rd-emoji{font-size:.95rem !important}
-  .rd-kpi-rep .rd-kpi-titulo{padding-right:1.9rem;min-height:1.7rem;display:flex;align-items:center}
+  .rd-kpi .rd-kpi-ico{position:absolute;right:.45rem;top:.45rem;width:1.7rem;height:1.7rem;border-radius:9px}
+  .rd-kpi .rd-kpi-ico .rd-emoji{font-size:.95rem !important}
+  .rd-kpi .rd-kpi-titulo{padding-right:1.9rem;min-height:1.7rem;display:flex;align-items:center}
 }
 html.dark .rd-kpi{background:linear-gradient(160deg,#0f2034 0%,#0b1828 100%);border-color:var(--kb);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 22px -16px rgba(0,0,0,.8)}
 html.dark .rd-kpi::before{box-shadow:0 0 8px var(--k)}
@@ -3981,3 +3981,57 @@ html.dark .rd-validar-pase [class*="bg-white/15"]:not(button){background:#0b0718
 html.dark .rd-validar-pase input{background:#0b1424 !important;color:#e8eefc !important;box-shadow:inset 0 0 0 1px rgba(181,157,255,.4)}
 html.dark .rd-validar-pase input::placeholder{color:#7a86a8 !important}
 html.dark .rd-validar-pase button.bg-white{background:#b59dff !important;color:#120a24 !important}
+
+/* ---------- Indicaciones (fisio paso 5): nombre completo arriba, dosis y lugar abajo ---------- */
+.rd-ind-item{border:1px solid #e4ddd0;border-radius:12px;padding:.45rem .55rem;background:#fffdf8;display:flex;flex-direction:column;gap:.35rem}
+.rd-ind-cab{display:flex;align-items:flex-start;gap:.45rem}
+.rd-ind-emoji{font-size:1rem;line-height:1.3;flex-shrink:0}
+.rd-ind-nombre{flex:1;min-width:0;font-size:13px;font-weight:700;color:#2f2b25;line-height:1.3;word-break:break-word}
+.rd-ind-quitar{flex-shrink:0;color:#b9b1a3;padding:2px;border-radius:6px;cursor:pointer}
+.rd-ind-quitar:hover{color:#b0545e;background:#f5e5e6}
+.rd-ind-ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem}
+.rd-ind-dosis{display:inline-flex;align-items:center;gap:.25rem;font-size:12px;color:#7a7266;font-weight:700}
+.rd-ind-num{width:2.6rem !important;min-width:2.6rem;padding:.2rem .1rem !important;border:1px solid #d9d1c2;border-radius:8px;text-align:center;font-weight:800;font-size:13px;background:#fff}
+.rd-ind-num-2{width:3.1rem !important;min-width:3.1rem}
+.rd-ind-lugar{display:inline-flex;border:1px solid #d9d1c2;border-radius:9px;overflow:hidden}
+.rd-ind-lugar button{padding:.2rem .5rem !important;font-size:11.5px !important}
+html.dark .rd-ind-item{background:#0b1828;border-color:rgba(95,219,226,.22)}
+html.dark .rd-ind-nombre{color:#e3ecf7}
+html.dark .rd-ind-dosis{color:#93a6bd}
+html.dark .rd-ind-num{background:#08121f;border-color:rgba(95,219,226,.3);color:#e3ecf7}
+html.dark .rd-ind-lugar{border-color:rgba(95,219,226,.3)}
+html.dark .rd-ind-quitar:hover{color:#ff7d8c;background:rgba(255,125,140,.12)}
+
+/* ---------- Nutrición: tachito para eliminar una comida ---------- */
+.rd-plato-quitar{position:absolute;top:.35rem;right:.35rem;z-index:2;width:1.7rem;height:1.7rem;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.85rem;
+  background:#fbf2f2;border:1px solid #ecd0d3;cursor:pointer;opacity:.85;transition:opacity .15s,transform .15s,background .15s}
+.rd-plato-quitar:hover{opacity:1;transform:scale(1.08);background:#f5e1e3;border-color:#b0545e}
+.rd-plato-tarjeta:focus-visible{outline:2px solid #3f8f96;outline-offset:2px}
+html.dark .rd-plato-quitar{background:#1b0f19;border-color:rgba(255,125,140,.4)}
+html.dark .rd-plato-quitar:hover{background:#2a1220;border-color:#ff7d8c;box-shadow:0 0 10px -3px #ff7d8c}
+
+/* ---------- Nutrición: ficha de información (distribución y cálculo TDEE) ---------- */
+.rd-info-plato{background:#f1f6f2;border-color:#cfe0d4;color:#2f4a3a}
+.rd-info-plato b{color:#2a6a4a}
+html.dark .rd-info-plato{background:rgba(95,227,161,.07);border-color:rgba(95,227,161,.28);color:#cfe9dc}
+html.dark .rd-info-plato b{color:#5fe3a1}
+
+/* ---------- Fisio: tarjetas de postura con área de dibujo ---------- */
+.rd-post-dibujo{background:#f3efe7}
+html.dark .rd-post-dibujo{background:#0a1626}
+.rd-post-tarjeta:hover .rd-post-dibujo{background:#ece6da}
+
+
+/* ---------- Rutinas: fila compacta de series · reps · RIR · descanso ---------- */
+.rd-ej-fila{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.5rem .6rem}
+.rd-ej-series{width:6.6rem;flex-shrink:0}
+.rd-ej-reps{width:6.4rem;flex-shrink:0}
+.rd-ej-rir{width:7rem;flex-shrink:0}
+.rd-ej-descanso{flex:1;min-width:14rem}
+.rd-ej-inp{padding-top:.3rem !important;padding-bottom:.3rem !important}
+
+/* ---------- Banco de ejercicios: fondo oscurecido y desenfocado detrás del panel ---------- */
+.rd-cajon-velo{background:rgba(24,20,14,.48) !important;backdrop-filter:blur(4px) saturate(.8)}
+html.dark .rd-cajon-velo{background:rgba(2,6,14,.68) !important}
+html.dark .rd-ind-lugar button.bg-slate-900{background:#5fdbe2 !important;color:#06101c !important}
+html:not(.dark) .rd-ind-lugar button.bg-slate-900{background:#3f8f96 !important;color:#fff !important}

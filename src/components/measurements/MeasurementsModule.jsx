@@ -35,12 +35,12 @@ import { hoyISO } from "../../utils/fecha";
 import { SelectorAlumno, coincideAlumno } from "../common/BuscarAlumno";
 import { BotonesDescarga } from "../common/BotonesDescarga";
 import { IconoEmoji } from "../common/IconoEmoji";
-const SECCION = "bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs";
-const TITULO = "text-base font-extrabold text-slate-900 flex items-center gap-2 mb-4";
+const SECCION = "bg-white rounded-2xl border border-slate-200 p-4 shadow-xs";
+const TITULO = "text-sm font-extrabold text-slate-900 flex items-center gap-2 mb-3";
 const SUB = "block text-xs font-black uppercase tracking-widest text-slate-500 mb-2";
-const ETQ = "block text-sm font-bold text-slate-700 mb-1.5";
+const ETQ = "block text-xs font-bold text-slate-600 mb-1";
 const CAMPO =
-  "w-full text-sm p-2.5 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+  "w-full text-sm px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-blue-500";
 
 const Campo = ({ label, unit, value, onChange, step = "1", hint, onFocus }) => (
   <label className="block">
@@ -53,15 +53,15 @@ const Campo = ({ label, unit, value, onChange, step = "1", hint, onFocus }) => (
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={onFocus}
-        className={`${CAMPO} pr-14 font-semibold`}
+        className={`${CAMPO} pr-11 font-semibold`}
       />
       {unit && (
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">
+        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400 pointer-events-none">
           {unit}
         </span>
       )}
     </div>
-    {hint && <span className="block text-xs text-slate-400 mt-1">{hint}</span>}
+    {hint && <span className="block text-[10px] text-slate-400 mt-0.5 leading-tight">{hint}</span>}
   </label>
 );
 
@@ -503,16 +503,16 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
           )}
 
           <form onSubmit={handleSaveAssessment} className="flex-1 overflow-y-auto">
-            <div className={`max-w-[1600px] mx-auto ${soloFormulario ? "p-0" : "p-4 sm:p-8"} grid grid-cols-1 xl:grid-cols-3 gap-6`}>
+            <div className={`max-w-[1600px] mx-auto ${soloFormulario ? "p-0" : "p-4 sm:p-8"} grid grid-cols-1 xl:grid-cols-3 gap-4`}>
               {/* COLUMNA IZQUIERDA: DATOS */}
-              <div className="xl:col-span-2 space-y-6">
+              <div className="xl:col-span-2 space-y-4">
                 {/* 1. Datos generales */}
                 <section className={SECCION}>
                   <h4 className={TITULO}>
                     <User className="w-5 h-5 text-blue-600" /> 1. Datos de la evaluación
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="md:col-span-2">
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-x-3 gap-y-2.5">
+                    <div className="col-span-2 md:col-span-3">
                       <label className={ETQ}>Alumno *</label>
                       <SelectorAlumno
                         alumnos={members}
@@ -532,7 +532,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                       <label className={ETQ}>Hora</label>
                       <input type="text" value={formTime} onChange={(e) => setFormTime(e.target.value)} className={CAMPO} />
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="col-span-2 md:col-span-2">
                       <label className={ETQ}>Evaluador</label>
                       <input
                         list="lista-evaluadores"
@@ -567,7 +567,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                   <h4 className={TITULO}>
                     <Scale className="w-5 h-5 text-violet-600" /> 2. Composición corporal (báscula de bioimpedancia)
                   </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-x-3 gap-y-2.5">
                     <Campo label="Grasa corporal" unit="%" value={biaFatPct} onChange={setBiaFatPct} step="0.1" />
                     <Campo label="Masa muscular" unit="%" value={biaMusclePct} onChange={setBiaMusclePct} step="0.1" />
                     <Campo label="Agua corporal" unit="%" value={biaWaterPct} onChange={setBiaWaterPct} step="0.1" />
@@ -577,7 +577,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                     <Campo label="Edad metabólica" unit="años" value={biaMetabolicAge} onChange={setBiaMetabolicAge} />
                   </div>
                   {biaVisceral !== "" && (
-                    <div className="mt-5">
+                    <div className="mt-3">
                       <div className="flex justify-between text-sm font-semibold mb-1.5">
                         <span className="text-slate-700">Grasa visceral</span>
                         <span
@@ -618,10 +618,10 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                     <Ruler className="w-5 h-5 text-cyan-600" /> 3. Perímetros corporales (cinta métrica, cm)
                   </h4>
                   <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_220px] gap-4 items-start">
-                  <div className="space-y-5">
+                  <div className="space-y-3.5">
                     <div>
                       <span className={SUB}>Tronco</span>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-2.5">
                         <Campo label="Cuello" unit="cm" value={perimNeck} onChange={setPerimNeck} onFocus={() => setPerimActivo("neck")} step="0.1" />
                         <Campo label="Hombros" unit="cm" value={perimShoulders} onChange={setPerimShoulders} onFocus={() => setPerimActivo("shoulders")} step="0.1" />
                         <Campo label="Pecho / tórax" unit="cm" value={perimChest} onChange={setPerimChest} onFocus={() => setPerimActivo("chest")} step="0.1" />
@@ -653,7 +653,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                     </div>
                     <div>
                       <span className={SUB}>Miembro superior</span>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-3 gap-y-2.5">
                         <Campo label="Brazo relajado I" unit="cm" value={perimBicepsRelL} onChange={setPerimBicepsRelL} onFocus={() => setPerimActivo("bicepsRel")} step="0.1" />
                         <Campo label="Brazo relajado D" unit="cm" value={perimBicepsRelR} onChange={setPerimBicepsRelR} onFocus={() => setPerimActivo("bicepsRel")} step="0.1" />
                         <Campo label="Brazo contraído I" unit="cm" value={perimBicepsFlexL} onChange={setPerimBicepsFlexL} onFocus={() => setPerimActivo("bicepsFlex")} step="0.1" />
@@ -663,7 +663,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                     </div>
                     <div>
                       <span className={SUB}>Miembro inferior</span>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-2.5">
                         <Campo label="Muslo superior" unit="cm" value={perimThighSup} onChange={setPerimThighSup} onFocus={() => setPerimActivo("thighSup")} step="0.1" />
                         <Campo label="Muslo medio" unit="cm" value={perimThighMid} onChange={setPerimThighMid} onFocus={() => setPerimActivo("thighMid")} step="0.1" />
                         <Campo label="Pantorrilla" unit="cm" value={perimCalf} onChange={setPerimCalf} onFocus={() => setPerimActivo("calf")} step="0.1" />

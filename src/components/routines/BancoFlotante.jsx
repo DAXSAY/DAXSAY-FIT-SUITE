@@ -70,7 +70,7 @@ export const BancoFlotante = ({ exercises, destino, setDestino, dias = [], onAgr
       {abierto && (
         <div className="fixed inset-0 z-[70] flex justify-end" role="dialog" aria-label="Banco de ejercicios" data-sin-controles>
           <div className="rd-cajon-velo absolute inset-0 bg-slate-900/35" onClick={cerrar} />
-          <aside className="rd-cajon relative m-0 sm:m-3 h-full sm:h-[calc(100%-1.5rem)] w-full sm:w-[560px] rounded-none sm:rounded-3xl border shadow-2xl flex flex-col overflow-hidden">
+          <aside className="rd-cajon relative m-0 sm:m-3 h-full sm:h-[calc(100%-1.5rem)] w-full sm:w-[min(980px,calc(100vw-1.5rem))] rounded-none sm:rounded-3xl border shadow-2xl flex flex-col overflow-hidden">
             <header className="px-4 pt-4 pb-3 border-b border-slate-200/70 space-y-2.5">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-base font-extrabold text-slate-900 flex items-center gap-2.5">

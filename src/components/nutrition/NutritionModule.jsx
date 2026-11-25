@@ -33,7 +33,7 @@ import { CatalogoAlimentos } from "./CatalogoAlimentos";
 
 import { SelectorAlumno, CodigoAlumno, coincideAlumno } from "../common/BuscarAlumno";
 import { objetivoNutricion } from "../../utils/objetivos";
-import { OBJETIVOS_NUTRI, COLOR_OBJETIVO, objetivoNutri, calcularTdee, ACTIVIDADES, SUPLEMENTOS_BASE } from "../../data/nutricionOpciones";
+import { OBJETIVOS_NUTRI, COLOR_OBJETIVO, objetivoNutri, calcularTdee, edadExacta, ACTIVIDADES, SUPLEMENTOS_BASE } from "../../data/nutricionOpciones";
 import { BotonesDescarga } from "../common/BotonesDescarga";
 import { IconoEmoji } from "../common/IconoEmoji";
 const OBJECTIVE_LABELS = Object.fromEntries(OBJETIVOS_NUTRI.map((o) => [o.id, o.label]));
@@ -110,7 +110,7 @@ const TdeeEnPlan = ({ alumno, objetivo, onUsar }) => {
       sexo: alumno.gender === "F" || alumno.sex === "F" ? "F" : x.sexo,
       peso: Number(alumno.weight) || x.peso,
       talla: Number(alumno.height) || x.talla,
-      edad: alumno.birthDate ? Math.max(14, new Date().getFullYear() - Number(String(alumno.birthDate).slice(0, 4))) : x.edad,
+      edad: alumno.birthDate ? Math.max(14, edadExacta(alumno.birthDate) ?? x.edad) : x.edad,
     }));
   }, [alumno?.id]);
   const r = calcularTdee({ ...d, objetivo });
@@ -158,6 +158,15 @@ const TdeeEnPlan = ({ alumno, objetivo, onUsar }) => {
             <button type="button" onClick={() => onUsar(r)} className="ml-auto px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-black cursor-pointer">
               Usar estas metas
             </button>
+          </div>
+          <div className="rd-info-plato rounded-lg border px-2.5 py-1.5 text-[11px] space-y-0.5">
+            <p>
+              <b>🧮 Cómo se calcula:</b> basal = 10×peso + 6.25×talla − 5×edad {d.sexo === "F" ? "− 161" : "+ 5"} · gasto = basal × {d.actividad} · meta = gasto {objetivoNutri(objetivo).ajuste >= 0 ? "+" : "−"} {Math.abs(objetivoNutri(objetivo).ajuste)} kcal · proteína {objetivoNutri(objetivo).prot} g/kg · grasa {Math.round(Math.max(0.2, objetivoNutri(objetivo).grasa) * 100)} % · carbohidratos = el resto.
+            </p>
+            <p>
+              <b>✅ Comprobación:</b> {r.proteinas}×4 + {r.carbohidratos}×4 + {r.grasas}×9 = {r.proteinas * 4 + r.carbohidratos * 4 + r.grasas * 9} kcal (meta {r.kcal}) · IMC {r.imc}
+            </p>
+            {r.avisos?.map((a) => <p key={a} className="font-bold">⚠️ {a}</p>)}
           </div>
         </div>
       )}

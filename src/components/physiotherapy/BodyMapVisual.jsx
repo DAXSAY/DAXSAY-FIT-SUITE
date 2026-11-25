@@ -447,7 +447,7 @@ export const BodyMapVisual = ({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        <div className="xl:col-span-5 bg-slate-950 rounded-xl border border-slate-800 py-3 flex justify-center gap-4 sm:gap-8">
+        <div className="rd-mapa-dolor xl:col-span-6 bg-slate-950 rounded-xl border border-slate-800 py-4 px-2 flex justify-center items-start gap-3 sm:gap-8">
           {["front", "back"].map((v) => (
             <BodyFigure
               key={v}
@@ -455,16 +455,16 @@ export const BodyMapVisual = ({
               selectedZones={selectedZones}
               zoneSides={zoneSides}
               onPoint={handlePoint}
-              size="w-32 h-[260px] sm:w-36 sm:h-[300px]"
+              size="w-[42vw] max-w-[230px] h-auto aspect-[240/450] sm:w-52 lg:w-56"
             />
           ))}
         </div>
 
-        <div className="xl:col-span-7 space-y-2">
+        <div className="xl:col-span-6 space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
             Zonas anatómicas
           </span>
-          <div className="grid sm:grid-cols-2 gap-1.5 max-h-[300px] overflow-y-auto pr-1">
+          <div className="grid sm:grid-cols-2 gap-1.5 max-h-[460px] overflow-y-auto pr-1">
             {ZONE_DETAILS.filter((z) => !z.legacy || selectedZones.includes(z.id)).map((z) => {
               const on = selectedZones.includes(z.id);
               const sides = zoneSides?.[z.id] || [];

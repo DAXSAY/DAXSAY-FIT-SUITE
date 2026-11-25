@@ -852,26 +852,30 @@ export const MrcSection = ({ scales, set }) => {
         </div>
       }
     >
-      <div className="space-y-1.5 mb-4 select-none">
-        {regiones.map((r) => (
-          <div key={r} className="flex flex-wrap items-center gap-1.5">
-            <span className="w-28 shrink-0 text-[11px] font-black uppercase text-slate-500">{r}</span>
-            {MRC_GROUPS.filter((g) => g.region === r).map((g) => {
-              const on = visibles.includes(g.id) || conValor(g);
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => alternar(g.id)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-bold border cursor-pointer ${on ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-indigo-300"}`}
-                >
-                  {on ? "✓ " : "+ "}
-                  {g.label}
-                </button>
-              );
-            })}
-          </div>
-        ))}
+      <div className="rd-patologias mb-4 select-none">
+        {regiones.map((r, ri) => {
+          const grupos = MRC_GROUPS.filter((g) => g.region === r);
+          const elegidos = grupos.filter((g) => visibles.includes(g.id) || conValor(g)).length;
+          return (
+            <div key={r} className={`rd-pat-fila rd-pat-t${ri % 10}`}>
+              <span className="rd-pat-region">
+                {r}
+                {elegidos > 0 && <b className="rd-pat-cuenta">{elegidos}</b>}
+              </span>
+              <div className="rd-pat-chips">
+                {grupos.map((g) => {
+                  const on = visibles.includes(g.id) || conValor(g);
+                  return (
+                    <button key={g.id} type="button" aria-pressed={on} onClick={() => alternar(g.id)} className={`rd-pat-chip ${on ? "rd-pat-on" : ""}`}>
+                      {on ? "✓ " : "+ "}
+                      {g.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="rounded-xl border border-slate-200 bg-white px-3 py-1 overflow-hidden">
