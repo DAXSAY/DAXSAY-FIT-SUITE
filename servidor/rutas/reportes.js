@@ -7,7 +7,18 @@ import { Router } from "express";
 import { readFile } from "node:fs/promises";
 import { consultar } from "../db.js";
 import { ErrorHttp, requierePermiso, tienePermiso } from "../seguridad.js";
-import { SQL_DEUDA, SQL_VENCE_DEUDA, estadoDeuda, saldoMatricula } from "./alumnos.js";
+import { SQL_DEUDA, SQL_VENCE_DEUDA, estadoDeuda, saldoMatricula, situacionAlumno } from "./alumnos.js";
+
+// Fin de la última membresía del alumno (para saber si está activo, vencido o es exalumno)
+const SQL_FIN_ULTIMA = (alias) =>
+  `(SELECT DATE_FORMAT(MAX(mz.fecha_fin), '%Y-%m-%d') FROM matriculas mz WHERE mz.idalumno = ${alias}.idalumno AND mz.estado <> 'anulada')`;
+const ESTADO_TXT = { activo: "Activo", por_vencer: "Por vencer", vencido: "Vencido", exalumno: "Exalumno", sin_matricula: "Sin matrícula" };
+async function plazoExalumno() {
+  const [c] = await consultar("SELECT valor FROM configuracion WHERE clave = 'dias_exalumno'");
+  return Number(c?.valor) || 30;
+}
+const estadoTexto = (fin, plazo) => ESTADO_TXT[situacionAlumno(fin, plazo).memberState] || "";
+const TIPO_INGRESO = { nuevo: "Nueva", renovacion: "Renovación", reingreso: "Exalumno recuperado" };
 import { SQL_CONGELAMIENTOS, aCongelamiento, hoyLima, reglas, saldo, textoReglas } from "../congelamiento.js";
 import { codigoAlumno } from "../codigoAlumno.js";
 
@@ -33,6 +44,7 @@ const ESTADO_DEUDA = { vencida: "Vencida", por_vencer: "Por vencer", al_dia: "En
 router.get("/deudas", async (req, res, next) => {
   try {
     const [desde, hasta] = rango(req, 179);
+    const plazo = await plazoExalumno();
     const filas = await consultar(
       `SELECT m.idmatricula, m.idalumno, a.dni, a.codigo, a.nombres, a.apellidos, CONCAT(a.nombres, ' ', a.apellidos) AS alumno, a.telefono, a.activo,
               p.nombre AS plan, m.fecha_inicio, m.fecha_fin, DATE(m.fecha_registro) AS fecha_matricula, m.es_renovacion,
@@ -41,7 +53,8 @@ router.get("/deudas", async (req, res, next) => {
               ${saldoMatricula("m")} AS saldo,
               IFNULL(m.fecha_limite_pago, m.fecha_fin) AS limite, m.fecha_limite_pago,
               DATEDIFF(IFNULL(m.fecha_limite_pago, m.fecha_fin), CURDATE()) AS dias,
-              u.usuario AS registrado_por,
+              u.usuario AS registrado_por, ${SQL_FIN_ULTIMA("a")} AS fin_ultima,
+              ${soporte.tipoIngreso ? "m.tipo_ingreso" : "NULL AS tipo_ingreso"},
               CONCAT_WS(' ', e.nombres, e.apellidos) AS entrenador
          FROM matriculas m
          JOIN alumnos a ON a.idalumno = m.idalumno
@@ -75,7 +88,8 @@ router.get("/deudas", async (req, res, next) => {
         telefono: f.telefono || "",
         deBaja: !f.activo,
         plan: f.plan,
-        tipo: f.es_renovacion ? "Renovación" : "Matrícula",
+        tipo: f.tipo_ingreso === "reingreso" ? "Exalumno recuperado" : f.es_renovacion ? "Renovación" : "Matrícula",
+        estadoAlumno: f.activo ? estadoTexto(f.fin_ultima, plazo) : "De baja",
         fechaMatricula: f.fecha_matricula,
         inicio: f.fecha_inicio,
         vence: f.fecha_fin,
@@ -205,6 +219,7 @@ router.get("/alumnos", async (req, res, next) => {
           inicio: f.fecha_inicio,
           vence: f.fecha_fin,
           diasRestantes: f.dias_restantes != null ? Number(f.dias_restantes) : null,
+          diasVencido: f.dias_restantes != null && f.dias_restantes < 0 ? -Number(f.dias_restantes) : 0,
           estado,
           registro: f.fecha_registro,
           matriculas: Number(f.matriculas),
@@ -284,10 +299,14 @@ router.get("/matriculas", async (req, res, next) => {
 router.get("/ingresos", async (req, res, next) => {
   try {
     const [desde, hasta] = rango(req);
+    const plazo = await plazoExalumno();
     const filas = await consultar(
       `SELECT mc.idmovimiento, mc.fecha, mc.tipo, mc.categoria, mc.monto, mc.metodo_pago, mc.descripcion, mc.comprobante,
-              mc.nombre_relacionado, tc.nombre_apertura AS cajero, tr.nombre AS turno_recepcion
+              mc.nombre_relacionado, tc.nombre_apertura AS cajero, tr.nombre AS turno_recepcion,
+              mc.idalumno, ${SQL_FIN_ULTIMA("mc")} AS fin_ultima,
+              ${soporte.tipoIngreso ? "mt.tipo_ingreso" : "IF(mt.es_renovacion = 1, 'renovacion', IF(mt.idmatricula IS NULL, NULL, 'nuevo'))"} AS tipo_ingreso
          FROM movimientos_caja mc
+         LEFT JOIN matriculas mt ON mc.categoria = 'matricula' AND mt.idmatricula = mc.idreferencia
          LEFT JOIN turnos_caja tc ON tc.idturno = mc.idturno
          LEFT JOIN turnos_recepcion tr ON tr.idturno_recepcion = tc.idturno_recepcion
         WHERE mc.fecha >= ? AND mc.fecha < ? + INTERVAL 1 DAY
@@ -310,6 +329,9 @@ router.get("/ingresos", async (req, res, next) => {
         relacionado: f.nombre_relacionado || "",
         cajero: f.cajero || "Sin turno",
         turnoRecepcion: f.turno_recepcion || "Sin turno",
+        // Membresías: nueva, renovación o exalumno recuperado · y cómo está hoy ese alumno
+        tipoMatricula: f.tipo_ingreso ? TIPO_INGRESO[f.tipo_ingreso] : "",
+        estadoAlumno: f.idalumno ? estadoTexto(f.fin_ultima, plazo) : "",
       })),
     });
   } catch (e) {
@@ -321,9 +343,10 @@ router.get("/ingresos", async (req, res, next) => {
 router.get("/asistencias", async (req, res, next) => {
   try {
     const [desde, hasta] = rango(req, 6);
+    const plazo = await plazoExalumno();
     const filas = await consultar(
       `SELECT aa.idasistencia_alumno, aa.fecha, aa.hora, aa.metodo, aa.resultado, a.dni,
-              CONCAT(a.nombres, ' ', a.apellidos) AS alumno, a.sexo
+              CONCAT(a.nombres, ' ', a.apellidos) AS alumno, a.sexo, ${SQL_FIN_ULTIMA("a")} AS fin_ultima
          FROM asistencias_alumno aa JOIN alumnos a ON a.idalumno = aa.idalumno
         WHERE aa.tipo = 'entrada' AND aa.fecha BETWEEN ? AND ?
         ORDER BY aa.fecha DESC, aa.hora DESC`,
@@ -341,6 +364,7 @@ router.get("/asistencias", async (req, res, next) => {
         sexo: f.sexo === "F" ? "Mujer" : f.sexo === "M" ? "Varón" : "Otro",
         metodo: f.metodo,
         resultado: f.resultado,
+        estadoAlumno: estadoTexto(f.fin_ultima, plazo),
       })),
     });
   } catch (e) {

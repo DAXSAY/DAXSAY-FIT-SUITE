@@ -22,11 +22,37 @@ const puntaje = (m, q) => {
   return 2;
 };
 
-/** Etiqueta del código, lista para mostrar al lado del nombre */
-export const CodigoAlumno = ({ m, className = "" }) =>
+/** Situación del alumno (la ven recepción, entrenador, fisioterapia y nutrición):
+ *  ⚠️ por vencer · ⏳ vencido hace N días (renovando) · 🔁 exalumno (ya no viene) */
+export const EstadoAlumno = ({ m, siempre = false, className = "" }) => {
+  const st = m?.memberState;
+  if (!st || (!siempre && st === "activo")) return null;
+  const info = {
+    activo: ["✅", "Activo", "rd-est-activo"],
+    por_vencer: ["⚠️", "Por vencer", "rd-est-porvencer"],
+    vencido: ["⏳", `Vencido ${m.daysExpired ? `hace ${m.daysExpired} d` : ""}`.trim(), "rd-est-vencido"],
+    exalumno: ["🔁", "Exalumno", "rd-est-exalumno"],
+    sin_matricula: ["➖", "Sin membresía", "rd-est-exalumno"],
+  }[st];
+  if (!info) return null;
+  return (
+    <span
+      className={`rd-est-alumno ${info[2]} ${className}`}
+      title={st === "exalumno" ? `Más de ${m.exAlumnoDays || 30} días sin renovar` : st === "vencido" ? "Su membresía venció: puede renovar con su mismo código" : undefined}
+    >
+      <span className="rd-emoji">{info[0]}</span> {info[1]}
+    </span>
+  );
+};
+
+/** Etiqueta del código, lista para mostrar al lado del nombre (con su situación si no está activo) */
+export const CodigoAlumno = ({ m, className = "", sinEstado = false }) =>
   m?.codeLabel ? (
-    <span className={`inline-block font-mono text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-px ${className}`}>
-      {m.codeLabel}
+    <span className="inline-flex items-center gap-1 flex-wrap">
+      <span className={`inline-block font-mono text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-px ${className}`}>
+        {m.codeLabel}
+      </span>
+      {!sinEstado && <EstadoAlumno m={m} />}
     </span>
   ) : null;
 

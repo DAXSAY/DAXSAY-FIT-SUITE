@@ -3873,3 +3873,13 @@ html.dark .rd-coincide{color:#7ff0f7;background:rgba(64,200,210,.12)}
 /* Íconos de contenido dibujados como emoji (mismo lugar y tamaño que el ícono) */
 :where(.rd-emoji-icono){display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;vertical-align:-0.15em;overflow:visible}
 .rd-emoji-icono{line-height:1;text-align:center;font-style:normal;pointer-events:none}
+/* Situación del alumno (por vencer · vencido · exalumno): pastel en claro, neón en oscuro */
+.rd-est-alumno{display:inline-flex;align-items:center;gap:3px;padding:0 7px;border-radius:999px;border:1px solid transparent;font-size:10px;font-weight:800;line-height:18px;white-space:nowrap}
+.rd-est-activo{background:#ddf3e6;border-color:#b5e3c7;color:#256b45}
+.rd-est-porvencer{background:#fbefd5;border-color:#f0d9a6;color:#8a5a12}
+.rd-est-vencido{background:#fbe1e3;border-color:#f2c1c6;color:#9b2f3c}
+.rd-est-exalumno{background:#ece6fb;border-color:#d4c8f4;color:#5b3fa8}
+html.dark .rd-est-activo{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.45);color:#6ee7b7}
+html.dark .rd-est-porvencer{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.45);color:#fcd34d}
+html.dark .rd-est-vencido{background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.45);color:#fda4af}
+html.dark .rd-est-exalumno{background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.5);color:#c4b5fd}

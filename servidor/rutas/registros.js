@@ -3,6 +3,7 @@
 // Cada registro se guarda en MySQL en la tabla `registros_app` como JSON,
 // con el alumno al que pertenece para poder filtrar (portal del alumno).
 // =====================================================================
+import { membresiaVigente, SOLO_VIGENTES } from "../membresia.js";
 import { Router } from "express";
 import { consultar, transaccion, enFila } from "../db.js";
 import { ErrorHttp, tienePermiso } from "../seguridad.js";
@@ -148,9 +149,13 @@ router.get("/", async (req, res, next) => {
         [idalumno],
       );
       filas.forEach((f) => salida[f.modulo] && salida[f.modulo].registros.push(parsear(f)));
+      // Membresía caducada: rutina, dieta, fisioterapia y medidas quedan guardadas pero no se entregan
+      const mem = await membresiaVigente(idalumno);
+      salida._membresia = mem;
+      if (!mem.vigente) SOLO_VIGENTES.forEach((m) => salida[m] && (salida[m].registros = []));
 
       // Rutinas generales (plantillas) que le fueron asignadas
-      const asignadas = salida.asignaciones_rutina.registros.map((a) => String(a.routineId)).filter(Boolean);
+      const asignadas = (salida.asignaciones_rutina?.registros || []).map((a) => String(a.routineId)).filter(Boolean);
       const propias = new Set(salida.rutinas.registros.map((r) => String(r.id)));
       const faltan = asignadas.filter((id) => !propias.has(id));
       if (faltan.length) {

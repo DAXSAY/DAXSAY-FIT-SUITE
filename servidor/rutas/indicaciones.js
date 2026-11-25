@@ -4,6 +4,7 @@
 // postura y cuidados), plantillas para aplicar con un clic y asignación por alumno.
 // Cada indicación va "antes" (calentamiento), "despues" (post entrenamiento) o "casa".
 // =====================================================================
+import { membresiaVigente } from "../membresia.js";
 import { Router } from "express";
 import { consultar, transaccion } from "../db.js";
 import { ErrorHttp, soloPersonal, tienePermiso } from "../seguridad.js";
@@ -243,6 +244,8 @@ async function asignaciones(idalumno, soloVigente) {
 router.get("/alumno/:id", async (req, res, next) => {
   try {
     if (!(await puedeVerAlumno(req, req.params.id))) throw new ErrorHttp(403, "No tienes permiso para ver este alumno");
+    // Membresía caducada: el alumno no ve sus indicaciones (quedan guardadas)
+    if (req.usuario.rol === "student" && !(await membresiaVigente(req.params.id)).vigente) return res.json({ vigente: null, historial: [], caducada: true });
     const todas = await asignaciones(req.params.id, req.usuario.rol === "student");
     res.json({ vigente: todas.find((a) => a.current) || null, historial: req.usuario.rol === "student" ? [] : todas.filter((a) => !a.current) });
   } catch (e) {

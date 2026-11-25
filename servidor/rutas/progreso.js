@@ -8,6 +8,7 @@
 // Los cálculos de progreso se hacen en src/utils/progreso.js (mismos datos
 // para la pantalla, el PDF y el Excel).
 // =====================================================================
+import { membresiaVigente } from "../membresia.js";
 import { Router } from "express";
 import { consultar, transaccion } from "../db.js";
 import { ErrorHttp, tienePermiso } from "../seguridad.js";
@@ -114,6 +115,7 @@ async function acceso(req, escribir = false) {
   if (rol === "student") {
     const [u] = await consultar("SELECT idalumno FROM usuarios WHERE idusuario = ?", [idusuario]);
     if (!u?.idalumno || String(u.idalumno) !== pedido) throw new ErrorHttp(403, "Solo puedes ver tu propio progreso");
+    if (!(await membresiaVigente(u.idalumno)).vigente) throw new ErrorHttp(403, "Tu membresía venció: renueva para volver a ver tu rutina y tu progreso");
     return { idalumno: Number(pedido), esAlumno: true, puedeAnotar: true };
   }
   const ver = await tienePermiso(idusuario, ["members", "routines"], "ver");

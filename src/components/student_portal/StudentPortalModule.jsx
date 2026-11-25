@@ -249,6 +249,12 @@ export const StudentPortalModule = ({
     );
   }
 
+  // Membresía caducada: rutina, alimentación, fisioterapia y medidas son privilegios
+  // de los alumnos con membresía vigente (el servidor tampoco las entrega).
+  const caducada = !!currentMember && currentMember.status === "expired";
+  const SOLO_VIGENTES = ["routine", "nutrition", "physio", "measurements"];
+  const tab = caducada && SOLO_VIGENTES.includes(activeTab) ? "caducada" : activeTab;
+
   return (
     <div className="space-y-6 pb-12 max-w-7xl mx-auto">
       {/* WELCOME STUDENT BANNER */}
@@ -474,10 +480,40 @@ export const StudentPortalModule = ({
         </div>
       </div>
 
+      {/* Membresía caducada: pantalla para renovar */}
+      {tab === "caducada" && (
+        <div className="rd-caducada max-w-2xl mx-auto rounded-3xl border-2 border-rose-200 bg-white p-6 sm:p-8 text-center space-y-4 shadow-sm">
+          <div className="text-5xl">🔒</div>
+          <h2 className="text-2xl font-black text-slate-900">Membresía caducada</h2>
+          <p className="text-sm text-slate-600">
+            Tu plan <b>{currentMember?.planName}</b> venció el <b>{String(currentMember?.membershipEndDate || "").split("-").reverse().join("/")}</b>
+            {currentMember?.daysExpired ? <> (hace {currentMember.daysExpired} día{currentMember.daysExpired === 1 ? "" : "s"})</> : null}.
+          </p>
+          <p className="text-sm text-slate-600">
+            Tu rutina, tu plan de alimentación, tu ficha de fisioterapia y tus medidas son exclusivas de los alumnos con membresía vigente.
+            <b> Todo está guardado:</b> al renovar vuelves a verlo con tu mismo código <span className="font-mono font-bold">{currentMember?.codeLabel}</span>.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2 pt-1">
+            <a
+              href={`https://wa.me/${gymConfig?.gym_whatsapp || ""}?text=${encodeURIComponent(`Hola Recepción ${gymConfig?.gym_nombre || "RADICAL"}, soy ${currentMember?.fullName} (código ${currentMember?.codeLabel}, DNI ${currentMember?.dni}). Mi membresía venció y quiero renovar.`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm"
+            >
+              💬 Renovar por WhatsApp
+            </a>
+            <button type="button" onClick={() => handleTabClick("membership")} className="px-5 py-3 rounded-xl bg-white border border-slate-300 text-slate-700 font-bold text-sm cursor-pointer">
+              💳 Ver mi membresía
+            </button>
+          </div>
+          <p className="text-xs text-slate-500">También puedes renovar en recepción. Tus asistencias y tus citas siguen disponibles.</p>
+        </div>
+      )}
+
       {/* =========================================================================
            TAB 1: MI MEMBRESÍA & MATRÍCULA
           ========================================================================= */}
-      {!(activeTab === "routine" && vistaRutina === "pesos") && (
+      {!caducada && !(tab === "routine" && vistaRutina === "pesos") && (
         <RecordatorioPesos
           setActiveTab={() => {
             setActiveTab("routine");
@@ -487,7 +523,7 @@ export const StudentPortalModule = ({
         />
       )}
 
-      {activeTab === "membership" && (
+      {tab === "membership" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Digital Member Card */}
           <div className="lg:col-span-1 space-y-4">
@@ -759,7 +795,7 @@ export const StudentPortalModule = ({
       {/* =========================================================================
            TAB 2: NOTIFICACIONES & CITAS (FISIOTERAPIA / NUTRICIÓN)
           ========================================================================= */}
-      {activeTab === "appointments" && (
+      {tab === "appointments" && (
         <div className="space-y-6">
           <DisponibilidadTurnos titulo="Horarios de fisioterapia y nutrición" />
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
@@ -952,7 +988,7 @@ export const StudentPortalModule = ({
       {/* =========================================================================
            TAB 3: MIS MEDIDAS & PROGRESO EN HISTORIAL
           ========================================================================= */}
-      {activeTab === "measurements" && (
+      {tab === "measurements" && (
         <div className="space-y-6">
           {/* Metrics Quick Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -1505,7 +1541,7 @@ export const StudentPortalModule = ({
         </div>
       )}
 
-      {activeTab === "routine" && (
+      {tab === "routine" && (
         <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl w-fit">
           {[
             ["pesos", "💪 Anotar pesos y mi progreso"],
@@ -1523,20 +1559,20 @@ export const StudentPortalModule = ({
           ))}
         </div>
       )}
-      {activeTab === "routine" && vistaRutina === "pesos" && currentMember && (
+      {tab === "routine" && vistaRutina === "pesos" && currentMember && (
         <ProgresoPesos memberId={currentMember.id} modo="alumno" abrirAnotar={anotarPedido} />
       )}
-      {activeTab === "routine" && vistaRutina === "rutina" && <MisIndicaciones memberId={currentMember?.id} />}
-      {activeTab === "routine" && vistaRutina === "rutina" && (
+      {tab === "routine" && vistaRutina === "rutina" && <MisIndicaciones memberId={currentMember?.id} />}
+      {tab === "routine" && vistaRutina === "rutina" && (
         <MiRutina
           routines={routines}
           memberId={currentMember?.id}
           assignedRoutineId={currentMember?.assignedRoutineId}
         />
       )}
-      {activeTab === "nutrition" && <MiDieta plan={memberNutritionPlan} sexo={currentMember?.gender} />}
-      {activeTab === "physio" && <MiFisioterapia records={memberPhysioRecords} />}
-      {activeTab === "attendance" && currentMember && (
+      {tab === "nutrition" && <MiDieta plan={memberNutritionPlan} sexo={currentMember?.gender} />}
+      {tab === "physio" && <MiFisioterapia records={memberPhysioRecords} />}
+      {tab === "attendance" && currentMember && (
         <div className="space-y-3">
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
             <h3 className="text-lg font-extrabold text-slate-900"><IconoEmoji e="📅" /> Mis asistencias</h3>

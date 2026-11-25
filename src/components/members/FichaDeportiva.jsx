@@ -3,6 +3,7 @@
 // Membresía + rutina que le toca hoy + lesiones / restricciones de fisio +
 // dieta + asistencia reciente, en una sola vista.
 // =====================================================================
+import { EstadoAlumno } from "../common/BuscarAlumno";
 import React, { useEffect, useMemo, useState } from "react";
 import { Dumbbell, HeartPulse, Salad, CalendarCheck, AlertTriangle, ShieldCheck, Clock, ChevronDown } from "lucide-react";
 import { api } from "../../api/cliente";
@@ -67,6 +68,19 @@ export const FichaDeportiva = ({ member, onVerCalendario }) => {
 
   return (
     <div className="space-y-3">
+      {/* Situación de su membresía: para que el entrenador / fisio / nutri sepan si está renovando o ya no viene */}
+      {member.memberState && member.memberState !== "activo" && (
+        <div className={`rounded-2xl border p-3 flex items-center gap-2 text-sm ${member.memberState === "exalumno" ? "bg-violet-50 border-violet-200 text-violet-900" : member.memberState === "vencido" ? "bg-rose-50 border-rose-200 text-rose-900" : "bg-amber-50 border-amber-200 text-amber-900"}`}>
+          <EstadoAlumno m={member} />
+          <span>
+            {member.memberState === "exalumno"
+              ? "Ya no viene: no renovó su membresía. Su rutina y planes se mantienen guardados por si vuelve."
+              : member.memberState === "vencido"
+                ? "Su membresía venció: puede renovar con su mismo código. Mientras tanto no ve su rutina en el portal."
+                : "Su membresía vence pronto: recuérdale renovar."}
+          </span>
+        </div>
+      )}
       {/* Avisos importantes arriba */}
       {(alertas.length > 0 || tieneLesion) && (
         <div className="rounded-2xl border-2 border-rose-300 bg-rose-50 p-3.5 flex items-start gap-3">

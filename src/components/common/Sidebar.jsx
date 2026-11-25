@@ -162,7 +162,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
               <span className="font-bold text-white truncate">
                 {currentMember.planName}
               </span>
-              <span className="text-xs font-black text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-1.5 py-0.2 rounded shrink-0">
+              <span className={`rd-est-alumno shrink-0 ${currentMember.status === "expired" ? (currentMember.memberState === "exalumno" ? "rd-est-exalumno" : "rd-est-vencido") : currentMember.status === "expiring_soon" ? "rd-est-porvencer" : "rd-est-activo"}`}>
                 {currentMember.status === "frozen"
                   ? "CONGELADO"
                   : currentMember.status === "active"
