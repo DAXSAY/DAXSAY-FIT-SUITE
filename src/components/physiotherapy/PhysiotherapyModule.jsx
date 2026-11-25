@@ -219,7 +219,7 @@ export const PhysiotherapyModule = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   // Filtros de pacientes (se combinan): estado de la atención · nivel de dolor · diagnóstico · parte del cuerpo
-  const [filtroFisio, setFiltroFisio] = useState(""); // estado: con_sesiones · sin_eval · lesion_sin_eval · control · vencidos
+  const [filtroFisio, setFiltroFisio] = useState(""); // evolución de su última ficha (mejoría, estable, recaída, alta…)
   const [dolorF, setDolorF] = useState(""); // alto · moderado · leve
   const [diagF, setDiagF] = useState(""); // diagnóstico presuntivo de su última evaluación
   const [parteF, setParteF] = useState(""); // parte del cuerpo con dolor (id de zona)
@@ -429,14 +429,6 @@ export const PhysiotherapyModule = () => {
   }, [physioRecords, searchTerm]);
 
   const hoyFisio = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
-  // Estado de la atención de cada paciente
-  const ESTADO_FISIO = {
-    con_sesiones: (m, u) => !!u,
-    sin_eval: (m, u) => !u,
-    lesion_sin_eval: (m, u) => !u && conLesion(m),
-    control: (m, u) => !!u?.nextAppointmentDate && String(u.nextAppointmentDate) <= hoyFisio,
-    vencidos: (m) => m.status === "expired",
-  };
   // Nivel de dolor según la EVA de su última evaluación
   const nivelDolor = (u) => {
     const e = Number(u?.painLevelEVA);
@@ -459,7 +451,9 @@ export const PhysiotherapyModule = () => {
       if (!searchTerm.trim() && !filtroFisio && !dolorF && !diagF && !parteF) return false; // nada cargado hasta buscar o filtrar
       if (!coincideAlumno(m, searchTerm) && !coincidenciaFicha.has(String(m.id))) return false;
       const ult = ultimaSesion.get(m.id);
-      if (filtroFisio && filtroFisio !== "todos" && !ESTADO_FISIO[filtroFisio]?.(m, ult)) return false;
+      // Fichas clínicas: los filtros trabajan sobre pacientes que ya tienen ficha (el resto está en Seguimiento)
+      if ((filtroFisio || dolorF || diagF || parteF) && !ult) return false;
+      if (filtroFisio && filtroFisio !== "todos" && (ult?.improvementStatus || "en_evaluacion") !== filtroFisio) return false;
       if (dolorF && nivelDolor(ult) !== dolorF) return false;
       if (diagF && !(ult?.pathologies || []).includes(diagF)) return false;
       if (parteF && !(ult?.affectedZones || []).includes(parteF)) return false;
@@ -1380,17 +1374,19 @@ export const PhysiotherapyModule = () => {
         <PanelFiltros
           filas={[
             {
-              etiqueta: "Pacientes",
+              etiqueta: "Evolución",
               contenido: (
                 <ChipsFiltro
                   valor={filtroFisio}
                   onCambio={setFiltroFisio}
                   opciones={[
-                    { k: "todos", emoji: "👥", texto: "Todos", n: members.length },
-                    { k: "con_sesiones", emoji: "🩺", texto: "Con evaluación", n: members.filter((m) => ESTADO_FISIO.con_sesiones(m, ultimaSesion.get(m.id))).length },
-                    { k: "lesion_sin_eval", emoji: "🚑", texto: "Lesión declarada sin evaluar", n: members.filter((m) => ESTADO_FISIO.lesion_sin_eval(m, ultimaSesion.get(m.id))).length },
-                    { k: "control", emoji: "📅", texto: "Control pendiente", n: members.filter((m) => ESTADO_FISIO.control(m, ultimaSesion.get(m.id))).length },
-                    { k: "vencidos", emoji: "⏳", texto: "Membresía vencida", n: members.filter((m) => ESTADO_FISIO.vencidos(m)).length },
+                    { k: "todos", emoji: "📚", texto: "Todas las fichas", n: members.filter((m) => ultimaSesion.has(m.id)).length },
+                    ...ESTADOS_EVOLUCION.map((e) => ({
+                      k: e.v,
+                      emoji: e.emoji,
+                      texto: e.l,
+                      n: members.filter((m) => ultimaSesion.has(m.id) && (ultimaSesion.get(m.id).improvementStatus || "en_evaluacion") === e.v).length,
+                    })),
                   ]}
                 />
               ),
