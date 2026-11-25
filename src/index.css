@@ -3883,3 +3883,101 @@ html.dark .rd-est-activo{background:rgba(52,211,153,.12);border-color:rgba(52,21
 html.dark .rd-est-porvencer{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.45);color:#fcd34d}
 html.dark .rd-est-vencido{background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.45);color:#fda4af}
 html.dark .rd-est-exalumno{background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.5);color:#c4b5fd}
+
+/* =====================================================================
+   DEFINICIÓN FINAL DE TEMAS · v2 (nov 2026)
+   Claro = colores MATE (apagados, cálidos)  ·  Oscuro = NEÓN SUAVE (vivo, sin encandilar)
+   Cada tono es una variable --k (color fuerte) y --kf (fondo suave).
+   ===================================================================== */
+
+/* ---------- Paleta de tonos ---------- */
+.rd-kpi-teal,.rd-pat-t0,.rd-pat-t5{--k:#3f8f96;--kf:#e2efee;--kb:#c6dfdd}
+.rd-kpi-verde,.rd-pat-t1,.rd-pat-t6{--k:#4f8a64;--kf:#e4efe6;--kb:#c9ddcd}
+.rd-kpi-rojo{--k:#b0545e;--kf:#f5e5e6;--kb:#e6c7ca}
+.rd-kpi-ambar,.rd-pat-t2,.rd-pat-t7{--k:#a8773a;--kf:#f4ebdc;--kb:#e5d2b3}
+.rd-kpi-violeta,.rd-pat-t3,.rd-pat-t8{--k:#76659f;--kf:#ebe7f3;--kb:#d4cce6}
+.rd-kpi-azul,.rd-pat-t4{--k:#4c74a1;--kf:#e3eaf3;--kb:#c8d5e6}
+.rd-kpi-rosa,.rd-pat-t9{--k:#a9567a;--kf:#f4e4ec;--kb:#e4c6d4}
+.rd-kpi-plomo{--k:#6b6a66;--kf:#ece9e3;--kb:#d9d4ca}
+.rd-pat-t5{--k:#b0545e;--kf:#f5e5e6;--kb:#e6c7ca}
+.rd-pat-t6{--k:#b0663a;--kf:#f5e8de;--kb:#e7cdb8}
+.rd-pat-t7{--k:#5f8a3f;--kf:#e8efdf;--kb:#d0ddbf}
+.rd-pat-t8{--k:#5a62a6;--kf:#e7e8f4;--kb:#cdd0e8}
+html.dark .rd-kpi-teal,html.dark .rd-pat-t0{--k:#5fdbe2;--kf:rgba(95,219,226,.10);--kb:rgba(95,219,226,.30)}
+html.dark .rd-kpi-verde,html.dark .rd-pat-t1{--k:#5fe3a1;--kf:rgba(95,227,161,.10);--kb:rgba(95,227,161,.30)}
+html.dark .rd-kpi-rojo,html.dark .rd-pat-t5{--k:#ff7d8c;--kf:rgba(255,125,140,.10);--kb:rgba(255,125,140,.32)}
+html.dark .rd-kpi-ambar,html.dark .rd-pat-t2{--k:#ffc266;--kf:rgba(255,194,102,.10);--kb:rgba(255,194,102,.30)}
+html.dark .rd-kpi-violeta,html.dark .rd-pat-t3{--k:#b59dff;--kf:rgba(181,157,255,.11);--kb:rgba(181,157,255,.32)}
+html.dark .rd-kpi-azul,html.dark .rd-pat-t4{--k:#7db4ff;--kf:rgba(125,180,255,.10);--kb:rgba(125,180,255,.30)}
+html.dark .rd-kpi-rosa,html.dark .rd-pat-t9{--k:#ff8cc8;--kf:rgba(255,140,200,.10);--kb:rgba(255,140,200,.30)}
+html.dark .rd-kpi-plomo{--k:#b4c0d0;--kf:rgba(180,192,208,.09);--kb:rgba(180,192,208,.25)}
+html.dark .rd-pat-t7{--k:#a6e36b;--kf:rgba(166,227,107,.10);--kb:rgba(166,227,107,.30)}
+html.dark .rd-pat-t6{--k:#ff9e62;--kf:rgba(255,158,98,.10);--kb:rgba(255,158,98,.30)}
+html.dark .rd-pat-t8{--k:#93a0ff;--kf:rgba(147,160,255,.11);--kb:rgba(147,160,255,.32)}
+
+/* ---------- Tarjeta de información (una sola en todo el sistema) ---------- */
+.rd-kpi{position:relative;display:flex;align-items:center;gap:.7rem;padding:.7rem .85rem .7rem 1rem;border-radius:14px;
+  background:#fbf9f4;border:1px solid #e4ddd0;box-shadow:0 1px 2px rgba(60,48,30,.05),0 6px 16px -14px rgba(60,48,30,.35);overflow:hidden;transition:border-color .18s,box-shadow .18s,transform .18s}
+.rd-kpi::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 4px 4px 0;background:var(--k)}
+.rd-kpi-boton{cursor:pointer}
+.rd-kpi-boton:hover{border-color:var(--kb);transform:translateY(-1px)}
+.rd-kpi-activo{border-color:var(--k);box-shadow:0 0 0 3px var(--kf)}
+.rd-kpi-ico{width:2.35rem;height:2.35rem;flex-shrink:0;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--kf);border:1px solid var(--kb);font-size:1.15rem;line-height:1}
+.rd-kpi-ico .rd-emoji,.rd-kpi-ico .rd-emoji-icono{font-size:1.2rem !important;width:auto !important;height:auto !important;filter:none !important;opacity:1 !important}
+.rd-kpi-titulo{display:block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#7a7266;line-height:1.2}
+.rd-kpi-valor{display:block;font-size:1.2rem;font-weight:900;line-height:1.2;color:var(--k);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rd-kpi-sub{display:block;font-size:11px;font-weight:600;color:#8b8376;line-height:1.25;margin-top:1px}
+.rd-kpi-anillo{color:var(--k)}
+.rd-kpi-rep{container-type:inline-size}
+@container (max-width:175px){
+  .rd-kpi-rep .rd-kpi-ico{position:absolute;right:.45rem;top:.45rem;width:1.7rem;height:1.7rem;border-radius:9px}
+  .rd-kpi-rep .rd-kpi-ico .rd-emoji{font-size:.95rem !important}
+  .rd-kpi-rep .rd-kpi-titulo{padding-right:1.9rem;min-height:1.7rem;display:flex;align-items:center}
+}
+html.dark .rd-kpi{background:linear-gradient(160deg,#0f2034 0%,#0b1828 100%);border-color:var(--kb);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 22px -16px rgba(0,0,0,.8)}
+html.dark .rd-kpi::before{box-shadow:0 0 8px var(--k)}
+html.dark .rd-kpi-boton:hover{border-color:var(--k);box-shadow:0 0 0 1px var(--kb),0 0 14px -6px var(--k)}
+html.dark .rd-kpi-activo{box-shadow:0 0 0 1px var(--k),0 0 16px -6px var(--k)}
+html.dark .rd-kpi-ico{background:#08121f;border-color:var(--kb);box-shadow:0 0 10px -4px var(--k)}
+html.dark .rd-kpi-titulo{color:#9fb0c6}
+html.dark .rd-kpi-sub{color:#8597ad}
+html.dark .rd-kpi-valor{text-shadow:0 0 10px color-mix(in srgb,var(--k) 35%,transparent)}
+.rd-kpi-alerta{background:#f8ecec}
+html.dark .rd-kpi-alerta{background:linear-gradient(160deg,#2a1220,#180c16)}
+
+/* ---------- Fisioterapia: diagnóstico ordenado por zona y burbujas de color ---------- */
+.rd-patologias{display:flex;flex-direction:column;gap:.5rem}
+.rd-pat-fila{display:grid;grid-template-columns:9.5rem minmax(0,1fr);gap:.4rem .75rem;align-items:start;padding:.55rem .6rem;border-radius:12px;background:var(--kf);border:1px solid var(--kb)}
+.rd-pat-region{display:flex;align-items:center;gap:.35rem;padding-top:.3rem;font-size:11px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:var(--k);line-height:1.2}
+.rd-pat-cuenta{min-width:1.15rem;height:1.15rem;padding:0 .3rem;border-radius:999px;background:var(--k);color:#fff;font-size:10px;display:inline-flex;align-items:center;justify-content:center}
+.rd-pat-chips{display:flex;flex-wrap:wrap;gap:.4rem;min-width:0}
+.rd-pat-chip{padding:.3rem .7rem;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:#fffdf8;color:#3b372f;border:1px solid var(--kb);transition:background .15s,border-color .15s,color .15s;white-space:normal;text-align:left;max-width:100%}
+.rd-pat-chip:hover{border-color:var(--k);color:var(--k)}
+.rd-pat-on,.rd-pat-on:hover{background:var(--k);border-color:var(--k);color:#fff}
+html.dark .rd-pat-fila{background:var(--kf);border-color:var(--kb)}
+html.dark .rd-pat-chip{background:#0a1626;color:#d6e2f0;border-color:var(--kb)}
+html.dark .rd-pat-chip:hover{color:var(--k);border-color:var(--k)}
+html.dark .rd-pat-on,html.dark .rd-pat-on:hover{background:var(--k);color:#06101c;border-color:var(--k);box-shadow:0 0 10px -3px var(--k)}
+html.dark .rd-pat-cuenta{color:#06101c}
+@media (max-width:640px){.rd-pat-fila{grid-template-columns:1fr}.rd-pat-region{padding-top:0}}
+
+/* ---------- Sin sombreado al seleccionar texto en ningún campo ---------- */
+/* El texto elegido se marca solo con color (sin fondo), en todos los campos */
+input::selection,textarea::selection,select::selection,[contenteditable]::selection{background:transparent !important;color:#1f6f75 !important}
+html.dark input::selection,html.dark textarea::selection,html.dark select::selection,html.dark [contenteditable]::selection{background:transparent !important;color:#7ff0f5 !important}
+input,textarea,select{-webkit-tap-highlight-color:transparent}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{opacity:.45}
+
+/* ---------- Emojis nítidos en modo oscuro ---------- */
+/* Ningún filtro del contenedor debe apagar al emoji: los degradados se atenúan sin tocar su contenido */
+html.dark main :is([class*="from-emerald-"],[class*="from-rose-"],[class*="from-orange-"],[class*="from-amber-"],[class*="from-violet-"],[class*="from-fuchsia-"],[class*="from-pink-"],[class*="from-sky-"],[class*="from-cyan-"],[class*="from-indigo-"],[class*="from-blue-"]):is(button,a,span):has(.rd-emoji){filter:none}
+html.dark .rd-emoji{filter:saturate(1.12) brightness(1.06)}
+/* Fichas de emoji translúcidas sobre color (bg-white/15, /20…): fondo oscuro sólido para que el emoji resalte */
+html.dark :is(span,div)[class*="bg-white/1"]:has(> .rd-emoji-icono:only-child),
+html.dark :is(span,div)[class*="bg-white/2"]:has(> .rd-emoji-icono:only-child){background:rgba(6,14,26,.55) !important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+/* Validar pase libre (CRM) en oscuro: morado profundo, sin saturar, con ficha oscura */
+html.dark .rd-validar-pase{background:linear-gradient(110deg,#2a1752 0%,#25195a 50%,#0d3b4a 100%);border:1px solid rgba(181,157,255,.35);box-shadow:0 0 22px -12px rgba(181,157,255,.6)}
+html.dark .rd-validar-pase [class*="bg-white/15"]:not(button){background:#0b0718 !important;box-shadow:0 0 0 1px rgba(181,157,255,.45),0 0 12px -4px rgba(181,157,255,.7)}
+html.dark .rd-validar-pase input{background:#0b1424 !important;color:#e8eefc !important;box-shadow:inset 0 0 0 1px rgba(181,157,255,.4)}
+html.dark .rd-validar-pase input::placeholder{color:#7a86a8 !important}
+html.dark .rd-validar-pase button.bg-white{background:#b59dff !important;color:#120a24 !important}

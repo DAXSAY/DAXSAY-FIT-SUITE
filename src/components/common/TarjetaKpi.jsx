@@ -52,43 +52,46 @@ export const Anillo = ({ pct = 0, clase = "text-cyan-600", tam = 34 }) => (
   </svg>
 );
 
+/** ¿Vale la pena dibujar la tendencia? (al menos 3 puntos y que cambie algo) */
+const serieUtil = (serie) => Array.isArray(serie) && serie.length >= 3 && Math.max(...serie.map(Number)) !== Math.min(...serie.map(Number));
+
 /**
- * Tarjeta de indicador común a todo el sistema:
- * icono grande en degradado, número animado, línea de contexto y, a la derecha,
- * minigráfico (serie) o anillo de avance (progreso 0-100).
+ * Tarjeta de información común a todo el sistema (diseño único):
+ * franja de color a la izquierda, ficha del emoji con fondo suave del mismo tono,
+ * título corto, número grande y una línea de contexto. A la derecha, solo si
+ * aporta: tendencia (serie con cambios) o anillo de avance (progreso 0-100).
+ * Los colores salen de variables CSS (--k): mate en modo claro, neón suave en oscuro.
  * <TarjetaKpi titulo="Nuevos" valor={12} sub="registrados hoy" serie={[1,3,2,5]} tono="teal" icono={Sparkles} />
  * alerta = estilo rojo de "Acción inmediata"; activo = resaltada (filtro elegido)
  */
-export const TarjetaKpi = ({ titulo, valor = 0, decimales = 0, prefijo = "", sufijo = "", sub, icono: I, tono = "teal", serie, progreso, activo = false, alerta = false, pulso = false, onClick, title, texto }) => {
-  const t = TONOS[alerta ? "rojo" : tono] || TONOS.teal;
+export const TarjetaKpi = ({ titulo, valor = 0, decimales = 0, prefijo = "", sufijo = "", sub, icono: I, emoji, tono = "teal", serie, progreso, activo = false, alerta = false, pulso = false, onClick, title, texto }) => {
+  const k = alerta ? "rojo" : TONOS[tono] ? tono : "teal";
   const Comp = onClick ? "button" : "div";
   return (
     <Comp
       type={onClick ? "button" : undefined}
       onClick={onClick}
       title={title}
-      className={`rd-kpi @container rd-aparece rd-levanta relative overflow-hidden w-full text-left px-3 py-2.5 rounded-xl border transition-all flex items-center gap-2.5 ${onClick ? "cursor-pointer" : ""} ${
-        alerta ? "bg-rose-50 border-rose-300 hover:border-rose-400" : `${t.fondo} ${activo ? t.borde : t.hover}`
-      }`}
+      className={`rd-kpi rd-kpi-${k} @container rd-aparece w-full text-left ${onClick ? "rd-kpi-boton" : ""} ${activo ? "rd-kpi-activo" : ""} ${alerta ? "rd-kpi-alerta" : ""}`}
     >
-      {I && (
-        <span className={`relative w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br ${t.grad} text-white flex items-center justify-center shadow-md ${pulso ? "animate-pulse" : ""}`}>
-          <I className="w-[18px] h-[18px]" />
+      {(I || emoji) && (
+        <span className={`rd-kpi-ico ${pulso ? "animate-pulse" : ""}`} aria-hidden>
+          {emoji ? <span className="rd-emoji">{emoji}</span> : <I className="w-5 h-5" />}
         </span>
       )}
       <span className="min-w-0 flex-1">
-        <span className={`block text-[10px] font-black uppercase tracking-wider leading-tight line-clamp-2 ${alerta ? "text-rose-700" : "text-slate-500"}`}>{titulo}</span>
-        <span className={`block text-lg font-black leading-tight whitespace-nowrap ${t.texto}`}>
+        <span className="rd-kpi-titulo line-clamp-2">{titulo}</span>
+        <span className="rd-kpi-valor">
           {texto != null ? texto : <NumeroAnimado valor={Number(valor) || 0} decimales={decimales} prefijo={prefijo} />}
           {sufijo}
         </span>
-        {sub && <span className="block text-[11px] font-semibold text-slate-500 leading-tight line-clamp-2" title={typeof sub === "string" ? sub : undefined}>{sub}</span>}
+        {sub && <span className="rd-kpi-sub line-clamp-2" title={typeof sub === "string" ? sub : undefined}>{sub}</span>}
       </span>
       {progreso != null ? (
-        <span className="hidden @[13rem]:block shrink-0"><Anillo pct={progreso} clase={t.texto} /></span>
-      ) : serie ? (
-        <span className="hidden @[16rem]:block shrink-0 pl-1">
-          <MiniGrafico serie={serie} color={t.color} ancho={52} alto={22} />
+        <span className="rd-kpi-extra hidden @[13rem]:block shrink-0"><Anillo pct={progreso} clase="rd-kpi-anillo" /></span>
+      ) : serieUtil(serie) ? (
+        <span className="rd-kpi-extra hidden @[16rem]:block shrink-0 pl-1">
+          <MiniGrafico serie={serie} color="var(--k)" ancho={56} alto={24} />
         </span>
       ) : null}
     </Comp>

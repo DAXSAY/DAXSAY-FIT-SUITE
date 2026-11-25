@@ -2419,26 +2419,36 @@ export const PhysiotherapyModule = () => {
                       const deZona = PATOLOGIAS_POR_REGION.filter((r) => r.zonas.some((z) => formZones.includes(z)));
                       const regiones = verTodasPatologias || !deZona.length ? PATOLOGIAS_POR_REGION : deZona;
                       return (
-                        <div className="space-y-2.5 select-none">
-                          {regiones.map((r) => (
-                            <div key={r.region} className="flex flex-wrap items-center gap-1.5">
-                              <span className="w-32 shrink-0 text-[11px] font-black uppercase text-slate-500">{r.region}</span>
-                              {r.items.map((p) => {
-                                const on = formPatologias.includes(p);
-                                return (
-                                  <button
-                                    type="button"
-                                    key={p}
-                                    onClick={() => setFormPatologias((prev) => (on ? prev.filter((x) => x !== p) : [...prev, p]))}
-                                    className={`px-2.5 py-1 rounded-full border text-xs font-bold cursor-pointer ${on ? "bg-rose-600 border-rose-600 text-white" : "bg-white border-slate-300 text-slate-700 hover:border-rose-300"}`}
-                                  >
-                                    {on ? "✓ " : ""}
-                                    {p}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          ))}
+                        <div className="rd-patologias select-none">
+                          {regiones.map((r) => {
+                            const tono = PATOLOGIAS_POR_REGION.findIndex((x) => x.region === r.region) % 10;
+                            const elegidas = r.items.filter((p) => formPatologias.includes(p)).length;
+                            return (
+                              <div key={r.region} className={`rd-pat-fila rd-pat-t${tono}`}>
+                                <span className="rd-pat-region">
+                                  {r.region}
+                                  {elegidas > 0 && <b className="rd-pat-cuenta">{elegidas}</b>}
+                                </span>
+                                <div className="rd-pat-chips">
+                                  {r.items.map((p) => {
+                                    const on = formPatologias.includes(p);
+                                    return (
+                                      <button
+                                        type="button"
+                                        key={p}
+                                        aria-pressed={on}
+                                        onClick={() => setFormPatologias((prev) => (on ? prev.filter((x) => x !== p) : [...prev, p]))}
+                                        className={`rd-pat-chip ${on ? "rd-pat-on" : ""}`}
+                                      >
+                                        {on ? "✓ " : ""}
+                                        {p}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
                           {deZona.length > 0 && (
                             <button type="button" onClick={() => setVerTodasPatologias((v) => !v)} className="text-xs font-bold text-rose-700 underline underline-offset-2 cursor-pointer">
                               {verTodasPatologias ? "Ver solo las de las zonas marcadas" : `Ver todas las regiones (${PATOLOGIAS_POR_REGION.length})`}

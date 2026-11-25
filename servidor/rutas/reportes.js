@@ -250,7 +250,7 @@ router.get("/matriculas", async (req, res, next) => {
               p.nombre AS plan, p.idplan,
               a.idalumno, a.dni, CONCAT(a.nombres, ' ', a.apellidos) AS alumno, a.sexo,
               TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) AS edad,
-              u.usuario AS registro_usuario,
+              u.usuario AS registro_usuario, a.activo AS alumno_activo, ${SQL_FIN_ULTIMA("a")} AS fin_ultima,
               (SELECT IFNULL(SUM(pg.monto), 0) FROM pagos_matricula pg WHERE pg.idmatricula = m.idmatricula) AS pagos
          FROM matriculas m
          JOIN alumnos a ON a.idalumno = m.idalumno
@@ -260,6 +260,7 @@ router.get("/matriculas", async (req, res, next) => {
         ORDER BY m.fecha_registro DESC`,
       [desde, hasta],
     );
+    const plazo = await plazoExalumno();
     res.json({
       desde,
       hasta,
@@ -286,6 +287,8 @@ router.get("/matriculas", async (req, res, next) => {
           saldo: f.estado === "anulada" ? 0 : Math.max(0, Number(f.precio) - pagado),
           metodo: f.metodo_pago,
           estado: f.estado,
+          // Situación HOY del alumno (no de esta matrícula): Activo · Por vencer · Vencido · Exalumno · De baja
+          estadoAlumno: f.alumno_activo ? estadoTexto(f.fin_ultima, plazo) : "De baja",
           registradoPor: f.registro_usuario || "",
         };
       }),

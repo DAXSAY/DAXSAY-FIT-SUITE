@@ -150,15 +150,26 @@ const Grupo = ({ titulo, color = "blue", children }) => (
 );
 
 // Tarjeta de indicador con franja de color según el tono
-const BORDE_TONO = { rose: "border-l-rose-500", emerald: "border-l-emerald-500", amber: "border-l-amber-500", blue: "border-l-blue-500", indigo: "border-l-indigo-500", sky: "border-l-sky-500", slate: "border-l-slate-300" };
-const FONDO_TONO = { rose: "bg-rose-500", emerald: "bg-emerald-500", amber: "bg-amber-500", blue: "bg-blue-500", indigo: "bg-indigo-500", sky: "bg-sky-500", slate: "bg-slate-400" };
-const Kpi = ({ label, value, tone = "text-slate-900" }) => {
-  const color = Object.keys(BORDE_TONO).find((k) => tone.includes(k)) || "blue";
+// Tarjeta de información de los reportes: mismo diseño que TarjetaKpi (franja, ficha con emoji, número)
+const TONO_KPI = { rose: "rojo", emerald: "verde", amber: "ambar", blue: "azul", indigo: "violeta", sky: "teal", violet: "violeta", slate: "plomo" };
+const EMOJI_KPI = [
+  [/exalumno/i, "🔁"], [/renovaci/i, "🔄"], [/nueva|nuevas/i, "🆕"], [/matr[ií]cula|membres/i, "📝"], [/vendido/i, "🧾"],
+  [/cobrad/i, "💵"], [/saldo|por cobrar|deuda/i, "💸"], [/vencido|caducan/i, "⏳"], [/vence en/i, "⚠️"],
+  [/egreso/i, "📤"], [/ingresos al|ingreso al/i, "🚪"], [/ingreso/i, "💰"], [/neto/i, "📊"], [/hora punta/i, "🕒"],
+  [/distintos|alumnos|socios/i, "🎓"], [/mujeres/i, "👥"], [/edad/i, "🎂"], [/congelad/i, "❄️"], [/programad/i, "🗓️"],
+  [/d[ií]as/i, "📅"], [/terminad|usaron/i, "✅"], [/derecho/i, "🎟️"],
+];
+const Kpi = ({ label, value, tone = "text-slate-900", emoji }) => {
+  const color = Object.keys(TONO_KPI).find((k) => tone.includes(k)) || "slate";
+  const limpio = String(label).replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, "");
+  const e = emoji || (String(label).match(/^\p{Extended_Pictographic}\uFE0F?/u) || [])[0] || EMOJI_KPI.find(([r]) => r.test(limpio))?.[1] || "📊";
   return (
-    <div className={`relative overflow-hidden bg-white rounded-xl border border-slate-200 border-l-4 ${BORDE_TONO[color]} px-3 py-2.5 shadow-sm`}>
-      <span className={`pointer-events-none absolute -right-5 -top-5 w-16 h-16 rounded-full opacity-15 ${FONDO_TONO[color]}`} />
-      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide block">{label}</span>
-      <span className={`text-xl font-black ${tone}`}>{value}</span>
+    <div className={`rd-kpi rd-kpi-${TONO_KPI[color]} rd-kpi-rep`}>
+      <span className="rd-kpi-ico" aria-hidden><span className="rd-emoji">{e}</span></span>
+      <span className="min-w-0 flex-1">
+        <span className="rd-kpi-titulo line-clamp-2">{limpio}</span>
+        <span className="rd-kpi-valor">{value}</span>
+      </span>
     </div>
   );
 };
@@ -258,7 +269,7 @@ const colEstadoAlumno = {
   ver: (x) =>
     x.estadoAlumno ? (
       <span className={`inline-block px-2 py-0.5 rounded-full border text-[11px] font-bold ${(ESTILO_ESTADO[x.estadoAlumno] || ["bg-slate-100 text-slate-600 border-slate-200"])[0]}`}>
-        {x.estadoAlumno === "Exalumno" ? "🔁 " : x.estadoAlumno === "Vencido" ? "⏳ " : x.estadoAlumno === "Activo" ? "✅ " : ""}
+        {{ Exalumno: "🔁 ", Vencido: "⏳ ", Activo: "✅ ", "Por vencer": "⚠️ ", "De baja": "🚫 " }[x.estadoAlumno] || ""}
         {x.estadoAlumno}
       </span>
     ) : (
@@ -266,6 +277,16 @@ const colEstadoAlumno = {
     ),
 };
 const ESTADOS_ALUMNO = ["Activo", "Por vencer", "Vencido", "Exalumno"];
+// Fila de tarjetas por situación del alumno (activo · por vencer · vencido · exalumno)
+const KPI_ESTADO = { Activo: ["✅", "text-emerald-600", "Activos"], "Por vencer": ["⚠️", "text-amber-600", "Por vencer"], Vencido: ["⏳", "text-rose-600", "Vencidos"], Exalumno: ["🔁", "text-violet-600", "Exalumnos"] };
+const KpisEstado = ({ filas, campo = "estadoAlumno", sufijo = "", valor }) => (
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    {ESTADOS_ALUMNO.map((e) => {
+      const de = filas.filter((x) => x[campo] === e);
+      return <Kpi key={e} emoji={KPI_ESTADO[e][0]} tone={KPI_ESTADO[e][1]} label={`${KPI_ESTADO[e][2]}${sufijo}`} value={valor ? valor(de) : de.length} />;
+    })}
+  </div>
+);
 
 const Tabla = ({ columnas, filas, franja: franjaFila }) => (
   <div className="overflow-x-auto max-h-[520px] overflow-y-auto rounded-xl border border-slate-200">
@@ -635,6 +656,7 @@ const ReporteAlumnos = () => {
         <Kpi label="Con deuda" value={filas.filter((a) => a.deuda > 0).length} tone="text-rose-600" />
         <Kpi label="Deuda total" value={soles(deudaTotal)} tone="text-rose-600" />
       </div>
+      <KpisEstado filas={filas} campo="estado" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Alumnos por plan</h4>
@@ -665,7 +687,7 @@ const ReporteMatriculas = () => {
   const [desde, setDesde] = useState(`${h.slice(0, 7)}-01`);
   const [hasta, setHasta] = useState(h);
   const [datos, setDatos] = useState(null);
-  const [f, setF] = useState({ plan: "", tipo: "", metodo: "", saldo: "", sexo: "", usuario: "" });
+  const [f, setF] = useState({ plan: "", tipo: "", metodo: "", saldo: "", sexo: "", estadoAlumno: "", usuario: "" });
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   useEffect(() => {
     setDatos(null);
@@ -682,6 +704,7 @@ const ReporteMatriculas = () => {
           (!f.metodo || m.metodo === f.metodo) &&
           (!f.saldo || (f.saldo === "si" ? m.saldo > 0 : m.saldo === 0)) &&
           (!f.sexo || m.sexo === f.sexo) &&
+          (!f.estadoAlumno || m.estadoAlumno === f.estadoAlumno) &&
           (!f.usuario || m.registradoPor === f.usuario),
       ),
     [datos, f],
@@ -705,6 +728,7 @@ const ReporteMatriculas = () => {
     ...(f.metodo ? [METODO[f.metodo]] : []),
     ...(f.saldo ? [f.saldo === "si" ? "Con saldo pendiente" : "Pagadas completas"] : []),
     ...(f.sexo ? [f.sexo === "Mujer" ? "Mujeres" : "Varones"] : []),
+    ...(f.estadoAlumno ? [`Alumno hoy: ${f.estadoAlumno}`] : []),
     ...(f.usuario ? [`Registró: ${f.usuario}`] : []),
   ];
   const columnas = [
@@ -729,6 +753,7 @@ const ReporteMatriculas = () => {
       excel: (m) => (m.diasSinMembresia == null ? "" : m.diasSinMembresia),
       ver: (m) => (m.diasSinMembresia == null ? "—" : m.diasSinMembresia === 0 ? "Sin pausa" : `${m.diasSinMembresia} d`),
     },
+    colEstadoAlumno,
     { key: "inicio", label: "Inicio", excel: (m) => fCorta(m.inicio) },
     { key: "vence", label: "Vence", excel: (m) => fCorta(m.vence) },
     { key: "precio", label: "Precio", excel: (m) => m.precio, ver: (m) => soles(m.precio) },
@@ -763,7 +788,7 @@ const ReporteMatriculas = () => {
             ["Mujeres", { sexo: "Mujer" }],
             ["Varones", { sexo: "Varón" }],
           ].map(([l, c]) => {
-            const vacio = { plan: "", tipo: "", metodo: "", saldo: "", sexo: "", usuario: "" };
+            const vacio = { plan: "", tipo: "", metodo: "", saldo: "", sexo: "", estadoAlumno: "", usuario: "" };
             const activo = Object.entries({ ...vacio, ...c }).every(([k, v]) => k === "plan" || k === "usuario" || f[k] === v);
             return (
               <Chip key={l} activo={activo} tono={l === "Todas" ? "slate" : undefined} onClick={() => setF((p) => ({ ...vacio, plan: p.plan, usuario: p.usuario, ...c }))}>
@@ -773,7 +798,7 @@ const ReporteMatriculas = () => {
           })}
         </Atajos>
         <Periodo desde={desde} hasta={hasta} setRango={(a, b) => { setDesde(a); setHasta(b); }} />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-2">
           <Sel label="Plan / paquete" value={f.plan} onChange={(v) => set("plan", v)}>
             <option value="">Todos</option>
             {plans.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -798,14 +823,18 @@ const ReporteMatriculas = () => {
             <option value="Mujer">Mujeres</option>
             <option value="Varón">Varones</option>
           </Sel>
+          <Sel label="Alumno hoy" value={f.estadoAlumno} onChange={(v) => set("estadoAlumno", v)}>
+            <option value="">Todos</option>
+            {[...ESTADOS_ALUMNO, "De baja"].map((e) => <option key={e}>{e}</option>)}
+          </Sel>
           <Sel label="Registrado por" value={f.usuario} onChange={(v) => set("usuario", v)}>
             <option value="">Todos</option>
             {usuarios.map((u) => <option key={u}>{u}</option>)}
           </Sel>
         </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
-        {totales.map(([k, v]) => <Kpi key={k} label={k} value={v} tone={k === "Saldo pendiente" ? "text-rose-600" : k === "Cobrado" ? "text-emerald-600" : "text-slate-900"} />)}
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+        {totales.map(([k, v]) => <Kpi key={k} label={k} value={v} tone={{ "Saldo pendiente": "text-rose-600", Cobrado: "text-emerald-600", Nuevas: "text-emerald-600", Renovaciones: "text-indigo-600", "Exalumnos recuperados": "text-violet-600", Vendido: "text-blue-700", Matrículas: "text-sky-600" }[k] || "text-slate-900"} />)}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 p-4">
@@ -969,9 +998,9 @@ const ReporteIngresos = ({ ventas = false }) => {
         <Kpi label="Neto" value={soles(ingresos - egresos)} tone="text-blue-700" />
       </div>
       {!ventas && filas.some((m) => m.tipoMatricula) && (
-        <div className="grid grid-cols-3 gap-3">
-          {[["🆕 Membresías nuevas", "Nueva"], ["🔄 Renovaciones", "Renovación"], ["🔁 Exalumnos recuperados", "Exalumno recuperado"]].map(([l, t]) => (
-            <Kpi key={t} label={l} value={soles(filas.filter((m) => m.tipo === "Ingreso" && m.tipoMatricula === t).reduce((a, m) => a + m.monto, 0))} />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[["🆕 Membresías nuevas", "Nueva", "text-emerald-600"], ["🔄 Renovaciones", "Renovación", "text-indigo-600"], ["🔁 Exalumnos recuperados", "Exalumno recuperado", "text-violet-600"]].map(([l, t, tono]) => (
+            <Kpi key={t} label={l} tone={tono} value={soles(filas.filter((m) => m.tipo === "Ingreso" && m.tipoMatricula === t).reduce((a, m) => a + m.monto, 0))} />
           ))}
         </div>
       )}
@@ -1155,6 +1184,7 @@ const ReporteDeudas = () => {
         <Kpi label="Alumnos con deuda" value={alumnos} />
         <Kpi label="Saldos cobrados (periodo)" value={soles(cobrado)} tone="text-emerald-600" />
       </div>
+      <KpisEstado filas={filas} sufijo=" · deben" valor={(de) => soles(de.reduce((a, d) => a + d.saldo, 0))} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Deuda por estado</h4>
@@ -1299,11 +1329,12 @@ const ReporteAsistencias = () => {
         </div>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Kpi label="Ingresos al gimnasio" value={filas.length} />
         <Kpi label="Alumnos distintos" value={new Set(filas.map((a) => a.dni)).size} />
         <Kpi label="Hora punta" value={porHora.reduce((a, b) => (b.valor > a.valor ? b : a), { nombre: "—", valor: 0 }).nombre} tone="text-blue-700" />
       </div>
+      <KpisEstado filas={filas} sufijo=" · ingresos" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 p-4 lg:col-span-2">
           <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Afluencia por hora</h4>
