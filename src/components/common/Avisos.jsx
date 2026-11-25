@@ -283,7 +283,7 @@ export function RecordatorioPesos({ setActiveTab }) {
     <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3.5 flex flex-wrap items-center gap-3">
       <span className="text-2xl"><IconoEmoji e="💪" /></span>
       <div className="flex-1 min-w-[200px]">
-        <p className="text-sm font-black text-amber-900"><ConIconos texto={a.titulo} /></p>
+        <p className="text-sm font-black text-amber-900"><ConIconos texto={String(a.titulo || "").replace(/^💪\uFE0F?\s*/u, "")} /></p>
         <p className="text-xs text-amber-800"><ConIconos texto={a.mensaje} /></p>
       </div>
       <button type="button" onClick={() => ejecutar(a)} className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-black cursor-pointer">

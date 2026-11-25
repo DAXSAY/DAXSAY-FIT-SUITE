@@ -26,3 +26,21 @@ export const PRONOSTICO = [
   { v: "desfavorable", l: "Desfavorable", emoji: "🔴" },
 ];
 export const etiqueta = (lista, v) => lista.find((x) => x.v === v);
+
+/**
+ * Estado sugerido para una sesión de control según el cambio de dolor (EVA 0-10):
+ *  bajó > 50 %  -> mejoría notable · 30-50 % -> moderada · < 30 % -> leve
+ *  igual -> estable (o alta si sigue sin dolor) · subió -> recaída si venía mejorando, si no empeoramiento
+ */
+export function sugerirEstado(antes, ahora, estadoPrevio) {
+  antes = Number(antes);
+  ahora = Number(ahora);
+  if (!Number.isFinite(antes) || !Number.isFinite(ahora)) return null;
+  const venia = ["notable_mejora", "mejora_moderada", "mejora_leve", "alta"].includes(estadoPrevio);
+  if (antes > 0 && ahora < antes) {
+    const baja = (antes - ahora) / antes;
+    return baja > 0.5 ? "notable_mejora" : baja >= 0.3 ? "mejora_moderada" : "mejora_leve";
+  }
+  if (ahora > antes) return venia ? "recaida" : "empeoramiento";
+  return antes === 0 && ahora === 0 ? "alta" : "estable";
+}

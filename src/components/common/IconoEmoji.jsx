@@ -292,8 +292,21 @@ export function IconoEmoji({ e, className = "w-[1.1em] h-[1.1em]", strokeWidth =
 
 /** Texto que puede traer emojis (avisos, plantillas): cada emoji se dibuja como ícono */
 export function ConIconos({ texto }) {
-  // Los emojis del texto se dejan tal cual (de color)
-  return texto ?? null;
+  // Cada emoji del texto va en su propia pieza (.rd-emoji) para tomar el tono del tema:
+  // pastel en modo claro y neón medio en oscuro. El resto del texto queda igual.
+  if (typeof texto !== "string") return texto ?? null;
+  RE_EMOJI.lastIndex = 0;
+  if (!RE_EMOJI.test(texto)) return texto;
+  const partes = [];
+  let ultimo = 0;
+  RE_EMOJI.lastIndex = 0;
+  for (const m of texto.matchAll(RE_EMOJI)) {
+    if (m.index > ultimo) partes.push(texto.slice(ultimo, m.index));
+    partes.push(SIMBOLOS.has(m[0].trim()) ? m[0] : <span key={m.index} className="rd-emoji" aria-hidden="true">{m[0]}</span>);
+    ultimo = m.index + m[0].length;
+  }
+  if (ultimo < texto.length) partes.push(texto.slice(ultimo));
+  return <>{partes}</>;
 }
 /** Repite el ícono de un emoji n veces (p. ej. porciones con la mano) */
 export function IconosRepetidos({ e, n, className }) {

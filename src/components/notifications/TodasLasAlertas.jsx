@@ -33,7 +33,7 @@ const Fila = ({ a }) => {
         </div>
         <p className="truncate text-xs text-slate-600"><ConIconos texto={a.detalle} /></p>
       </div>
-      <span className={`shrink-0 px-2 py-0.5 rounded-full border text-[11px] font-bold ${p.chip}`}>{p.etiqueta}</span>
+      <span className={`shrink-0 px-2 py-0.5 rounded-full border text-[11px] font-bold ${p.chip}`}><ConIconos texto={p.etiqueta} /></span>
       {a.telefono && (
         <a href={enlaceWhatsApp(a.telefono, a.mensaje)} target="_blank" rel="noreferrer" title="Escribir por WhatsApp"
           className="shrink-0 w-8 h-8 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 flex items-center justify-center hover:bg-emerald-100">

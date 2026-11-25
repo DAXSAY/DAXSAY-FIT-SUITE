@@ -11,7 +11,7 @@ import { textoNivelRutina, textoObjetivoRutina } from "../../utils/rutinas";
 import { SaludAlumno } from "./SaludAlumno";
 import { BotonProgramar, BotonPerfil, EstadoSeguimiento, CabeceraSeguimiento, COLUMNAS_SEG } from "../common/Programados";
 import { TONO, TONO_NIVEL } from "./FormEjercicioPropio";
-import { IconoEmoji } from "../common/IconoEmoji";
+import { IconoEmoji, ConIconos } from "../common/IconoEmoji";
 import { api } from "../../api/cliente";
 import { escucharCambios } from "../../utils/tiempoReal";
 
@@ -317,8 +317,8 @@ export const RutinasAsignadas = ({
             {rutina ? (
               <>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded-full border text-[11px] font-bold ${TONO[TONO_NIVEL[rutina.level || "intermedio"] || "slate"][0]}`}>{textoNivelRutina(rutina.level)}</span>
-                  <span className="px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50 text-slate-700 text-[11px] font-semibold">{textoObjetivoRutina(rutina.objective)}</span>
+                  <span className={`px-2 py-0.5 rounded-full border text-[11px] font-bold ${TONO[TONO_NIVEL[rutina.level || "intermedio"] || "slate"][0]}`}><ConIconos texto={textoNivelRutina(rutina.level)} /></span>
+                  <span className="px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50 text-slate-700 text-[11px] font-semibold"><ConIconos texto={textoObjetivoRutina(rutina.objective)} /></span>
                   <span className="text-sm font-black text-slate-900">{rutina.title}</span>
                   {(rutina.trainerName || rutina.creadaPor) && (
                     <span className="text-[11px] text-slate-500">

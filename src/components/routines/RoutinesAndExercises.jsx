@@ -50,7 +50,7 @@ import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
 import { useRecordado } from "../../utils/subPestana";
 import { GuiaSesion } from "./GuiaSesion";
 import { SaludAlumno } from "./SaludAlumno";
-import { IconoEmoji } from "../common/IconoEmoji";
+import { IconoEmoji, ConIconos } from "../common/IconoEmoji";
 import { HojaRutina } from "./HojaRutina";
 export const RoutinesAndExercises = () => {
   const {
@@ -477,8 +477,8 @@ export const RoutinesAndExercises = () => {
                       >
                         <div>
                           <div className="flex flex-wrap items-center gap-1.5">
-                            {nivelR && <span className={`px-2 py-0.5 rounded-full border text-[11px] font-bold ${tonoN[0]}`}>{nivelR[1]} {nivelR[2]}</span>}
-                            {objetivoR && <span className="px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50 text-slate-700 text-[11px] font-semibold">{objetivoR[1]} {objetivoR[2]}</span>}
+                            {nivelR && <span className={`px-2 py-0.5 rounded-full border text-[11px] font-bold ${tonoN[0]}`}><ConIconos texto={`${nivelR[1]} ${nivelR[2]}`} /></span>}
+                            {objetivoR && <span className="px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50 text-slate-700 text-[11px] font-semibold"><ConIconos texto={`${objetivoR[1]} ${objetivoR[2]}`} /></span>}
                           </div>
 
                           <h3 className="text-base font-black text-slate-900 mt-2 leading-tight group-hover:text-blue-600 transition-colors">{tituloR}</h3>

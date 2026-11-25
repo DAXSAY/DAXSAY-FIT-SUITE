@@ -534,6 +534,86 @@ async function avisosAgendaYCambios(req, hoy) {
   return avisos;
 }
 
+// ----- Evolución en fisioterapia (última sesión de cada alumno) -----
+//  entrenador/admin: recaída, empeoramiento o derivación (14 días) -> ajustar la rutina
+//  alumno: mejoría, alta o recaída en su última sesión (7 días) -> mensaje propio
+//  fisioterapia/admin: control pendiente (fecha de próximo control vencida y sin sesión nueva)
+const EVOL = {
+  notable_mejora: ["🎉", "Mejoría notable"], mejora_moderada: ["😊", "Mejoría moderada"], mejora_leve: ["👍", "Mejoría leve"],
+  estable: ["⚖️", "Estable"], recaida: ["🔁", "Recaída"], empeoramiento: ["⚠️", "Empeoramiento"], derivacion: ["🏥", "Derivado a médico"], alta: ["🏆", "Alta"],
+};
+async function avisosEvolucionFisio(req, hoy) {
+  const { rol, idusuario } = req.usuario;
+  if (!["trainer", "admin", "physio", "student"].includes(rol)) return [];
+  let miAlumno = null;
+  if (rol === "student") {
+    const [u] = await consultar("SELECT idalumno FROM usuarios WHERE idusuario = ?", [idusuario]);
+    if (!u?.idalumno) return [];
+    miAlumno = String(u.idalumno);
+  }
+  const filas = await consultar(
+    `SELECT r.idregistro, r.datos, CONCAT(a.nombres, ' ', a.apellidos) AS nombre
+       FROM registros_app r LEFT JOIN alumnos a ON a.idalumno = r.idalumno
+      WHERE r.modulo = 'fisioterapia' ${miAlumno ? "AND r.idalumno = ?" : ""}`,
+    miAlumno ? [miAlumno] : [],
+  );
+  const ultima = new Map();
+  for (const f of filas) {
+    const d = parsearDatos(f.datos);
+    if (!d?.memberId) continue;
+    const k = String(d.memberId);
+    const clave = `${d.date || ""}${d.time || ""}`;
+    if (!ultima.has(k) || clave > ultima.get(k).clave) ultima.set(k, { clave, d, nombre: f.nombre || d.memberName || "Alumno", id: f.idregistro });
+  }
+  const avisos = [];
+  for (const [idAl, { d, nombre, id }] of ultima) {
+    const [emo, txt] = EVOL[d.improvementStatus] || [];
+    const fecha = String(d.date || hoy).slice(0, 10);
+    if ((rol === "trainer" || rol === "admin") && ["recaida", "empeoramiento", "derivacion"].includes(d.improvementStatus) && fecha >= sumarDias(hoy, -14)) {
+      avisos.push({
+        id: `fisio-evol-${id}-${d.improvementStatus}`,
+        tipo: "fisio_evolucion",
+        nivel: "alto",
+        titulo: `${emo} Fisioterapia: ${nombre} · ${txt}`,
+        mensaje: "Revisa sus indicaciones de fisioterapia y ajusta la carga de su rutina.",
+        fecha,
+        accion: { tipo: "ir", tab: "routines" },
+      });
+    }
+    if ((rol === "physio" || rol === "admin") && d.nextAppointmentDate && String(d.nextAppointmentDate).slice(0, 10) <= hoy && d.improvementStatus !== "alta") {
+      avisos.push({
+        id: `fisio-control-${id}`,
+        tipo: "fisio_control",
+        nivel: String(d.nextAppointmentDate).slice(0, 10) < hoy ? "alto" : "medio",
+        titulo: `📅 Control pendiente: ${nombre}`,
+        mensaje: `Su próximo control era el ${fBonita(String(d.nextAppointmentDate).slice(0, 10))}. Ábrelo con «Sesión de control».`,
+        fecha: String(d.nextAppointmentDate).slice(0, 10),
+        accion: { tipo: "ir", tab: "physiotherapy" },
+      });
+    }
+    if (rol === "student" && txt && fecha >= sumarDias(hoy, -7)) {
+      const bueno = ["notable_mejora", "mejora_moderada", "mejora_leve"].includes(d.improvementStatus);
+      const malo = ["recaida", "empeoramiento", "derivacion"].includes(d.improvementStatus);
+      if (!bueno && !malo && d.improvementStatus !== "alta") continue;
+      avisos.push({
+        id: `fisio-mio-${id}-${d.improvementStatus}`,
+        tipo: "fisio_evolucion",
+        nivel: malo ? "alto" : "medio",
+        titulo: d.improvementStatus === "alta" ? "🏆 ¡Alta en fisioterapia!" : bueno ? `${emo} ¡Vas mejorando! ${txt}` : `${emo} Fisioterapia: ${txt}`,
+        mensaje:
+          d.improvementStatus === "alta"
+            ? "Cumpliste tu objetivo de rehabilitación. ¡Felicitaciones!"
+            : bueno
+              ? `Tu dolor bajó a ${d.painLevelEVA ?? "—"}/10. Sigue con tus ejercicios en casa.`
+              : "Sigue las indicaciones de tu fisioterapeuta y avisa a tu entrenador antes de entrenar.",
+        fecha,
+        accion: { tipo: "ir", tab: "mi_fisioterapia" },
+      });
+    }
+  }
+  return avisos;
+}
+
 router.get("/", async (req, res, next) => {
   try {
     const hoy = hoyLima();
@@ -545,6 +625,7 @@ router.get("/", async (req, res, next) => {
       avisosLogrosEntrenador(req, hoy).catch(() => []),
       avisosRutinas(req, hoy).catch(() => []),
       avisosAgendaYCambios(req, hoy).catch((e) => (console.warn("[avisos agenda]", e.message), [])),
+      avisosEvolucionFisio(req, hoy).catch((e) => (console.warn("[avisos fisio]", e.message), [])),
     ]);
     res.json({ hoy, avisos: grupos.flat() });
   } catch (e) {

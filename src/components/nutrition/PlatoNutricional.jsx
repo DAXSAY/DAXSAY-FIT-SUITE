@@ -10,7 +10,7 @@ import { CampoNumero } from "../common/CampoNumero";
 import React from "react";
 import { EditorComidas } from "./EditorComidas";
 import { PORCIONES_PESO, CONSEJOS_MANO } from "../../data/nutricionOpciones";
-import { IconoEmoji, IconosRepetidos } from "../common/IconoEmoji";
+import { IconoEmoji, IconosRepetidos, ConIconos } from "../common/IconoEmoji";
 
 // --- Porciones con la mano --------------------------------------------
 // Los gramos son una referencia aproximada para estimar macros.
@@ -530,7 +530,7 @@ export const GuiaPorciones = ({ oscuro = false, sexo }) => (
         ["🥑 Grasas", "Palta, frutos secos, aceite de oliva o pescado azul; evita frituras y grasas trans."],
       ].map(([t, x]) => (
         <div key={t} className={`rounded-xl p-3 border ${oscuro ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
-          <b>{t}:</b> {x}
+          <b><ConIconos texto={t} />:</b> {x}
         </div>
       ))}
     </div>

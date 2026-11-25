@@ -35,7 +35,7 @@ import { fechaCorta, sumarDias, hoyISO } from "../../utils/fecha";
 import { textoObjetivos } from "../../utils/objetivos";
 import { coincideAlumno } from "../../utils/buscarPersona";
 import { BotonesDescarga } from "../common/BotonesDescarga";
-import { IconoEmoji } from "../common/IconoEmoji";
+import { IconoEmoji, ConIconos } from "../common/IconoEmoji";
 
 export const MembersManagement = ({ onOpenNewMemberModal }) => {
   const {
@@ -274,7 +274,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-300"
             }`}
           >
-            🔁 Exalumnos ({members.filter((m) => m.memberState === "exalumno").length})
+            <ConIconos texto="🔁" /> Exalumnos ({members.filter((m) => m.memberState === "exalumno").length})
           </button>
           <button
             onClick={() => setStatusFilter("debt")}

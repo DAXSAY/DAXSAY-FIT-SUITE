@@ -17,14 +17,30 @@ instalarTooltipGlobal();
 instalarSelectorFecha();
 instalarSelectorHora();
 
-// Campos numéricos: al entrar se selecciona el valor (escribir lo reemplaza)
-// y se quitan los ceros a la izquierda (evita "012").
+// Campos numéricos: al entrar NO se sombrea el valor (sin selección azul);
+// la primera tecla que escribe un número reemplaza lo que había (como antes).
 document.addEventListener("focusin", (e) => {
   const el = e.target;
-  if (el instanceof HTMLInputElement && el.type === "number") {
-    requestAnimationFrame(() => el.select());
-  }
+  if (el instanceof HTMLInputElement && el.type === "number") el.dataset.rdReemplazar = "1";
 });
+document.addEventListener(
+  "beforeinput",
+  (e) => {
+    const el = e.target;
+    if (!(el instanceof HTMLInputElement) || el.type !== "number" || el.dataset.rdReemplazar !== "1") return;
+    delete el.dataset.rdReemplazar;
+    if (e.inputType === "insertText" && el.value !== "") el.value = "";
+  },
+  true,
+);
+document.addEventListener(
+  "keydown",
+  (e) => {
+    const el = e.target;
+    if (el instanceof HTMLInputElement && el.dataset.rdReemplazar === "1" && /^(Arrow|Backspace|Delete|Home|End)/.test(e.key)) delete el.dataset.rdReemplazar;
+  },
+  true,
+);
 document.addEventListener(
   "input",
   (e) => {

@@ -7,6 +7,7 @@
 // WhatsApp del administrador.
 // =====================================================================
 import React, { useEffect, useMemo, useState } from "react";
+import { ConIconos } from "../common/IconoEmoji";
 import { ClipboardList, Search } from "lucide-react";
 import { api } from "../../api/cliente";
 import { hoyISO, fechaCorta } from "../../utils/fecha";
@@ -221,7 +222,7 @@ export const RegistroCrm = ({ onAbrirProspecto }) => {
                       {p.objective && <p className="text-xs text-slate-500">{p.objective}</p>}
                     </td>
                     <td className="px-3 py-2">
-                      <span className={`inline-block px-2 py-0.5 rounded-full border text-[11px] font-bold whitespace-nowrap ${ESTADOS[p.status]?.chip || ""}`}>{ESTADOS[p.status]?.label || p.status}</span>
+                      <span className={`inline-block px-2 py-0.5 rounded-full border text-[11px] font-bold whitespace-nowrap ${ESTADOS[p.status]?.chip || ""}`}><ConIconos texto={ESTADOS[p.status]?.label || p.status} /></span>
                     </td>
                     <td className="px-3 py-2 text-slate-700">{queQuedo(p) || <span className="text-slate-400">—</span>}</td>
                     <td className="px-3 py-2">

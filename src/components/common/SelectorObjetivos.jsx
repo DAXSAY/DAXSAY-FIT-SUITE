@@ -1,5 +1,6 @@
 // Elegir uno o varios objetivos con "pastillas" (en vez de una lista desplegable)
 import React from "react";
+import { ConIconos } from "./IconoEmoji";
 import { Check } from "lucide-react";
 import { OBJETIVOS_ALUMNO, listaObjetivos } from "../../utils/objetivos";
 
@@ -23,7 +24,7 @@ export const SelectorObjetivos = ({ value, onChange }) => {
                 on ? "bg-blue-600 border-blue-600 text-white shadow-sm" : "bg-white border-slate-300 text-slate-600 hover:border-blue-400"
               }`}
             >
-              {on ? <Check className="w-3.5 h-3.5" /> : <span>{e}</span>}
+              {on ? <Check className="w-3.5 h-3.5" /> : <ConIconos texto={e} />}
               {l}
             </button>
           );

@@ -37,7 +37,7 @@ import { MiCongelamiento } from "./MiCongelamiento";
 import { MisIndicaciones } from "../indicaciones/Indicaciones";
 
 import { textoObjetivos } from "../../utils/objetivos";
-import { IconoEmoji } from "../common/IconoEmoji";
+import { IconoEmoji, ConIconos } from "../common/IconoEmoji";
 import { DisponibilidadTurnos } from "../appointments/DisponibilidadTurnos";
 // Lectura segura de los datos de cada evaluación corporal
 const fatPct = (a) => a?.bioimpedance?.bodyFatPercentage ?? a?.bodyFatPercentage;
@@ -723,7 +723,7 @@ export const StudentPortalModule = ({
                     Objetivo Deportivo
                   </span>
                   <span className="text-xs font-extrabold text-slate-800 capitalize">
-                    {textoObjetivos(currentMember?.objective, true)}
+                    <ConIconos texto={textoObjetivos(currentMember?.objective, true)} />
                   </span>
                 </div>
 
@@ -1554,7 +1554,7 @@ export const StudentPortalModule = ({
                 vistaRutina === k ? "bg-blue-600 text-white shadow" : "text-slate-600 hover:bg-white"
               }`}
             >
-              {t}
+              <ConIconos texto={t} />
             </button>
           ))}
         </div>

@@ -88,7 +88,7 @@ import { ExercisePrescriptionCard } from "./ExercisePrescriptionCard";
 import { textoPlanoFicha } from "./PhysioTextualRecordsView";
 import { ChipsFiltro, PanelFiltros, BuscadorFiltro } from "../common/ChipsFiltro";
 import { PhysioReportModal } from "./PhysioReportModal";
-import { ESTADOS_EVOLUCION, estadoEvolucion, ADHERENCIA, FRECUENCIA_SESIONES, PRONOSTICO } from "./evolucion";
+import { ESTADOS_EVOLUCION, estadoEvolucion, ADHERENCIA, FRECUENCIA_SESIONES, PRONOSTICO, sugerirEstado } from "./evolucion";
 import { api } from "../../api/cliente";
 import { SelectorAlumno, CodigoAlumno, coincideAlumno } from "../common/BuscarAlumno";
 import { SelectorIndicaciones, sugerirIndicaciones, textoIndicaciones } from "../indicaciones/Indicaciones";
@@ -2913,8 +2913,7 @@ export const PhysiotherapyModule = () => {
                                   setFormPainEVA(v);
                                   setFormClinicalScales((prev) => ({ ...prev, pain: { ...(prev?.pain || {}), actual: v } }));
                                 }}
-                                className={`rd-eva-btn ${Number(ahora) === v ? "rd-eva-on" : ""}`}
-                                style={{ "--k": v >= 7 ? "#c2525d" : v >= 4 ? "#c08a3a" : "#4f8a64" }}
+                                className={`rd-eva-btn ${v >= 7 ? "rd-kpi-rojo" : v >= 4 ? "rd-kpi-ambar" : "rd-kpi-verde"} ${Number(ahora) === v ? "rd-eva-on" : ""}`}
                               >
                                 {v}
                               </button>
@@ -2930,15 +2929,7 @@ export const PhysiotherapyModule = () => {
                         .sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`))[0];
                       const antes = Number(previa?.painLevelEVA);
                       const ahora = Number(formClinicalScales?.pain?.actual ?? formPainEVA ?? 0);
-                      let sugerido = null;
-                      if (previa && Number.isFinite(antes) && Number.isFinite(ahora)) {
-                        const venia = ["notable_mejora", "mejora_moderada", "mejora_leve", "alta"].includes(previa.improvementStatus);
-                        if (antes > 0 && ahora < antes) {
-                          const baja = (antes - ahora) / antes;
-                          sugerido = baja > 0.5 ? "notable_mejora" : baja >= 0.3 ? "mejora_moderada" : "mejora_leve";
-                        } else if (ahora > antes) sugerido = venia ? "recaida" : "empeoramiento";
-                        else sugerido = antes === 0 && ahora === 0 ? "alta" : "estable";
-                      }
+                      const sugerido = previa ? sugerirEstado(antes, ahora, previa.improvementStatus) : null;
                       return (
                         <>
                           <label className={LBL}>Estado respecto a la sesión anterior</label>

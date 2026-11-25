@@ -3795,7 +3795,7 @@ html.dark input.rd-campo-activo{border-color:#40c8d2!important;box-shadow:0 0 0 
 .rd-disp-vivo{font-size:9px;font-weight:900;letter-spacing:.1em;padding:2px 6px;border-radius:999px;background:#dcfce7;color:#047857;animation:rd-vivo 1.6s ease-in-out infinite}
 @keyframes rd-vivo{50%{opacity:.45}}
 .rd-disp-srv{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;border:1px solid #e2e8f0;font-size:12px;font-weight:800;color:#475569;background:#fff;cursor:pointer}
-.rd-disp-srv-on{background:#1f6f75;border-color:#1f6f75;color:#fff}
+.rd-disp-srv-on{background:#d4efeb;border-color:#60b7ae;color:#2f6f69}
 .rd-disp-dia{min-width:68px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border-radius:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;flex-shrink:0}
 .rd-disp-dia-on{background:#e0f2f1;border-color:#1f6f75;color:#0f4c51;box-shadow:0 0 0 2px rgba(31,111,117,.15)}
 .rd-disp-ley,.rd-disp-turno{border:1px solid transparent;border-radius:10px}
@@ -4099,3 +4099,36 @@ html.dark .rd-aviso-fisio{background:rgba(255,125,140,.12);color:#ffb3bd;border-
 .rd-eva-on,.rd-eva-btn:hover{background:var(--k);color:#fff}
 html.dark .rd-eva-btn{background:#08121f}
 html.dark .rd-eva-on,html.dark .rd-eva-btn:hover{background:var(--k);color:#06101c;box-shadow:0 0 10px -3px var(--k)}
+
+/* =====================================================================
+   TONOS DE TARJETAS Y BURBUJAS = PALETA ÚNICA (pastel en claro · neón medio en oscuro)
+   --k acento · --kt texto (más legible) · --kf fondo · --kb borde
+   ===================================================================== */
+.rd-kpi-teal,.rd-pat-t0{--k:#60b7ae;--kt:#47988f;--kf:#e4f5f3;--kb:#ceece9}
+html.dark .rd-kpi-teal,html.dark .rd-pat-t0{--k:#88f0e5;--kt:#88f0e5;--kf:rgba(94,232,216,.09);--kb:rgba(94,232,216,.30)}
+.rd-kpi-verde,.rd-pat-t1{--k:#60b79a;--kt:#47987d;--kf:#e4f5f0;--kb:#ceece2}
+html.dark .rd-kpi-verde,html.dark .rd-pat-t1{--k:#88f0ce;--kt:#88f0ce;--kf:rgba(94,232,186,.09);--kb:rgba(94,232,186,.30)}
+.rd-kpi-rojo,.rd-pat-t5{--k:#b7606f;--kt:#984755;--kf:#f5e4e7;--kb:#ecced4}
+html.dark .rd-kpi-rojo,html.dark .rd-pat-t5{--k:#f0889a;--kt:#f0889a;--kf:rgba(232,94,117,.09);--kb:rgba(232,94,117,.30)}
+.rd-kpi-ambar,.rd-pat-t2{--k:#b79760;--kt:#987a47;--kf:#f5efe4;--kb:#ece1ce}
+html.dark .rd-kpi-ambar,html.dark .rd-pat-t2{--k:#f0c988;--kt:#f0c988;--kf:rgba(232,180,94,.09);--kb:rgba(232,180,94,.30)}
+.rd-kpi-violeta,.rd-pat-t3{--k:#7b60b7;--kt:#604798;--kf:#e9e4f5;--kb:#d8ceec}
+html.dark .rd-kpi-violeta,html.dark .rd-pat-t3{--k:#a888f0;--kt:#a888f0;--kf:rgba(136,94,232,.09);--kb:rgba(136,94,232,.30)}
+.rd-kpi-azul,.rd-pat-t4{--k:#609cb7;--kt:#477f98;--kf:#e4f0f5;--kb:#cee3ec}
+html.dark .rd-kpi-azul,html.dark .rd-pat-t4{--k:#88d0f0;--kt:#88d0f0;--kf:rgba(94,189,232,.09);--kb:rgba(94,189,232,.30)}
+.rd-kpi-rosa,.rd-pat-t9{--k:#b7608b;--kt:#98476f;--kf:#f5e4ed;--kb:#eccedd}
+html.dark .rd-kpi-rosa,html.dark .rd-pat-t9{--k:#f088bc;--kt:#f088bc;--kf:rgba(232,94,162,.09);--kb:rgba(232,94,162,.30)}
+.rd-kpi-plomo{--k:#8a8478;--kt:#6b665c;--kf:#efece6;--kb:#e0dbd2}
+html.dark .rd-kpi-plomo{--k:#b4c0d0;--kt:#b4c0d0;--kf:rgba(180,192,208,.09);--kb:rgba(180,192,208,.30)}
+.rd-kpi-naranja,.rd-pat-t6{--k:#b78460;--kt:#986847;--kf:#f5ebe4;--kb:#ecdbce}
+html.dark .rd-kpi-naranja,html.dark .rd-pat-t6{--k:#f0b388;--kt:#f0b388;--kf:rgba(232,150,94,.09);--kb:rgba(232,150,94,.30)}
+.rd-kpi-indigo,.rd-pat-t8{--k:#6062b7;--kt:#474998;--kf:#e4e4f5;--kb:#cecfec}
+html.dark .rd-kpi-indigo,html.dark .rd-pat-t8{--k:#888bf0;--kt:#888bf0;--kf:rgba(94,97,232,.09);--kb:rgba(94,97,232,.30)}
+.rd-kpi-lima,.rd-pat-t7{--k:#7fa860;--kt:#64884a;--kf:#ebf3e4;--kb:#d9e8cc}
+html.dark .rd-kpi-lima,html.dark .rd-pat-t7{--k:#bdf08a;--kt:#bdf08a;--kf:rgba(170,232,94,.09);--kb:rgba(170,232,94,.30)}
+.rd-kpi-valor,.rd-pat-region{color:var(--kt,var(--k))}
+html:not(.dark) .rd-pat-on,html:not(.dark) .rd-pat-on:hover{color:#fff}
+html:not(.dark) .rd-pat-chip:hover{color:var(--kt)}
+/* Emojis: pastel en modo claro (más suaves) · neón medio en oscuro (vivos, sin encandilar) */
+html:not(.dark) .rd-emoji,html:not(.dark) .rd-emoji-icono{filter:saturate(.62) brightness(1.07) contrast(.96) !important}
+html.dark .rd-emoji,html.dark .rd-emoji-icono{filter:saturate(1.18) brightness(1.04) drop-shadow(0 0 2px rgba(160,240,255,.18)) !important}
