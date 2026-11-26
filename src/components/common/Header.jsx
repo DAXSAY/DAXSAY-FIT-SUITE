@@ -223,7 +223,7 @@ export const Header = ({
 
   return (
     <header className="rd-cabecera-app sticky top-0 z-30 rd-vidrio border-b border-slate-200/80 pl-4 lg:pl-6 pr-2 lg:pr-3 py-2 text-slate-800 shadow-[0_1px_0_rgba(16,181,167,0.15)] transition-all">
-      <div className="w-full mx-auto flex flex-col md:flex-row md:flex-wrap lg:flex-nowrap items-center justify-between gap-3 md:gap-y-2">
+      <div className="w-full mx-auto flex flex-col md:flex-row md:flex-wrap items-center justify-between gap-3 md:gap-y-2">
         {/* Brand logo */}
         <div className="flex items-center justify-between w-full md:w-auto gap-3">
           <div className="flex items-center gap-2">

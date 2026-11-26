@@ -74,6 +74,17 @@ export const textoPlazo = (member) => {
 /** Etiqueta "Debe S/ 50 · hasta 05/11 (faltan 6 días)" */
 export const DebtBadge = ({ member, compact = false }) => {
   if (!(member?.debt > 0)) return null;
+  // Compacta (tablas): siempre dos renglones fijos, sin partir palabras
+  if (compact)
+    return (
+      <span
+        className={`inline-flex flex-col items-start leading-tight px-2 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap ${ESTILOS[member.debtStatus] || ESTILOS.al_dia}`}
+        title={member.debtDueDate ? `Fecha límite de pago: ${fechaCorta(member.debtDueDate)}` : "Sin fecha límite"}
+      >
+        <span className="text-[11px] font-black">Debe S/ {member.debt.toFixed(2)}</span>
+        {member.debtDueDate && <span className="opacity-90">{textoPlazo(member)}</span>}
+      </span>
+    );
   return (
     <span
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${ESTILOS[member.debtStatus] || ESTILOS.al_dia}`}

@@ -17,6 +17,17 @@ const NOMBRE_ZONA = {
   rodilla: "Rodilla", tobillo: "Tobillo", pie: "Pie", sacro: "Sacro", isquios: "Isquiotibiales", cuadriceps: "Cuádriceps",
 };
 
+/** «hombro_der» -> «Hombro (lado derecho)» */
+export const nombreZona = (z) => {
+  const t = String(z || "");
+  if (NOMBRE_ZONA[t]) return NOMBRE_ZONA[t];
+  const m = t.match(/^(.*?)[_-](der|izq|derecho|izquierdo|d|i)$/i);
+  const base = m ? m[1] : t;
+  const nombre = NOMBRE_ZONA[base] || base.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+  if (!m) return nombre;
+  return `${nombre} (lado ${/^d/i.test(m[2]) ? "derecho" : "izquierdo"})`;
+};
+
 /** Qué día de la rutina le toca hoy:
  *  1) si el día se llama como el día de la semana (Lunes, Martes…), ese;
  *  2) si no, va rotando según los días que ya vino al gimnasio. */
@@ -89,7 +100,7 @@ export const FichaDeportiva = ({ member, onVerCalendario }) => {
             <p className="font-black">Cuidado al entrenar</p>
             {tieneLesion && (
               <p>
-                Zona tratada en fisioterapia: <b>{(f.zonas || []).map((z) => NOMBRE_ZONA[z] || z).join(", ") || "—"}</b>
+                Zona tratada en fisioterapia: <b>{(f.zonas || []).map(nombreZona).join(", ") || "—"}</b>
                 {Number(f.dolorEVA) > 0 && <> · dolor {f.dolorEVA}/10</>}
                 {f.tonoMuscular && f.tonoMuscular !== "normotono" && <> · tono muscular: {f.tonoMuscular}</>}
               </p>
@@ -170,7 +181,7 @@ export const FichaDeportiva = ({ member, onVerCalendario }) => {
               {f.motivo && <p><b>Motivo:</b> {f.motivo}</p>}
               <div className="flex flex-wrap gap-1.5">
                 {(f.zonas || []).map((z) => (
-                  <span key={z} className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-xs font-bold">{NOMBRE_ZONA[z] || z}</span>
+                  <span key={z} className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-xs font-bold">{nombreZona(z)}</span>
                 ))}
                 {(f.puntosGatillo || []).filter((p) => String(p).trim()).map((p) => (
                   <span key={p} className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">Contractura: {p}</span>
@@ -185,7 +196,7 @@ export const FichaDeportiva = ({ member, onVerCalendario }) => {
               {f.indicaciones?.length > 0 && (
                 <details className="group">
                   <summary className="text-xs font-bold text-rose-700 cursor-pointer flex items-center gap-1 list-none">
-                    <ChevronDown className="w-3.5 h-3.5 group-open:rotate-180 transition-transform" /> {f.indicaciones.length} indicaciones para el alumno
+                    <ChevronDown className="w-3.5 h-3.5 group-open:rotate-180 transition-transform" /> {f.indicaciones.length} {f.indicaciones.length === 1 ? "indicación" : "indicaciones"} para el alumno
                   </summary>
                   <ul className="mt-1.5 space-y-1">
                     {f.indicaciones.map((x, i) => (

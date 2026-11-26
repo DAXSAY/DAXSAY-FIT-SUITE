@@ -4243,3 +4243,10 @@ html.dark .rd-barra-alumno-hoja{background:#0b1626;border-color:rgba(148,163,184
   .rd-boton-banco{top:auto !important;bottom:1rem;right:.75rem !important;transform:none !important;flex-direction:row !important;border-radius:999px !important;padding:.7rem 1rem !important;box-shadow:0 10px 24px -8px rgba(15,40,70,.5)}
   .rd-boton-banco > span{writing-mode:horizontal-tb !important;transform:none !important}
 }
+
+/* ===== Perfil del alumno ===== */
+.rd-perfil-cab{background:linear-gradient(135deg,var(--kf),color-mix(in srgb,var(--kf) 35%,var(--rd-surface)));border-color:var(--kb)}
+.rd-perfil-foto{background:var(--rd-surface);color:var(--kt,var(--k));border:2px solid var(--kb);box-shadow:0 8px 20px -12px color-mix(in srgb,var(--k) 70%,transparent)}
+.rd-perfil-mini{background:color-mix(in srgb,var(--rd-surface) 82%,transparent);border:1px solid var(--kb)}
+.rd-perfil-bloque{background:var(--rd-surface);border-color:var(--kb);border-top:3px solid var(--k)}
+html.dark .rd-perfil-mini{background:rgba(8,16,28,.55)}

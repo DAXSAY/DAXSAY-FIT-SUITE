@@ -24,7 +24,7 @@ import { UsersRound, SearchX } from "lucide-react";
 import { TelWhatsApp } from "../common/TelWhatsApp";
 import { userCan } from "../../config/roles";
 import { MemberAccountScreen } from "./MemberAccountScreen";
-import { FichaDeportiva } from "./FichaDeportiva";
+import { PerfilAlumno } from "./PerfilAlumno";
 import { EditMemberScreen } from "./EditMemberScreen";
 import { FreezeScreen, FreezeBadge } from "./FreezeScreen";
 import { CalendarioAsistencias } from "../attendances/CalendarioAsistencias";
@@ -457,8 +457,8 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                       </td>
 
                       {/* Plan */}
-                      <td className="px-4 py-3">
-                        <span className="font-semibold text-slate-800">
+                      <td className="px-4 py-3 min-w-[150px]">
+                        <span className="font-semibold text-slate-800 whitespace-nowrap">
                           {member.planName}
                         </span>
                         {member.freeze?.current && (
@@ -490,7 +490,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                       </td>
 
                       {/* Expiration Date */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div>
                           <p className="font-mono text-slate-800 font-semibold">
                             {String(member.membershipEndDate || "").slice(0, 10).split("-").reverse().join("/")}
@@ -638,218 +638,33 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
       {selectedMember && (
         <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
           <div className="w-full max-w-6xl mx-auto min-h-full sm:px-8 sm:py-8 bg-white overflow-y-auto p-5 text-slate-800">
-            <div className="flex items-start justify-between border-b border-gray-200 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 font-extrabold text-xl flex items-center justify-center">
-                  {selectedMember.fullName.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">
-                    {selectedMember.fullName}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs font-mono font-black text-blue-700 bg-blue-50 border border-blue-100 rounded px-1.5">
-                      {selectedMember.codeLabel}
-                    </span>
-                    <span className="text-xs font-mono text-gray-500">
-                      DNI: {selectedMember.dni}
-                    </span>
-                    <span className="text-xs text-gray-300">•</span>
-                    <span className="text-xs text-blue-600 font-semibold">
-                      {textoObjetivos(selectedMember.objective)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <span className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  title="Imprimir ficha del alumno"
-                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer print:hidden"
-                >
-                  <Printer className="w-4 h-4" />
-                </button>
-                <BotonesDescarga compacto nombre={`Ficha_${selectedMember.codeLabel}_${selectedMember.fullName}`} />
-                <button
-                  onClick={() => setSelectedMember(null)}
-                  className="text-gray-400 hover:text-gray-700 p-1 text-sm cursor-pointer print:hidden"
-                >
-                  ✕
-                </button>
-              </span>
-            </div>
-
-            {/* Ficha deportiva: rutina de hoy, lesiones, dieta y asistencia */}
-            <div className="mt-4">
-              <FichaDeportiva
-                member={selectedMember}
-                onVerCalendario={() => {
-                  setAsistenciasDe(selectedMember);
-                  setSelectedMember(null);
-                }}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 my-4">
-              {/* Membership Card */}
-              <div className="bg-gray-50/70 p-3.5 rounded-xl border border-gray-200 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    Membresía
-                  </span>
-                  <span
-                    className={`px-1.5 py-0.2 rounded text-xs font-bold uppercase ${
-                      selectedMember.status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {selectedMember.status === "active" ? "Vigente" : "Vencido"}
-                  </span>
-                </div>
-                <p className="text-sm font-bold text-slate-900">
-                  {selectedMember.planName}
-                </p>
-                <div className="text-xs text-slate-600 space-y-1 pt-1">
-                  <p>
-                    <IconoEmoji e="📅" /> Inicio:{" "}
-                    <span className="font-mono">
-                      {selectedMember.membershipStartDate}
-                    </span>
-                  </p>
-                  <p>
-                    <IconoEmoji e="⏳" /> Vencimiento:{" "}
-                    <span className="font-mono text-blue-700 font-bold">
-                      {selectedMember.membershipEndDate}
-                    </span>
-                  </p>
-                  <p>
-                    <IconoEmoji e="💳" /> Deuda:{" "}
-                    <span className={`font-bold ${selectedMember.debt > 0 ? "text-rose-600" : "text-green-700"}`}>
-                      {selectedMember.debt > 0 ? `S/ ${selectedMember.debt.toFixed(2)}` : "Al día"}
-                    </span>{" "}
-                    {selectedMember.debtDueDate && (
-                      <span className={`text-xs font-semibold ${selectedMember.debtStatus === "vencida" ? "text-rose-700" : "text-amber-700"}`}>
-                        (cancelar hasta {fechaCorta(selectedMember.debtDueDate)}){" "}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCuentaDe(selectedMember);
-                        setSelectedMember(null);
-                      }}
-                      className="text-xs text-blue-600 font-bold underline cursor-pointer"
-                    >
-                      {selectedMember.debt > 0 ? "Cobrar saldo" : "Estado de cuenta"}
-                    </button>
-                  </p>
-                  {selectedMember.address && <p><IconoEmoji e="🏠" /> Dirección: <span className="font-semibold">{selectedMember.address}</span></p>}
-                  {selectedMember.lastPaymentAmount && (
-                    <p>
-                      <IconoEmoji e="💰" /> Último Pago:{" "}
-                      <span className="font-bold text-green-700">
-                        S/ {selectedMember.lastPaymentAmount}
-                      </span>{" "}
-                      ({selectedMember.lastPaymentDate})
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Contact Info */}
-              <div className="bg-gray-50/70 p-3.5 rounded-xl border border-gray-200 space-y-1.5">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Contacto & Emergencia
-                </span>
-                <div className="text-xs text-slate-600 space-y-1">
-                  <p className="flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-gray-400" />
-                    {gestiona ? <TelWhatsApp tel={selectedMember.phone} /> : <span>{selectedMember.phone}</span>}
-                  </p>
-                  <p className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="truncate">{selectedMember.email}</span>
-                  </p>
-                  <div className="pt-1 text-xs text-gray-500">
-                    <p className="font-semibold text-slate-700">
-                      Contacto de Emergencia:
-                    </p>
-                    <p>
-                      {selectedMember.emergencyContact.name} (
-                      {selectedMember.emergencyContact.relationship}) -{" "}
-                      {gestiona ? <TelWhatsApp tel={selectedMember.emergencyContact.phone} /> : <span>{selectedMember.emergencyContact.phone}</span>}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Trainer & Routine Assignment */}
-              <div className="bg-gray-50/70 p-3.5 rounded-xl border border-gray-200 space-y-2">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Entrenador Personal
-                </span>
-                <select
-                  value={selectedMember.assignedTrainerId || ""}
-                  onChange={(e) => {
-                    assignTrainerToMember(selectedMember.id, e.target.value);
-                    setSelectedMember({
-                      ...selectedMember,
-                      assignedTrainerId: e.target.value,
-                    });
-                  }}
-                  className="w-full px-2.5 py-1.5 bg-white border border-gray-300 rounded-md text-sm text-slate-800"
-                >
-                  <option value="">Sin Entrenador Asignado</option>
-                  {trainers.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.specialization})
-                    </option>
-                  ))}
-                </select>
-
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mt-1">
-                  Rutina Asignada
-                </span>
-                <select
-                  value={selectedMember.assignedRoutineId || ""}
-                  onChange={(e) => {
-                    assignRoutineToMember(selectedMember.id, e.target.value);
-                    setSelectedMember({
-                      ...selectedMember,
-                      assignedRoutineId: e.target.value,
-                    });
-                  }}
-                  className="w-full px-2.5 py-1.5 bg-white border border-gray-300 rounded-md text-sm text-slate-800"
-                >
-                  <option value="">Sin Rutina Asignada</option>
-                  {routines.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.title} ({r.level})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Medical & Notes */}
-              <div className="bg-gray-50/70 p-3.5 rounded-xl border border-gray-200 space-y-1.5">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                  <HeartPulse className="w-3.5 h-3.5 text-rose-500" />
-                  Salud & Observaciones
-                </span>
-                <p className="text-xs text-slate-600">
-                  {selectedMember.medicalNotes ||
-                    "Sin restricciones médicas reportadas."}
-                </p>
-                {selectedMember.notes && (
-                  <p className="text-xs text-amber-800 pt-1 border-t border-gray-200">
-                    <span className="font-semibold">Nota:</span>{" "}
-                    {selectedMember.notes}
-                  </p>
-                )}
-              </div>
-            </div>
+            <PerfilAlumno
+              m={selectedMember}
+              gestiona={gestiona}
+              trainers={trainers}
+              routines={routines}
+              onCerrar={() => setSelectedMember(null)}
+              onCuenta={() => {
+                setCuentaDe(selectedMember);
+                setSelectedMember(null);
+              }}
+              onCalendario={() => {
+                setAsistenciasDe(selectedMember);
+                setSelectedMember(null);
+              }}
+              onEditar={() => {
+                setEditingMember(selectedMember);
+                setSelectedMember(null);
+              }}
+              onEntrenador={(id) => {
+                assignTrainerToMember(selectedMember.id, id);
+                setSelectedMember({ ...selectedMember, assignedTrainerId: id });
+              }}
+              onRutina={(id) => {
+                assignRoutineToMember(selectedMember.id, id);
+                setSelectedMember({ ...selectedMember, assignedRoutineId: id });
+              }}
+            />
 
             {/* Actions footer */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-200">
