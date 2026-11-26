@@ -41,7 +41,6 @@ import { hoyISO } from "../../utils/fecha";
 import { TelWhatsApp } from "../common/TelWhatsApp";
 import { PaseNoConcretado, PanelPases } from "./CrmPases";
 import { ReporteCrm } from "./CrmReporte";
-import { RegistroCrm } from "./CrmRegistro";
 import { TarjetaKpi, seriePorDia } from "../common/TarjetaKpi";
 import { ChipResponsable, Luces, PanelResponsable } from "./Responsable";
 import { NewMemberModal } from "../members/NewMemberModal";
@@ -141,6 +140,7 @@ const SelectorDia = ({ valor, onCambiar, tono = "azul" }) => {
 // ---------------------------------------------------------------------
 // Formulario (nuevo / editar)
 // ---------------------------------------------------------------------
+const OBJETIVOS = ["Bajar de peso", "Ganar masa muscular", "Tonificar", "Salud y bienestar", "Rendimiento deportivo"];
 const FormularioProspecto = ({ inicial, planes, onGuardar, onCerrar }) => {
   const [f, setF] = useState(() => ({
     fullName: "", phone: "", dni: "", email: "", planId: "", objective: "", source: "visita", notes: "",
@@ -181,58 +181,88 @@ const FormularioProspecto = ({ inicial, planes, onGuardar, onCerrar }) => {
       <form onSubmit={guardar} className="w-full max-w-2xl mx-auto min-h-full bg-white p-6 space-y-4 text-slate-800">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-black flex items-center gap-2">
-            <Contact className="w-5 h-5 text-blue-600" /> {inicial?.id ? "Editar prospecto" : "Nuevo prospecto"}
+            <Contact className="w-5 h-5 text-blue-600" /> {inicial?.id ? "Editar interesado" : "Nuevo interesado"}
           </h3>
           <button type="button" onClick={onCerrar} className="p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="block text-sm sm:col-span-2">
-            <span className="font-bold text-slate-700">Nombre completo *</span>
-            <input autoFocus value={f.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="Ej. David Flores Ramos" className={campo} />
-          </label>
-          <label className="block text-sm">
-            <span className="font-bold text-slate-700">Celular *</span>
-            <input value={f.phone} onChange={(e) => set("phone", e.target.value)} inputMode="tel" placeholder="9XX XXX XXX" className={campo} />
-          </label>
-          <label className="block text-sm">
-            <span className="font-bold text-slate-700">Plan que le interesa</span>
-            <select value={f.planId} onChange={(e) => set("planId", e.target.value)} className={campo}>
-              <option value="">Aún no sabe</option>
-              {planes.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} · S/ {p.price}
-                </option>
+        <p className="text-xs text-slate-500 -mt-2">Solo el nombre y el celular son obligatorios. Lo demás se elige con un toque.</p>
+
+        {/* 1. Quién es */}
+        <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-600">1 · ¿Quién es? 🙋</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="block text-sm">
+              <span className="font-bold text-slate-700">Nombre completo *</span>
+              <input autoFocus value={f.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="Ej. David Flores Ramos" className={campo} />
+            </label>
+            <label className="block text-sm">
+              <span className="font-bold text-slate-700">Celular *</span>
+              <input value={f.phone} onChange={(e) => set("phone", e.target.value)} inputMode="tel" placeholder="9XX XXX XXX" className={campo} />
+            </label>
+          </div>
+          <details className="group" open={!!(f.dni || f.email)}>
+            <summary className="text-xs font-bold text-blue-700 cursor-pointer select-none">+ Más datos (DNI y correo, opcional)</summary>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+              <label className="block text-sm">
+                <span className="font-bold text-slate-700">DNI</span>
+                <input value={f.dni} onChange={(e) => set("dni", e.target.value)} inputMode="numeric" className={campo} />
+              </label>
+              <label className="block text-sm">
+                <span className="font-bold text-slate-700">Correo</span>
+                <input value={f.email} onChange={(e) => set("email", e.target.value)} type="email" className={campo} />
+              </label>
+            </div>
+          </details>
+        </div>
+
+        {/* 2. Qué busca */}
+        <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-600">2 · ¿Qué busca? 🎯</p>
+          <div>
+            <p className="text-sm font-bold text-slate-700 mb-1.5">Plan que le interesa</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {[{ id: "", name: "Aún no sabe" }, ...planes].map((p) => (
+                <button
+                  key={p.id || "ninguno"}
+                  type="button"
+                  onClick={() => set("planId", p.id ? String(p.id) : "")}
+                  className={`rounded-xl border px-2.5 py-2 text-left cursor-pointer transition-colors min-w-0 ${String(f.planId || "") === String(p.id || "") ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}
+                >
+                  <span className="block text-sm font-black leading-tight truncate">{p.name}</span>
+                  <span className={`block text-[11px] ${String(f.planId || "") === String(p.id || "") ? "text-white/85" : "text-slate-500"}`}>{p.id ? `S/ ${p.price}` : "Lo decide luego"}</span>
+                </button>
               ))}
-            </select>
-          </label>
-          <label className="block text-sm">
-            <span className="font-bold text-slate-700">¿Cómo nos conoció?</span>
-            <select value={f.source} onChange={(e) => set("source", e.target.value)} className={campo}>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-700 mb-1.5">Objetivo</p>
+            <div className="flex flex-wrap gap-1.5">
+              {OBJETIVOS.map((o) => (
+                <button key={o} type="button" onClick={() => set("objective", f.objective === o ? "" : o)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${f.objective === o ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                  {o}
+                </button>
+              ))}
+            </div>
+            <input value={f.objective} onChange={(e) => set("objective", e.target.value)} placeholder="u otro objetivo…" className={`${campo} mt-2`} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-700 mb-1.5">¿Cómo nos conoció?</p>
+            <div className="flex flex-wrap gap-1.5">
               {Object.entries(ORIGENES).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
+                <button key={k} type="button" onClick={() => set("source", k)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${f.source === k ? "bg-violet-600 border-violet-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                  {typeof v === "string" ? v : v.label}
+                </button>
               ))}
-            </select>
-          </label>
-          <label className="block text-sm">
-            <span className="font-bold text-slate-700">Objetivo (opcional)</span>
-            <input value={f.objective} onChange={(e) => set("objective", e.target.value)} placeholder="Bajar de peso, ganar masa…" className={campo} />
-          </label>
-          <label className="block text-sm">
-            <span className="font-bold text-slate-700">DNI (opcional)</span>
-            <input value={f.dni} onChange={(e) => set("dni", e.target.value)} inputMode="numeric" className={campo} />
-          </label>
-          <label className="block text-sm">
-            <span className="font-bold text-slate-700">Correo (opcional)</span>
-            <input value={f.email} onChange={(e) => set("email", e.target.value)} type="email" className={campo} />
-          </label>
+            </div>
+          </div>
         </div>
 
         {/* Cita de contacto */}
         <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 space-y-3">
           <p className="text-xs font-black uppercase tracking-wider text-blue-800 flex items-center gap-1.5">
-            <CalendarClock className="w-4 h-4" /> ¿Cuándo y cómo lo contactamos?
+            <CalendarClock className="w-4 h-4" /> 3 · ¿Cuándo y cómo lo contactamos? 📞
           </p>
           <div className="flex flex-wrap gap-2">
             {[...Object.entries(CONTACTO), ["", { label: "Sin cita", icono: X }]].map(([k, c]) => {
@@ -266,7 +296,7 @@ const FormularioProspecto = ({ inicial, planes, onGuardar, onCerrar }) => {
         {nuevo && (
           <div className="rounded-2xl border border-violet-200 bg-violet-50/50 p-4 space-y-2">
             <p className="text-xs font-black uppercase tracking-wider text-violet-800 flex items-center gap-1.5">
-              <Ticket className="w-4 h-4" /> ¿Acepta un pase libre para venir a conocer el gimnasio?
+              <Ticket className="w-4 h-4" /> 4 · ¿Acepta un pase libre para venir a conocer el gimnasio?
             </p>
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => elegirPase(true)} className={`px-3 py-1.5 rounded-xl border text-sm font-bold cursor-pointer ${aceptaPase ? "bg-violet-600 border-violet-600 text-white" : "bg-white border-violet-200 text-violet-800 hover:bg-violet-50"}`}>
@@ -294,7 +324,7 @@ const FormularioProspecto = ({ inicial, planes, onGuardar, onCerrar }) => {
             Cancelar
           </button>
           <button disabled={guardando} className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-black cursor-pointer">
-            {guardando ? "Guardando…" : "Guardar prospecto"}
+            {guardando ? "Guardando…" : nuevo ? "✅ Registrar interesado" : "Guardar cambios"}
           </button>
         </div>
       </form>
@@ -892,12 +922,11 @@ export const CrmModule = () => {
       </form>
 
       {/* Pestañas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
         {[
           ["interesados", "Interesados", "Tablero y agenda", Users],
           ["pases", "Pases libres", "Quién vino y quién no", Ticket],
-          ["registro", "Registro", "Base de datos y descargas", ClipboardList],
-          ["reporte", "Reporte", "Cómo nos va", BarChart3],
+          ["reporte", "Reporte y registro", "Gráficos, lista y descargas", BarChart3],
         ].map(([k, l, sub, I]) => (
           <button
             key={k}
@@ -928,14 +957,6 @@ export const CrmModule = () => {
       )}
       {vista === "reporte" && (
         <ReporteCrm
-          onAbrirProspecto={(id, fila) => {
-            const p = lista.find((x) => x.id === id) || fila;
-            if (p) setAbierto(p);
-          }}
-        />
-      )}
-      {vista === "registro" && (
-        <RegistroCrm
           onAbrirProspecto={(id, fila) => {
             const p = lista.find((x) => x.id === id) || fila;
             if (p) setAbierto(p);

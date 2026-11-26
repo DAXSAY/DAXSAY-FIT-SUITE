@@ -14,7 +14,7 @@ import { hoyISO, fechaCorta } from "../../utils/fecha";
 import { Exportar } from "../reports/ReportsModule";
 import { Luces, LUCES, lucesEncendidas, situacion } from "./Responsable";
 
-const ESTADOS = {
+export const ESTADOS = {
   nuevo: { label: "Nuevo", chip: "bg-sky-100 text-sky-800 border-sky-200" },
   seguimiento: { label: "En seguimiento", chip: "bg-amber-100 text-amber-800 border-amber-200" },
   pase_entregado: { label: "Pase libre entregado", chip: "bg-violet-100 text-violet-800 border-violet-200" },
@@ -24,10 +24,10 @@ const ESTADOS = {
 const ORIGENES = { visita: "Vino al gimnasio", whatsapp: "WhatsApp", llamada: "Llamada", redes: "Redes sociales", referido: "Referido", web: "Página web", otro: "Otro" };
 const CONTACTO = { llamada: "Llamada", whatsapp: "WhatsApp", visita: "Visita" };
 
-const fechaHora = (v) => (v ? `${fechaCorta(v)} ${String(v).slice(11, 16)}`.trim() : "");
+export const fechaHora = (v) => (v ? `${fechaCorta(v)} ${String(v).slice(11, 16)}`.trim() : "");
 
 /** Qué quedó en hacer: la cita o el contacto agendado */
-const queQuedo = (p) =>
+export const queQuedo = (p) =>
   p.contactType && p.contactDate ? `${CONTACTO[p.contactType] || p.contactType} el ${fechaCorta(p.contactDate)}${p.contactTime ? ` a las ${p.contactTime}` : ""}` : "";
 
 /** Cómo terminó: una sola clave para filtrar y un texto para leer */
@@ -45,7 +45,7 @@ export const resultadoDe = (p, hoy = hoyISO()) => {
 };
 
 /** Lo que dijo: motivo de no venir o de baja, y las notas */
-const loQueDijo = (p) =>
+export const loQueDijo = (p) =>
   [
     p.lastPass?.reasonLabel ? `${p.lastPass.reasonLabel}${p.lastPass.reason ? `: ${p.lastPass.reason}` : ""}` : "",
     p.status === "de_baja" && p.dropReason ? p.dropReason : "",
@@ -55,7 +55,7 @@ const loQueDijo = (p) =>
     .filter((v, i, a) => a.indexOf(v) === i)
     .join(" · ");
 
-const COLUMNAS = [
+export const COLUMNAS = [
   { key: "createdAt", label: "Registro", excel: (p) => fechaHora(p.createdAt) },
   { key: "fullName", label: "Interesado", excel: (p) => `${p.fullName}${p.dni ? ` (DNI ${p.dni})` : ""}` },
   { key: "phone", label: "Celular" },
@@ -72,7 +72,7 @@ const COLUMNAS = [
   { key: "registeredBy", label: "Registrado por" },
 ];
 
-const RESULTADOS = [
+export const RESULTADOS = [
   ["todos", "Todos"],
   ["pendiente", "Pendientes"],
   ["vino", "Vinieron"],

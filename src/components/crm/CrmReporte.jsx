@@ -11,12 +11,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { tono } from "../../utils/tonos";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from "recharts";
-import { Clock, Compass, Users, AlertTriangle, Filter, X, ShieldCheck, ChevronDown, MousePointerClick } from "lucide-react";
+import { Clock, Compass, Users, AlertTriangle, Filter, X, ShieldCheck, ChevronDown, MousePointerClick, Search, CalendarDays, ListChecks } from "lucide-react";
+import { ConIconos } from "../common/IconoEmoji";
 import { api } from "../../api/cliente";
 import { hoyISO, fechaCorta } from "../../utils/fecha";
 import { Exportar } from "../reports/ReportsModule";
-import { resultadoDe } from "./CrmRegistro";
-import { Luces } from "./Responsable";
+import { resultadoDe, COLUMNAS, RESULTADOS, ESTADOS, queQuedo, loQueDijo, fechaHora } from "./CrmRegistro";
+import { Luces, situacion } from "./Responsable";
 import { TarjetaKpi, serieRango } from "../common/TarjetaKpi";
 import { useGym } from "../../context/GymContext";
 import { coloresPorNombre } from "../../utils/colorPlan";
@@ -125,6 +126,10 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
   const [error, setError] = useState("");
   const [cuando, setCuando] = useState("dia");
   const [filtro, setFiltro] = useState(null); // { tipo, valor, texto }
+  const [plan, setPlan] = useState("");
+  const [responsable, setResponsable] = useState("");
+  const [resultado, setResultado] = useState("todos");
+  const [busca, setBusca] = useState("");
   const detalleRef = useRef(null);
 
   useEffect(() => {
@@ -138,6 +143,7 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
 
   const rangos = [
     ["Hoy", hoy, hoy],
+    ["Ayer", (() => { const [y, m, d] = hoy.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10); })(), (() => { const [y, m, d] = hoy.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10); })()],
     ["Últimos 7 días", (() => { const [y, m, d] = hoy.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d - 6)).toISOString().slice(0, 10); })(), hoy],
     ["Este mes", `${hoy.slice(0, 7)}-01`, hoy],
     ["Mes pasado", (() => { const [y, m] = hoy.split("-").map(Number); return new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10); })(), (() => { const [y, m] = hoy.split("-").map(Number); return new Date(Date.UTC(y, m - 1, 0)).toISOString().slice(0, 10); })()],
@@ -158,7 +164,22 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
     return (turnos.find((t) => (t.inicio <= t.fin ? h >= t.inicio && h < t.fin : h >= t.inicio || h < t.fin)) || { nombre: "Fuera de turno" }).nombre;
   };
 
-  const lista = filas || [];
+  // Filtros: todo lo de abajo (indicadores, gráficos, lista y descargas) usa la misma lista
+  const base = filas || [];
+  const planes = useMemo(() => [...new Set(base.map((p) => p.planName || "Aún no sabe"))].sort(), [filas]);
+  const responsables = useMemo(() => [...new Set(base.map((p) => p.owner).filter(Boolean))].sort(), [filas]);
+  const sinResultado = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return base.filter((p) => {
+      if (plan && (p.planName || "Aún no sabe") !== plan) return false;
+      if (responsable && p.owner !== responsable) return false;
+      return !q || `${p.fullName} ${p.phone} ${p.dni} ${p.notes} ${p.dropReason} ${p.lastPass?.reason || ""}`.toLowerCase().includes(q);
+    });
+  }, [filas, plan, responsable, busca]);
+  const lista = useMemo(() => (resultado === "todos" ? sinResultado : sinResultado.filter((p) => resultadoDe(p, hoy).clave === resultado)), [sinResultado, resultado, hoy]);
+  const cuenta = (k) => (k === "todos" ? sinResultado.length : sinResultado.filter((p) => resultadoDe(p, hoy).clave === k).length);
+  const hayFiltros = plan || responsable || resultado !== "todos" || busca.trim();
+  const limpiar = () => (setPlan(""), setResponsable(""), setResultado("todos"), setBusca(""), setFiltro(null));
   const embudo = useMemo(() => {
     const conPase = lista.filter(pase);
     const vinieron = lista.filter(vino);
@@ -169,19 +190,19 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
       { clave: "vino", nombre: "Vinieron a su visita", total: vinieron.length, color: "bg-teal-500", sub: `${pct(vinieron.length, conPase.length)}% de los que tenían pase` },
       { clave: "matriculado", nombre: "Se matricularon", total: matric.length, color: "bg-emerald-500", sub: `${pct(matric.length, lista.length)}% de conversión` },
     ];
-  }, [filas]);
+  }, [lista]);
 
-  const porDia = useMemo(() => contar(lista, diaDe, DIAS), [filas]);
+  const porDia = useMemo(() => contar(lista, diaDe, DIAS), [lista]);
   const porHora = useMemo(() => {
     const c = contar(lista, (p) => `${String(horaDe(p)).padStart(2, "0")}:00`);
     return Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, "0")}:00`)
       .map((n) => c.find((x) => x.nombre === n) || { nombre: n, total: 0 })
       .filter((x, i) => x.total || (i >= 6 && i <= 22));
-  }, [filas]);
-  const porTurno = useMemo(() => contar(lista, turnoDe, [...turnos.map((t) => t.nombre), ...(lista.some((p) => turnoDe(p) === "Fuera de turno") ? ["Fuera de turno"] : [])]), [filas, turnos]);
-  const porOrigen = useMemo(() => contar(lista, (p) => ORIGENES[p.source] || p.source), [filas]);
-  const porPlan = useMemo(() => contar(lista, (p) => p.planName || "Aún no sabe"), [filas]);
-  const noVinieron = useMemo(() => lista.filter((p) => resultadoDe(p, hoy).clave === "no_vino" || (p.status === "de_baja" && pase(p) && !vino(p))), [filas]);
+  }, [lista]);
+  const porTurno = useMemo(() => contar(lista, turnoDe, [...turnos.map((t) => t.nombre), ...(lista.some((p) => turnoDe(p) === "Fuera de turno") ? ["Fuera de turno"] : [])]), [lista, turnos]);
+  const porOrigen = useMemo(() => contar(lista, (p) => ORIGENES[p.source] || p.source), [lista]);
+  const porPlan = useMemo(() => contar(lista, (p) => p.planName || "Aún no sabe"), [lista]);
+  const noVinieron = useMemo(() => lista.filter((p) => resultadoDe(p, hoy).clave === "no_vino" || (p.status === "de_baja" && pase(p) && !vino(p))), [lista]);
   const porMotivo = useMemo(() => contar(noVinieron, motivoDe), [noVinieron]);
   const equipo = useMemo(() => {
     const m = new Map();
@@ -197,7 +218,7 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
       if (p.free) x.libres++;
     });
     return [...m.values()].sort((a, b) => b.matriculados - a.matriculados || b.interesados - a.interesados);
-  }, [filas]);
+  }, [lista]);
 
   const mejor = (f) => f.reduce((a, b) => (b.total > a.total ? b : a), { total: 0 });
   const serie = cuando === "dia" ? porDia : cuando === "hora" ? porHora : porTurno;
@@ -209,7 +230,7 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
     setTimeout(() => detalleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
   const detalle = useMemo(() => {
-    if (!filtro) return [];
+    if (!filtro) return lista;
     const { tipo, valor } = filtro;
     return lista.filter((p) => {
       if (tipo === "embudo") return valor === "todos" ? true : valor === "pase" ? pase(p) : valor === "vino" ? vino(p) : p.status === "matriculado";
@@ -222,17 +243,26 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
       if (tipo === "motivo") return noVinieron.includes(p) && motivoDe(p) === valor;
       return true;
     });
-  }, [filtro, filas, turnos]);
+  }, [filtro, lista, turnos]);
 
-  const columnas = [
-    { key: "createdAt", label: "Registro", excel: (p) => `${fechaCorta(p.createdAt)} ${String(p.createdAt).slice(11, 16)}` },
-    { key: "fullName", label: "Interesado" },
-    { key: "phone", label: "Celular" },
-    { key: "planName", label: "Plan de interés", excel: (p) => p.planName || "Aún no sabe" },
-    { key: "owner", label: "Responsable", excel: (p) => `${p.owner || ""}${p.ownerShift ? ` · ${p.ownerShift}` : ""}` },
-    { key: "resultado", label: "Resultado", excel: (p) => resultadoDe(p, hoy).texto },
-    { key: "motivo", label: "Lo que dijo", excel: (p) => [p.lastPass?.reasonLabel && `${p.lastPass.reasonLabel}${p.lastPass.reason ? `: ${p.lastPass.reason}` : ""}`, p.status === "de_baja" && p.dropReason, p.notes].filter(Boolean).join(" · ") },
+  const columnas = COLUMNAS;
+  const nombreRango = rangos.find(([, a, b]) => a === desde && b === hasta)?.[0];
+  const filtrosTexto = [
+    `Registrados del ${fechaCorta(desde)} al ${fechaCorta(hasta)}${nombreRango ? ` (${nombreRango})` : ""}`,
+    resultado !== "todos" ? `Resultado: ${RESULTADOS.find((r) => r[0] === resultado)[1]}` : "",
+    plan ? `Plan: ${plan}` : "",
+    responsable ? `Responsable: ${responsable}` : "",
+    busca.trim() ? `Búsqueda: "${busca.trim()}"` : "",
+    filtro ? filtro.texto : "",
+  ].filter(Boolean);
+  const totales = [
+    ["Interesados", detalle.length],
+    ["Con pase libre", detalle.filter(pase).length],
+    ["Vinieron", detalle.filter(vino).length],
+    ["Se matricularon", detalle.filter((p) => p.status === "matriculado").length],
+    ["No vinieron", detalle.filter((p) => resultadoDe(p, hoy).clave === "no_vino").length],
   ];
+  const colorResultado = (r) => (r.clave === "matriculado" || r.clave === "vino" ? "text-emerald-700" : r.clave === "no_vino" ? "text-rose-700" : r.clave === "baja" ? "text-slate-500" : "text-amber-700");
 
   const chip = (k, l) => (
     <button key={k} type="button" onClick={() => setCuando(k)} className={`px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer ${cuando === k ? "bg-slate-900 border-slate-900 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
@@ -242,8 +272,14 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
 
   return (
     <div className="space-y-4">
-      {/* Periodo */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-wrap items-end gap-3">
+      {/* Periodo, filtros y descargas: todo lo de abajo usa esta misma selección */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+            <CalendarDays className="w-4 h-4 text-blue-600" /> Periodo y filtros
+          </p>
+          {filas && <Exportar titulo="Interesados (CRM)" filtros={filtrosTexto} columnas={columnas} filas={detalle} totales={totales} />}
+        </div>
         <div className="flex flex-wrap gap-1.5">
           {rangos.map(([l, a, b], i) => (
             <button key={l} type="button" onClick={() => (setDesde(a), setHasta(b))} className={`px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer ${desde === a && hasta === b ? `${tono(i).activo} shadow-sm` : tono(i).suave}`}>
@@ -251,15 +287,51 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
             </button>
           ))}
         </div>
-        <label className="text-xs font-bold text-slate-600">
-          Desde
-          <input type="date" value={desde} max={hasta} onChange={(e) => e.target.value && setDesde(e.target.value)} className="block mt-0.5 px-2 py-1.5 rounded-lg border border-slate-200 text-sm" />
-        </label>
-        <label className="text-xs font-bold text-slate-600">
-          Hasta
-          <input type="date" value={hasta} min={desde} onChange={(e) => e.target.value && setHasta(e.target.value)} className="block mt-0.5 px-2 py-1.5 rounded-lg border border-slate-200 text-sm" />
-        </label>
-        <p className="text-xs text-slate-500 ml-auto">Toca cualquier barra, paso o fila para ver la lista de personas.</p>
+        <div className="grid grid-cols-2 lg:grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-2 sm:gap-3 items-end">
+          <label className="text-xs font-bold text-slate-600 min-w-0">
+            Desde
+            <input type="date" value={desde} max={hasta} onChange={(e) => e.target.value && setDesde(e.target.value)} className="block w-full mt-0.5 px-2 py-1.5 rounded-lg border border-slate-200 text-sm" />
+          </label>
+          <label className="text-xs font-bold text-slate-600 min-w-0">
+            Hasta
+            <input type="date" value={hasta} min={desde} onChange={(e) => e.target.value && setHasta(e.target.value)} className="block w-full mt-0.5 px-2 py-1.5 rounded-lg border border-slate-200 text-sm" />
+          </label>
+          <label className="text-xs font-bold text-slate-600 min-w-0">
+            Plan de interés
+            <select value={plan} onChange={(e) => (setPlan(e.target.value), setFiltro(null))} className="block w-full mt-0.5 px-2 py-1.5 rounded-lg border border-slate-200 text-sm bg-white">
+              <option value="">Todos</option>
+              {planes.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs font-bold text-slate-600 min-w-0">
+            Responsable
+            <select value={responsable} onChange={(e) => (setResponsable(e.target.value), setFiltro(null))} className="block w-full mt-0.5 px-2 py-1.5 rounded-lg border border-slate-200 text-sm bg-white">
+              <option value="">Todos</option>
+              {responsables.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </label>
+          <label className="relative col-span-2 lg:col-span-1 min-w-0">
+            <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input value={busca} onChange={(e) => (setBusca(e.target.value), setFiltro(null))} placeholder="Buscar nombre, celular, DNI o lo que dijo…" className="w-full pl-8 pr-2 py-2 rounded-lg border border-slate-200 text-sm" />
+          </label>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {RESULTADOS.map(([k, l]) => (
+            <button key={k} type="button" onClick={() => (setResultado(k), setFiltro(null))} className={`px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer ${resultado === k ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
+              {l} ({filas ? cuenta(k) : "…"})
+            </button>
+          ))}
+          {hayFiltros && (
+            <button type="button" onClick={limpiar} className="px-3 py-1.5 rounded-full text-xs font-bold border border-rose-200 bg-rose-50 text-rose-700 flex items-center gap-1 cursor-pointer">
+              <X className="w-3.5 h-3.5" /> Quitar filtros
+            </button>
+          )}
+        </div>
+        <p className="text-[11px] text-slate-500">Los indicadores, gráficos, la lista y las descargas (Excel, PDF, Foto, WhatsApp) usan exactamente estos filtros. Toca una barra para afinar la lista.</p>
       </div>
 
       {error && <p className="text-sm font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">{error}</p>}
@@ -384,57 +456,103 @@ export const ReporteCrm = ({ onAbrirProspecto }) => {
             <Barras filas={porMotivo.map((f) => ({ ...f, extra: `${pct(f.total, noVinieron.length)}%` }))} activo={filtro?.tipo === "motivo" ? filtro.valor : null} onClick={(v) => elegir("motivo", v, `No vinieron: ${v}`)} vacio="Nadie dejó de venir en este periodo." />
           </Seccion>
 
-          {/* Detalle */}
-          <div ref={detalleRef} className="bg-white rounded-2xl border border-slate-200 overflow-x-auto scroll-mt-4">
-            <div className="px-4 pt-4 pb-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-black text-slate-900">
-                {filtro ? `${filtro.texto} · ${detalle.length} persona${detalle.length === 1 ? "" : "s"}` : "Detalle de personas"}
-              </p>
-              {filtro && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Exportar titulo={`CRM · ${filtro.texto}`} filtros={[`Del ${fechaCorta(desde)} al ${fechaCorta(hasta)}`, filtro.texto]} columnas={columnas} filas={detalle} />
+          {/* Lista de personas (lo mismo que se descarga) */}
+          <div ref={detalleRef} className="bg-white rounded-2xl border border-slate-200 scroll-mt-4 overflow-hidden">
+            <div className="px-3 sm:px-4 pt-4 pb-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                  <ListChecks className="w-4 h-4 text-blue-600" /> {filtro ? filtro.texto : "Registro de interesados"} · {detalle.length} persona{detalle.length === 1 ? "" : "s"}
+                </p>
+                <p className="text-xs text-slate-500">Toca una persona para abrir su ficha.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Exportar titulo={`Interesados (CRM)${filtro ? ` · ${filtro.texto}` : ""}`} filtros={filtrosTexto} columnas={columnas} filas={detalle} totales={totales} />
+                {filtro && (
                   <button type="button" onClick={() => setFiltro(null)} className="px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-bold flex items-center gap-1 cursor-pointer">
-                    <X className="w-3.5 h-3.5" /> Quitar
+                    <X className="w-3.5 h-3.5" /> Quitar barra
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-            {!filtro ? (
-              <p className="px-4 pb-4 text-sm text-slate-400">Elige un paso del embudo, una barra o una fila de arriba para ver aquí quiénes son.</p>
-            ) : (
+
+            {/* Celular: tarjetas */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {detalle.slice(0, 300).map((p) => {
+                const r = resultadoDe(p, hoy);
+                return (
+                  <button key={p.id} type="button" onClick={() => onAbrirProspecto?.(p.id, p)} className="w-full text-left px-3 py-2.5 cursor-pointer hover:bg-slate-50">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 truncate">{p.fullName}</p>
+                        <p className="text-xs text-slate-500 truncate">{p.phone} · {p.planName || "Aún no sabe"}</p>
+                      </div>
+                      <span className={`shrink-0 px-2 py-0.5 rounded-full border text-[10px] font-bold whitespace-nowrap ${ESTADOS[p.status]?.chip || ""}`}>{ESTADOS[p.status]?.label || p.status}</span>
+                    </div>
+                    <p className={`text-xs font-bold mt-1 ${colorResultado(r)}`}>{r.texto}</p>
+                    <div className="flex items-center justify-between gap-2 mt-1">
+                      <span className="text-[11px] text-slate-500 truncate">{fechaHora(p.createdAt)} · {p.owner || "Sin responsable"}</span>
+                      <Luces p={p} compacto />
+                    </div>
+                  </button>
+                );
+              })}
+              {!detalle.length && <p className="px-3 py-8 text-center text-sm text-slate-400">No hay interesados con estos filtros.</p>}
+            </div>
+
+            {/* PC: tabla */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500">
                   <tr>
-                    {["Registro", "Interesado", "Plan", "Responsable", "Resultado"].map((h) => (
-                      <th key={h} className="text-left px-3 py-2">{h}</th>
+                    {["Registro", "Interesado", "Plan de interés", "Estado", "Qué quedó", "Resultado", "Lo que dijo / notas", "Responsable"].map((h) => (
+                      <th key={h} className="text-left font-black px-3 py-2 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {detalle.map((p) => {
+                  {detalle.slice(0, 500).map((p) => {
                     const r = resultadoDe(p, hoy);
+                    const s = situacion(p);
                     return (
-                      <tr key={p.id} onClick={() => onAbrirProspecto?.(p.id, p)} className="border-t border-slate-100 hover:bg-slate-50 cursor-pointer">
-                        <td className="px-3 py-2 whitespace-nowrap text-slate-600">{fechaCorta(p.createdAt)} {String(p.createdAt).slice(11, 16)}</td>
-                        <td className="px-3 py-2">
+                      <tr key={p.id} onClick={() => onAbrirProspecto?.(p.id, p)} className="border-t border-slate-100 hover:bg-slate-50 cursor-pointer align-top">
+                        <td className="px-3 py-2 whitespace-nowrap text-slate-600">{fechaHora(p.createdAt)}</td>
+                        <td className="px-3 py-2 min-w-[160px]">
                           <p className="font-bold text-slate-900">{p.fullName}</p>
-                          <p className="text-xs text-slate-500">{p.phone}</p>
+                          <p className="text-xs text-slate-500">{p.phone}{p.dni ? ` · DNI ${p.dni}` : ""} · {ORIGENES[p.source] || p.source}</p>
                         </td>
-                        <td className="px-3 py-2">{p.planName || "Aún no sabe"}</td>
-                        <td className="px-3 py-2">
-                          <p className="text-xs font-bold">{p.owner || "—"}</p>
-                          <Luces p={p} compacto />
+                        <td className="px-3 py-2 min-w-[120px]">
+                          <p>{p.planName || "Aún no sabe"}</p>
+                          {p.objective && <p className="text-xs text-slate-500">{p.objective}</p>}
                         </td>
                         <td className="px-3 py-2">
-                          <p className={`font-bold ${r.clave === "matriculado" || r.clave === "vino" ? "text-emerald-700" : r.clave === "no_vino" ? "text-rose-700" : r.clave === "baja" ? "text-slate-500" : "text-amber-700"}`}>{r.texto}</p>
-                          {filtro.tipo === "motivo" && p.lastPass?.reason && <p className="text-xs text-slate-500">"{p.lastPass.reason}"</p>}
+                          <span className={`inline-block px-2 py-0.5 rounded-full border text-[11px] font-bold whitespace-nowrap ${ESTADOS[p.status]?.chip || ""}`}><ConIconos texto={ESTADOS[p.status]?.label || p.status} /></span>
+                        </td>
+                        <td className="px-3 py-2 text-slate-700 min-w-[120px]">{queQuedo(p) || <span className="text-slate-400">—</span>}</td>
+                        <td className="px-3 py-2 min-w-[140px]">
+                          <p className={`font-bold ${colorResultado(r)}`}>{r.texto}</p>
+                          {p.lastPass && <p className="text-xs text-slate-500">Pase {p.lastPass.code}{p.passes > 1 ? ` · ${p.passes} pases` : ""}</p>}
+                        </td>
+                        <td className="px-3 py-2 text-slate-700 min-w-[160px] max-w-[280px]">{loQueDijo(p) || <span className="text-slate-400">—</span>}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <p className="text-xs font-bold text-slate-800">{p.owner || "—"}</p>
+                          {p.ownerShift && <p className="text-[11px] text-slate-500">{p.ownerShift}</p>}
+                          <div className="mt-1 flex items-center gap-1.5">
+                            <Luces p={p} compacto />
+                            {s && !["Matriculado", "De baja"].includes(s.texto) && <span className={`px-1.5 py-0.5 rounded-full border text-[10px] font-black ${s.tono}`}>{s.texto}</span>}
+                          </div>
                         </td>
                       </tr>
                     );
                   })}
+                  {!detalle.length && (
+                    <tr>
+                      <td colSpan={8} className="px-3 py-8 text-center text-slate-400">No hay interesados con estos filtros.</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
-            )}
+            </div>
+            {detalle.length > 500 && <p className="text-xs text-slate-500 p-2 bg-slate-50">Se muestran 500 de {detalle.length}. La descarga incluye todos.</p>}
           </div>
         </>
       )}
