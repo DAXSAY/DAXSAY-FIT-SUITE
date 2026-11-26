@@ -29,7 +29,7 @@ export const AlumnosPorPlan = ({ planesIniciales = [] }) => {
   const plazo = Number(gymConfig?.dias_exalumno) || 30;
   const hoy = hoyLima();
   const ordenados = useMemo(() => [...plans].sort((a, b) => Number(a.durationDays) - Number(b.durationDays) || a.price - b.price), [plans]);
-  const [elegidos, setElegidos] = useState(planesIniciales.length ? planesIniciales : ordenados.slice(0, 1).map((p) => p.id));
+  const [elegidos, setElegidos] = useState(planesIniciales);
   const [estado, setEstado] = useState("vigentes");
   const [buscar, setBuscar] = useState("");
   const [orden, setOrden] = useState("vence");
