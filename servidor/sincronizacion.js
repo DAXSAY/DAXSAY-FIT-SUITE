@@ -376,8 +376,11 @@ const MAPAS = {
     const m = d.measurements || {};
     const s = d.skinfolds || {};
     const b = d.bioimpedance || {};
-    const c1 = (v) => rango(v, 0, 9999.9, 1); // DECIMAL(5,1)
-    const c4 = (v) => rango(v, 0, 999.9, 1); //  DECIMAL(4,1)
+    // 0 = «no se midió»: se guarda vacío (NULL). Así los índices del trigger
+    // (cintura/cadera, cintura/talla, IMC) no dividen entre cero.
+    const medido = (v) => (Number(v) > 0 ? v : null);
+    const c1 = (v) => rango(medido(v), 0, 9999.9, 1); // DECIMAL(5,1)
+    const c4 = (v) => rango(medido(v), 0, 999.9, 1); //  DECIMAL(4,1)
     await guardarFila(cx, "medidas", "idmedida", id, {
       idalumno,
       idevaluador: await idEmpleado(cx, d.evaluatorId, d.evaluatorTrainerName || d.evaluatorName),
