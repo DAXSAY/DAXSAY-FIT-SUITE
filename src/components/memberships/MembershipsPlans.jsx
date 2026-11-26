@@ -23,6 +23,7 @@ import { api } from "../../api/cliente";
 import { useGym } from "../../context/GymContext";
 import { userCan } from "../../config/roles";
 import { PALETA, colorDePlan, esColorLibre } from "../../utils/colorPlan";
+import { AlumnosPorPlan } from "./AlumnosPorPlan";
 import { BotonColor } from "../common/SelectorColor";
 import { Search } from "lucide-react";
 
@@ -216,6 +217,7 @@ export const MembershipsPlans = () => {
   const puedeEliminar = userCan(currentUser, "memberships", "eliminar");
 
   const [vista, setVista] = useState("tarjetas");
+  const [planesVer, setPlanesVer] = useState([]);
   const [seleccion, setSeleccion] = useState(null);
   const [editando, setEditando] = useState(null); // null | "nuevo" | plan
   const [form, setForm] = useState(VACIO);
@@ -426,6 +428,17 @@ export const MembershipsPlans = () => {
                   style={{ ...t.estilo, width: `${totalActivos ? (activos / totalActivos) * 100 : 0}%` }}
                 />
               </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPlanesVer([p.id]);
+                  setVista("alumnos");
+                }}
+                className="mt-3 w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white text-slate-700 text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Users className="w-4 h-4" /> Ver alumnos de este plan
+              </button>
             </div>
           )}
         </div>
@@ -472,6 +485,15 @@ export const MembershipsPlans = () => {
             >
               <Table2 className="w-4 h-4" /> Comparar
             </button>
+            <button
+              onClick={() => {
+                setPlanesVer([]);
+                setVista("alumnos");
+              }}
+              className={`px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 cursor-pointer ${vista === "alumnos" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+            >
+              <Users className="w-4 h-4" /> Alumnos por plan
+            </button>
           </div>
           {puedeCrear && (
             <button
@@ -488,6 +510,8 @@ export const MembershipsPlans = () => {
         <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-500">
           Aún no hay planes registrados.
         </div>
+      ) : vista === "alumnos" ? (
+        <AlumnosPorPlan key={planesVer.join(",")} planesIniciales={planesVer} />
       ) : vista === "tarjetas" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-stretch">
           {ordenados.map((p, i) => (

@@ -7,7 +7,7 @@
 // historial. Se actualiza sola en todas las pantallas (tiempo real).
 // =====================================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ClipboardList, Plus, CalendarDays, ListChecks, BarChart3, X, ChevronLeft, ChevronRight, History, Search, MessageCircle } from "lucide-react";
+import { ClipboardList, Plus, CalendarDays, ListChecks, BarChart3, ArrowLeft, ChevronLeft, ChevronRight, History, Search, MessageCircle } from "lucide-react";
 import { api } from "../../api/cliente";
 import { escucharCambios } from "../../utils/tiempoReal";
 import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
@@ -61,21 +61,109 @@ const Chip = ({ tono = "plomo", children, className = "", title }) => (
 );
 const Emo = ({ e }) => <span className="rd-emoji">{e}</span>;
 
-const Modal = ({ titulo, emoji, onCerrar, children, ancho = "max-w-lg" }) => (
-  <div className="fixed inset-0 z-[70] rd-velo items-start sm:items-center justify-center overflow-y-auto" onMouseDown={(e) => e.target === e.currentTarget && onCerrar()}>
-    <div className={`w-full ${ancho} bg-white rounded-2xl border border-slate-200 shadow-2xl rd-aparece`}>
-      <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-3 border-b border-slate-100">
-        <h3 className="font-black text-slate-900 flex items-center gap-2">
-          {emoji && <Emo e={emoji} />} {titulo}
-        </h3>
-        <button type="button" onClick={onCerrar} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 cursor-pointer" aria-label="Cerrar">
-          <X className="w-4 h-4" />
-        </button>
+/** Ventana a pantalla completa (igual que el resto del sistema): «Volver», título y,
+ *  si se pasa «lado», una columna con el detalle a la izquierda y el formulario a la derecha. */
+const Modal = ({ titulo, emoji, subtitulo, onCerrar, children, lado, acciones }) => (
+  <div className="fixed inset-0 z-[70] bg-slate-100 overflow-y-auto rd-aparece" role="dialog" aria-label={titulo} data-rd-tam="ancha">
+    <div className="w-full mx-auto min-h-full p-4 sm:p-6 space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={onCerrar} className="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold flex items-center gap-1.5 cursor-pointer">
+            <ArrowLeft className="w-4 h-4" /> Volver
+          </button>
+          <div>
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
+              {emoji && <Emo e={emoji} />} {titulo}
+            </h2>
+            {subtitulo && <p className="text-xs sm:text-sm text-slate-500">{subtitulo}</p>}
+          </div>
+        </div>
+        {acciones}
       </div>
-      <div className="p-5 space-y-4">{children}</div>
+      {lado ? (
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
+          <aside className="lg:col-span-2 space-y-4 lg:sticky lg:top-4">{lado}</aside>
+          <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-5">{children}</div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-5">{children}</div>
+      )}
     </div>
   </div>
 );
+
+/** Detalle completo de una tarea (columna izquierda de las ventanas) con su historial */
+const FichaTarea = ({ t, ctx, recargar = 0 }) => {
+  const tipo = tipoDe(t.tipo);
+  const est = ESTADOS[estadoVisible(t)];
+  const persona = t.alumno || t.prospecto;
+  const wa = persona ? enlaceWhatsapp(persona.telefono) : null;
+  const [hist, setHist] = useState(null);
+  useEffect(() => {
+    api(`/tareas/${t.id}/historial`).then(setHist).catch(() => setHist([]));
+  }, [t.id, recargar]);
+  const Dato = ({ e, l, v }) => (
+    <div className="flex items-start gap-2 text-sm">
+      <Emo e={e} />
+      <div className="min-w-0">
+        <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{l}</p>
+        <p className="font-bold text-slate-800 break-words">{v}</p>
+      </div>
+    </div>
+  );
+  return (
+    <>
+      <div className={`rd-kpi-${t.atrasada ? "rojo" : tipo.tono} rd-tarea rounded-2xl border p-5 space-y-4`}>
+        <div className="flex items-start gap-3">
+          <span className="rd-tarea-ico w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0">
+            <Emo e={tipo.emoji} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-wide rd-texto-k">{tipo.label}</p>
+            <p className="font-black text-slate-900 text-base leading-snug">{t.titulo}</p>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              <Chip tono={est.tono}>
+                <Emo e={est.emoji} /> {est.label}
+              </Chip>
+              {t.desdePortal ? <Chip tono="violeta">📲 Desde el portal</Chip> : t.origen === "auto" && <Chip tono="indigo">🤖 Automática</Chip>}
+            </div>
+          </div>
+        </div>
+        {t.nota && <p className="text-sm text-slate-600 whitespace-pre-line bg-white/60 rounded-xl p-3 border border-slate-100">{t.nota}</p>}
+        <div className="grid grid-cols-2 gap-3">
+          <Dato e="🗓️" l="Cuándo" v={`${cuandoTexto(t.fecha, ctx.hoy)} · ${fechaCorta(t.fecha)}${t.hora ? ` · ${t.hora}` : ""}`} />
+          <Dato e={emojiDestino(t.destino)} l="Para" v={textoDestino(t.destino, ctx.turnos)} />
+          <Dato e="🙋" l="La tiene" v={t.tomadaPor ? t.tomadaPor.nombre : "Nadie todavía"} />
+          <Dato e="🆕" l="La creó" v={t.creador ? t.creador.nombre : "El sistema"} />
+          {t.fechaOriginal && <Dato e="📅" l="Fecha original" v={`${fechaCorta(t.fechaOriginal)} · reprogramada ${t.reprogramaciones}×`} />}
+          {t.pases > 0 && <Dato e="↪️" l="Pasada" v={`${t.pases} ${t.pases === 1 ? "vez" : "veces"}`} />}
+        </div>
+        {persona && (
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
+            <span className="text-sm font-bold text-slate-800">
+              <Emo e={t.alumno ? "🧑‍🎓" : "🙋"} /> {persona.nombre}
+              {t.alumno?.codigo ? ` · ${t.alumno.codigo}` : ""}
+            </span>
+            {persona.telefono && <span className="text-sm text-slate-500">📱 {persona.telefono}</span>}
+            {wa && (
+              <a href={wa} target="_blank" rel="noreferrer" className="rd-kpi-verde rd-chip-t inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold">
+                <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <p className="text-[11px] font-black uppercase tracking-wide text-slate-500 mb-3">🕓 Historial</p>
+        {!hist ? (
+          <p className="text-sm text-slate-500">Cargando…</p>
+        ) : (
+          <LineaHistorial filas={hist} />
+        )}
+      </div>
+    </>
+  );
+};
 
 /** Botones grandes para elegir (en vez de listas desplegables) */
 const Opciones = ({ opciones, valor, onElegir, className = "" }) => (
@@ -247,7 +335,41 @@ const NuevaTarea = ({ ctx, fechaInicial, onCerrar, onListo }) => {
     }
   };
   return (
-    <Modal titulo="Nueva tarea" emoji="📝" onCerrar={onCerrar} ancho="max-w-2xl">
+    <Modal
+      titulo="Nueva tarea"
+      emoji="📝"
+      subtitulo="Elige con botones: qué, sobre quién, para quién y cuándo."
+      onCerrar={onCerrar}
+      lado={
+        <>
+          <div className={`rd-kpi-${tipoDe(tipo).tono} rd-tarea rounded-2xl border p-5 space-y-3`}>
+            <p className="text-[11px] font-black uppercase tracking-wide rd-texto-k">👀 Así se verá</p>
+            <div className="flex items-start gap-3">
+              <span className="rd-tarea-ico w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0">
+                <Emo e={tipoDe(tipo).emoji} />
+              </span>
+              <div className="min-w-0 space-y-1.5">
+                <p className="font-black text-slate-900 leading-snug">{titulo.trim() || tituloAuto}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <Chip tono="plomo">🗓️ {cuandoTexto(fecha, hoy)}{hora ? ` · ${hora}` : ""}</Chip>
+                  <Chip tono="teal">
+                    <Emo e={emojiDestino(destino)} /> {destino ? textoDestino({ ...destino, usuario: ctx.personas.find((p) => p.id === destino.usuarioId)?.nombre }, ctx.turnos) : "Falta elegir para quién"}
+                  </Chip>
+                </div>
+                {sobre && <p className="text-sm font-bold text-slate-600"><Emo e={sobre.tipo === "alumno" ? "🧑‍🎓" : "🙋"} /> {sobre.nombre} · {sobre.detalle}</p>}
+                {nota && <p className="text-sm text-slate-600">{nota}</p>}
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 text-sm text-slate-600 space-y-2">
+            <p className="font-black text-slate-800">💡 Cómo funciona</p>
+            <p>• La primera persona que pulsa <b>Tomar</b> se queda con la tarea; nadie más la duplica.</p>
+            <p>• Si no se termina en el turno, se <b>pasa al siguiente turno</b> con un comentario.</p>
+            <p>• Las tareas de <b>renovación</b> y <b>armar rutina</b> se cierran solas cuando se registra la renovación o se guarda la rutina.</p>
+          </div>
+        </>
+      }
+    >
       <div>
         <Etiqueta>1. ¿Qué hay que hacer?</Etiqueta>
         <Opciones valor={tipo} onElegir={setTipo} opciones={Object.entries(TIPOS_TAREA).map(([k, t]) => ({ k, emoji: t.emoji, label: t.label, tono: t.tono }))} />
@@ -311,7 +433,7 @@ const RESULTADOS = {
   _: ["Listo", "Se hizo con observaciones"],
 };
 
-const AccionHecha = ({ t, onCerrar, onListo }) => {
+const AccionHecha = ({ t, ctx, onCerrar, onListo }) => {
   const [res, setRes] = useState("");
   const [error, setError] = useState("");
   const enviar = async () => {
@@ -323,11 +445,10 @@ const AccionHecha = ({ t, onCerrar, onListo }) => {
     }
   };
   return (
-    <Modal titulo="Marcar como hecha" emoji="✅" onCerrar={onCerrar}>
-      <p className="text-sm font-bold text-slate-800">{t.titulo}</p>
+    <Modal titulo="Marcar como hecha" emoji="✅" subtitulo={t.titulo} onCerrar={onCerrar} lado={<FichaTarea t={t} ctx={ctx} />}>
       <Etiqueta>¿Cómo quedó?</Etiqueta>
       <Opciones valor={res} onElegir={setRes} opciones={(RESULTADOS[t.tipo] || RESULTADOS._).map((x) => ({ k: x, label: x, tono: "verde" }))} />
-      <textarea value={res} onChange={(e) => setRes(e.target.value)} rows={2} placeholder="O escribe el resultado" className={campo} maxLength={500} />
+      <textarea value={res} onChange={(e) => setRes(e.target.value)} rows={4} placeholder="O escribe el resultado" className={campo} maxLength={500} />
       {error && <p className="rd-error-t text-sm font-bold">{error}</p>}
       <div className="flex justify-end">
         <button type="button" onClick={enviar} className="rd-boton-t px-5 py-2 rounded-xl text-sm font-black cursor-pointer">
@@ -358,15 +479,14 @@ const AccionPasar = ({ t, ctx, onCerrar, onListo }) => {
     }
   };
   return (
-    <Modal titulo="Pasar a otro turno" emoji="↪️" onCerrar={onCerrar} ancho="max-w-2xl">
-      <p className="text-sm font-bold text-slate-800">{t.titulo}</p>
+    <Modal titulo="Pasar a otro turno" emoji="↪️" subtitulo={t.titulo} onCerrar={onCerrar} lado={<FichaTarea t={t} ctx={ctx} />}>
       <div>
         <Etiqueta>¿A quién se la pasas?</Etiqueta>
         <ElegirDestino ctx={ctx} valor={destino} onCambiar={setDestino} excluir={t.destino} />
       </div>
       <label className="block">
         <Etiqueta>Comentario (qué se hizo y qué falta)</Etiqueta>
-        <textarea value={comentario} onChange={(e) => setComentario(e.target.value)} rows={3} placeholder="Ej. Lo llamé a las 12, no contestó. Volver a llamar después de las 5 pm." className={campo} maxLength={400} />
+        <textarea value={comentario} onChange={(e) => setComentario(e.target.value)} rows={4} placeholder="Ej. Lo llamé a las 12, no contestó. Volver a llamar después de las 5 pm." className={campo} maxLength={400} />
       </label>
       <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
         <input type="checkbox" checked={manana} onChange={(e) => setManana(e.target.checked)} className="w-4 h-4" /> Que lo haga mañana
@@ -396,8 +516,7 @@ const AccionReprogramar = ({ t, ctx, onCerrar, onListo }) => {
     }
   };
   return (
-    <Modal titulo="Reprogramar" emoji="📅" onCerrar={onCerrar}>
-      <p className="text-sm font-bold text-slate-800">{t.titulo}</p>
+    <Modal titulo="Reprogramar" emoji="📅" subtitulo={t.titulo} onCerrar={onCerrar} lado={<FichaTarea t={t} ctx={ctx} />}>
       <Etiqueta>Nueva fecha</Etiqueta>
       <div className="flex flex-wrap items-center gap-2">
         <Opciones
@@ -439,48 +558,49 @@ const ACCION_HIST = {
   comentario: ["💬", "Comentario"],
   cancelada: ["🚫", "Anulada"],
 };
-const Historial = ({ t, onCerrar }) => {
-  const [filas, setFilas] = useState(null);
+const LineaHistorial = ({ filas }) =>
+  filas.length === 0 ? (
+    <p className="text-sm text-slate-500">Sin movimientos.</p>
+  ) : (
+    <ol className="space-y-3 border-l-2 border-slate-200 ml-2 pl-5">
+      {filas.map((h, i) => {
+        const [e, l] = ACCION_HIST[h.accion] || ["•", h.accion];
+        return (
+          <li key={i} className="relative">
+            <span className="absolute -left-[31px] top-0 w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center text-xs">
+              <Emo e={e} />
+            </span>
+            <p className="text-sm font-extrabold text-slate-800">
+              {l} <span className="font-semibold text-slate-500">· {h.quien}</span>
+              <span className="ml-2 text-[11px] font-semibold text-slate-400">{String(h.fecha).slice(0, 16).replace("T", " ")}</span>
+            </p>
+            {h.detalle && <p className="text-sm text-slate-600">{h.detalle}</p>}
+          </li>
+        );
+      })}
+    </ol>
+  );
+
+const Historial = ({ t, ctx, onCerrar }) => {
   const [comentario, setComentario] = useState("");
-  const cargar = () => api(`/tareas/${t.id}/historial`).then(setFilas).catch(() => setFilas([]));
-  useEffect(() => {
-    cargar();
-  }, [t.id]);
+  const [n, setN] = useState(0);
   const comentar = async () => {
     if (!comentario.trim()) return;
     await api(`/tareas/${t.id}/comentar`, { method: "POST", body: { comentario } }).catch(() => {});
     setComentario("");
-    cargar();
+    setN((x) => x + 1);
   };
   return (
-    <Modal titulo="Historial de la tarea" emoji="🕓" onCerrar={onCerrar}>
-      <p className="text-sm font-bold text-slate-800">{t.titulo}</p>
-      {!filas ? (
-        <p className="text-sm text-slate-500">Cargando…</p>
-      ) : (
-        <ol className="space-y-2.5 border-l-2 border-slate-200 ml-2 pl-4">
-          {filas.map((h, i) => {
-            const [e, l] = ACCION_HIST[h.accion] || ["•", h.accion];
-            return (
-              <li key={i} className="relative">
-                <span className="absolute -left-[27px] top-0 w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[11px]">
-                  <Emo e={e} />
-                </span>
-                <p className="text-sm font-extrabold text-slate-800">
-                  {l} <span className="font-semibold text-slate-500">· {h.quien}</span>
-                </p>
-                {h.detalle && <p className="text-sm text-slate-600">{h.detalle}</p>}
-                <p className="text-[11px] text-slate-400">{String(h.fecha).slice(0, 16).replace("T", " ")}</p>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-      <div className="flex gap-2">
-        <input value={comentario} onChange={(e) => setComentario(e.target.value)} onKeyDown={(e) => e.key === "Enter" && comentar()} placeholder="Agregar un comentario" className={campo} />
-        <button type="button" onClick={comentar} className="rd-boton-t px-4 rounded-xl text-sm font-black cursor-pointer">
-          Enviar
-        </button>
+    <Modal titulo="Detalle e historial" emoji="🕓" subtitulo={t.titulo} onCerrar={onCerrar} lado={<FichaTarea t={t} ctx={ctx} recargar={n} />}>
+      <div>
+        <Etiqueta>💬 Agregar un comentario</Etiqueta>
+        <p className="text-sm text-slate-500 mb-2">Queda en el historial para el siguiente turno: qué se hizo, qué respondió el alumno, qué falta.</p>
+        <textarea value={comentario} onChange={(e) => setComentario(e.target.value)} rows={4} placeholder="Ej. Dijo que pasa el sábado por la mañana a renovar." className={campo} maxLength={400} />
+        <div className="flex justify-end mt-2">
+          <button type="button" onClick={comentar} disabled={!comentario.trim()} className="rd-boton-t px-5 py-2 rounded-xl text-sm font-black cursor-pointer disabled:opacity-50">
+            Guardar comentario
+          </button>
+        </div>
       </div>
     </Modal>
   );
@@ -620,7 +740,7 @@ export const VentanasTarea = ({ abierta, ctx, onCerrar, onListo }) => {
   if (tipo === "hecha") return <AccionHecha {...p} />;
   if (tipo === "pasar") return <AccionPasar {...p} />;
   if (tipo === "reprogramar") return <AccionReprogramar {...p} />;
-  if (tipo === "historial") return <Historial t={t} onCerrar={onCerrar} />;
+  if (tipo === "historial") return <Historial t={t} ctx={ctx} onCerrar={onCerrar} />;
   return null;
 };
 
