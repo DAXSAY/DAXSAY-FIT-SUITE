@@ -4206,3 +4206,40 @@ html.dark .rd-cal-on{background:rgba(94,232,216,.12);border-color:#88f0e5;box-sh
 .rd-anuncio-latido{animation:rd-latido 1.8s ease-in-out infinite}
 @keyframes rd-latido{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 @media (prefers-reduced-motion:reduce){.rd-anuncio-latido{animation:none}}
+
+/* ===== CELULAR: cabecera compacta ===== */
+/* El foco (tema) va en la primera fila junto al logo; el tamaño de letra solo en PC */
+.rd-solo-movil{display:none !important}
+@media (max-width: 767px){
+  .rd-solo-pc{display:none !important}
+  .rd-solo-movil{display:inline-flex !important}
+}
+@media (max-width: 639px){
+  /* Pestañas de cada módulo: en dos columnas, sin cortar el texto */
+  .rd-pestanas-modulo{flex-wrap:wrap;overflow:visible}
+  .rd-pestanas-modulo > .rd-pestana-modulo{flex:1 1 calc(50% - .5rem);white-space:normal;line-height:1.15;min-height:2.6rem}
+  /* «Elige una opción» más bajo para no ocupar toda la pantalla */
+  .rd-sin-seleccion{min-height:13rem !important;padding-top:1.5rem !important;padding-bottom:1.5rem !important}
+  .rd-sin-seleccion .rd-ilu{width:12rem}
+}
+
+/* ===== CELULAR: portal del alumno ===== */
+.rd-barra-alumno{background:color-mix(in srgb,var(--rd-surface) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-color:#e2e8f0;box-shadow:0 -8px 24px -16px rgba(15,40,70,.35);color:#64748b}
+.rd-barra-alumno-on{background:#e3f3f1;color:#2f7f78}
+.rd-barra-alumno-velo{background:rgba(15,23,42,.35)}
+.rd-barra-alumno-hoja{background:var(--rd-surface);border-color:#e2e8f0;box-shadow:0 18px 40px -12px rgba(15,40,70,.45);color:#334155}
+html.dark .rd-barra-alumno{background:rgba(8,16,28,.92);border-color:rgba(148,163,184,.18);color:#94a3b8;box-shadow:0 -8px 24px -14px rgba(0,0,0,.8)}
+html.dark .rd-barra-alumno-on{background:rgba(94,232,216,.12);color:#9ff3ea}
+html.dark .rd-barra-alumno-velo{background:rgba(0,3,9,.6)}
+html.dark .rd-barra-alumno-hoja{background:#0b1626;border-color:rgba(148,163,184,.2);color:#cbd5e1}
+@media (max-width: 767px){
+  .rd-portal-tabs{display:none !important}
+  .rd-portal-metricas{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem !important;width:100%}
+  .rd-portal-metricas > div{min-width:0 !important;padding:.5rem .4rem !important;border-radius:.9rem !important}
+  .rd-portal-metricas > div > span:first-child{font-size:9.5px !important;letter-spacing:.04em !important}
+}
+@media (max-width: 639px){
+  /* Banco de ejercicios: en el celular es una píldora abajo a la derecha (no tapa los campos) */
+  .rd-boton-banco{top:auto !important;bottom:1rem;right:.75rem !important;transform:none !important;flex-direction:row !important;border-radius:999px !important;padding:.7rem 1rem !important;box-shadow:0 10px 24px -8px rgba(15,40,70,.5)}
+  .rd-boton-banco > span{writing-mode:horizontal-tb !important;transform:none !important}
+}

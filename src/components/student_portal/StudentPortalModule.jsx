@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { AnuncioRenovacion } from "./AnuncioRenovacion";
+import { BarraAlumnoMovil } from "./BarraAlumnoMovil";
 import { PanelComposicion, SiluetaMedidas, edadDe } from "../measurements/VisualMedidas";
 import {
   Dumbbell,
@@ -257,10 +258,11 @@ export const StudentPortalModule = ({
   const tab = caducada && SOLO_VIGENTES.includes(activeTab) ? "caducada" : activeTab;
 
   return (
-    <div className="space-y-6 pb-12 max-w-7xl mx-auto">
+    <div className="space-y-6 pb-28 md:pb-12 max-w-7xl mx-auto">
       <AnuncioRenovacion />
+      <BarraAlumnoMovil activa={activeTab} onIr={handleTabClick} />
       {/* WELCOME STUDENT BANNER */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-blue-900/40 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white rounded-3xl p-4 sm:p-8 shadow-xl border border-blue-900/40 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-96 bg-radial from-cyan-500/10 to-transparent pointer-events-none" />
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
@@ -323,7 +325,7 @@ export const StudentPortalModule = ({
           </div>
 
           {/* Quick Metrics Cards */}
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="rd-portal-metricas flex items-center gap-3 flex-wrap">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 px-4 border border-white/10 text-center min-w-[110px]">
               <span className="text-xs font-bold text-slate-300 block uppercase tracking-wider">
                 Vigencia
@@ -394,8 +396,8 @@ export const StudentPortalModule = ({
           <MiCongelamiento member={currentMember} gymConfig={gymConfig} />
         )}
 
-        {/* PORTAL NAV TABS */}
-        <div className="flex items-center gap-2 mt-6 pt-5 border-t border-white/10 overflow-x-auto">
+        {/* PORTAL NAV TABS (en el celular se usa la barra de abajo) */}
+        <div className="rd-portal-tabs flex items-center gap-2 mt-6 pt-5 border-t border-white/10 overflow-x-auto">
           <button
             onClick={() => handleTabClick("membership")}
             className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${

@@ -328,8 +328,62 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
         </div>
       </div>
 
+      {/* Celular: tarjetas en vez de tabla (toca una para abrir su ficha) */}
+      <div className="md:hidden space-y-2">
+        {filteredMembers.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200">
+            {members.length === 0 ? (
+              <EstadoVacio icono={UsersRound} titulo="Aún no hay alumnos" texto="Matricula al primer alumno para empezar." accion="Nuevo alumno" onAccion={onOpenNewMemberModal} />
+            ) : (
+              <EstadoVacio icono={SearchX} titulo="Nadie coincide con la búsqueda" texto="Prueba con otro nombre, código o DNI, o quita los filtros." accion="Quitar filtros" onAccion={() => (setSearchTerm(""), setStatusFilter("all"))} />
+            )}
+          </div>
+        ) : (
+          filteredMembers.slice(0, 150).map((member) => {
+            const est =
+              member.status === "frozen"
+                ? ["❄️", "Congelado", "azul"]
+                : member.status === "active"
+                  ? ["✅", "Vigente", "verde"]
+                  : member.status === "expiring_soon"
+                    ? ["⏳", "Por vencer", "ambar"]
+                    : member.memberState === "exalumno"
+                      ? ["👋", "Exalumno", "plomo"]
+                      : ["⏰", "Vencido", "rojo"];
+            const fin = String(member.membershipEndDate || "").slice(0, 10).split("-").reverse().join("/");
+            return (
+              <button
+                key={member.id}
+                type="button"
+                onClick={() => setSelectedMember(member)}
+                className={`rd-kpi-${est[2]} rd-tarea w-full text-left rounded-2xl border p-3 flex items-start gap-3 cursor-pointer`}
+              >
+                <span className="rd-tarea-ico w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0">{member.fullName.charAt(0)}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-start justify-between gap-2">
+                    <span className="font-extrabold text-slate-900 text-sm leading-snug">{member.fullName}</span>
+                    <span className="rd-chip-t shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black">
+                      <span className="rd-emoji">{est[0]}</span> {est[1]}
+                    </span>
+                  </span>
+                  <span className="block text-xs text-slate-500 mt-0.5">
+                    <b className="font-mono text-slate-700">{member.codeLabel}</b> · {member.planName || "Sin plan"} · vence {fin || "—"}
+                  </span>
+                  <span className="flex flex-wrap items-center gap-2 mt-1 text-xs">
+                    <span className="font-mono text-slate-600">DNI {member.dni}</span>
+                    {member.phone && <span className="text-slate-500">📱 {member.phone}</span>}
+                    {member.debt > 0 && <span className="rd-error-t font-black">Debe S/ {Number(member.debt).toFixed(2)}</span>}
+                  </span>
+                </span>
+              </button>
+            );
+          })
+        )}
+        {filteredMembers.length > 150 && <p className="text-xs text-slate-500 text-center">Se muestran 150 de {filteredMembers.length}. Usa la búsqueda para encontrar al resto.</p>}
+      </div>
+
       {/* Members List Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xs">
+      <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[960px] text-left text-xs border-collapse">
             <thead>

@@ -3111,49 +3111,49 @@ export const PhysiotherapyModule = () => {
 
               {/* Barra de acciones fija */}
               <div className="sticky bottom-0 z-10 bg-white/95 backdrop-blur border-t border-slate-200">
-                <div className="max-w-[1700px] mx-auto px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="max-w-[1700px] mx-auto px-3 sm:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       disabled={stepIndex === 0}
                       onClick={() => setActiveModalTab(PHYSIO_STEPS[stepIndex - 1].id)}
-                      className="px-4 py-2.5 rounded-xl text-sm font-bold border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                      className="px-3 sm:px-4 py-2.5 rounded-xl text-sm font-bold border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                     >
-                      ← Anterior
+                      ←<span className="hidden sm:inline"> Anterior</span>
                     </button>
                     <button
                       type="button"
                       disabled={stepIndex === PHYSIO_STEPS.length - 1}
                       onClick={() => setActiveModalTab(PHYSIO_STEPS[stepIndex + 1].id)}
-                      className="px-4 py-2.5 rounded-xl text-sm font-bold border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-40 cursor-pointer"
+                      className="px-3 sm:px-4 py-2.5 rounded-xl text-sm font-bold border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-40 cursor-pointer"
                     >
-                      Siguiente →
+                      <span className="hidden sm:inline">Siguiente </span>→
                     </button>
                     <span className="hidden md:inline text-sm text-slate-500 ml-2">
                       Paso {stepIndex + 1} de {PHYSIO_STEPS.length}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <div className="flex items-center gap-1.5 sm:gap-2 justify-end">
                     <button
                       type="button"
                       onClick={() => setIsNewSessionModalOpen(false)}
-                      className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                      className="hidden sm:inline-flex px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer"
                     >
                       Cancelar
                     </button>
                     <button
                       type="button"
                       onClick={handlePreviewCurrentPDF}
-                      className="flex items-center gap-1.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-300 px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer"
+                      className="flex items-center gap-1.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-300 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer"
                     >
-                      <Download className="w-4 h-4" /> Vista previa PDF
+                      <Download className="w-4 h-4" /> <span className="hidden sm:inline">Vista previa </span>PDF
                     </button>
                     <button
                       type="submit"
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-extrabold shadow-md flex items-center gap-1.5 cursor-pointer"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2.5 rounded-xl text-sm font-extrabold shadow-md flex items-center gap-1.5 cursor-pointer"
                     >
                       <Check className="w-4 h-4 stroke-[3]" />
-                      {editingSessionId ? "Guardar cambios" : "Guardar evaluación"}
+                      {editingSessionId ? "Guardar cambios" : <>Guardar<span className="hidden sm:inline"> evaluación</span></>}
                     </button>
                   </div>
                 </div>

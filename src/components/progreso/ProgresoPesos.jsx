@@ -249,26 +249,26 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
                 </button>
               </div>
             )}
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            <div className="mt-3 grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2">
               {filas.map((s, i) => {
                 const pl = plantillaDe(ex)[i];
                 const conKg = !pl || pl.kg;
                 const unidad = UNIDAD[pl?.campo] || "reps";
                 return (
-                <div key={i} className={`rounded-xl border p-2.5 ${s.peso !== "" || (!conKg && s.reps !== "") ? "border-emerald-300 bg-emerald-50/40" : "border-slate-200"}`}>
-                  <p className="text-[11px] font-bold text-slate-500 uppercase mb-1">
-                    {pl ? pl.etiqueta : `Serie ${i + 1}`}
+                <div key={i} className={`rounded-xl border p-1.5 sm:p-2.5 ${s.peso !== "" || (!conKg && s.reps !== "") ? "border-emerald-300 bg-emerald-50/40" : "border-slate-200"}`}>
+                  <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase mb-1 truncate">
+                    {pl ? pl.etiqueta.replace(/^serie\s*/i, "S") : `S${i + 1}`}
                     {!pl && <span className="text-amber-600"> · extra</span>}
-                    {pl?.objetivo && <span className="normal-case font-semibold text-slate-400"> · meta {pl.objetivo}</span>}
+                    {pl?.objetivo && <span className="normal-case font-semibold text-slate-400"> · {pl.objetivo}</span>}
                   </p>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     {conKg && (<>
                     <input
                       inputMode="decimal"
                       value={s.peso}
                       onChange={(e) => cambiar(ex.clave, i, "peso", e.target.value.replace(/[^0-9.,]/g, ""))}
                       placeholder="kg"
-                      className="w-full min-w-0 px-2 py-2 rounded-lg border border-slate-300 text-base font-black text-slate-900 text-center"
+                      className="w-full min-w-0 px-1 py-1.5 sm:px-2 sm:py-2 rounded-lg border border-slate-300 text-base font-black text-slate-900 text-center"
                       aria-label={`${ex.nombre} serie ${i + 1} peso en kg`}
                     />
                     <span className="text-xs text-slate-400 font-bold">×</span>
@@ -278,7 +278,7 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
                       value={s.reps}
                       onChange={(e) => cambiar(ex.clave, i, "reps", e.target.value.replace(/\D/g, "").slice(0, 3))}
                       placeholder={conKg ? String(repsBase(pl?.objetivo || ex.reps) ?? "reps") : unidad}
-                      className={`${conKg ? "w-16" : "w-full"} px-2 py-2 rounded-lg border border-slate-300 text-base font-bold text-slate-900 text-center`}
+                      className={`${conKg ? "w-11 sm:w-16" : "w-full"} px-1 py-1.5 sm:px-2 sm:py-2 rounded-lg border border-slate-300 text-base font-bold text-slate-900 text-center`}
                       aria-label={`${ex.nombre} serie ${i + 1} repeticiones`}
                     />
                     {!conKg && <span className="text-xs text-slate-500 font-bold">{unidad}</span>}

@@ -254,6 +254,7 @@ export const Header = ({
 
           {/* Mobile alerts icon */}
           <div className="flex items-center gap-2 md:hidden">
+            <BotonTema vertical className="rd-solo-movil" />
             {can("crm") && <CrmCampana setActiveTab={setActiveTab} />}
             {!can("alerts") && <CampanaAvisos setActiveTab={setActiveTab} />}
             {can("alerts") && (
@@ -321,7 +322,7 @@ export const Header = ({
 
           </div>
         ) : isStudent ? (
-          <div className="flex items-center gap-2 overflow-x-auto py-1">
+          <div className="rd-solo-pc flex items-center gap-2 overflow-x-auto py-1">
             <button
               onClick={() => setActiveTab("mis_medidas")}
               className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shadow-2xs"
@@ -614,8 +615,8 @@ export const Header = ({
           )}
 
           {/* Tamaño de letra (pantallas grandes) y modo claro / oscuro */}
-          <BotonTamano className="hidden sm:inline-flex" />
-          <BotonTema vertical className="ml-1" />
+          <BotonTamano className="rd-solo-pc" />
+          <BotonTema vertical className="ml-1 rd-solo-pc" />
         </div>
       </div>
     </header>
