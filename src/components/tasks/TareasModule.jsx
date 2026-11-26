@@ -529,7 +529,7 @@ export const TarjetaTarea = ({ t, ctx, onAccion, compacta = false }) => {
             <Chip tono="teal" title="Para quién es">
               <Emo e={emojiDestino(t.destino)} /> {textoDestino(t.destino, ctx.turnos)}
             </Chip>
-            {t.origen === "auto" && <Chip tono="indigo">🤖 Automática</Chip>}
+            {t.desdePortal ? <Chip tono="violeta">📲 Pedido desde el portal</Chip> : t.origen === "auto" && <Chip tono="indigo">🤖 Automática</Chip>}
             {t.reprogramaciones > 0 && <Chip tono="ambar">📅 Reprogramada {t.reprogramaciones}×</Chip>}
             {t.pases > 0 && <Chip tono="violeta">↪️ Pasada {t.pases}×</Chip>}
           </div>
@@ -809,6 +809,13 @@ const Reporte = ({ hoy }) => {
         <TarjetaKpi titulo="Atrasadas" valor={g.atrasadas} sub={`${g.pendientes} pendientes en fecha`} emoji="⏰" tono="rojo" alerta={g.atrasadas > 0} />
         <TarjetaKpi titulo="Cumplimiento" valor={g.cumplimiento ?? 0} texto={g.cumplimiento == null ? "—" : undefined} sufijo={g.cumplimiento == null ? "" : "%"} sub={`${g.reprogramadas} reprogramadas · ${g.pasadas} pasadas`} emoji="🎯" tono={tonoPct(g.cumplimiento)} progreso={g.cumplimiento} />
       </div>
+      {r.anuncio && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <TarjetaKpi titulo="Pidieron renovar en el portal" valor={r.anuncio.solicitudes} sub="eligieron un plan en el anuncio" emoji="📲" tono="violeta" />
+          <TarjetaKpi titulo="Renovaron desde el anuncio" valor={r.anuncio.renovaron} sub={r.anuncio.solicitudes ? `${Math.round((r.anuncio.renovaron / r.anuncio.solicitudes) * 100)} % de los pedidos` : "aún sin pedidos"} emoji="🔁" tono="verde" progreso={r.anuncio.solicitudes ? (r.anuncio.renovaron / r.anuncio.solicitudes) * 100 : null} />
+          <TarjetaKpi titulo="Pedidos por atender" valor={r.anuncio.pendientes} sub="esperan respuesta de recepción" emoji="⏳" tono="ambar" alerta={r.anuncio.pendientes > 0} />
+        </div>
+      )}
       <Tabla titulo="Por turno de recepción" emoji="🕒" nombre="Turno" filas={r.porTurno.map((t) => ({ ...t, k: t.turnoId, nombre: textoTurno({ corto: t.nombre, personas: t.personas }) }))} />
       <Tabla titulo="Por área" emoji="👥" nombre="Área" filas={r.porRol.map((t) => ({ ...t, k: t.rol, nombre: AREAS[t.rol]?.corto || "Administración" }))} />
       <div className="bg-white rounded-2xl border border-slate-200 p-4">

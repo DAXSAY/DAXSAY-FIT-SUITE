@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { AnuncioRenovacion } from "./AnuncioRenovacion";
 import { PanelComposicion, SiluetaMedidas, edadDe } from "../measurements/VisualMedidas";
 import {
   Dumbbell,
@@ -257,6 +258,7 @@ export const StudentPortalModule = ({
 
   return (
     <div className="space-y-6 pb-12 max-w-7xl mx-auto">
+      <AnuncioRenovacion />
       {/* WELCOME STUDENT BANNER */}
       <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-blue-900/40 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-96 bg-radial from-cyan-500/10 to-transparent pointer-events-none" />
@@ -494,14 +496,13 @@ export const StudentPortalModule = ({
             <b> Todo está guardado:</b> al renovar vuelves a verlo con tu mismo código <span className="font-mono font-bold">{currentMember?.codeLabel}</span>.
           </p>
           <div className="flex flex-wrap justify-center gap-2 pt-1">
-            <a
-              href={`https://wa.me/${gymConfig?.gym_whatsapp || ""}?text=${encodeURIComponent(`Hola Recepción ${gymConfig?.gym_nombre || "RADICAL"}, soy ${currentMember?.fullName} (código ${currentMember?.codeLabel}, DNI ${currentMember?.dni}). Mi membresía venció y quiero renovar.`)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm"
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("radical:renovar"))}
+              className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm cursor-pointer"
             >
-              💬 Renovar por WhatsApp
-            </a>
+              💬 Ver planes y renovar
+            </button>
             <button type="button" onClick={() => handleTabClick("membership")} className="px-5 py-3 rounded-xl bg-white border border-slate-300 text-slate-700 font-bold text-sm cursor-pointer">
               💳 Ver mi membresía
             </button>

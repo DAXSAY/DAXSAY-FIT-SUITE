@@ -40,7 +40,7 @@ const fBonita = (iso) => {
   return `${Number(d)} ${MESES[Number(m) - 1]}`;
 };
 const FORMATO_HORA = new Intl.DateTimeFormat("en-GB", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", hour12: false });
-const horaLima = () => FORMATO_HORA.format(Date.now()).slice(0, 5);
+export const horaLima = () => FORMATO_HORA.format(Date.now()).slice(0, 5);
 const diasEntre = (a, b) => Math.round((new Date(`${b}T12:00:00Z`) - new Date(`${a}T12:00:00Z`)) / 86400000);
 /** «Turno 1 - Mañana» -> «Mañana» (se muestra «Turno Mañana · Ana») */
 export const nombreCortoTurno = (n) => String(n || "").replace(/^\s*turno\s*\d*\s*[-–·:]?\s*/i, "").trim() || String(n || "");
@@ -49,7 +49,7 @@ export const nombreCortoTurno = (n) => String(n || "").replace(/^\s*turno\s*\d*\
 // ¿Existen las tablas? (en la PC se crean ejecutando la parte 37 como root)
 // ---------------------------------------------------------------------
 let hayTablas = { v: null, t: 0 };
-async function tablasListas() {
+export async function tablasListas() {
   if (hayTablas.v === true || Date.now() - hayTablas.t < 20000) return hayTablas.v;
   const [f] = await consultar(
     "SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('tareas','tarea_historial')",
@@ -159,6 +159,7 @@ function aTarea(f, nombres, hoy, ahora) {
     aTiempo,
     resultado: f.resultado || "",
     origen: f.origen,
+    desdePortal: f.referencia === "portal",
     creador: f.idusuario_creador ? { id: String(f.idusuario_creador), nombre: nombres[f.idusuario_creador] || "" } : null,
     tomadaPor: f.idusuario_tomada ? { id: String(f.idusuario_tomada), nombre: nombres[f.idusuario_tomada] || "" } : null,
     tomadaEn: f.tomada_en || null,
@@ -172,7 +173,7 @@ function aTarea(f, nombres, hoy, ahora) {
   };
 }
 
-async function historial(idtarea, accion, detalle, idusuario, cx = null) {
+export async function historial(idtarea, accion, detalle, idusuario, cx = null) {
   const q = "INSERT INTO tarea_historial (idtarea, accion, detalle, idusuario) VALUES (?,?,?,?)";
   const p = [idtarea, accion, txt(detalle, 500), idusuario || null];
   return cx ? cx.execute(q, p) : consultar(q, p);
@@ -251,8 +252,12 @@ async function generar() {
   );
   const nom = (a) => `${a.nombres} ${a.apellidos}`.trim();
 
-  // 1) Por vencer en los próximos 3 días -> recepción
+  // 1) Por vencer en los próximos 3 días -> recepción (si ya hay una de renovación abierta, p. ej. del portal, no se repite)
+  const conRenovacion = new Set(
+    (await consultar("SELECT DISTINCT idalumno FROM tareas WHERE tipo = 'renovacion' AND estado IN ('pendiente','en_curso') AND idalumno IS NOT NULL")).map((x) => String(x.idalumno)),
+  );
   for (const a of vig) {
+    if (conRenovacion.has(String(a.idalumno))) continue;
     const fin = String(a.fecha_fin).slice(0, 10);
     if (fin > sumarDias(hoy, DIAS_POR_VENCER)) continue;
     const d = diasEntre(hoy, fin);
@@ -654,10 +659,18 @@ router.get("/reporte", async (req, res, next) => {
       if (h.accion === "pasada") persona(h.idusuario).pasadas += 1;
       if (h.accion === "reprogramada") persona(h.idusuario).reprogramadas += 1;
     }
+    // Anuncio de renovación del portal: cuántos lo pidieron y cuántos renovaron
+    const delPortal = tareas.filter((t) => t._f.referencia === "portal");
+    const anuncio = {
+      solicitudes: delPortal.length,
+      renovaron: delPortal.filter((t) => t.estado === "hecha" && t.cierreAuto).length,
+      pendientes: delPortal.filter((t) => t.estado === "pendiente" || t.estado === "en_curso").length,
+    };
     res.json({
       ...respuesta,
       desde,
       hasta,
+      anuncio,
       general: porcentaje(general),
       porTurno: respuesta.turnos.map((t) => ({ turnoId: t.id, nombre: t.corto, personas: t.personas, ...porcentaje(porTurno[t.id] || vacio()) })),
       porRol: Object.entries(porRol).map(([rol, o]) => ({ rol, ...porcentaje(o) })),

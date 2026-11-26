@@ -4196,3 +4196,13 @@ html.dark .rd-cal-on{background:rgba(94,232,216,.12);border-color:#88f0e5;box-sh
 .rd-cal-n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;border-radius:999px;font-size:10px;font-weight:900;background:var(--kf);color:var(--kt,var(--k));border:1px solid var(--kb)}
 .rd-barra-t{background:color-mix(in srgb,var(--k) 14%,transparent);flex:1;min-width:60px}
 .rd-barra-t>span{background:var(--k)}
+
+/* Anuncio de renovación del portal del alumno */
+.rd-anuncio{background:var(--rd-surface);border-color:var(--kb)}
+.rd-anuncio-portada{background:radial-gradient(ellipse at top,var(--kf),transparent 70%)}
+.rd-anuncio-x{background:var(--kf);color:var(--kt,var(--k));border:1px solid var(--kb)}
+.rd-anuncio-plan{background:var(--rd-surface);border-color:var(--kb);border-top:4px solid var(--k);transition:transform .15s,box-shadow .15s}
+.rd-anuncio-plan:hover{transform:translateY(-2px);box-shadow:0 12px 24px -14px color-mix(in srgb,var(--k) 60%,transparent)}
+.rd-anuncio-latido{animation:rd-latido 1.8s ease-in-out infinite}
+@keyframes rd-latido{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.rd-anuncio-latido{animation:none}}

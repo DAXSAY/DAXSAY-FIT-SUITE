@@ -29,6 +29,7 @@ import prospectos from "./rutas/prospectos.js";
 import progreso from "./rutas/progreso.js";
 import avisos from "./rutas/avisos.js";
 import tareas, { marcarCambioTareas } from "./rutas/tareas.js";
+import renovacionPortal from "./rutas/renovacionPortal.js";
 import { verificarSincronizacion, sincronizarPendientes } from "./sincronizacion.js";
 import { aplicarActualizaciones } from "./actualizaciones.js";
 import { programarRespaldos, estadoRespaldos, hacerRespaldo } from "./respaldo.js";
@@ -137,6 +138,7 @@ app.use("/api/prospectos", requiereSesion, prospectos);
 app.use("/api/progreso", requiereSesion, progreso);
 app.use("/api/avisos", requiereSesion, avisos);
 app.use("/api/tareas", requiereSesion, tareas);
+app.use("/api/portal-renovacion", requiereSesion, renovacionPortal);
 
 // Imágenes subidas (públicas por enlace, nombres imposibles de adivinar)
 app.use("/uploads", express.static(CARPETA_UPLOADS, { maxAge: "30d" }));
