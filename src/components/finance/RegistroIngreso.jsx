@@ -104,7 +104,7 @@ const SelectorProfesional = ({ opciones, value, onChange, quien }) => {
                   if (lista[0]) elegir(lista[0]);
                 }
               }}
-              placeholder="Buscar: nombre, 1-ENTRENADOR, 2-EXT o DNI"
+              placeholder="Buscar: nombre, 1-ENTR, 2-EXT o DNI"
               className="w-full pl-8 pr-2 py-1.5 rounded-lg border border-slate-300 text-sm"
             />
           </div>

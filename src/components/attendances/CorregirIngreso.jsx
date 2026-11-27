@@ -94,7 +94,7 @@ export const CorregirIngreso = () => {
             )}
           </div>
         ) : (
-          <p className="text-sm text-slate-600">Para el personal, elimina este registro y vuelve a marcar con el código correcto (ej. 1-ENTRENADOR).</p>
+          <p className="text-sm text-slate-600">Para el personal, elimina este registro y vuelve a marcar con el código correcto (ej. 1-ENTR).</p>
         )}
         {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
         <div className="flex flex-wrap justify-between gap-2 pt-1">

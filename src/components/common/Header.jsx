@@ -190,7 +190,7 @@ export const Header = ({
       return;
     }
     if (esCodigoPersonal(texto)) {
-      mostrarIngreso({ tipo: "error", codigo: texto.toUpperCase(), titulo: "No hay personal con ese código", detalle: "Revisa el código en Contratos de Personal (ej. 1-ENTRENADOR, 1-NUTRI)." });
+      mostrarIngreso({ tipo: "error", codigo: texto.toUpperCase(), titulo: "No hay personal con ese código", detalle: "Revisa el código en Contratos de Personal (ej. 1-ENTR, 1-NUTRI)." });
       return;
     }
 
