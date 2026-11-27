@@ -262,12 +262,41 @@ async function validar(b) {
     idsede: await sedeValida(b.sedeId),
   };
 }
-router.post("/", async (req, res, next) => {
-  try {
+/**
+ * Un solo salón: dos másters no pueden cruzarse en horario el mismo día
+ * (en la misma sede). Ej. 08:00–09:30 y 09:30–11:00 sí; 09:00–11:00 y 10:00–12:00 no.
+ */
+async function exigirHorarioLibre(v, excluir = null) {
+  let conSede = true;
+  const filas = await consultar(
+    `SELECT idmaster, titulo, TIME_FORMAT(hora_inicio,'%H:%i') AS ini, TIME_FORMAT(hora_fin,'%H:%i') AS fin, idsede FROM masters
+      WHERE fecha = ? AND estado <> 'cancelado' AND idmaster <> ? AND hora_inicio < ? AND hora_fin > ?`,
+    [v.fecha, excluir || 0, v.fin, v.inicio],
+  ).catch(async (e) => {
+    if (e.code !== "ER_BAD_FIELD_ERROR") throw e;
+    conSede = false;
+    return consultar(
+      `SELECT idmaster, titulo, TIME_FORMAT(hora_inicio,'%H:%i') AS ini, TIME_FORMAT(hora_fin,'%H:%i') AS fin FROM masters
+        WHERE fecha = ? AND estado <> 'cancelado' AND idmaster <> ? AND hora_inicio < ? AND hora_fin > ?`,
+      [v.fecha, excluir || 0, v.fin, v.inicio],
+    );
+  });
+  // Sedes distintas tienen salones distintos; sin sede se cuenta como el mismo salón
+  const choque = filas.find((f) => !conSede || !v.idsede || !f.idsede || f.idsede === v.idsede);
+  if (choque)
+    throw new ErrorHttp(
+      409,
+      `Ese horario se cruza con «${choque.titulo}» (${choque.ini} – ${choque.fin}). Solo hay un salón: elige una hora que empiece a las ${choque.fin} o termine a las ${choque.ini}.`,
+    );
+}
+router.post("/", (req, res, next) => enFila("masters-horario", () => crearMaster(req, res)).catch(next));
+async function crearMaster(req, res) {
+  {
     await exigirTablas();
     exigir(req, ["admin"], "Solo administración crea másters");
     const v = await validar(req.body || {});
     if (v.fecha < hoyLima()) throw new ErrorHttp(400, "La fecha ya pasó");
+    await exigirHorarioLibre(v);
     const r = await consultar(
       `INSERT INTO masters (titulo, iddisciplina, idempleado, profesor_invitado, fecha, hora_inicio, hora_fin, precio_socio, precio_publico, cupo, sala, descripcion, idusuario_creador)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -276,16 +305,16 @@ router.post("/", async (req, res, next) => {
     if (await parte40()) await consultar("UPDATE masters SET pct_gym = ? WHERE idmaster = ?", [v.pct, r.insertId]);
     if (v.idsede) await consultar("UPDATE masters SET idsede = ? WHERE idmaster = ?", [v.idsede, r.insertId]);
     res.status(201).json({ ok: true, id: r.insertId });
-  } catch (e) {
-    next(e);
   }
-});
-router.put("/:id(\\d+)", async (req, res, next) => {
-  try {
+}
+router.put("/:id(\\d+)", (req, res, next) => enFila("masters-horario", () => editarMaster(req, res)).catch(next));
+async function editarMaster(req, res) {
+  {
     await exigirTablas();
     exigir(req, ["admin"], "Solo administración cambia los másters");
     const v = await validar(req.body || {});
     const estado = ["abierto", "cerrado", "realizado", "cancelado"].includes(req.body?.estado) ? req.body.estado : "abierto";
+    if (estado !== "cancelado") await exigirHorarioLibre(v, Number(req.params.id));
     await consultar(
       `UPDATE masters SET titulo=?, iddisciplina=?, idempleado=?, profesor_invitado=?, fecha=?, hora_inicio=?, hora_fin=?, precio_socio=?, precio_publico=?, cupo=?, sala=?, descripcion=?, estado=?
         WHERE idmaster = ?`,
@@ -295,10 +324,8 @@ router.put("/:id(\\d+)", async (req, res, next) => {
       await consultar("UPDATE masters SET pct_gym = ? WHERE idmaster = ?", [v.pct, Number(req.params.id)]);
     if (v.idsede) await consultar("UPDATE masters SET idsede = ? WHERE idmaster = ?", [v.idsede, Number(req.params.id)]);
     res.json({ ok: true });
-  } catch (e) {
-    next(e);
   }
-});
+}
 
 // GET /api/masters/:id/inscritos (personal)
 router.get("/:id(\\d+)/inscritos", async (req, res, next) => {
