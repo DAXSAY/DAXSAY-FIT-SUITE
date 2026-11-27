@@ -372,7 +372,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <TarjetaKpi titulo="Inscritos" valor={m.inscritos} sub={`${m.inscritos - (m.externos || 0)} socios · ${m.externos || 0} externos${m.cupo ? ` · de ${m.cupo}` : ""}`} emoji="🙋" tono="teal" />
+        <TarjetaKpi titulo="Inscritos" valor={m.inscritos} sub={`${m.inscritos - (m.externos || 0)} socio${m.inscritos - (m.externos || 0) === 1 ? "" : "s"} · ${m.externos || 0} externo${m.externos === 1 ? "" : "s"}${m.cupo ? ` · de ${m.cupo}` : ""}`} emoji="🙋" tono="teal" />
         <TarjetaKpi titulo="Recaudado" valor={m.recaudado} prefijo="S/ " decimales={2} sub={`${m.pagados} pagaron`} emoji="💰" tono="verde" />
         <TarjetaKpi titulo="Por cobrar" valor={m.porCobrar} prefijo="S/ " decimales={2} sub={`${m.inscritos - m.pagados} sin pagar`} emoji="⏳" tono="ambar" />
         <TarjetaKpi titulo="Asistieron" valor={m.asistieron} sub="el día del máster" emoji="✅" tono="violeta" />
@@ -425,9 +425,9 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <LeyendaCroquis conExterno />
               <span className="text-xs font-black flex gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-teal-600 text-white">⭐ {sala.socios ?? 0} socios</span>
-                <span className="px-2 py-0.5 rounded-full bg-violet-600 text-white">🎟️ {sala.externos ?? 0} externos</span>
-                <span className="px-2 py-0.5 rounded-full border border-slate-300 text-slate-600">{Math.max(0, sala.libres)} libres</span>
+                <span className="px-2 py-0.5 rounded-full bg-teal-600 text-white">⭐ {sala.socios ?? 0} socio{sala.socios === 1 ? "" : "s"}</span>
+                <span className="px-2 py-0.5 rounded-full bg-violet-600 text-white">🎟️ {sala.externos ?? 0} externo{sala.externos === 1 ? "" : "s"}</span>
+                <span className="px-2 py-0.5 rounded-full border border-slate-300 text-slate-600">{Math.max(0, sala.libres)} libre{sala.libres === 1 ? "" : "s"}</span>
               </span>
             </div>
             <Croquis croquis={sala.croquis} reservas={sala.reservas} nombres onStep={(z, r) => setMsg({ ok: !!r, texto: r ? `Step ${z.numero}: ${r.alumno} · ${r.externo ? "🎟️ externo" : "⭐ socio"}${r.estado === "asistio" ? " · ✓ asistió" : ""}` : `Step ${z.numero}: libre. Usa «Dar step» en la lista para asignarlo.` })} />
