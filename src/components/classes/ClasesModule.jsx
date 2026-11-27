@@ -22,6 +22,7 @@ import { ingresoDeHoy } from "../../utils/codigoPersonal";
 import { hoyISO } from "../../utils/fecha";
 import { DIAS, DIAS_CORTO, COLORES, diaDe, lunesDe, fechaBonita, sumarDias, aMin, deMin, estadoVentana, useDatosClases, useCroquis, useSesiones, nombreSede } from "./clasesComun";
 import { Croquis, EditorCroquis, LeyendaCroquis } from "./Croquis";
+import { BuscarSocio } from "./BuscarSocio";
 import Masters from "./Masters";
 import Calificaciones from "./Calificaciones";
 
@@ -488,7 +489,7 @@ const Steps = ({ yo, claseInicial, sedes = [] }) => {
       if (estado === "asistio") {
         const m = members.find((x) => Number(x.id) === Number(r.alumnoId));
         const marco = m ? marcarAsistencia(m) : false;
-        setMensaje({ ok: true, texto: `✓ ${r.alumno} llegó · step ${r.numero}${marco ? " · asistencia marcada" : ""}` });
+        setMensaje({ ok: true, texto: `✓ ${r.alumno} asistió · step ${r.numero}${marco ? " · asistencia marcada" : ""}` });
       } else setMensaje({ ok: true, texto: estado === "no_vino" ? `✗ ${r.alumno} no vino: el step ${r.numero} quedó libre` : `Step ${r.numero} liberado` });
       setStep(null);
       cargar();
@@ -529,7 +530,7 @@ const Steps = ({ yo, claseInicial, sedes = [] }) => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <TarjetaKpi titulo="Steps" valor={(croquis?.steps || []).filter((z) => z.tipo === "step").length} sub="en el croquis" emoji="🧱" tono="teal" />
           <TarjetaKpi titulo="Reservados" valor={activas.filter((r) => r.estado === "reservado").length} sub="por confirmar" emoji="🎫" tono="ambar" />
-          <TarjetaKpi titulo="Llegaron" valor={activas.filter((r) => r.estado === "asistio").length} sub="confirmados" emoji="✅" tono="verde" />
+          <TarjetaKpi titulo="Asistieron" valor={activas.filter((r) => r.estado === "asistio").length} sub="confirmados" emoji="✅" tono="verde" />
           <TarjetaKpi titulo="Reserva del alumno" valor={0} texto={v?.estado === "abierta" ? "Abierta" : v?.estado === "pronto" ? `Desde ${v.abre}` : v?.estado === "en_curso" ? "En clase" : "Cerrada"} sub={`${croquis?.minutosReserva || 30} min antes`} emoji="⏰" tono="violeta" />
         </div>
       )}
@@ -546,7 +547,7 @@ const Steps = ({ yo, claseInicial, sedes = [] }) => {
             </p>
             <LeyendaCroquis />
           </div>
-          <p className="text-xs text-slate-500">Toca un step libre para sentar a quien llegó sin reservar (picas su código y se marca su asistencia). Toca un step reservado para confirmar ✓ o ✗.</p>
+          <p className="text-xs text-slate-500">Toca un step libre para sentar a quien llegó sin reservar (picas su código y se marca su asistencia). Toca un step reservado para confirmar su asistencia ✓ o liberarlo ✗.</p>
           <Croquis croquis={croquis} reservas={activas} nombres onStep={(z, r) => (setStep({ z, r }), setCodigo(""), setMensaje(null), setTimeout(() => entrada.current?.focus(), 80))} seleccionado={step?.z.id} />
           {activas.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
@@ -554,7 +555,7 @@ const Steps = ({ yo, claseInicial, sedes = [] }) => {
                 <button key={r.id} type="button" onClick={() => setStep({ z: { id: r.stepId, numero: r.numero }, r })} className="text-left rounded-xl border border-slate-200 px-3 py-1.5 text-xs cursor-pointer hover:bg-slate-50 flex items-center gap-2">
                   <b className="w-7 text-center">{r.numero}</b>
                   <span className="truncate flex-1">{r.alumno}</span>
-                  <span className={r.estado === "asistio" ? "text-emerald-700 font-black" : "text-amber-700 font-bold"}>{r.estado === "asistio" ? "✓ Llegó" : `Reservó ${r.hora}`}</span>
+                  <span className={r.estado === "asistio" ? "text-emerald-700 font-black" : "text-amber-700 font-bold"}>{r.estado === "asistio" ? "✓ Asistió" : `Reservó ${r.hora}`}</span>
                 </button>
               ))}
             </div>
@@ -566,20 +567,20 @@ const Steps = ({ yo, claseInicial, sedes = [] }) => {
         <Ventana titulo={`Step ${step.z.numero}`} icono={LayoutGrid} onCerrar={() => setStep(null)}>
           {!step.r ? (
             <form onSubmit={sentar} className="space-y-3">
-              <p className="text-sm text-slate-600">Step libre. Pica el código (o DNI) de quien llegó: se marca su asistencia de hoy y se le reserva este step.</p>
-              <input ref={entrada} autoFocus value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Código o DNI del alumno" className={`${campo} text-lg font-black tracking-wider`} />
+              <p className="text-sm text-slate-600">Step libre. Escribe el código (o DNI) de quien llegó: verás su nombre antes de confirmar, se marca su asistencia de hoy y se le reserva este step.</p>
+              <BuscarSocio ref={entrada} members={members} value={codigo} onChange={(t) => (setCodigo(t), setMensaje(null))} />
               {mensaje && !mensaje.ok && <Error texto={mensaje.texto} />}
-              <button className="w-full px-5 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-black cursor-pointer">Enter · Reservar step {step.z.numero}</button>
+              <button disabled={!buscarAlumno(members, codigo.trim())} className="w-full px-5 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white text-base font-black cursor-pointer">{(() => { const h = buscarAlumno(members, codigo.trim())?.member; return h ? `✅ Sentar a ${h.fullName.split(" ")[0]} en el step ${step.z.numero}` : `Enter · Reservar step ${step.z.numero}`; })()}</button>
             </form>
           ) : (
             <div className="space-y-3">
               <p className="text-sm">
-                <b>{step.r.alumno}</b> · {step.r.estado === "asistio" ? "ya llegó ✓" : `reservó a las ${step.r.hora}`}
+                <b>{step.r.alumno}</b> · {step.r.estado === "asistio" ? "ya asistió ✓" : `reservó a las ${step.r.hora}`}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {step.r.estado !== "asistio" && (
                   <button type="button" onClick={() => cambiarEstado(step.r, "asistio")} className="px-4 py-3 rounded-xl bg-emerald-600 text-white text-sm font-black flex items-center justify-center gap-1.5 cursor-pointer">
-                    <Check className="w-4 h-4" /> Llegó
+                    <Check className="w-4 h-4" /> Asistió
                   </button>
                 )}
                 {step.r.estado !== "asistio" ? (

@@ -209,7 +209,7 @@ const MastersAlumno = () => {
             {m.descripcion && <p className="text-xs">📝 {m.descripcion}</p>}
             <p className="text-sm">
               💰 <b>{soles(m.miPrecio)}</b>
-              {m.soySocio ? <span className="text-xs"> · precio socio (público {soles(m.precioPublico)})</span> : <span className="text-xs"> · con membresía vigente pagas {soles(m.precioSocio)}</span>}
+              {m.soySocio ? <span className="text-xs"> · precio socio (externos {soles(m.precioPublico)})</span> : <span className="text-xs"> · con membresía vigente pagas {soles(m.precioSocio)}</span>}
             </p>
             <div className="pt-1 flex flex-wrap items-center gap-2">
               {m.miInscripcion ? (

@@ -4271,22 +4271,24 @@ html.dark .rd-zona.rd-zona-consola{background:rgba(167,139,250,.14);border-color
 html.dark .rd-zona.rd-zona-puerta{background:rgba(255,194,102,.12);border-color:rgba(255,194,102,.55);color:#ffc266}
 html.dark .rd-zona.rd-zona-espejo{background:rgba(125,211,252,.14);border-color:rgba(125,211,252,.5);color:#a5ddfc}
 .rd-step{transition:transform .12s,background .15s,box-shadow .15s}
-.rd-step-libre{background:#ffffff;border-color:#cfdcdb;color:#47988f}
-button.rd-step-libre:not(:disabled):hover{background:#e4f5f3;transform:translateY(-1px);box-shadow:0 3px 8px rgba(71,152,143,.18)}
-.rd-step-reservado{background:#f4ebdc;border-color:#e2c99d;color:#946324}
-.rd-step-llego{background:#dff2e7;border-color:#a9d9bc;color:#2f7a52}
-.rd-step-mio{background:#dbe8fb;border-color:#93b7ee;color:#2c5aa8;box-shadow:0 0 0 2px rgba(59,130,246,.25)}
-.rd-step-sel{background:#47988f;border-color:#47988f;color:#fff;box-shadow:0 0 0 3px rgba(71,152,143,.3)}
+.rd-step-libre{background:#ffffff;border-color:#94a3b8;border-style:dashed;color:#475569}
+button.rd-step-libre:not(:disabled):hover{background:#f1f5f9;border-color:#47988f;color:#47988f;transform:translateY(-1px);box-shadow:0 3px 8px rgba(71,152,143,.18)}
+.rd-step-reservado{background:#f59e0b;border-color:#d97706;color:#ffffff;text-shadow:0 1px 0 rgba(0,0,0,.18)}
+.rd-step-llego{background:#16a34a;border-color:#15803d;color:#ffffff;text-shadow:0 1px 0 rgba(0,0,0,.18)}
+.rd-step-externo{background:#7c3aed;border-color:#6d28d9;color:#ffffff;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+.rd-step-mio{background:#2563eb;border-color:#1d4ed8;color:#ffffff;box-shadow:0 0 0 3px rgba(37,99,235,.3)}
+.rd-step-sel{background:#0f172a;border-color:#0f172a;color:#fff;box-shadow:0 0 0 3px rgba(245,158,11,.55);transform:scale(1.06);z-index:2}
 html.dark .rd-croquis{background:linear-gradient(180deg,rgba(20,32,48,.75),rgba(12,22,36,.75));border-color:rgba(94,232,216,.18)}
 html.dark .rd-croquis-editor{background-color:rgba(12,22,36,.8);background-image:linear-gradient(to right,rgba(148,163,184,.10) 1px,transparent 1px),linear-gradient(to bottom,rgba(148,163,184,.10) 1px,transparent 1px)}
 html.dark .rd-zona{background:repeating-linear-gradient(135deg,rgba(148,163,184,.06) 0 6px,rgba(148,163,184,.12) 6px 12px);border-color:rgba(148,163,184,.45);color:#a5b4c8}
 html.dark .rd-zona-sel{border-color:#88f0e5;color:#88f0e5}
-html.dark .rd-step-libre{background:rgba(15,28,44,.9);border-color:rgba(94,232,216,.35);color:#88f0e5}
-html.dark button.rd-step-libre:not(:disabled):hover{background:rgba(94,232,216,.14);box-shadow:0 0 12px rgba(94,232,216,.25)}
-html.dark .rd-step-reservado{background:rgba(255,194,102,.14);border-color:rgba(255,194,102,.5);color:#ffc266}
-html.dark .rd-step-llego{background:rgba(94,232,161,.14);border-color:rgba(94,232,161,.5);color:#88f0c0}
-html.dark .rd-step-mio{background:rgba(120,170,255,.18);border-color:rgba(120,170,255,.6);color:#a9c8ff;box-shadow:0 0 12px rgba(120,170,255,.3)}
-html.dark .rd-step-sel{background:#3fb5aa;border-color:#88f0e5;color:#04121a;box-shadow:0 0 14px rgba(94,232,216,.45)}
+html.dark .rd-step-libre{background:rgba(15,28,44,.6);border-color:rgba(148,163,184,.55);border-style:dashed;color:#cbd5e1}
+html.dark button.rd-step-libre:not(:disabled):hover{background:rgba(94,232,216,.12);border-color:#88f0e5;color:#88f0e5;box-shadow:0 0 12px rgba(94,232,216,.25)}
+html.dark .rd-step-reservado{background:#f5a524;border-color:#ffc266;color:#1f1300;text-shadow:none}
+html.dark .rd-step-llego{background:#22c55e;border-color:#86efac;color:#03200d;text-shadow:none}
+html.dark .rd-step-externo{background:#a78bfa;border-color:#c4b5fd;color:#1b0b3d;text-shadow:none}
+html.dark .rd-step-mio{background:#60a5fa;border-color:#bfdbfe;color:#06182f;box-shadow:0 0 12px rgba(96,165,250,.45)}
+html.dark .rd-step-sel{background:#f8fafc;border-color:#ffffff;color:#0b1220;box-shadow:0 0 0 3px rgba(255,194,102,.6),0 0 16px rgba(255,255,255,.35);transform:scale(1.06);z-index:2}
 /* Tarjeta de clase en el horario (color de su disciplina) */
 .rd-clase-card{background:var(--kf);border:1px solid var(--kb);border-left:4px solid var(--k);color:var(--kt,var(--k))}
 .rd-clase-card:hover{box-shadow:0 4px 14px color-mix(in srgb,var(--k) 22%,transparent)}
@@ -4294,3 +4296,17 @@ html.dark .rd-step-sel{background:#3fb5aa;border-color:#88f0e5;color:#04121a;box
 .rd-dia-hoy{border-color:#9fc9c5;box-shadow:0 0 0 2px rgba(71,152,143,.15)}
 html.dark .rd-dia-col{border-color:rgba(148,163,184,.18)}
 html.dark .rd-dia-hoy{border-color:rgba(94,232,216,.5);box-shadow:0 0 12px rgba(94,232,216,.15)}
+
+/* Buscador de socio por código: grande y con presencia */
+.rd-codigo{position:relative;border-radius:1.1rem;padding:3px;background:linear-gradient(135deg,#47988f,#f59e0b,#7c3aed);box-shadow:0 8px 24px rgba(71,152,143,.18)}
+.rd-codigo input{width:100%;border:0;outline:0;border-radius:calc(1.1rem - 3px);background:#ffffff;color:#0f172a;padding:.9rem 1rem .9rem 3.1rem;font-size:1.6rem;font-weight:900;letter-spacing:.12em}
+.rd-codigo input::placeholder{font-size:.95rem;font-weight:700;letter-spacing:.02em;color:#94a3b8}
+.rd-codigo .rd-codigo-ico{position:absolute;left:1rem;top:50%;transform:translateY(-50%);font-size:1.35rem;pointer-events:none}
+.rd-codigo:focus-within{box-shadow:0 0 0 4px rgba(71,152,143,.22),0 10px 28px rgba(71,152,143,.25)}
+html.dark .rd-codigo{box-shadow:0 0 22px rgba(94,232,216,.18)}
+html.dark .rd-codigo input{background:#0c1624;color:#e2f7f4}
+html.dark .rd-codigo input::placeholder{color:#64748b}
+.rd-socio-hallado{animation:rdSocioIn .22s ease-out}
+@keyframes rdSocioIn{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+.rd-socio-avatar{width:3.25rem;height:3.25rem;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.2rem;color:#fff;background:linear-gradient(135deg,#47988f,#2c6f68);flex-shrink:0}
+html.dark .rd-socio-avatar{background:linear-gradient(135deg,#3fb5aa,#1d6f68);color:#04121a}

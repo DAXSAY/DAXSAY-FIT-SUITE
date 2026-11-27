@@ -3,7 +3,7 @@
 //  - Administración crea cada máster con su profesor, fecha, hora y dos
 //    precios: socio (membresía vigente) y público. Pueden cambiar cada semana.
 //  - Durante la semana se van inscribiendo: en recepción (alumno o persona
-//    de afuera) o el propio alumno desde su app (queda «por pagar»).
+//    externos) o el propio alumno desde su app (queda «por pagar»).
 //  - Recepción cobra (efectivo, Yape/Plin, tarjeta, transferencia), marca
 //    quién asistió y descarga la lista.
 // =====================================================================
@@ -65,6 +65,7 @@ const SQL_MASTER = `
          (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito') AS inscritos,
          (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.pagado = 1) AS pagados,
          (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.es_socio = 1) AS socios,
+         (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.idalumno IS NULL) AS externos,
          (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.asistio = 1) AS asistieron,
          (SELECT COALESCE(SUM(i.precio),0) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.pagado = 1) AS recaudado,
          (SELECT COALESCE(SUM(i.precio),0) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.pagado = 0) AS por_cobrar
@@ -126,7 +127,7 @@ async function registrarCobro(req, ins, m, metodo) {
      VALUES ('ingreso', 'master', ?, ?, ?, ?, ?, ?, ?)`,
     [
       Number(ins.precio),
-      `Máster «${m.titulo}» ${String(m.fecha).slice(0, 10)} · ${ins.nombre} (${ins.es_socio ? "socio" : "público"})`.slice(0, 255),
+      `Máster «${m.titulo}» ${String(m.fecha).slice(0, 10)} · ${ins.nombre} (${ins.es_socio ? "socio" : ins.idalumno ? "socio sin plan vigente" : "externo"})`.slice(0, 255),
       metodo === "yape_plin" || metodo === "tarjeta" || metodo === "transferencia" ? metodo : "efectivo",
       ins.idinscripcion,
       ins.idalumno || null,
@@ -164,6 +165,7 @@ const masterJson = (f) => ({
   inscritos: Number(f.inscritos) || 0,
   pagados: Number(f.pagados) || 0,
   socios: Number(f.socios) || 0,
+  externos: Number(f.externos) || 0,
   asistieron: Number(f.asistieron) || 0,
   recaudado: Number(f.recaudado) || 0,
   porCobrar: Number(f.por_cobrar) || 0,
@@ -223,8 +225,8 @@ async function validar(b) {
   if (!inicio || !fin || fin <= inicio) throw new ErrorHttp(400, "Revisa la hora: la de fin debe ser después de la de inicio");
   const precioSocio = dinero(b.precioSocio);
   const precioPublico = dinero(b.precioPublico);
-  if (!(precioPublico > 0)) throw new ErrorHttp(400, "Pon el precio público");
-  if (precioSocio < 0 || precioSocio > precioPublico) throw new ErrorHttp(400, "El precio para socios no puede ser mayor que el público");
+  if (!(precioPublico > 0)) throw new ErrorHttp(400, "Pon el precio para externos");
+  if (precioSocio < 0 || precioSocio > precioPublico) throw new ErrorHttp(400, "El precio para socios no puede ser mayor que el de externos");
   const cupo = Number(b.cupo) > 0 ? Math.min(999, Math.round(Number(b.cupo))) : null;
   const pct = b.pctGym === undefined || b.pctGym === "" ? await pctDefecto() : Number(b.pctGym);
   if (!(pct >= 0 && pct <= 100)) throw new ErrorHttp(400, "El porcentaje del gimnasio debe estar entre 0 y 100");
@@ -346,12 +348,15 @@ router.get("/:id(\\d+)/steps", async (req, res, next) => {
       conSteps: !!(await parte41()),
       croquis: { ancho: 40, alto: 28, steps: pasos },
       libres: pasos.filter((z) => z.tipo === "step").length - new Set(filas.map((f) => f.idstep)).size,
+      socios: filas.filter((f) => f.idalumno).length,
+      externos: filas.filter((f) => !f.idalumno).length,
       reservas: filas
         .filter((f) => !vistos.has(f.idstep) && vistos.add(f.idstep))
         .map((f) => ({
           stepId: f.idstep,
           numero: nombreStep(f.numero),
           estado: f.asistio ? "asistio" : "reservado",
+          externo: !f.idalumno,
           mia: !!yo && f.idalumno === yo,
           inscripcionId: alumno ? undefined : f.idinscripcion,
           // el alumno solo ve el primer nombre de los demás

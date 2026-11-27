@@ -41,8 +41,8 @@ export const ElegirStep = ({ info, seleccionado, miStepId, onElegir, conMio = fa
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <LeyendaCroquis conMio={conMio} />
-        <span className="text-[11px] text-slate-500 flex items-center gap-1"><RefreshCw className="w-3 h-3" /> Se actualiza solo · {Math.max(0, info.libres)} libres</span>
+        <LeyendaCroquis conMio={conMio} conExterno />
+        <span className="text-[11px] text-slate-500 flex items-center gap-1"><RefreshCw className="w-3 h-3" /> Se actualiza solo · ⭐ {info.socios ?? 0} socios · 🎟️ {info.externos ?? 0} externos · {Math.max(0, info.libres)} libres</span>
       </div>
       <Croquis
         croquis={info.croquis}

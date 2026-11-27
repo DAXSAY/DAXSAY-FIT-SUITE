@@ -95,16 +95,22 @@ const claseStep = (r, sel) => {
   if (sel) return "rd-step rd-step-sel";
   if (!r) return "rd-step rd-step-libre";
   if (r.mia) return "rd-step rd-step-mio";
+  if (r.externo) return "rd-step rd-step-externo";
   if (r.estado === "asistio") return "rd-step rd-step-llego";
   return "rd-step rd-step-reservado";
 };
 
-export const LeyendaCroquis = ({ conMio = false }) => (
+const Muestra = ({ c, t }) => (
+  <span className="flex items-center gap-1.5"><i className={`rd-step ${c} w-5 h-4 rounded inline-block border-2`} /> {t}</span>
+);
+/** Leyenda de estados del croquis. conExterno: másters (socios y externos comparten el salón) */
+export const LeyendaCroquis = ({ conMio = false, conExterno = false }) => (
   <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-bold text-slate-600">
-    <span className="flex items-center gap-1.5"><i className="rd-step rd-step-libre w-4 h-3 rounded inline-block border" /> Libre</span>
-    <span className="flex items-center gap-1.5"><i className="rd-step rd-step-reservado w-4 h-3 rounded inline-block border" /> Reservado</span>
-    <span className="flex items-center gap-1.5"><i className="rd-step rd-step-llego w-4 h-3 rounded inline-block border" /> Llegó</span>
-    {conMio && <span className="flex items-center gap-1.5"><i className="rd-step rd-step-mio w-4 h-3 rounded inline-block border" /> Tu step</span>}
+    <Muestra c="rd-step-libre" t="Libre" />
+    <Muestra c="rd-step-reservado" t={conExterno ? "Socio" : "Reservado"} />
+    <Muestra c="rd-step-llego" t={conExterno ? "Socio asistió" : "Asistió"} />
+    {conExterno && <Muestra c="rd-step-externo" t="Externo" />}
+    {conMio && <Muestra c="rd-step-mio" t="Tu step" />}
   </div>
 );
 
@@ -141,7 +147,7 @@ export const Croquis = ({ croquis, reservas = [], onStep, seleccionado, nombres 
               type="button"
               disabled={deshabilitado || !onStep}
               onClick={() => onStep?.(z, r)}
-              title={r ? `Step ${z.numero} · ${r.alumno || (r.mia ? "Tu step" : r.estado === "asistio" ? "Llegó" : "Reservado")}` : `Step ${z.numero} · libre`}
+              title={r ? `Step ${z.numero} · ${r.alumno || (r.mia ? "Tu step" : r.estado === "asistio" ? "Asistió" : "Reservado")}${r.externo ? " · externo" : ""}` : `Step ${z.numero} · libre`}
               className={`${claseStep(r, sel)} absolute rounded-md border flex flex-col items-center justify-center leading-none overflow-hidden ${onStep && !deshabilitado ? "cursor-pointer" : "cursor-default"}`}
               style={estilo}
             >

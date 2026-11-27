@@ -3,7 +3,7 @@
 //  - Administración crea el máster: nombre, disciplina, profesor, fecha,
 //    hora, precio socio y precio público (cambian cada semana), cupo.
 //  - Recepción inscribe durante la semana (alumno por código/DNI o persona
-//    de afuera), cobra, marca asistencia y descarga la lista.
+//    externos), cobra, marca asistencia y descarga la lista.
 // =====================================================================
 import React, { useEffect, useMemo, useState } from "react";
 import { Star, Plus, X, Pencil, Check, Search, UserPlus, Wallet } from "lucide-react";
@@ -15,6 +15,7 @@ import { buscarAlumno } from "../../utils/codigo";
 import { hoyISO } from "../../utils/fecha";
 import { DIAS, diaDe, fechaBonita, sumarDias, aMin, deMin, nombreSede } from "./clasesComun";
 import { Croquis, LeyendaCroquis } from "./Croquis";
+import { BuscarSocio } from "./BuscarSocio";
 import { useStepsMaster, ElegirStep, VentanaStep } from "./StepsMaster";
 
 const campo = "mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800";
@@ -160,12 +161,12 @@ const FormMaster = ({ datos, inicial, pctDefecto = 50, onListo, onCerrar }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="block text-sm min-w-0">
               <span className="font-bold text-slate-700">⭐ Precio para socios (S/) *</span>
-              <span className="block text-[11px] text-slate-500">Alumnos con membresía vigente</span>
+              <span className="block text-[11px] text-slate-500">Socios con plan vigente</span>
               <input type="number" min={0} step="0.5" value={f.precioSocio} onChange={(e) => set("precioSocio", e.target.value)} placeholder="Ej. 30" className={campo} />
             </label>
             <label className="block text-sm min-w-0">
-              <span className="font-bold text-slate-700">🚶 Precio para no socios (S/) *</span>
-              <span className="block text-[11px] text-slate-500">Personas de afuera o alumnos con membresía vencida</span>
+              <span className="font-bold text-slate-700">🎟️ Precio para externos (S/) *</span>
+              <span className="block text-[11px] text-slate-500">Externos y socios sin plan vigente</span>
               <input type="number" min={0} step="0.5" value={f.precioPublico} onChange={(e) => set("precioPublico", e.target.value)} placeholder="Ej. 45" className={campo} />
             </label>
           </div>
@@ -239,14 +240,13 @@ const FormInscribir = ({ master, onListo, onCerrar }) => {
   const { info: pasos } = useStepsMaster(master.id, 6000);
   const [msg, setMsg] = useState(null);
   const hallado = modo === "alumno" && codigo.trim().length >= 1 ? buscarAlumno(members, codigo.trim())?.member : null;
-  const vigente = hallado && !["expired", "inactive", "cancelled"].includes(hallado.status);
   const guardar = async (e) => {
     e.preventDefault();
     try {
       const body = modo === "alumno" ? { alumnoId: Number(hallado?.id) } : p;
-      if (modo === "alumno" && !hallado) return setMsg({ ok: false, texto: "Busca al alumno por su código o DNI" });
+      if (modo === "alumno" && !hallado) return setMsg({ ok: false, texto: "Busca al socio por su código o DNI" });
       const r = await api(`/masters/${master.id}/inscribir`, { method: "POST", body: { ...body, pagado, metodo, step } });
-      onListo(`✅ ${r.nombre} inscrito${r.step ? ` en el step ${r.step}` : ""} · ${r.socio ? "precio socio" : "precio público"} ${soles(r.precio)}${r.pagado ? " · pagado" : " · por cobrar"}`);
+      onListo(`✅ ${r.nombre} inscrito${r.step ? ` en el step ${r.step}` : ""} · ${r.socio ? "precio socio" : "precio externo"} ${soles(r.precio)}${r.pagado ? " · pagado" : " · por cobrar"}`);
     } catch (er) {
       setMsg({ ok: false, texto: er.message });
     }
@@ -255,26 +255,24 @@ const FormInscribir = ({ master, onListo, onCerrar }) => {
     <Ventana titulo={`Inscribir · ${master.titulo}`} onCerrar={onCerrar}>
       <form onSubmit={guardar} className="space-y-4">
         <div className="grid grid-cols-2 gap-2">
-          {[["alumno", "🙋 Es alumno del gym"], ["externo", "🚶 Persona de afuera"]].map(([k, l]) => (
-            <button key={k} type="button" onClick={() => (setModo(k), setMsg(null))} className={`rounded-xl border py-2.5 text-sm font-black cursor-pointer ${modo === k ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{l}</button>
+          {[
+            ["alumno", "⭐ Socio", "Registrado: se busca por código o DNI"],
+            ["externo", "🎟️ Externo", "Invitado sin registro en el sistema"],
+          ].map(([k, l, d]) => (
+            <button key={k} type="button" onClick={() => (setModo(k), setMsg(null))} className={`rounded-xl border-2 p-2.5 text-left cursor-pointer ${modo === k ? (k === "externo" ? "bg-violet-600 border-violet-600 text-white" : "bg-teal-600 border-teal-600 text-white") : "bg-white border-slate-200 text-slate-700"}`}>
+              <span className="block text-sm font-black">{l}</span>
+              <span className="block text-[11px] opacity-80">{d}</span>
+            </button>
           ))}
         </div>
         {modo === "alumno" ? (
-          <div className="space-y-2">
-            <label className="block text-sm"><span className="font-bold text-slate-700">Código o DNI del alumno</span><input autoFocus value={codigo} onChange={(e) => setCodigo(e.target.value)} className={`${campo} text-lg font-black tracking-wider`} /></label>
-            {hallado && (
-              <div className={`rounded-xl border p-3 text-sm ${vigente ? "rd-kpi-verde rd-aviso-t" : "rd-kpi-ambar rd-aviso-t"}`}>
-                <b>{hallado.fullName}</b> · {vigente ? `socio con membresía vigente → ${soles(master.precioSocio)}` : `sin membresía vigente → ${soles(master.precioPublico)}`}
-                <p className="text-[11px] opacity-80">El sistema confirma el precio al guardar.</p>
-              </div>
-            )}
-          </div>
+          <BuscarSocio members={members} value={codigo} onChange={(t) => (setCodigo(t), setMsg(null))} detalleVigente={`precio socio ${soles(master.precioSocio)}`} detalleVencido={`precio externo ${soles(master.precioPublico)}`} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <label className="block text-sm sm:col-span-3"><span className="font-bold text-slate-700">Nombre completo *</span><input autoFocus value={p.nombre} onChange={(e) => setP({ ...p, nombre: e.target.value })} maxLength={120} className={campo} /></label>
             <label className="block text-sm"><span className="font-bold text-slate-700">DNI</span><input value={p.dni} onChange={(e) => setP({ ...p, dni: e.target.value })} inputMode="numeric" maxLength={15} className={campo} /></label>
             <label className="block text-sm sm:col-span-2"><span className="font-bold text-slate-700">Celular</span><input value={p.celular} onChange={(e) => setP({ ...p, celular: e.target.value })} inputMode="tel" maxLength={20} className={campo} /></label>
-            <p className="text-xs text-slate-500 sm:col-span-3">Paga el precio público: {soles(master.precioPublico)}.</p>
+            <p className="text-xs text-slate-500 sm:col-span-3">Paga el precio externo: {soles(master.precioPublico)}. Se mostrará en morado en el croquis.</p>
           </div>
         )}
         <div className="rounded-2xl border border-slate-200 p-3 space-y-2">
@@ -293,7 +291,7 @@ const FormInscribir = ({ master, onListo, onCerrar }) => {
           )}
         </div>
         <Aviso m={msg} />
-        <button className="w-full px-5 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-black cursor-pointer">✅ Inscribir</button>
+        <button className={`w-full px-5 py-3 rounded-xl text-white text-base font-black cursor-pointer ${modo === "externo" ? "bg-violet-600 hover:bg-violet-700" : "bg-teal-600 hover:bg-teal-700"}`}>✅ Inscribir{modo === "alumno" && hallado ? ` a ${hallado.fullName.split(" ")[0]}` : modo === "externo" && p.nombre.trim() ? ` a ${p.nombre.trim().split(" ")[0]} (externo)` : ""}</button>
       </form>
     </Ventana>
   );
@@ -346,7 +344,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
     { key: "dni", label: "DNI" },
     { key: "celular", label: "Celular" },
     { key: "step", label: "Step", excel: (i) => (i.step ? `Step ${i.step}` : "Sin step") },
-    { key: "tipo", label: "Tipo", excel: (i) => (i.socio ? "Socio" : i.alumnoId ? "Alumno sin membresía" : "Público") },
+    { key: "tipo", label: "Tipo", excel: (i) => (i.socio ? "Socio" : i.alumnoId ? "Socio sin plan vigente" : "Externo") },
     { key: "precio", label: "Precio", excel: (i) => soles(i.precio) },
     { key: "pago", label: "Pago", excel: (i) => (i.pagado ? `Pagado · ${nombreMetodo(i.metodo)}` : "Por cobrar") },
     { key: "asistio", label: "Asistió", excel: (i) => (i.asistio ? "Sí" : "") },
@@ -360,7 +358,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
           <p className="text-xl font-black">{m.emoji} {m.titulo}</p>
           <p className="text-sm">📅 {DIAS[diaDe(m.fecha)]} {fechaBonita(m.fecha).split(" ").slice(1).join(" ")} · {m.inicio} – {m.fin}{nombreSede(sedes, m.sedeId) ? ` · 📍 ${nombreSede(sedes, m.sedeId)}` : m.sala ? ` · 📍 ${m.sala}` : ""}</p>
           <p className="text-sm">🧑‍🏫 {m.profesor}</p>
-          <p className="text-sm font-bold">💰 Socio {soles(m.precioSocio)} · Público {soles(m.precioPublico)}{m.cupo ? ` · Cupo ${m.cupo}` : ""}</p>
+          <p className="text-sm font-bold">💰 Socio {soles(m.precioSocio)} · Externo {soles(m.precioPublico)}{m.cupo ? ` · Cupo ${m.cupo}` : ""}</p>
           {m.descripcion && <p className="text-xs mt-1">📝 {m.descripcion}</p>}
         </div>
         <div className="flex flex-wrap gap-2">
@@ -374,7 +372,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <TarjetaKpi titulo="Inscritos" valor={m.inscritos} sub={m.cupo ? `de ${m.cupo} cupos` : `${m.socios} socios · ${m.inscritos - m.socios} público`} emoji="🙋" tono="teal" />
+        <TarjetaKpi titulo="Inscritos" valor={m.inscritos} sub={`${m.inscritos - (m.externos || 0)} socios · ${m.externos || 0} externos${m.cupo ? ` · de ${m.cupo}` : ""}`} emoji="🙋" tono="teal" />
         <TarjetaKpi titulo="Recaudado" valor={m.recaudado} prefijo="S/ " decimales={2} sub={`${m.pagados} pagaron`} emoji="💰" tono="verde" />
         <TarjetaKpi titulo="Por cobrar" valor={m.porCobrar} prefijo="S/ " decimales={2} sub={`${m.inscritos - m.pagados} sin pagar`} emoji="⏳" tono="ambar" />
         <TarjetaKpi titulo="Asistieron" valor={m.asistieron} sub="el día del máster" emoji="✅" tono="violeta" />
@@ -424,8 +422,15 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
         </div>
         {verSala && (sala?.conSteps ? (
           <>
-            <LeyendaCroquis />
-            <Croquis croquis={sala.croquis} reservas={sala.reservas} nombres onStep={(z, r) => setMsg({ ok: !!r, texto: r ? `Step ${z.numero}: ${r.alumno}` : `Step ${z.numero}: libre. Usa «Dar step» en la lista para asignarlo.` })} />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <LeyendaCroquis conExterno />
+              <span className="text-xs font-black flex gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-teal-600 text-white">⭐ {sala.socios ?? 0} socios</span>
+                <span className="px-2 py-0.5 rounded-full bg-violet-600 text-white">🎟️ {sala.externos ?? 0} externos</span>
+                <span className="px-2 py-0.5 rounded-full border border-slate-300 text-slate-600">{Math.max(0, sala.libres)} libres</span>
+              </span>
+            </div>
+            <Croquis croquis={sala.croquis} reservas={sala.reservas} nombres onStep={(z, r) => setMsg({ ok: !!r, texto: r ? `Step ${z.numero}: ${r.alumno} · ${r.externo ? "🎟️ externo" : "⭐ socio"}${r.estado === "asistio" ? " · ✓ asistió" : ""}` : `Step ${z.numero}: libre. Usa «Dar step» en la lista para asignarlo.` })} />
           </>
         ) : (
           <p className="text-xs text-slate-500">{sala ? "Falta ejecutar la parte 41 (41_steps_masters_calificaciones.sql) en MySQL Workbench." : "Cargando croquis…"}</p>
@@ -438,7 +443,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
             <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar inscrito…" className="w-full pl-8 pr-2 py-2 rounded-lg border border-slate-200 text-sm" />
           </label>
-          <Exportar titulo={`Máster · ${m.titulo}`} filtros={[`${fechaBonita(m.fecha)} · ${m.inicio} – ${m.fin}`, `Profesor: ${m.profesor}`, `Socio ${soles(m.precioSocio)} · Público ${soles(m.precioPublico)}`]} columnas={columnas} filas={vistos} totales={[["Inscritos", vistos.length], ["Pagaron", vistos.filter((i) => i.pagado).length], ["Recaudado", soles(vistos.filter((i) => i.pagado).reduce((a, i) => a + i.precio, 0))], ["Por cobrar", soles(vistos.filter((i) => !i.pagado).reduce((a, i) => a + i.precio, 0))]]} />
+          <Exportar titulo={`Máster · ${m.titulo}`} filtros={[`${fechaBonita(m.fecha)} · ${m.inicio} – ${m.fin}`, `Profesor: ${m.profesor}`, `Socio ${soles(m.precioSocio)} · Externo ${soles(m.precioPublico)}`]} columnas={columnas} filas={vistos} totales={[["Inscritos", vistos.length], ["Pagaron", vistos.filter((i) => i.pagado).length], ["Recaudado", soles(vistos.filter((i) => i.pagado).reduce((a, i) => a + i.precio, 0))], ["Por cobrar", soles(vistos.filter((i) => !i.pagado).reduce((a, i) => a + i.precio, 0))]]} />
         </div>
         {!lista ? (
           <p className="px-4 pb-4 text-sm text-slate-500">Cargando inscritos…</p>
@@ -451,7 +456,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
                 <div className="min-w-0">
                   <p className="font-bold text-slate-900 truncate">{i.nombre} {i.codigo && <span className="text-xs text-slate-400">· {i.codigo}</span>}</p>
                   <p className="text-xs text-slate-500">
-                    {i.socio ? "⭐ Socio" : i.alumnoId ? "Alumno sin membresía" : "Público"} · {soles(i.precio)} · {i.pagado ? <b className="text-emerald-700">Pagado ({nombreMetodo(i.metodo)})</b> : <b className="text-amber-700">Por cobrar</b>}
+                    {i.socio ? "⭐ Socio" : i.alumnoId ? "Socio sin plan vigente" : <b className="text-violet-700">🎟️ Externo</b>} · {soles(i.precio)} · {i.pagado ? <b className="text-emerald-700">Pagado ({nombreMetodo(i.metodo)})</b> : <b className="text-amber-700">Por cobrar</b>}
                     {" · "}{i.step ? <b className="text-amber-700">🧱 Step {i.step}</b> : <span className="text-slate-400">sin step</span>}
                     {i.origen === "alumno" && " · 📱 desde la app"}
                     {i.asistio && <b className="text-emerald-700"> · ✓ Asistió</b>}
@@ -491,7 +496,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
       )}
       {cobrar && (
         <Ventana titulo={`Cobrar a ${cobrar.nombre}`} onCerrar={() => setCobrar(null)}>
-          <p className="text-sm">Monto: <b>{soles(cobrar.precio)}</b> ({cobrar.socio ? "precio socio" : "precio público"})</p>
+          <p className="text-sm">Monto: <b>{soles(cobrar.precio)}</b> ({cobrar.socio ? "precio socio" : "precio externo"})</p>
           <div className="grid grid-cols-2 gap-2">
             {METODOS.map(([k, l]) => (
               <button key={k} type="button" onClick={() => accion(cobrar, "pagar", { metodo: k })} className="rounded-xl border border-slate-200 py-3 text-sm font-black cursor-pointer hover:bg-emerald-50">{l}</button>
