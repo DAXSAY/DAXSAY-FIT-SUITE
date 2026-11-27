@@ -1178,7 +1178,7 @@ const Configuracion = ({ datos, recargar }) => {
     try {
       const r = await api("/clases/croquis", { method: "PUT", body: { sede: sedeOk, steps: borrador, minutosReserva: Number(minutos) } });
       setCroquis((c) => ({ ...c, steps: r.steps, minutosReserva: r.minutosReserva }));
-      setMsg({ ok: true, texto: `✅ Croquis${sedes.length > 1 ? ` de ${sedes.find((x) => x.id === sedeOk)?.nombre}` : ""} guardado. Ya lo ven recepción, los profesores y los alumnos.` });
+      setMsg({ ok: true, texto: `✅ Croquis${sedes.length > 1 ? ` de ${sedes.find((x) => x.id === sedeOk)?.nombre}` : ""} guardado. Ya lo ven recepción, los profesores y los alumnos.${r.liberados ? ` ⚠️ ${r.liberados} inscrito${r.liberados === 1 ? "" : "s"} de másters ${r.liberados === 1 ? "quedó" : "quedaron"} sin step: dales otro en Másters.` : ""}` });
     } catch (er) {
       setMsg({ ok: false, texto: er.message });
     }
@@ -1247,19 +1247,26 @@ const Configuracion = ({ datos, recargar }) => {
               </div>
             )}
           </div>
-          <label className="text-xs font-bold text-slate-600">
-            <Clock className="inline w-3.5 h-3.5 -mt-0.5" /> El alumno reserva desde
-            <span className="flex items-center gap-1.5 mt-0.5">
-              <input type="number" min={5} max={240} value={minutos} onChange={(e) => setMinutos(e.target.value)} className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 text-sm" /> min antes
+        </div>
+        <div className="rounded-2xl border border-violet-200 bg-violet-50/60 p-3 space-y-2">
+          <p className="text-sm font-black text-slate-800"><Clock className="inline w-4 h-4 -mt-0.5" /> ¿Desde cuándo reservan los alumnos por la app?</p>
+          <p className="text-xs text-slate-600">La reserva se abre este tiempo antes de cada clase y se cierra al empezar. El primero que toma un step se lo queda. Vale para todas las sedes.</p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {[[15, "15 min"], [30, "30 min"], [60, "1 hora"], [120, "2 horas"], [360, "6 horas"], [720, "12 horas"], [1440, "24 horas"]].map(([n, l]) => (
+              <button key={n} type="button" onClick={() => setMinutos(n)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${Number(minutos) === n ? "bg-violet-600 border-violet-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{l}</button>
+            ))}
+            <span className="flex items-center gap-1 text-xs font-bold text-slate-600 ml-1">
+              u otro: <input type="number" min={5} max={1440} value={minutos} onChange={(e) => setMinutos(e.target.value)} className="w-20 px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm" /> min
             </span>
-          </label>
+          </div>
+          {Number(minutos) !== croquis?.minutosReserva && <p className="text-[11px] font-bold text-violet-700">Toca «Guardar» abajo para aplicar el nuevo tiempo.</p>}
         </div>
         {borrador ? <EditorCroquis croquis={{ ...croquis, steps: borrador }} onCambiar={setBorrador} /> : <p className="text-sm text-slate-500">Cargando croquis…</p>}
         {msg && <p className={`text-sm font-bold rounded-xl border p-3 ${msg.ok ? "rd-kpi-verde rd-aviso-t" : "text-rose-700 bg-rose-50 border-rose-200"}`}>{msg.texto}</p>}
         <div className="flex flex-wrap justify-end gap-2">
           {sinGuardar && <button type="button" onClick={() => (cargarCroquis(), setMsg(null))} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">Descartar cambios</button>}
           <button type="button" disabled={!sinGuardar} onClick={guardar} className="px-5 py-2 rounded-xl bg-teal-600 disabled:opacity-50 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer">
-            <Save className="w-4 h-4" /> Guardar croquis
+            <Save className="w-4 h-4" /> Guardar cambios
           </button>
         </div>
       </div>

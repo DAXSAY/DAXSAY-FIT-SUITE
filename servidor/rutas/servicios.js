@@ -19,7 +19,7 @@ import { hoyLima, sumarDias } from "../congelamiento.js";
 import { modulosActivos } from "./licencia.js";
 
 const router = Router();
-const STAFF = ["admin", "reception", "trainer", "nutritionist", "physio", "instructor"];
+const STAFF = ["admin", "reception", "trainer", "nutritionist", "physio"];
 const VENDE = ["admin", "reception"];
 const CATEGORIAS = ["nutricion", "fisioterapia", "entrenamiento_personal", "otros"];
 const METODOS = ["efectivo", "yape_plin", "tarjeta", "transferencia"];

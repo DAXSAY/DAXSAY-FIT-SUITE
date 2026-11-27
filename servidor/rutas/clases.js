@@ -568,7 +568,7 @@ const ALTO = 28;
 async function minutosReserva() {
   const [c] = await consultar("SELECT valor FROM configuracion WHERE clave = 'clases_minutos_reserva'");
   const n = Number(c?.valor);
-  return n >= 5 && n <= 240 ? n : 30;
+  return n >= 5 && n <= 1440 ? n : 30;
 }
 export async function croquis(idsede = null) {
   const sede = await sedeValida(idsede);
@@ -601,9 +601,10 @@ router.put("/croquis", async (req, res, next) => {
     await exigirTablas();
     exigirRol(req, ["admin"], "Solo administración cambia el croquis");
     const b = req.body || {};
+    let liberados = 0;
     if (b.minutosReserva !== undefined) {
       const n = Math.round(Number(b.minutosReserva));
-      if (!(n >= 5 && n <= 240)) throw new ErrorHttp(400, "Los minutos para reservar deben estar entre 5 y 240");
+      if (!(n >= 5 && n <= 1440)) throw new ErrorHttp(400, "El tiempo para reservar debe estar entre 5 minutos y 24 horas");
       await consultar(
         `INSERT INTO configuracion (clave, valor, descripcion, actualizado_por) VALUES ('clases_minutos_reserva', ?, 'Clases grupales: minutos antes de la clase para reservar', ?)
          ON DUPLICATE KEY UPDATE valor = VALUES(valor), actualizado_por = VALUES(actualizado_por)`,
@@ -652,10 +653,27 @@ router.put("/croquis", async (req, res, next) => {
         }
       }
       const fuera = [...actuales].filter((id) => !quedan.has(id));
-      if (fuera.length) await consultar(`UPDATE clase_steps SET activo = 0 WHERE idstep IN (${fuera.map(() => "?").join(",")})`, fuera);
+      if (fuera.length) {
+        const ocupados = await consultar(
+          `SELECT COALESCE(NULLIF(s.etiqueta,''), s.numero) AS numero, a.nombres FROM clase_reservas r
+             JOIN clase_steps s ON s.idstep = r.idstep JOIN alumnos a ON a.idalumno = r.idalumno
+            WHERE r.estado IN ('reservado','asistio') AND r.fecha >= ? AND r.idstep IN (${fuera.map(() => "?").join(",")}) LIMIT 5`,
+          [hoyLima(), ...fuera],
+        );
+        if (ocupados.length)
+          throw new ErrorHttp(409, `No se puede quitar ${ocupados.length === 1 ? "el step" : "los steps"} ${[...new Set(ocupados.map((o) => o.numero))].join(", ")}: ${ocupados.length === 1 ? "tiene una reserva" : "tienen reservas"} de clase (${ocupados.map((o) => String(o.nombres).split(" ")[0]).join(", ")}). Muévelas o espera a que pase la clase.`);
+        await consultar(`UPDATE clase_steps SET activo = 0 WHERE idstep IN (${fuera.map(() => "?").join(",")})`, fuera);
+        // Los inscritos a másters que tenían esos steps quedan «sin step» (recepción les da otro)
+        const r = await consultar(
+          `UPDATE master_inscripciones i JOIN masters m ON m.idmaster = i.idmaster SET i.idstep = NULL
+            WHERE i.estado = 'inscrito' AND m.fecha >= ? AND i.idstep IN (${fuera.map(() => "?").join(",")})`,
+          [hoyLima(), ...fuera],
+        ).catch((e) => (e.code === "ER_BAD_FIELD_ERROR" ? { affectedRows: 0 } : Promise.reject(e)));
+        liberados = r.affectedRows || 0;
+      }
     }
     const sedeR = await sedeValida(b.sede);
-    res.json({ ok: true, sedeId: sedeR, steps: await croquis(sedeR), minutosReserva: await minutosReserva() });
+    res.json({ ok: true, sedeId: sedeR, steps: await croquis(sedeR), minutosReserva: await minutosReserva(), liberados });
   } catch (e) {
     next(e);
   }
@@ -683,8 +701,13 @@ async function ventana(c, fecha) {
   const ahora = aMin(horaLima());
   const abre = ini - min;
   const deMin = (m) => `${String(Math.floor(((m % 1440) + 1440) % 1440 / 60)).padStart(2, "0")}:${String((((m % 60) + 60) % 60)).padStart(2, "0")}`;
-  const estado = fecha < hoy ? "pasada" : fecha > hoy ? "pronto" : ahora < abre ? "pronto" : ahora < ini ? "abierta" : aMin(hhmm(c.hora_fin)) > ahora ? "en_curso" : "pasada";
-  return { minutos: min, abre: deMin(abre), cierra: hhmm(c.hora_inicio), estado };
+  // Minutos absolutos: así la ventana puede abrir el día anterior (hasta 24 h antes)
+  const dia = (f) => Math.round(Date.parse(`${f}T00:00:00Z`) / 86400000);
+  const t0 = dia(fecha) * 1440 + ini;
+  const tFin = dia(fecha) * 1440 + aMin(hhmm(c.hora_fin));
+  const yaAbs = dia(hoy) * 1440 + ahora;
+  const estado = yaAbs >= tFin ? "pasada" : yaAbs >= t0 ? "en_curso" : yaAbs >= t0 - min ? "abierta" : "pronto";
+  return { minutos: min, abre: `${abre < 0 ? "el día anterior a las " : ""}${deMin(abre)}`, cierra: hhmm(c.hora_inicio), estado };
 }
 async function listaReservas(idclase, fecha) {
   return consultar(
@@ -755,10 +778,13 @@ router.post("/reservas", async (req, res, next) => {
     if (!alumno) exigirRol(req, STAFF_RESERVA, "No puedes reservar steps");
     const idalumno = alumno ? await alumnoDe(req) : Number(b.alumno);
     if (!idalumno) throw new ErrorHttp(400, "Falta el alumno");
-    if (fecha !== hoyLima()) throw new ErrorHttp(400, "Solo se reservan steps para las clases de hoy");
     const v = await ventana(c, fecha);
+    // Hoy, o mañana si la reserva ya se abrió (cuando administración da más horas)
+    const manana = fecha === sumarDias(hoyLima(), 1);
+    if (fecha !== hoyLima() && !(manana && v.estado === "abierta")) throw new ErrorHttp(400, manana ? `La reserva para mañana se abre ${v.abre.startsWith("el día") ? "hoy a las " + v.abre.slice(22) : "mañana a las " + v.abre}` : "Solo se reservan steps de hoy (o de mañana si la reserva ya se abrió)");
+    const tiempo = v.minutos >= 60 ? `${Math.round((v.minutos / 60) * 10) / 10} h` : `${v.minutos} min`;
     if (alumno && v.estado !== "abierta")
-      throw new ErrorHttp(409, v.estado === "pronto" ? `La reserva se abre a las ${v.abre} (${v.minutos} min antes de la clase)` : "La reserva ya cerró: la clase ya empezó");
+      throw new ErrorHttp(409, v.estado === "pronto" ? `La reserva se abre ${v.abre.startsWith("el día") ? v.abre : `a las ${v.abre}`} (${tiempo} antes de la clase)` : "La reserva ya cerró: la clase ya empezó");
     if (!alumno && v.estado === "pasada") throw new ErrorHttp(409, "Esa clase ya terminó");
     const [st] = await consultar("SELECT *, COALESCE(NULLIF(etiqueta,''), numero) AS numero FROM clase_steps WHERE idstep = ? AND activo = 1 AND tipo = 'step'", [idstep]);
     if (!st) throw new ErrorHttp(404, "Ese step ya no existe en el croquis");

@@ -63,13 +63,19 @@ async function hayLicencia() {
   const [f] = await consultar("SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'licencia'");
   return Number(f?.n) === 1;
 }
-async function verificarClave(clave) {
+// Tras 5 intentos fallidos se bloquea 15 minutos (por usuario)
+const fallos = new Map();
+async function verificarClave(clave, idusuario) {
   if (!(await hayLicencia())) throw new ErrorHttp(503, "Falta ejecutar la parte 42 (42_sedes_licencia.sql) en MySQL Workbench.");
+  const f = fallos.get(idusuario);
+  if (f && f.n >= 5 && Date.now() - f.t < 15 * 60000) throw new ErrorHttp(429, "Demasiados intentos con la clave maestra. Espera 15 minutos.");
   const [l] = await consultar("SELECT clave_hash FROM licencia WHERE id = 1");
   if (!l || !(await bcrypt.compare(String(clave || ""), l.clave_hash))) {
+    fallos.set(idusuario, { n: (f && Date.now() - f.t < 15 * 60000 ? f.n : 0) + 1, t: Date.now() });
     await new Promise((r) => setTimeout(r, 800)); // frena a quien intente adivinar
     throw new ErrorHttp(403, "Clave maestra DAXSAY incorrecta");
   }
+  fallos.delete(idusuario);
 }
 
 const estado = async () => {
@@ -96,7 +102,7 @@ router.put("/", async (req, res, next) => {
   try {
     if (req.usuario.rol !== "admin") throw new ErrorHttp(403, "Solo desde una cuenta de administración");
     const b = req.body || {};
-    await verificarClave(b.clave);
+    await verificarClave(b.clave, req.usuario.idusuario);
     if (Array.isArray(b.activos)) {
       const on = new Set(b.activos);
       for (const p of PAQUETES) {

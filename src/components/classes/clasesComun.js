@@ -31,12 +31,14 @@ export { sumarDias };
 export const estadoVentana = (s, minutos = 30, fechaHoy = hoyISO(), hora = ahoraLima()) => {
   const ini = aMin(s.inicio);
   const abre = ini - minutos;
-  const ya = aMin(hora);
-  if (s.fecha < fechaHoy) return { estado: "pasada", abre: deMin(Math.max(abre, 0)) };
-  if (s.fecha > fechaHoy || ya < abre) return { estado: "pronto", abre: deMin(Math.max(abre, 0)) };
-  if (ya < ini) return { estado: "abierta", abre: deMin(Math.max(abre, 0)) };
-  if (ya < aMin(s.fin)) return { estado: "en_curso", abre: deMin(Math.max(abre, 0)) };
-  return { estado: "pasada", abre: deMin(Math.max(abre, 0)) };
+  // Minutos absolutos: la ventana puede abrir el día anterior (hasta 24 h antes)
+  const dia = (f) => Math.round(Date.parse(`${f}T00:00:00Z`) / 86400000);
+  const t0 = dia(s.fecha) * 1440 + ini;
+  const tFin = dia(s.fecha) * 1440 + aMin(s.fin);
+  const ya = dia(fechaHoy) * 1440 + aMin(hora);
+  const txt = `${abre < 0 ? "el día anterior a las " : ""}${deMin(((abre % 1440) + 1440) % 1440)}`;
+  const estado = ya >= tFin ? "pasada" : ya >= t0 ? "en_curso" : ya >= t0 - minutos ? "abierta" : "pronto";
+  return { estado, abre: txt };
 };
 
 /** Disciplinas, profesores y horario (GET /api/clases) */

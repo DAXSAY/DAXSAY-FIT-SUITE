@@ -1,12 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Eye, EyeOff, LogIn, Lock, User, AlertCircle } from "lucide-react";
 import { useGym } from "../../context/GymContext";
 import { api } from "../../api/cliente";
 import { LogoRadical, NombreRadical, BotonTema, FirmaDaxsay } from "../common/Marca";
 
+const EJEMPLOS_USUARIO = [
+  "Administración: tu usuario (ej. administracion)",
+  "Alumno: tu DNI (ej. 45678912)",
+  "Recepción: tu usuario asignado",
+  "Profesor o entrenador: tu usuario",
+  "Nutrición o fisioterapia: tu usuario",
+];
+
 export const LoginScreen = () => {
   const { login } = useGym();
   const [username, setUsername] = useState("");
+  // El ejemplo del campo va cambiando para que cada quien sepa con qué entra
+  const [ejemplo, setEjemplo] = useState(0);
+  useEffect(() => {
+    if (username) return undefined;
+    const t = setInterval(() => setEjemplo((i) => (i + 1) % EJEMPLOS_USUARIO.length), 2600);
+    return () => clearInterval(t);
+  }, [username]);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -72,13 +87,13 @@ export const LoginScreen = () => {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-900/5 p-7">
             <h2 className="text-xl font-extrabold text-slate-900">Iniciar sesión</h2>
             <p className="text-xs text-slate-500 mt-1 mb-6">
-              Ingresa con el usuario asignado a tu área.
+              Personal del gimnasio: con el usuario que te asignó administración. Alumnos: con tu número de DNI.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
                 <label htmlFor="username" className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Usuario
+                  Usuario o DNI
                 </label>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -89,7 +104,7 @@ export const LoginScreen = () => {
                     autoFocus
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Ej. recepcion"
+                    placeholder={EJEMPLOS_USUARIO[ejemplo]}
                     className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-1 focus:ring-blue-600 transition-colors"
                   />
                 </div>
