@@ -193,9 +193,16 @@ export const Croquis = ({ croquis, reservas = [], onStep, seleccionado, nombres 
                 className={`${claseStep(r, sel)} absolute rounded-md border flex flex-col items-center justify-center leading-none overflow-hidden ${onStep && !deshabilitado ? "cursor-pointer" : "cursor-default"}`}
                 style={cajaStep(z, ancho, alto)}
               >
-                <span className="text-[10px] sm:text-[13px] font-black">{z.numero}</span>
-                {nombres && r?.alumno && <span className="hidden md:block text-[9px] font-bold truncate max-w-full px-0.5">{r.alumno.split(" ")[0]}</span>}
-                {r?.debe ? <span className="text-[8px] sm:text-[9px] font-black">S/ {Number(r.saldo).toFixed(0)}</span> : r?.estado === "asistio" && <span className="text-[9px] sm:text-[10px]">✓</span>}
+                {/* Dos líneas como máximo para que nada se corte: número (y ✓) y, debajo, el saldo o el nombre */}
+                <span className="text-[10px] sm:text-[13px] font-black leading-none whitespace-nowrap">
+                  {z.numero}
+                  {r?.estado === "asistio" && <span className="text-[9px] sm:text-[10px] ml-0.5">✓</span>}
+                </span>
+                {r?.debe ? (
+                  <span className="text-[8px] sm:text-[10px] font-black leading-tight mt-px whitespace-nowrap">S/{Number(r.saldo).toFixed(0)}</span>
+                ) : (
+                  nombres && r?.alumno && <span className="hidden md:block text-[9px] font-bold leading-tight mt-px truncate max-w-full px-0.5">{r.alumno.split(" ")[0]}</span>
+                )}
               </button>
             );
           })}
