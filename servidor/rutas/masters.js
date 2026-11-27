@@ -11,7 +11,7 @@ import { Router } from "express";
 import { consultar, enFila } from "../db.js";
 import { ErrorHttp, exigirCajaAbierta } from "../seguridad.js";
 import { hoyLima, sumarDias } from "../congelamiento.js";
-import { croquis } from "./clases.js";
+import { croquis, nombreStep } from "./clases.js";
 
 const router = Router();
 const STAFF = ["admin", "reception"];
@@ -97,9 +97,9 @@ async function exigirParte41() {
 }
 /** Valida que el step exista en el croquis */
 async function stepValido(idstep) {
-  const [st] = await consultar("SELECT idstep, numero FROM clase_steps WHERE idstep = ? AND activo = 1 AND tipo = 'step'", [idstep]);
+  const [st] = await consultar("SELECT idstep, COALESCE(NULLIF(etiqueta,''), numero) AS numero FROM clase_steps WHERE idstep = ? AND activo = 1 AND tipo = 'step'", [idstep]);
   if (!st) throw new ErrorHttp(400, "Ese step ya no existe en el croquis");
-  return st;
+  return { ...st, numero: nombreStep(st.numero) };
 }
 /** ¿Quién tiene ese step en el máster? (la inscripción más antigua gana) */
 async function duenoStep(idmaster, idstep) {
@@ -183,7 +183,7 @@ router.get("/", async (req, res, next) => {
       const mias = yo
         ? await consultar(
             (await parte41())
-              ? `SELECT i.idinscripcion, i.idmaster, i.pagado, i.precio, i.idstep, s.numero AS step_numero
+              ? `SELECT i.idinscripcion, i.idmaster, i.pagado, i.precio, i.idstep, COALESCE(NULLIF(s.etiqueta,''), s.numero) AS step_numero
                    FROM master_inscripciones i LEFT JOIN clase_steps s ON s.idstep = i.idstep
                   WHERE i.idalumno = ? AND i.estado = 'inscrito'`
               : "SELECT idinscripcion, idmaster, pagado, precio FROM master_inscripciones WHERE idalumno = ? AND estado = 'inscrito'",
@@ -199,7 +199,7 @@ router.get("/", async (req, res, next) => {
           miPrecio: socio ? m.precioSocio : m.precioPublico,
           soySocio: socio,
           lleno: !!m.cupo && m.inscritos >= m.cupo,
-          miInscripcion: i ? { id: i.idinscripcion, pagado: !!i.pagado, precio: Number(i.precio), stepId: i.idstep || null, step: i.step_numero || null } : null,
+          miInscripcion: i ? { id: i.idinscripcion, pagado: !!i.pagado, precio: Number(i.precio), stepId: i.idstep || null, step: nombreStep(i.step_numero) || null } : null,
         };
       });
     }
@@ -285,7 +285,7 @@ router.get("/:id(\\d+)/inscritos", async (req, res, next) => {
     exigir(req, VEN, "La lista es para el personal");
     const filas = await consultar(
       (await parte41())
-        ? `SELECT i.*, a.codigo, s.numero AS step_numero FROM master_inscripciones i
+        ? `SELECT i.*, a.codigo, COALESCE(NULLIF(s.etiqueta,''), s.numero) AS step_numero FROM master_inscripciones i
              LEFT JOIN alumnos a ON a.idalumno = i.idalumno LEFT JOIN clase_steps s ON s.idstep = i.idstep
             WHERE i.idmaster = ? ORDER BY i.estado = 'anulado', i.creada_en`
         : `SELECT i.*, a.codigo FROM master_inscripciones i LEFT JOIN alumnos a ON a.idalumno = i.idalumno
@@ -301,7 +301,7 @@ router.get("/:id(\\d+)/inscritos", async (req, res, next) => {
         dni: f.dni || "",
         celular: f.celular || "",
         stepId: f.idstep || null,
-        step: f.step_numero || null,
+        step: nombreStep(f.step_numero) || null,
         socio: !!f.es_socio,
         precio: Number(f.precio),
         pagado: !!f.pagado,
@@ -329,7 +329,7 @@ router.get("/:id(\\d+)/steps", async (req, res, next) => {
     const pasos = await croquis();
     const filas = (await parte41())
       ? await consultar(
-          `SELECT i.idinscripcion, i.idstep, i.idalumno, i.nombre, i.asistio, s.numero
+          `SELECT i.idinscripcion, i.idstep, i.idalumno, i.nombre, i.asistio, COALESCE(NULLIF(s.etiqueta,''), s.numero) AS numero
              FROM master_inscripciones i JOIN clase_steps s ON s.idstep = i.idstep
             WHERE i.idmaster = ? AND i.estado = 'inscrito' AND i.idstep IS NOT NULL ORDER BY i.idinscripcion`,
           [id],
@@ -344,7 +344,7 @@ router.get("/:id(\\d+)/steps", async (req, res, next) => {
         .filter((f) => !vistos.has(f.idstep) && vistos.add(f.idstep))
         .map((f) => ({
           stepId: f.idstep,
-          numero: f.numero,
+          numero: nombreStep(f.numero),
           estado: f.asistio ? "asistio" : "reservado",
           mia: !!yo && f.idalumno === yo,
           inscripcionId: alumno ? undefined : f.idinscripcion,

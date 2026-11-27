@@ -936,12 +936,128 @@ const FormDisciplina = ({ datos, inicial, onListo, onCerrar }) => {
   );
 };
 
+/** Agregar o cambiar un profesor: nombre, celular, disciplinas y su usuario */
+const FormProfesor = ({ datos, inicial, onListo, onCerrar }) => {
+  const [nombre0, ...resto] = (inicial?.nombre || "").split(" ");
+  const [f, setF] = useState({
+    nombres: inicial ? inicial.nombres ?? nombre0 : "",
+    apellidos: inicial ? inicial.apellidos ?? resto.join(" ") : "",
+    telefono: inicial?.telefono || "",
+    disciplinas: inicial?.disciplinas || [],
+    crearUsuario: true,
+    usuario: "",
+  });
+  const [error, setError] = useState("");
+  const [listo, setListo] = useState(null);
+  const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
+  const clasesDe = inicial ? datos.clases.filter((c) => c.profesorId === inicial.id).length : 0;
+  const guardar = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      if (inicial) {
+        await api(`/clases/profesores/${inicial.id}`, { method: "PUT", body: f });
+        onListo(`✅ ${f.nombres} actualizado`);
+      } else {
+        const r = await api("/clases/profesores", { method: "POST", body: f });
+        if (r.usuario) setListo(r);
+        else onListo(`✅ ${f.nombres} agregado`);
+      }
+    } catch (er) {
+      setError(er.message);
+    }
+  };
+  const desactivar = async () => {
+    setError("");
+    try {
+      await api(`/clases/profesores/${inicial.id}`, { method: "PUT", body: { activo: false } });
+      onListo(`${inicial.nombre} quedó desactivado`);
+    } catch (er) {
+      setError(er.message);
+    }
+  };
+  if (listo)
+    return (
+      <Ventana titulo="Profesor agregado" icono={Users} onCerrar={() => onListo(`✅ ${f.nombres} agregado`)}>
+        <div className="rd-kpi-verde rd-aviso-t rounded-2xl border p-4 space-y-1">
+          <p className="font-black">✅ {f.nombres} ya puede entrar al sistema</p>
+          <p className="text-sm">Usuario: <b className="font-mono">{listo.usuario}</b></p>
+          <p className="text-sm">Contraseña inicial: <b className="font-mono">{listo.clave}</b> (al entrar se le pide cambiarla)</p>
+        </div>
+        <button type="button" onClick={() => onListo(`✅ ${f.nombres} agregado`)} className="w-full px-5 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-black cursor-pointer">Listo</button>
+      </Ventana>
+    );
+  return (
+    <Ventana titulo={inicial ? `Profesor · ${inicial.nombre}` : "Nuevo profesor"} icono={Users} onCerrar={onCerrar}>
+      <form onSubmit={guardar} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="text-sm">
+            <span className="font-bold text-slate-700">Nombre</span>
+            <input value={f.nombres} onChange={(e) => set("nombres", e.target.value)} maxLength={80} placeholder="Ej. Mauricio" className={campo} autoFocus />
+          </label>
+          <label className="text-sm">
+            <span className="font-bold text-slate-700">Apellidos <span className="font-normal text-slate-500">(opcional)</span></span>
+            <input value={f.apellidos} onChange={(e) => set("apellidos", e.target.value)} maxLength={80} className={campo} />
+          </label>
+          <label className="text-sm sm:col-span-2">
+            <span className="font-bold text-slate-700">Celular <span className="font-normal text-slate-500">(opcional)</span></span>
+            <input value={f.telefono} onChange={(e) => set("telefono", e.target.value)} maxLength={20} inputMode="tel" placeholder="9xx xxx xxx" className={campo} />
+          </label>
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-sm font-bold text-slate-700">¿Qué disciplinas dicta? <span className="font-normal text-slate-500">(puede ser más de una)</span></p>
+          <div className="flex flex-wrap gap-1.5">
+            {datos.disciplinas.filter((d) => d.activa).map((d) => {
+              const on = f.disciplinas.includes(d.id);
+              return (
+                <button key={d.id} type="button" onClick={() => set("disciplinas", on ? f.disciplinas.filter((x) => x !== d.id) : [...f.disciplinas, d.id])} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${on ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
+                  {d.emoji} {d.nombre}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {!inicial && (
+          <div className="rounded-2xl border border-slate-200 p-3 space-y-2">
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+              <input type="checkbox" checked={f.crearUsuario} onChange={(e) => set("crearUsuario", e.target.checked)} /> Darle usuario para entrar (ve sus clases y anota sus discos)
+            </label>
+            {f.crearUsuario && (
+              <label className="text-xs font-bold text-slate-600 block">
+                Usuario <span className="font-normal">(si lo dejas vacío se crea con su nombre)</span>
+                <input value={f.usuario} onChange={(e) => set("usuario", e.target.value.toLowerCase().replace(/\s/g, ""))} maxLength={40} placeholder={(f.nombres || "nombre").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, ".")} className={campo} />
+              </label>
+            )}
+          </div>
+        )}
+        {inicial && (
+          <p className="text-xs text-slate-500">
+            {inicial.usuario ? <>Entra con el usuario <b className="font-mono">{inicial.usuario}</b>. </> : "No tiene usuario para entrar. "}
+            Tiene {clasesDe} clase{clasesDe === 1 ? "" : "s"} en el horario.
+          </p>
+        )}
+        <Error texto={error} />
+        <div className="flex flex-wrap justify-between gap-2">
+          {inicial ? (
+            <button type="button" onClick={desactivar} className="px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-bold cursor-pointer">Desactivar profesor</button>
+          ) : <span />}
+          <button disabled={!f.nombres.trim()} className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer">
+            <Save className="w-4 h-4" /> {inicial ? "Guardar cambios" : "Agregar profesor"}
+          </button>
+        </div>
+      </form>
+    </Ventana>
+  );
+};
+
 const Configuracion = ({ datos, recargar }) => {
   const { croquis, setCroquis, cargarCroquis } = useCroquis();
   const [borrador, setBorrador] = useState(null);
   const [minutos, setMinutos] = useState(30);
   const [msg, setMsg] = useState(null);
   const [disc, setDisc] = useState(null);
+  const [profe, setProfe] = useState(null);
+  const [aviso, setAviso] = useState("");
   useEffect(() => {
     if (croquis) (setBorrador(croquis.steps), setMinutos(croquis.minutosReserva));
   }, [croquis]);
@@ -973,16 +1089,35 @@ const Configuracion = ({ datos, recargar }) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-2">
-        <p className="text-sm font-black text-slate-800">🧑‍🏫 Profesores y sus usuarios</p>
-        <p className="text-xs text-slate-500">Entran con su usuario y ven el horario, sus clases y dónde anotar sus discos. La contraseña inicial es <b>Clase2026!</b> (se pide cambiarla). Para crear más profesores: Usuarios › Nuevo usuario › rol «Profesor de clases».</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-1.5">
-          {datos.profesores.map((p) => (
-            <div key={p.id} className="rounded-xl border border-slate-200 px-3 py-2 text-sm flex items-center justify-between gap-2">
-              <span className="truncate font-bold">{p.nombre}</span>
-              <span className="text-xs text-slate-500 font-mono">{p.usuario || "sin usuario"}</span>
-            </div>
-          ))}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-sm font-black text-slate-800">🧑‍🏫 Profesores</p>
+            <p className="text-xs text-slate-500">Toca un profesor para cambiar su nombre o sus disciplinas. Una disciplina puede tener varios profesores. Para cambiar quién dicta una clase, edítala en el Horario.</p>
+          </div>
+          <button type="button" onClick={() => setProfe({})} className="px-3 py-1.5 rounded-xl bg-teal-600 text-white text-xs font-black flex items-center gap-1 cursor-pointer"><Plus className="w-3.5 h-3.5" /> Nuevo profesor</button>
+        </div>
+        {aviso && <p className="text-sm font-bold rounded-xl border p-3 rd-kpi-verde rd-aviso-t">{aviso}</p>}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+          {datos.profesores.map((p) => {
+            const n = datos.clases.filter((c) => c.profesorId === p.id).length;
+            return (
+              <button key={p.id} type="button" onClick={() => setProfe(p)} className="rounded-xl border border-slate-200 px-3 py-2 text-left cursor-pointer hover:bg-slate-50 space-y-1">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="truncate text-sm font-black text-slate-800">{p.nombre}</span>
+                  <span className="text-[11px] text-slate-500 whitespace-nowrap">{n} clase{n === 1 ? "" : "s"}</span>
+                </span>
+                <span className="flex flex-wrap gap-1">
+                  {p.disciplinas.length ? (
+                    datos.disciplinas.filter((d) => p.disciplinas.includes(d.id)).map((d) => <span key={d.id} className={`rd-kpi-${d.color} rd-clase-card px-2 py-0.5 rounded-full text-[10px] font-black`}>{d.emoji} {d.nombre}</span>)
+                  ) : (
+                    <span className="text-[11px] text-slate-400">Sin disciplina</span>
+                  )}
+                </span>
+                <span className="block text-[11px] text-slate-500 font-mono">{p.usuario ? `👤 ${p.usuario}` : "sin usuario"}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -1008,6 +1143,7 @@ const Configuracion = ({ datos, recargar }) => {
           </button>
         </div>
       </div>
+      {profe && <FormProfesor datos={datos} inicial={profe.id ? profe : null} onCerrar={() => setProfe(null)} onListo={(t) => (setProfe(null), setAviso(t), recargar())} />}
       {disc && <FormDisciplina datos={datos} inicial={disc.id ? disc : null} onCerrar={() => setDisc(null)} onListo={() => (setDisc(null), recargar())} />}
     </div>
   );

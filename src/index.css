@@ -4256,6 +4256,20 @@ html.dark .rd-perfil-mini{background:rgba(8,16,28,.55)}
 .rd-croquis-editor{background-color:#f8fbfb;background-image:linear-gradient(to right,rgba(15,23,42,.06) 1px,transparent 1px),linear-gradient(to bottom,rgba(15,23,42,.06) 1px,transparent 1px)}
 .rd-zona{background:repeating-linear-gradient(135deg,rgba(100,116,139,.08) 0 6px,rgba(100,116,139,.14) 6px 12px);border:1.5px dashed #a9b6c4;border-radius:8px;color:#64748b}
 .rd-zona-sel{border-color:#47988f;color:#47988f;box-shadow:0 0 0 2px rgba(71,152,143,.25)}
+.rd-zona-muro{background:repeating-linear-gradient(45deg,#475569 0 4px,#334155 4px 8px);border:1px solid #1e293b;border-radius:3px}
+.rd-zona-columna{background:radial-gradient(circle at 35% 30%,#94a3b8,#475569 70%);border:1.5px solid #1e293b;border-radius:6px}
+.rd-zona-baranda{background:repeating-linear-gradient(90deg,#cbd5e1 0 6px,#94a3b8 6px 8px);border:1px solid #94a3b8;border-radius:4px;color:#334155}
+.rd-zona-instructor{background:linear-gradient(180deg,#e4f5f3,#d3ece8);border:1.5px solid #8fcac2;color:#2f7a72}
+.rd-zona-consola{background:#e8e4f8;border:1.5px solid #b8acec;color:#5b48b3}
+.rd-zona-puerta{background:#fdf0db;border:1.5px dashed #e2b25c;color:#9a6512}
+.rd-zona-espejo{background:linear-gradient(90deg,#e0f2fe,#f0f9ff,#e0f2fe);border:1.5px solid #9fd2f2;color:#2a77a8}
+html.dark .rd-zona.rd-zona-muro{background:repeating-linear-gradient(45deg,#64748b 0 4px,#475569 4px 8px);border-color:#94a3b8}
+html.dark .rd-zona.rd-zona-columna{background:radial-gradient(circle at 35% 30%,#a5b4c8,#4b5b70 70%);border-color:#a5b4c8}
+html.dark .rd-zona.rd-zona-baranda{background:repeating-linear-gradient(90deg,rgba(203,213,225,.35) 0 6px,rgba(148,163,184,.6) 6px 8px);border-color:#94a3b8;color:#e2e8f0}
+html.dark .rd-zona.rd-zona-instructor{background:rgba(94,232,216,.12);border-color:rgba(94,232,216,.5);color:#88f0e5}
+html.dark .rd-zona.rd-zona-consola{background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.5);color:#c4b5fd}
+html.dark .rd-zona.rd-zona-puerta{background:rgba(255,194,102,.12);border-color:rgba(255,194,102,.55);color:#ffc266}
+html.dark .rd-zona.rd-zona-espejo{background:rgba(125,211,252,.14);border-color:rgba(125,211,252,.5);color:#a5ddfc}
 .rd-step{transition:transform .12s,background .15s,box-shadow .15s}
 .rd-step-libre{background:#ffffff;border-color:#cfdcdb;color:#47988f}
 button.rd-step-libre:not(:disabled):hover{background:#e4f5f3;transform:translateY(-1px);box-shadow:0 3px 8px rgba(71,152,143,.18)}

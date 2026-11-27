@@ -9,6 +9,7 @@
 //    reporte, y al alumno le llega un recordatorio 2 horas antes.
 // =====================================================================
 import { Router } from "express";
+import bcrypt from "bcryptjs";
 import { consultar } from "../db.js";
 import { ErrorHttp } from "../seguridad.js";
 import { hoyLima, sumarDias } from "../congelamiento.js";
@@ -124,6 +125,8 @@ router.get("/", async (req, res, next) => {
       profesores: profes.map((p) => ({
         id: p.idempleado,
         nombre: `${p.nombres} ${p.apellidos}`.trim(),
+        nombres: p.nombres,
+        apellidos: p.apellidos || "",
         usuario: p.usuario || "",
         activo: p.usuario_activo === null ? null : !!p.usuario_activo,
         telefono: p.telefono || "",
@@ -390,9 +393,97 @@ router.put("/disciplinas/:id(\\d+)", async (req, res, next) => {
 });
 
 // ---------------------------------------------------------------------
+// Profesores de clases (administración): crear, renombrar, sus disciplinas
+// (un profesor puede dictar varias y una disciplina tener varios
+// profesores), su usuario para entrar y desactivarlo.
+// ---------------------------------------------------------------------
+const sinTildes = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+async function usuarioLibre(base) {
+  const raiz = sinTildes(base).toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "").slice(0, 30) || "profesor";
+  for (let i = 0; i < 50; i++) {
+    const u = i ? `${raiz}${i + 1}` : raiz.length >= 3 ? raiz : `${raiz}.prof`;
+    if (!(await consultar("SELECT 1 FROM usuarios WHERE usuario = ?", [u])).length) return u;
+  }
+  throw new ErrorHttp(409, "No se pudo crear un usuario libre: escribe uno");
+}
+const datosProfesor = (b) => {
+  const nombres = txt(b.nombres, 80);
+  if (!nombres) throw new ErrorHttp(400, "Escribe el nombre del profesor");
+  const telefono = txt(b.telefono, 20);
+  if (telefono && !/^\+?\d[\d\s-]{5,}$/.test(telefono)) throw new ErrorHttp(400, "El celular no es válido");
+  return { nombres, apellidos: txt(b.apellidos, 80) || "", telefono: telefono || null };
+};
+async function disciplinasDe(idempleado, lista) {
+  if (!Array.isArray(lista)) return;
+  const ids = [...new Set(lista.map(Number).filter(Boolean))];
+  await consultar("DELETE FROM disciplina_profesores WHERE idempleado = ?", [idempleado]);
+  for (const d of ids) await consultar("INSERT IGNORE INTO disciplina_profesores (iddisciplina, idempleado) SELECT iddisciplina, ? FROM disciplinas WHERE iddisciplina = ?", [idempleado, d]);
+}
+// POST /api/clases/profesores { nombres, apellidos?, telefono?, disciplinas[], crearUsuario?, usuario? }
+router.post("/profesores", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    exigirRol(req, ["admin"], "Solo administración agrega profesores");
+    const b = req.body || {};
+    const p = datosProfesor(b);
+    const disc = (await consultar("SELECT nombre FROM disciplinas WHERE iddisciplina IN (?)", [(b.disciplinas || []).map(Number).filter(Boolean).concat(0)])).map((d) => d.nombre);
+    const r = await consultar(
+      "INSERT INTO empleados (nombres, apellidos, telefono, cargo, titulo_cargo, especialidad, fecha_ingreso) VALUES (?, ?, ?, 'instructor', 'Profesor de clases grupales', ?, CURDATE())",
+      [p.nombres, p.apellidos, p.telefono, disc.join(", ").slice(0, 120) || null],
+    );
+    await disciplinasDe(r.insertId, b.disciplinas || []);
+    let usuario = null;
+    if (b.crearUsuario !== false) {
+      usuario = String(b.usuario || "").trim().toLowerCase();
+      if (usuario && !/^[a-z0-9._-]{3,40}$/.test(usuario)) throw new ErrorHttp(400, "El usuario debe tener de 3 a 40 letras, números, punto o guion");
+      if (usuario && (await consultar("SELECT 1 FROM usuarios WHERE usuario = ?", [usuario])).length) throw new ErrorHttp(409, `El usuario «${usuario}» ya existe`);
+      usuario = usuario || (await usuarioLibre(p.nombres));
+      const [rol] = await consultar("SELECT idrol FROM roles WHERE codigo = 'instructor'");
+      if (rol) {
+        await consultar("INSERT INTO usuarios (usuario, clave_hash, idrol, idempleado, debe_cambiar_clave, creado_por) VALUES (?, ?, ?, ?, 1, ?)", [
+          usuario, await bcrypt.hash("Clase2026!", 10), rol.idrol, r.insertId, req.usuario.idusuario,
+        ]);
+      } else usuario = null;
+    }
+    res.status(201).json({ ok: true, id: r.insertId, usuario, clave: usuario ? "Clase2026!" : null });
+  } catch (e) {
+    next(e);
+  }
+});
+// PUT /api/clases/profesores/:id { nombres, apellidos, telefono, disciplinas[], activo }
+router.put("/profesores/:id(\\d+)", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    exigirRol(req, ["admin"], "Solo administración cambia a los profesores");
+    const id = Number(req.params.id);
+    const b = req.body || {};
+    const [e] = await consultar("SELECT idempleado, cargo FROM empleados WHERE idempleado = ?", [id]);
+    if (!e) throw new ErrorHttp(404, "Ese profesor no existe");
+    if (b.activo === false) {
+      const [c] = await consultar("SELECT COUNT(*) AS n FROM clases_grupales WHERE activa = 1 AND idempleado = ?", [id]);
+      if (Number(c.n)) throw new ErrorHttp(409, `Tiene ${c.n} clase${Number(c.n) === 1 ? "" : "s"} en el horario: pásalas a otro profesor antes de desactivarlo`);
+      await consultar("DELETE FROM disciplina_profesores WHERE idempleado = ?", [id]);
+      if (e.cargo === "instructor") {
+        await consultar("UPDATE empleados SET activo = 0 WHERE idempleado = ?", [id]);
+        await consultar("UPDATE usuarios SET activo = 0 WHERE idempleado = ?", [id]);
+      }
+      return res.json({ ok: true, desactivado: true });
+    }
+    const p = datosProfesor(b);
+    await consultar("UPDATE empleados SET nombres = ?, apellidos = ?, telefono = ? WHERE idempleado = ?", [p.nombres, p.apellidos, p.telefono, id]);
+    await disciplinasDe(id, b.disciplinas);
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ---------------------------------------------------------------------
 // Croquis del salón (steps y zonas)
 // ---------------------------------------------------------------------
 const ANCHO = 40;
+/** Nombre visible de un step: número (12) o letra (A, B…) */
+export const nombreStep = (v) => (v != null && /^\d+$/.test(String(v)) ? Number(v) : v);
 const ALTO = 28;
 async function minutosReserva() {
   const [c] = await consultar("SELECT valor FROM configuracion WHERE clave = 'clases_minutos_reserva'");
@@ -404,8 +495,8 @@ export async function croquis() {
   return filas.map((f) => ({
     id: f.idstep,
     tipo: f.tipo,
-    numero: f.numero,
-    etiqueta: f.etiqueta || "",
+    numero: f.tipo === "step" ? f.etiqueta || f.numero : f.numero,
+    etiqueta: f.tipo === "step" ? "" : f.etiqueta || "",
     x: f.x,
     y: f.y,
     w: f.ancho,
@@ -443,13 +534,25 @@ router.put("/croquis", async (req, res, next) => {
         const h = Math.max(1, Math.min(ALTO, Math.round(Number(st.h) || 2)));
         const x = Math.max(0, Math.min(ANCHO - w, Math.round(Number(st.x) || 0)));
         const y = Math.max(0, Math.min(ALTO - h, Math.round(Number(st.y) || 0)));
-        const numero = tipo === "step" ? Math.round(Number(st.numero)) : null;
-        if (tipo === "step" && !(numero >= 1 && numero <= 999)) throw new ErrorHttp(400, "Cada step necesita un número del 1 al 999");
-        return { id: Number(st.id) || null, tipo, numero, etiqueta: tipo === "zona" ? txt(st.etiqueta, 40) || "Zona" : null, x, y, w, h };
+        // El step se llama con un número (1 al 999) o con letras (A, B, C1…)
+        const nombre = String(st.numero ?? "").trim().toUpperCase();
+        let numero = null;
+        let letra = null;
+        if (tipo === "step") {
+          if (/^\d{1,3}$/.test(nombre) && Number(nombre) >= 1) numero = Number(nombre);
+          else if (/^[A-ZÑ]{1,2}\d{0,2}$/.test(nombre)) letra = nombre;
+          else throw new ErrorHttp(400, "Cada step necesita un número (1 al 999) o una letra (A, B, C…)");
+        }
+        return { id: Number(st.id) || null, tipo, numero, letra, etiqueta: tipo === "zona" ? txt(st.etiqueta, 40) || "Zona" : letra, x, y, w, h };
       });
-      const nums = limpio.filter((z) => z.tipo === "step").map((z) => z.numero);
-      const rep = nums.find((n, i) => nums.indexOf(n) !== i);
-      if (rep) throw new ErrorHttp(400, `El número ${rep} está repetido en dos steps`);
+      const nombres = limpio.filter((z) => z.tipo === "step").map((z) => String(z.letra || z.numero));
+      const rep = nombres.find((n, i) => nombres.indexOf(n) !== i);
+      if (rep) throw new ErrorHttp(400, `El step ${rep} está repetido: cada step debe tener un nombre distinto`);
+      // Los steps con letra guardan un número interno (A=1001, B=1002…) solo para ordenarlos
+      limpio
+        .filter((z) => z.letra)
+        .sort((a, b) => a.letra.length - b.letra.length || a.letra.localeCompare(b.letra))
+        .forEach((z, k) => (z.numero = 1001 + k));
       const actuales = new Set((await consultar("SELECT idstep FROM clase_steps WHERE activo = 1")).map((f) => f.idstep));
       const quedan = new Set();
       for (const z of limpio) {
@@ -498,7 +601,7 @@ async function ventana(c, fecha) {
 }
 async function listaReservas(idclase, fecha) {
   return consultar(
-    `SELECT r.idreserva, r.idstep, r.idalumno, r.estado, r.origen, r.actualizada_en, s.numero,
+    `SELECT r.idreserva, r.idstep, r.idalumno, r.estado, r.origen, r.actualizada_en, COALESCE(NULLIF(s.etiqueta,''), s.numero) AS numero,
             a.nombres, a.apellidos, a.codigo
        FROM clase_reservas r
        JOIN clase_steps s ON s.idstep = r.idstep
@@ -509,7 +612,7 @@ async function listaReservas(idclase, fecha) {
   ).catch(async (e) => {
     if (e.code !== "ER_BAD_FIELD_ERROR") throw e;
     return consultar(
-      `SELECT r.idreserva, r.idstep, r.idalumno, r.estado, r.origen, r.actualizada_en, s.numero, a.nombres, a.apellidos, NULL AS codigo
+      `SELECT r.idreserva, r.idstep, r.idalumno, r.estado, r.origen, r.actualizada_en, COALESCE(NULLIF(s.etiqueta,''), s.numero) AS numero, a.nombres, a.apellidos, NULL AS codigo
          FROM clase_reservas r JOIN clase_steps s ON s.idstep = r.idstep JOIN alumnos a ON a.idalumno = r.idalumno
         WHERE r.idclase_grupal = ? AND r.fecha = ? ORDER BY s.numero`,
       [idclase, fecha],
@@ -535,7 +638,7 @@ router.get("/reservas", async (req, res, next) => {
         .map((f) => ({
           id: f.idreserva,
           stepId: f.idstep,
-          numero: f.numero,
+          numero: nombreStep(f.numero),
           estado: f.estado,
           origen: f.origen,
           mia: alumno ? f.idalumno === yo : undefined,
@@ -570,7 +673,7 @@ router.post("/reservas", async (req, res, next) => {
     if (alumno && v.estado !== "abierta")
       throw new ErrorHttp(409, v.estado === "pronto" ? `La reserva se abre a las ${v.abre} (${v.minutos} min antes de la clase)` : "La reserva ya cerró: la clase ya empezó");
     if (!alumno && v.estado === "pasada") throw new ErrorHttp(409, "Esa clase ya terminó");
-    const [st] = await consultar("SELECT idstep, numero FROM clase_steps WHERE idstep = ? AND activo = 1 AND tipo = 'step'", [idstep]);
+    const [st] = await consultar("SELECT idstep, COALESCE(NULLIF(etiqueta,''), numero) AS numero FROM clase_steps WHERE idstep = ? AND activo = 1 AND tipo = 'step'", [idstep]);
     if (!st) throw new ErrorHttp(404, "Ese step ya no existe en el croquis");
     const [al] = await consultar("SELECT idalumno, nombres, apellidos FROM alumnos WHERE idalumno = ?", [idalumno]);
     if (!al) throw new ErrorHttp(404, "No existe ese alumno");
@@ -612,7 +715,7 @@ router.post("/reservas", async (req, res, next) => {
         throw e;
       }
     }
-    res.json({ ok: true, numero: st.numero, estado, alumno: `${al.nombres} ${al.apellidos}`.trim() });
+    res.json({ ok: true, numero: nombreStep(st.numero), estado, alumno: `${al.nombres} ${al.apellidos}`.trim() });
   } catch (e) {
     next(e);
   }
