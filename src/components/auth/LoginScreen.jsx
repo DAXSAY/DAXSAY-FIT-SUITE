@@ -67,7 +67,7 @@ export const LoginScreen = () => {
           </h1>
           <p className="text-slate-300/90 text-sm leading-relaxed">
             Socios, membresías, rutinas, nutrición, fisioterapia, asistencias,
-            ventas y caja en un solo lugar. Cada socio del equipo ve solo lo
+            ventas y caja en un solo lugar. Cada persona del equipo ve solo lo
             que necesita para su trabajo.
           </p>
         </div>
