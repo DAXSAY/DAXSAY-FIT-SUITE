@@ -216,7 +216,7 @@ export const Header = ({
       category: "student",
       checkInMethod: "quick_pass",
       membershipPlan: m.planName,
-      notes: `Check-in rápido en barra superior (${m.status})`,
+      notes: `Ingreso rápido en barra superior (${({ active: "activo", expiring_soon: "por vencer", expired: "vencido", frozen: "congelado" })[m.status] || m.status})`,
     });
     mostrarIngreso({ ...avisoAlumno(m, { visitasPrevias }), accion: reg?.record ? { texto: "¿Error? Corregir", fn: () => abrirCorreccion(reg.record) } : undefined });
   };

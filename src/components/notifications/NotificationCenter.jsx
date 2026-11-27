@@ -61,6 +61,8 @@ const conVariables = (texto) =>
       ),
     );
 
+const ESTADO_ENVIO = { delivered: "Entregado", sent: "Enviado", pending: "Pendiente", failed: "Falló", read: "Leído", opened: "Abierto" };
+
 export const NotificationCenter = () => {
   const {
     currentUser,
@@ -320,13 +322,13 @@ export const NotificationCenter = () => {
       case "email":
         return (
           <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-bold flex items-center gap-1">
-            <Mail className="w-3 h-3" /> Email
+            <Mail className="w-3 h-3" /> Correo
           </span>
         );
       case "push":
         return (
           <span className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-xs font-bold flex items-center gap-1">
-            <Smartphone className="w-3 h-3" /> Push Web
+            <Smartphone className="w-3 h-3" /> Aviso web
           </span>
         );
       default:
@@ -739,7 +741,7 @@ export const NotificationCenter = () => {
                         title="Enviar correo de renovación"
                       >
                         <Mail className="w-3 h-3" />
-                        <span>Email</span>
+                        <span>Correo</span>
                       </button>
 
                       <button
@@ -797,13 +799,13 @@ export const NotificationCenter = () => {
                   <button
                     key={ch}
                     onClick={() => setLogChannelFilter(ch)}
-                    className={`px-2.5 py-1 rounded capitalize font-semibold cursor-pointer ${
+                    className={`px-2.5 py-1 rounded font-semibold cursor-pointer ${
                       logChannelFilter === ch
                         ? "bg-blue-600 text-white"
                         : "bg-gray-100 text-gray-600 hover:text-slate-800"
                     }`}
                   >
-                    {ch}
+                    {{ all: "Todos", whatsapp: "WhatsApp", email: "Correo", push: "Aviso web" }[ch]}
                   </button>
                 ))}
               </div>
@@ -870,7 +872,7 @@ export const NotificationCenter = () => {
                       <td className="py-2.5 px-3">
                         <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1 w-fit">
                           <Check className="w-3 h-3" />
-                          {log.status}
+                          {ESTADO_ENVIO[log.status] || log.status}
                         </span>
                       </td>
                       <td className="py-2.5 px-3 text-right">
@@ -970,7 +972,7 @@ export const NotificationCenter = () => {
                       className="rounded accent-blue-600"
                     />
 
-                    <span className="font-semibold text-blue-800">Email</span>
+                    <span className="font-semibold text-blue-800">Correo</span>
                   </label>
 
                   <label className="flex items-center gap-1.5 cursor-pointer bg-gray-50 px-2.5 py-1 rounded border border-gray-200">
@@ -1069,7 +1071,7 @@ export const NotificationCenter = () => {
             <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
               <span>Fecha: {viewingLogMessage.timestamp}</span>
               <span className="font-bold text-emerald-600 uppercase">
-                Estado: {viewingLogMessage.status}
+                Estado: {ESTADO_ENVIO[viewingLogMessage.status] || viewingLogMessage.status}
               </span>
             </div>
           </div>

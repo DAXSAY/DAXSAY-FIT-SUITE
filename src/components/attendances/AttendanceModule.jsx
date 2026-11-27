@@ -360,7 +360,7 @@ export const AttendanceModule = () => {
       "ID,Categoria,Fecha,Hora,Usuario,DNI,Estado,HorarioProgramado,HorasTrabajadas,Motivo,Notas\n";
     const list = activeTab === "staffCalendar" ? staffRecords : studentRecords;
     list.forEach((r) => {
-      csv += `"${r.id}","${r.category || "general"}","${r.date}","${r.time}","${r.userName}","${r.userDni}","${r.status}","${r.scheduledTime || ""}","${r.hoursWorked || 0}","${r.reason || ""}","${r.notes || ""}"\n`;
+      csv += `"${r.id}","${({ student: "Alumno", staff: "Personal" })[r.category] || r.category || "general"}","${r.date}","${r.time}","${r.userName}","${r.userDni}","${({ authorized: "Autorizado", warning: "Con alerta", denied: "Denegado", puntual: "Puntual", tarde: "Tarde", falta: "Falta", permiso: "Permiso" })[r.status] || r.status}","${r.scheduledTime || ""}","${r.hoursWorked || 0}","${r.reason || ""}","${r.notes || ""}"\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
