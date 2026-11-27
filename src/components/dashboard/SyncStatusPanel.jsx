@@ -160,7 +160,7 @@ const CopiasSeguridad = () => {
               ? `Última: ${new Date(ultima.fecha).toLocaleString("es-PE", { timeZone: "America/Lima", dateStyle: "short", timeStyle: "short" })} · ${tam(ultima.bytes)} · ${estado.copias.length} guardadas`
               : "Aún no hay copias"}
             {" · "}
-            <span className="font-mono">{estado.carpeta}</span>
+            <span className="font-mono break-all">{estado.carpeta}</span>
           </span>
           {(error || estado.ultimoError) && <span className="block text-rose-600 font-bold">{error || estado.ultimoError}</span>}
           {!error && !estado.ultimoError && estado.ultimoAviso && <span className="block text-amber-700 font-bold">{estado.ultimoAviso}</span>}

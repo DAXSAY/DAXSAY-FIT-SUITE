@@ -9,7 +9,7 @@
 // =====================================================================
 import { Router } from "express";
 import { consultar } from "../db.js";
-import { ErrorHttp } from "../seguridad.js";
+import { ErrorHttp, exigirCajaAbierta } from "../seguridad.js";
 import { hoyLima, sumarDias } from "../congelamiento.js";
 
 const router = Router();
@@ -70,6 +70,43 @@ const SQL_MASTER = `
     FROM masters m
     LEFT JOIN disciplinas d ON d.iddisciplina = m.iddisciplina
     LEFT JOIN empleados e ON e.idempleado = m.idempleado`;
+const NOMBRE_METODO = { efectivo: "efectivo", yape_plin: "Yape/Plin", tarjeta: "tarjeta", transferencia: "transferencia" };
+/** ¿Las columnas de la parte 40 ya existen? (porcentaje y enlace con caja) */
+let p40 = { v: null, t: 0 };
+async function parte40() {
+  if (p40.v === true || Date.now() - p40.t < 20000) return p40.v;
+  const [f] = await consultar(
+    "SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'master_inscripciones' AND COLUMN_NAME = 'idmovimiento'",
+  );
+  p40 = { v: Number(f?.n) === 1, t: Date.now() };
+  return p40.v;
+}
+async function pctDefecto() {
+  const [c] = await consultar("SELECT valor FROM configuracion WHERE clave = 'pct_gym_masters'").catch(() => []);
+  const n = Number(c?.valor);
+  return n >= 0 && n <= 100 && c ? n : 50;
+}
+/** El cobro de una inscripción entra a caja como ingreso «master» */
+async function registrarCobro(req, ins, m, metodo) {
+  if (!(await parte40())) return null;
+  await exigirCajaAbierta(req);
+  const r = await consultar(
+    `INSERT INTO movimientos_caja (tipo, categoria, monto, descripcion, metodo_pago, idreferencia, idalumno, nombre_relacionado, idusuario_registro)
+     VALUES ('ingreso', 'master', ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      Number(ins.precio),
+      `Máster «${m.titulo}» ${String(m.fecha).slice(0, 10)} · ${ins.nombre} (${ins.es_socio ? "socio" : "público"})`.slice(0, 255),
+      metodo === "yape_plin" || metodo === "tarjeta" || metodo === "transferencia" ? metodo : "efectivo",
+      ins.idinscripcion,
+      ins.idalumno || null,
+      ins.nombre,
+      req.usuario.idusuario,
+    ],
+  );
+  await consultar("UPDATE master_inscripciones SET idmovimiento = ? WHERE idinscripcion = ?", [r.insertId, ins.idinscripcion]);
+  return r.insertId;
+}
+
 const masterJson = (f) => ({
   id: f.idmaster,
   titulo: f.titulo,
@@ -89,6 +126,9 @@ const masterJson = (f) => ({
   sala: f.sala || "",
   descripcion: f.descripcion || "",
   estado: f.estado,
+  pctGym: f.pct_gym === undefined || f.pct_gym === null ? 50 : Number(f.pct_gym),
+  pagadoProfesor: f.pagado_profesor === undefined || f.pagado_profesor === null ? 0 : Number(f.pagado_profesor),
+  pagadoProfesorEn: f.pagado_profesor_en ? String(f.pagado_profesor_en).replace("T", " ").slice(0, 16) : "",
   inscritos: Number(f.inscritos) || 0,
   pagados: Number(f.pagados) || 0,
   socios: Number(f.socios) || 0,
@@ -126,7 +166,7 @@ router.get("/", async (req, res, next) => {
         };
       });
     }
-    res.json({ hoy, masters: filas });
+    res.json({ hoy, masters: filas, pctDefecto: alumno ? undefined : await pctDefecto(), conCaja: await parte40() });
   } catch (e) {
     next(e);
   }
@@ -136,7 +176,9 @@ async function validar(b) {
   const titulo = txt(b.titulo, 100);
   if (!titulo) throw new ErrorHttp(400, "Escribe el nombre del máster");
   const fecha = fechaOk(b.fecha);
-  if (!fecha) throw new ErrorHttp(400, "Elige la fecha");
+  if (!fecha) throw new ErrorHttp(400, "Elige el sábado o domingo del máster");
+  const dia = new Date(`${fecha}T12:00:00Z`).getUTCDay();
+  if (dia !== 0 && dia !== 6) throw new ErrorHttp(400, "Los másters son sábado o domingo");
   const inicio = horaOk(b.inicio);
   const fin = horaOk(b.fin);
   if (!inicio || !fin || fin <= inicio) throw new ErrorHttp(400, "Revisa la hora: la de fin debe ser después de la de inicio");
@@ -145,6 +187,8 @@ async function validar(b) {
   if (!(precioPublico > 0)) throw new ErrorHttp(400, "Pon el precio público");
   if (precioSocio < 0 || precioSocio > precioPublico) throw new ErrorHttp(400, "El precio para socios no puede ser mayor que el público");
   const cupo = Number(b.cupo) > 0 ? Math.min(999, Math.round(Number(b.cupo))) : null;
+  const pct = b.pctGym === undefined || b.pctGym === "" ? await pctDefecto() : Number(b.pctGym);
+  if (!(pct >= 0 && pct <= 100)) throw new ErrorHttp(400, "El porcentaje del gimnasio debe estar entre 0 y 100");
   return {
     titulo,
     iddisciplina: Number(b.disciplinaId) || null,
@@ -158,6 +202,7 @@ async function validar(b) {
     cupo,
     sala: txt(b.sala, 60),
     descripcion: txt(b.descripcion, 400),
+    pct: Math.round(pct * 100) / 100,
   };
 }
 router.post("/", async (req, res, next) => {
@@ -171,6 +216,7 @@ router.post("/", async (req, res, next) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [v.titulo, v.iddisciplina, v.idempleado, v.invitado, v.fecha, v.inicio, v.fin, v.precioSocio, v.precioPublico, v.cupo, v.sala, v.descripcion, req.usuario.idusuario],
     );
+    if (await parte40()) await consultar("UPDATE masters SET pct_gym = ? WHERE idmaster = ?", [v.pct, r.insertId]);
     res.status(201).json({ ok: true, id: r.insertId });
   } catch (e) {
     next(e);
@@ -187,6 +233,8 @@ router.put("/:id(\\d+)", async (req, res, next) => {
         WHERE idmaster = ?`,
       [v.titulo, v.iddisciplina, v.idempleado, v.invitado, v.fecha, v.inicio, v.fin, v.precioSocio, v.precioPublico, v.cupo, v.sala, v.descripcion, estado, Number(req.params.id)],
     );
+    if (req.body?.pctGym !== undefined && req.body.pctGym !== "" && (await parte40()))
+      await consultar("UPDATE masters SET pct_gym = ? WHERE idmaster = ?", [v.pct, Number(req.params.id)]);
     res.json({ ok: true });
   } catch (e) {
     next(e);
@@ -271,11 +319,16 @@ router.post("/:id(\\d+)/inscribir", async (req, res, next) => {
     const precio = socio ? Number(m.precio_socio) : Number(m.precio_publico);
     const pagado = !alumno && !!b.pagado;
     const metodo = pagado ? (METODOS.includes(b.metodo) ? b.metodo : "efectivo") : null;
+    if (pagado && (await parte40())) await exigirCajaAbierta(req);
     const r = await consultar(
       `INSERT INTO master_inscripciones (idmaster, idalumno, nombre, dni, celular, es_socio, precio, pagado, metodo_pago, pagado_en, origen, nota, idusuario)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${pagado ? "NOW()" : "NULL"}, ?, ?, ?)`,
       [id, idalumno, nombre, dni, celular, socio ? 1 : 0, precio, pagado ? 1 : 0, metodo, alumno ? "alumno" : "recepcion", txt(b.nota, 200), req.usuario.idusuario],
     );
+    if (pagado) {
+      const [ins] = await consultar("SELECT * FROM master_inscripciones WHERE idinscripcion = ?", [r.insertId]);
+      await registrarCobro(req, ins, m, metodo);
+    }
     res.status(201).json({ ok: true, id: r.insertId, nombre, socio, precio, pagado });
   } catch (e) {
     next(e);
@@ -294,15 +347,56 @@ router.post("/inscripciones/:id(\\d+)", async (req, res, next) => {
       if (accion !== "anular" || i.idalumno !== (await alumnoDe(req))) throw new ErrorHttp(403, "Solo puedes anular tu propia inscripción");
       if (i.pagado) throw new ErrorHttp(409, "Ya pagaste: para anular acércate a recepción");
     } else exigir(req, STAFF, "Solo recepción y administración");
+    const [m] = await consultar("SELECT * FROM masters WHERE idmaster = ?", [i.idmaster]);
     if (accion === "pagar") {
+      if (i.pagado) throw new ErrorHttp(409, "Ya estaba pagado");
+      if (i.estado !== "inscrito") throw new ErrorHttp(409, "La inscripción está anulada");
       const metodo = METODOS.includes(req.body?.metodo) ? req.body.metodo : "efectivo";
+      if (await parte40()) await exigirCajaAbierta(req);
       await consultar("UPDATE master_inscripciones SET pagado = 1, metodo_pago = ?, pagado_en = NOW(), idusuario = ? WHERE idinscripcion = ?", [metodo, req.usuario.idusuario, id]);
+      await registrarCobro(req, i, m, metodo);
     } else if (accion === "anular") {
+      if (i.estado !== "inscrito") throw new ErrorHttp(409, "Ya estaba anulada");
+      // Si ya había pagado, la devolución sale de caja como egreso
+      if (i.pagado && i.idmovimiento && (await parte40())) {
+        await exigirCajaAbierta(req);
+        await consultar(
+          `INSERT INTO movimientos_caja (tipo, categoria, monto, descripcion, metodo_pago, idreferencia, idalumno, nombre_relacionado, idusuario_registro)
+           VALUES ('egreso', 'master', ?, ?, ?, ?, ?, ?, ?)`,
+          [Number(i.precio), `Devolución máster «${m.titulo}» · ${i.nombre}`.slice(0, 255), i.metodo_pago || "efectivo", i.idinscripcion, i.idalumno || null, i.nombre, req.usuario.idusuario],
+        );
+      }
       await consultar("UPDATE master_inscripciones SET estado = 'anulado', idusuario = ? WHERE idinscripcion = ?", [req.usuario.idusuario, id]);
     } else if (accion === "asistio" || accion === "no_asistio") {
       await consultar("UPDATE master_inscripciones SET asistio = ?, idusuario = ? WHERE idinscripcion = ?", [accion === "asistio" ? 1 : 0, req.usuario.idusuario, id]);
     } else throw new ErrorHttp(400, "Acción no válida");
     res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// POST /api/masters/:id/pago-profesor -> entrega al profesor su parte (egreso de caja)
+router.post("/:id(\\d+)/pago-profesor", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    exigir(req, STAFF, "Solo recepción y administración registran el pago al profesor");
+    if (!(await parte40())) throw new ErrorHttp(503, "Falta ejecutar la parte 40 (40_masters_caja_tareas.sql) en MySQL Workbench.");
+    const id = Number(req.params.id);
+    const [m] = (await consultar(`${SQL_MASTER} WHERE m.idmaster = ?`, [id])).map(masterJson);
+    if (!m) throw new ErrorHttp(404, "El máster no existe");
+    const parte = Math.round(m.recaudado * (100 - m.pctGym)) / 100;
+    const falta = Math.round((parte - m.pagadoProfesor) * 100) / 100;
+    if (!(falta > 0)) throw new ErrorHttp(409, "No hay nada pendiente por pagar al profesor");
+    await exigirCajaAbierta(req);
+    const metodo = METODOS.includes(req.body?.metodo) ? req.body.metodo : "efectivo";
+    await consultar(
+      `INSERT INTO movimientos_caja (tipo, categoria, monto, descripcion, metodo_pago, idreferencia, idempleado, nombre_relacionado, idusuario_registro)
+       VALUES ('egreso', 'master', ?, ?, ?, ?, ?, ?, ?)`,
+      [falta, `Pago al profesor · máster «${m.titulo}» ${m.fecha} (${100 - m.pctGym}% de S/ ${m.recaudado.toFixed(2)})`.slice(0, 255), metodo, id, m.profesorId || null, m.profesor, req.usuario.idusuario],
+    );
+    await consultar("UPDATE masters SET pagado_profesor = COALESCE(pagado_profesor,0) + ?, pagado_profesor_en = NOW() WHERE idmaster = ?", [falta, id]);
+    res.json({ ok: true, monto: falta });
   } catch (e) {
     next(e);
   }

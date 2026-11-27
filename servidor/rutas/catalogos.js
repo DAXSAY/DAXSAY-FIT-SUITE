@@ -178,13 +178,13 @@ const A_BASE = {
   salary: "sueldo", staff_payroll: "sueldo", equipment_breakdown: "averia_equipo",
   rent: "alquiler", utilities: "servicios", supplies: "insumos", marketing: "marketing",
   maintenance: "mantenimiento", physiotherapy: "fisioterapia", nutrition: "nutricion",
-  free_expense: "otros", other: "otros",
+  free_expense: "otros", other: "otros", master: "master",
 };
 const A_APP = {
   matricula: "membership", pase_dia: "day_pass", venta: "pos_sale", entrenamiento_personal: "personal_training",
   sueldo: "salary", averia_equipo: "equipment_breakdown", alquiler: "rent", servicios: "utilities",
   insumos: "supplies", marketing: "marketing", mantenimiento: "maintenance",
-  fisioterapia: "physiotherapy", nutricion: "nutrition", otros: "other",
+  fisioterapia: "physiotherapy", nutricion: "nutrition", otros: "other", master: "master",
 };
 const METODOS = ["efectivo", "tarjeta", "transferencia", "yape_plin"];
 
@@ -271,6 +271,7 @@ async function movimientoEditable(id) {
   if (!f) throw new ErrorHttp(404, "Movimiento no encontrado");
   if (f.categoria === "matricula" && f.idreferencia) throw new ErrorHttp(400, "Este ingreso pertenece a una matrícula. Para corregirlo, anula o edita la matrícula.");
   if (f.categoria === "venta" && f.idreferencia) throw new ErrorHttp(400, "Este ingreso es de una venta. Corrígela o anúlala desde el ticket en Ventas.");
+  if (f.categoria === "master" && f.idreferencia) throw new ErrorHttp(400, "Este movimiento es de un máster. Corrígelo desde Clases grupales › Másters.");
   if (f.idturno && f.estado_turno && f.estado_turno !== "abierto") {
     throw new ErrorHttp(409, "El movimiento pertenece a un turno de caja ya cerrado. Registra un ajuste (ingreso o gasto) en el turno actual.");
   }

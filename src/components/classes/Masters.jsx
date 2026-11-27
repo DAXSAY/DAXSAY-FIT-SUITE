@@ -49,7 +49,18 @@ const Aviso = ({ m }) => (m ? <p className={`text-sm font-bold rounded-xl border
 // ---------------------------------------------------------------------
 // Crear / editar máster (administración)
 // ---------------------------------------------------------------------
-const FormMaster = ({ datos, inicial, onListo, onCerrar }) => {
+/** Próximos sábados y domingos (los másters solo se dictan el fin de semana) */
+const findes = (n = 4) => {
+  const out = [];
+  let f = proximoFinde();
+  while (out.length < n * 2) {
+    if (diaDe(f) >= 6) out.push(f);
+    f = sumarDias(f, 1);
+  }
+  return out;
+};
+
+const FormMaster = ({ datos, inicial, pctDefecto = 50, onListo, onCerrar }) => {
   const [f, setF] = useState(() => ({
     titulo: "",
     disciplinaId: "",
@@ -61,18 +72,21 @@ const FormMaster = ({ datos, inicial, onListo, onCerrar }) => {
     precioSocio: "",
     precioPublico: "",
     cupo: "",
-    sala: "",
     descripcion: "",
     estado: "abierto",
+    pctGym: pctDefecto,
     ...(inicial || {}),
   }));
+  const [conLimite, setConLimite] = useState(!!inicial?.cupo);
+  const { currentUser, saveGymConfig } = useGym();
+  const [pctFijado, setPctFijado] = useState(false);
   const [msg, setMsg] = useState(null);
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
   const desc = f.precioPublico > 0 && f.precioSocio !== "" ? Math.round((1 - Number(f.precioSocio) / Number(f.precioPublico)) * 100) : null;
   const guardar = async (e) => {
     e.preventDefault();
     try {
-      const cuerpo = { ...f, profesorId: Number(f.profesorId) || null, disciplinaId: Number(f.disciplinaId) || null };
+      const cuerpo = { ...f, cupo: conLimite ? f.cupo : "", profesorId: Number(f.profesorId) || null, disciplinaId: Number(f.disciplinaId) || null };
       if (inicial?.id) await api(`/masters/${inicial.id}`, { method: "PUT", body: cuerpo });
       else await api("/masters", { method: "POST", body: cuerpo });
       onListo();
@@ -107,41 +121,79 @@ const FormMaster = ({ datos, inicial, onListo, onCerrar }) => {
         </div>
 
         <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
-          <p className="text-xs font-black uppercase tracking-wider text-slate-600">2 · ¿Cuándo? 📅</p>
-          <div className="flex flex-wrap gap-1.5">
-            {[0, 1, 7, 8].map((n) => {
-              const fe = sumarDias(proximoFinde(), diaDe(proximoFinde()) === 7 ? n - 1 : n);
-              return (
-                <button key={n} type="button" onClick={() => set("fecha", fe)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${f.fecha === fe ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
-                  {fechaBonita(fe)}
-                </button>
-              );
-            })}
+          <p className="text-xs font-black uppercase tracking-wider text-slate-600">2 · ¿Qué sábado o domingo? 📅</p>
+          <p className="text-xs text-slate-500">Los másters se dictan solo los fines de semana: elige el día.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            {[...new Set([...findes(4), ...(inicial?.fecha ? [inicial.fecha] : [])])].sort().map((fe) => (
+              <button key={fe} type="button" onClick={() => set("fecha", fe)} className={`px-2 py-2 rounded-xl border text-xs font-black cursor-pointer ${f.fecha === fe ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
+                {DIAS[diaDe(fe)]} {Number(fe.slice(8))}/{Number(fe.slice(5, 7))}
+              </button>
+            ))}
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <label className="block text-sm"><span className="font-bold text-slate-700">Fecha</span><input type="date" value={f.fecha} onChange={(e) => set("fecha", e.target.value)} className={campo} /></label>
-            <label className="block text-sm"><span className="font-bold text-slate-700">Empieza</span><input type="time" value={f.inicio} onChange={(e) => set("inicio", e.target.value)} className={campo} /></label>
-            <label className="block text-sm"><span className="font-bold text-slate-700">Termina</span><input type="time" value={f.fin} onChange={(e) => set("fin", e.target.value)} className={campo} /></label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-sm min-w-0"><span className="font-bold text-slate-700">Empieza</span><input type="time" value={f.inicio} onChange={(e) => set("inicio", e.target.value)} className={campo} /></label>
+            <label className="block text-sm min-w-0"><span className="font-bold text-slate-700">Termina</span><input type="time" value={f.fin} onChange={(e) => set("fin", e.target.value)} className={campo} /></label>
           </div>
           <div className="flex flex-wrap gap-1.5">
+            <span className="text-xs font-bold text-slate-500 self-center">Dura:</span>
             {[60, 90, 120].map((m) => (
-              <button key={m} type="button" onClick={() => set("fin", deMin(aMin(f.inicio) + m))} className="px-3 py-1 rounded-full border border-slate-200 bg-white text-xs font-bold text-slate-600 cursor-pointer">{m === 60 ? "1 h" : m === 90 ? "1 h 30" : "2 h"}</button>
+              <button key={m} type="button" onClick={() => set("fin", deMin(aMin(f.inicio) + m))} className={`px-3 py-1 rounded-full border text-xs font-bold cursor-pointer ${aMin(f.fin) - aMin(f.inicio) === m ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{m === 60 ? "1 h" : m === 90 ? "1 h 30" : "2 h"}</button>
             ))}
           </div>
         </div>
 
         <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
-          <p className="text-xs font-black uppercase tracking-wider text-slate-600">3 · Precio y cupo 💰</p>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm"><span className="font-bold text-slate-700">Precio público (S/) *</span><input type="number" min={0} step="0.5" value={f.precioPublico} onChange={(e) => set("precioPublico", e.target.value)} className={campo} /></label>
-            <label className="block text-sm"><span className="font-bold text-slate-700">Precio socio (S/) *</span><input type="number" min={0} step="0.5" value={f.precioSocio} onChange={(e) => set("precioSocio", e.target.value)} className={campo} /></label>
+          <p className="text-xs font-black uppercase tracking-wider text-slate-600">3 · Precio 💰</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="block text-sm min-w-0">
+              <span className="font-bold text-slate-700">⭐ Precio para socios (S/) *</span>
+              <span className="block text-[11px] text-slate-500">Alumnos con membresía vigente</span>
+              <input type="number" min={0} step="0.5" value={f.precioSocio} onChange={(e) => set("precioSocio", e.target.value)} placeholder="Ej. 30" className={campo} />
+            </label>
+            <label className="block text-sm min-w-0">
+              <span className="font-bold text-slate-700">🚶 Precio para no socios (S/) *</span>
+              <span className="block text-[11px] text-slate-500">Personas de afuera o alumnos con membresía vencida</span>
+              <input type="number" min={0} step="0.5" value={f.precioPublico} onChange={(e) => set("precioPublico", e.target.value)} placeholder="Ej. 45" className={campo} />
+            </label>
           </div>
-          {desc !== null && desc >= 0 && <p className="text-xs font-bold text-emerald-700">Los socios con membresía vigente ahorran {soles(f.precioPublico - f.precioSocio)} ({desc}% de descuento).</p>}
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm"><span className="font-bold text-slate-700">Cupo (vacío = sin límite)</span><input type="number" min={1} value={f.cupo ?? ""} onChange={(e) => set("cupo", e.target.value)} className={campo} /></label>
-            <label className="block text-sm"><span className="font-bold text-slate-700">Sala (opcional)</span><input value={f.sala} onChange={(e) => set("sala", e.target.value)} maxLength={60} className={campo} /></label>
+          {desc !== null && desc >= 0 && <p className="text-xs font-bold text-emerald-700">Los socios ahorran {soles(f.precioPublico - f.precioSocio)} ({desc}% de descuento).</p>}
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-600">4 · ¿Cómo se reparte lo recaudado? 🤝</p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-bold text-slate-600">Para el gimnasio:</span>
+            {[30, 40, 50, 60, 70].map((n) => (
+              <button key={n} type="button" onClick={() => set("pctGym", n)} className={`px-2.5 py-1 rounded-lg border text-xs font-black cursor-pointer ${Number(f.pctGym) === n ? "bg-emerald-600 border-emerald-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{n}%</button>
+            ))}
+            <input type="number" min={0} max={100} value={f.pctGym} onChange={(e) => set("pctGym", e.target.value)} className="w-16 px-2 py-1 rounded-lg border border-slate-200 text-sm font-black text-center" aria-label="Porcentaje del gimnasio" /> %
           </div>
-          <label className="block text-sm"><span className="font-bold text-slate-700">Descripción (opcional)</span><input value={f.descripcion} onChange={(e) => set("descripcion", e.target.value)} maxLength={400} placeholder="Ej. Traer toalla, hidratación incluida" className={campo} /></label>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="rd-kpi-verde rd-aviso-t rounded-xl border p-2.5"><p className="text-[11px] font-black uppercase">🏋️ Gimnasio {Number(f.pctGym) || 0}%</p><p className="font-black">De cada S/ 100 → {soles(Number(f.pctGym) || 0)}</p></div>
+            <div className="rd-kpi-violeta rd-aviso-t rounded-xl border p-2.5"><p className="text-[11px] font-black uppercase">🧑‍🏫 Profesor {100 - (Number(f.pctGym) || 0)}%</p><p className="font-black">De cada S/ 100 → {soles(100 - (Number(f.pctGym) || 0))}</p></div>
+          </div>
+          {currentUser?.role === "admin" && saveGymConfig && Number(f.pctGym) !== Number(pctDefecto) && !pctFijado && (
+            <button type="button" onClick={async () => (await saveGymConfig({ pct_gym_masters: Number(f.pctGym) }), setPctFijado(true))} className="text-xs font-bold text-teal-700 underline cursor-pointer">
+              Usar {f.pctGym}% siempre para los próximos másters
+            </button>
+          )}
+          {pctFijado && <p className="text-xs font-bold text-emerald-700">✅ Desde ahora los másters nuevos empiezan con {f.pctGym}%.</p>}
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-600">5 · ¿Cuántas personas pueden entrar? 👥</p>
+          <div className="grid grid-cols-2 gap-2">
+            {[[false, "Sin límite", "Entran todos los que se inscriban"], [true, "Con límite", "Se cierra al llenarse"]].map(([k, l, d]) => (
+              <button key={l} type="button" onClick={() => setConLimite(k)} className={`rounded-xl border p-2.5 text-left cursor-pointer ${conLimite === k ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-700"}`}>
+                <span className="block text-sm font-black">{l}</span>
+                <span className="block text-[11px] opacity-80">{d}</span>
+              </button>
+            ))}
+          </div>
+          {conLimite && (
+            <label className="block text-sm"><span className="font-bold text-slate-700">Máximo de personas</span><input type="number" min={1} value={f.cupo ?? ""} onChange={(e) => set("cupo", e.target.value)} placeholder="Ej. 45 (los steps del salón)" className={campo} /></label>
+          )}
+          <label className="block text-sm"><span className="font-bold text-slate-700">Indicaciones para los alumnos (opcional)</span><input value={f.descripcion} onChange={(e) => set("descripcion", e.target.value)} maxLength={400} placeholder="Ej. Traer toalla y agua" className={campo} /></label>
           {inicial?.id && (
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(ESTADOS).map(([k, l]) => (
@@ -254,6 +306,15 @@ const DetalleMaster = ({ m, rol, onCambio, onEditar }) => {
       setMsg({ ok: false, texto: e.message });
     }
   };
+  const pagarProfesor = async (metodo) => {
+    try {
+      const r = await api(`/masters/${m.id}/pago-profesor`, { method: "POST", body: { metodo } });
+      setMsg({ ok: true, texto: `💸 Pago al profesor registrado: ${soles(r.monto)} (sale de caja como egreso)` });
+      onCambio();
+    } catch (e) {
+      setMsg({ ok: false, texto: e.message });
+    }
+  };
   const activos = (lista || []).filter((i) => i.estado === "inscrito");
   const vistos = activos.filter((i) => !busca.trim() || `${i.nombre} ${i.dni} ${i.codigo} ${i.celular}`.toLowerCase().includes(busca.trim().toLowerCase()));
   const columnas = [
@@ -292,6 +353,41 @@ const DetalleMaster = ({ m, rol, onCambio, onEditar }) => {
         <TarjetaKpi titulo="Recaudado" valor={m.recaudado} prefijo="S/ " decimales={2} sub={`${m.pagados} pagaron`} emoji="💰" tono="verde" />
         <TarjetaKpi titulo="Por cobrar" valor={m.porCobrar} prefijo="S/ " decimales={2} sub={`${m.inscritos - m.pagados} sin pagar`} emoji="⏳" tono="ambar" />
         <TarjetaKpi titulo="Asistieron" valor={m.asistieron} sub="el día del máster" emoji="✅" tono="violeta" />
+      </div>
+
+      {/* Reparto de lo recaudado */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-black text-slate-800">🤝 Reparto de lo recaudado</p>
+          <p className="text-[11px] text-slate-500">Cada cobro entra a Ingresos y a la caja del turno como «Máster».</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="rd-kpi-verde rd-aviso-t rounded-xl border p-3">
+            <p className="text-[11px] font-black uppercase">🏋️ Gimnasio {m.pctGym}%</p>
+            <p className="text-lg font-black">{soles((m.recaudado * m.pctGym) / 100)}</p>
+          </div>
+          <div className="rd-kpi-violeta rd-aviso-t rounded-xl border p-3">
+            <p className="text-[11px] font-black uppercase">🧑‍🏫 Profesor {100 - m.pctGym}%</p>
+            <p className="text-lg font-black">{soles((m.recaudado * (100 - m.pctGym)) / 100)}</p>
+            <p className="text-[11px]">{m.profesor}</p>
+          </div>
+          <div className="rd-kpi-plomo rd-aviso-t rounded-xl border p-3">
+            <p className="text-[11px] font-black uppercase">💸 Entregado al profesor</p>
+            <p className="text-lg font-black">{soles(m.pagadoProfesor)}</p>
+            <p className="text-[11px]">{m.pagadoProfesorEn ? `Último pago: ${m.pagadoProfesorEn}` : "Aún no se le paga"}</p>
+          </div>
+        </div>
+        {gestiona && (() => {
+          const falta = Math.round(((m.recaudado * (100 - m.pctGym)) / 100 - m.pagadoProfesor) * 100) / 100;
+          return falta > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-600">Pagar al profesor {soles(falta)} con:</span>
+              {METODOS.map(([k, l]) => (
+                <button key={k} type="button" onClick={() => window.confirm(`¿Registrar el pago de ${soles(falta)} a ${m.profesor}? Sale de caja como egreso.`) && pagarProfesor(k)} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold cursor-pointer hover:bg-violet-50">{l}</button>
+              ))}
+            </div>
+          ) : null;
+        })()}
       </div>
       <Aviso m={msg} />
 
@@ -350,12 +446,13 @@ const DetalleMaster = ({ m, rol, onCambio, onEditar }) => {
 export default function Masters({ datos, rol }) {
   const [ver, setVer] = useState("proximos");
   const [lista, setLista] = useState(null);
+  const [pctDef, setPctDef] = useState(50);
   const [error, setError] = useState("");
   const [elegido, setElegido] = useState(null);
   const [form, setForm] = useState(null);
   const cargar = () =>
     api(`/masters?ver=${ver}`)
-      .then((d) => (setLista(d.masters), setError("")))
+      .then((d) => (setLista(d.masters), setPctDef(d.pctDefecto ?? 50), setError("")))
       .catch((e) => setError(e.message));
   useEffect(() => {
     setLista(null);
@@ -366,7 +463,7 @@ export default function Masters({ datos, rol }) {
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 flex flex-wrap items-center gap-2">
         <p className="text-xs font-black uppercase tracking-wider text-slate-600 mr-2">🌟 Másters de fin de semana</p>
-        {[["proximos", "Próximos"], ["pasados", "Pasados"]].map(([k, l]) => (
+        {[["proximos", "Próximos"], ["pasados", "Historial (ya dictados)"]].map(([k, l]) => (
           <button key={k} type="button" onClick={() => (setVer(k), setElegido(null))} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${ver === k ? "bg-amber-500 border-amber-500 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{l}</button>
         ))}
         {rol === "admin" && (
@@ -396,7 +493,7 @@ export default function Masters({ datos, rol }) {
           {actual && <DetalleMaster key={actual.id} m={actual} rol={rol} onCambio={cargar} onEditar={() => setForm(actual)} />}
         </>
       )}
-      {form && <FormMaster datos={datos} inicial={form.id ? form : null} onCerrar={() => setForm(null)} onListo={() => (setForm(null), cargar())} />}
+      {form && <FormMaster datos={datos} pctDefecto={pctDef} inicial={form.id ? form : null} onCerrar={() => setForm(null)} onListo={() => (setForm(null), cargar())} />}
     </div>
   );
 }

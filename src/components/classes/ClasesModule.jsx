@@ -231,7 +231,7 @@ const DetalleSesion = ({ s, puedeGestionar, puedeDisco, onEditar, onQuitar, onDi
     <div className="flex flex-wrap gap-2">
       {s.fecha === hoyISO() && (
         <button type="button" onClick={onSteps} className="px-4 py-2 rounded-xl bg-teal-600 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer">
-          <LayoutGrid className="w-4 h-4" /> Steps y reservas
+          <LayoutGrid className="w-4 h-4" /> Reservas
         </button>
       )}
       {puedeDisco && (
@@ -591,11 +591,17 @@ const MisDiscos = () => {
         </div>
       ) : (
         <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            <TarjetaKpi titulo="Tus clases" valor={sesiones.length} sub={semana ? "próxima semana" : "esta semana"} emoji="🗓️" tono="teal" />
+            <TarjetaKpi titulo="Con disco" valor={sesiones.filter((s) => s.disco).length} sub="ya enviados" emoji="🎵" tono="verde" />
+            <TarjetaKpi titulo="Faltan" valor={sesiones.filter((s) => !s.disco).length} sub="sin disco" emoji="⏳" tono="ambar" />
+          </div>
           {sesiones.map((s) => (
             <div key={s.id} className={`rd-kpi-${s.color} rd-clase-card rounded-2xl p-3 grid grid-cols-1 md:grid-cols-[200px_minmax(0,1fr)_minmax(0,1fr)] gap-2 items-center`}>
               <div>
                 <p className="text-xs font-black">{fechaBonita(s.fecha)} · {s.inicio}</p>
                 <p className="text-sm font-black">{s.emoji} {s.nombre}</p>
+                <p className="text-[11px] font-bold">{s.disco ? (borrador[s.id] && borrador[s.id].disco !== s.disco ? "✏️ Cambio sin enviar" : "✅ Enviado") : "⏳ Falta el disco"}</p>
               </div>
               <input value={valor(s, "disco")} onChange={(e) => cambiar(s, "disco", e.target.value)} maxLength={120} placeholder="🎵 Disco (ej. Ayahuasca)" className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 min-w-0" />
               <input value={valor(s, "nota")} onChange={(e) => cambiar(s, "nota", e.target.value)} maxLength={300} placeholder="Nota (opcional)" className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 min-w-0" />
@@ -1018,11 +1024,11 @@ export default function ClasesModule() {
   const v = vista || (esProfe ? "discos" : "horario");
   const pestanas = [
     { k: "horario", icono: CalendarDays, label: "Horario", tono: "teal" },
-    { k: "steps", icono: LayoutGrid, label: "Steps y reservas", tono: "violet" },
+    { k: "steps", icono: LayoutGrid, label: "Reservas", tono: "violet" },
     { k: "discos", icono: Disc3, label: esProfe ? "Mis discos" : "Discos", tono: "amber" },
     { k: "masters", icono: Star, label: "Másters", tono: "amber" },
     { k: "reporte", icono: BarChart3, label: "Asistencia", tono: "teal" },
-    ...(yo.rol === "admin" ? [{ k: "config", icono: Settings2, label: "Disciplinas y steps", tono: "rose" }] : []),
+    ...(yo.rol === "admin" ? [{ k: "config", icono: Settings2, label: "Disciplinas y salón", tono: "rose" }] : []),
   ];
   return (
     <div className="space-y-5">

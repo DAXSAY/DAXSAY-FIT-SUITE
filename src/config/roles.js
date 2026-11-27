@@ -46,7 +46,7 @@ export const MODULES = {
   finance: { label: "Finanzas", code: "FN", icon: BadgeDollarSign },
   alerts: { label: "Notificaciones", code: "NT", icon: BellRing },
   crm: { label: "Interesados (CRM)", code: "CR", icon: Contact },
-  tasks: { label: "Tareas entre turnos", code: "TA", icon: ClipboardList },
+  tasks: { label: "Asignación de tareas", code: "TA", icon: ClipboardList },
   classes: { label: "Clases grupales", code: "CG", icon: Music },
   // Portal del alumno
   mi_membresia: { label: "Mi membresía", code: "MB", icon: CreditCard },

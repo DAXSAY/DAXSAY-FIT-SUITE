@@ -584,7 +584,7 @@ const TurnosRecepcion = () => {
           <p>Cada recepcionista pertenece a un turno; se elige en su usuario.</p>
           <p>Las metas de recepción se asignan por turno y suman todo lo cobrado en las cajas que abren las personas de ese turno.</p>
           <p>En Arqueo de caja cada quien ve solo la meta de su turno.</p>
-          <p>Las <b>tareas entre turnos</b> funcionan con todos los turnos activos: si agregas un 3.º, 4.º o 5.º turno, aparece solo para recibir y pasar tareas.</p>
+          <p>La <b>asignación de tareas</b> funcionan con todos los turnos activos: si agregas un 3.º, 4.º o 5.º turno, aparece solo para recibir y pasar tareas.</p>
           <p>Se muestran como «Turno Mañana · nombre de la recepcionista».</p>
         </div>
       </aside>
@@ -903,7 +903,7 @@ export const UsersAccessModule = () => {
         <TarjetaKpi titulo="Alumnos con acceso" valor={datos.cuentasAlumnos.activas} sub="ver credenciales →" icono={IcKey} tono="azul" onClick={() => setPestana("socios")} />
       </div>
 
-      <div className="flex gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 w-fit">
+      <div className="flex flex-wrap gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 w-full sm:w-fit">
         {[["usuarios", "Usuarios del personal"], ["socios", "Socios (alumnos)"], ["turnos", "Turnos de recepción"], ["config", "Configuración del gimnasio"]].map(([k, l]) => (
           <button key={k} onClick={() => setPestana(k)} className={`px-3 py-2 rounded-lg text-sm font-bold cursor-pointer ${pestana === k ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
             {l}
@@ -927,7 +927,28 @@ export const UsersAccessModule = () => {
             className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-sm"
           />
         </div>
-        <div className="overflow-x-auto">
+        {/* Celular: tarjetas */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {lista.map((u) => (
+            <div key={u.id} className={`py-3 flex items-start justify-between gap-3 ${u.active ? "" : "opacity-60"}`}>
+              <div className="min-w-0">
+                <p className="font-black text-slate-900 truncate">{u.fullName}</p>
+                <p className="text-xs text-slate-500 truncate">{u.title || "—"}</p>
+                <p className="text-xs font-mono text-slate-700 mt-0.5">👤 {u.username}</p>
+                <span className="rd-chip-rol inline-block whitespace-nowrap mt-1 px-2 py-0.5 rounded-full text-[11px] font-black" style={{ "--c": COLOR_ROL[u.role] || "var(--color-slate-400)" }}>
+                  {ROLES[u.role]?.label || u.roleName}
+                </span>
+              </div>
+              {puedeEditar && (
+                <div className="flex flex-col gap-1 shrink-0">
+                  <button onClick={() => setVista({ editar: u })} title="Editar" className="p-2 rounded-lg border border-slate-200 cursor-pointer"><Pencil className="w-4 h-4 text-slate-600" /></button>
+                  <button onClick={() => restablecer(u)} title="Restablecer contraseña" className="p-2 rounded-lg border border-slate-200 cursor-pointer"><KeyRound className="w-4 h-4 text-amber-600" /></button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-400 border-b border-slate-200">
@@ -950,7 +971,7 @@ export const UsersAccessModule = () => {
                     </td>
                     <td className="py-3 pr-3 font-mono text-slate-700">{u.username}</td>
                     <td className="py-3 pr-3">
-                      <span className="rd-chip-rol px-2 py-0.5 rounded-full text-xs font-black" style={{ "--c": COLOR_ROL[u.role] || "var(--color-slate-400)" }}>
+                      <span className="rd-chip-rol inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-black" style={{ "--c": COLOR_ROL[u.role] || "var(--color-slate-400)" }}>
                         {ROLES[u.role]?.label || u.roleName}
                       </span>
                       {u.receptionShift && <span className="block text-xs text-slate-500 mt-0.5">{nombreTurno(u.receptionShift)}</span>}

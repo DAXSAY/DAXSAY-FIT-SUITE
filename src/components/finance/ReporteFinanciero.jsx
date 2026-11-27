@@ -35,6 +35,7 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 import { hoyISO } from "../../utils/fecha";
+import { TarjetaKpi } from "../common/TarjetaKpi";
 import { crearExcel, crearPDF, descargar } from "../../utils/exportar";
 
 export const NOMBRE_CATEGORIA = {
@@ -44,6 +45,7 @@ export const NOMBRE_CATEGORIA = {
   personal_training: "Entrenamiento personal",
   physiotherapy: "Fisioterapia",
   nutrition: "Nutrición",
+  master: "Másters (clases especiales)",
   salary: "Sueldos del personal",
   staff_payroll: "Sueldos del personal",
   equipment_breakdown: "Averías de equipos",
@@ -284,21 +286,6 @@ export const ReporteFinanciero = ({ transactions }) => {
 
   // Indicador con el diseño común: icono grande en degradado + fondo de color suave
   const GRAD = { emerald: "from-emerald-500 to-teal-600", rose: "from-rose-500 to-red-600", blue: "from-blue-500 to-indigo-600", amber: "from-amber-500 to-orange-500", indigo: "from-violet-500 to-indigo-600" };
-  const Kpi = ({ titulo, valor, icono: Icono, tono, children }) => {
-    const c = Object.keys(GRAD).find((k) => tono.includes(`bg-${k}-50`)) || "blue";
-    return (
-      <div className={`rd-kpi rd-levanta relative overflow-hidden rounded-xl border px-3 py-2.5 rd-aparece flex items-center gap-2.5 ${tono}`}>
-        <span className={`w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br ${GRAD[c]} text-white flex items-center justify-center shadow-md`}>
-          <Icono className="w-[18px] h-[18px]" />
-        </span>
-        <span className="min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-wider opacity-80">{titulo}</p>
-          <p className="text-lg font-black leading-tight truncate">{valor}</p>
-          <div className="text-[11px]">{children}</div>
-        </span>
-      </div>
-    );
-  };
 
   return (
     <div className="space-y-4">
@@ -359,21 +346,11 @@ export const ReporteFinanciero = ({ transactions }) => {
 
       {/* Indicadores */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Kpi titulo="Ingresos" valor={soles(totIng)} icono={TrendingUp} tono="bg-emerald-50 border-emerald-200 text-emerald-900">
-          <Variacion actual={totIng} anterior={antIng} />
-        </Kpi>
-        <Kpi titulo="Egresos" valor={soles(totEgr)} icono={TrendingDown} tono="bg-rose-50 border-rose-200 text-rose-900">
-          <Variacion actual={totEgr} anterior={antEgr} invertir />
-        </Kpi>
-        <Kpi titulo="Utilidad" valor={soles(util)} icono={Wallet} tono={util >= 0 ? "bg-blue-50 border-blue-200 text-blue-900" : "bg-amber-50 border-amber-200 text-amber-900"}>
-          <Variacion actual={util} anterior={antIng - antEgr} />
-        </Kpi>
-        <Kpi titulo="Margen" valor={`${margen.toFixed(1)}%`} icono={Percent} tono="bg-indigo-50 border-indigo-200 text-indigo-900">
-          <span className="text-[11px] font-semibold">de cada S/ 100 quedan S/ {Math.max(0, margen).toFixed(0)}</span>
-        </Kpi>
-        <Kpi titulo="Ticket promedio" valor={soles(ticket)} icono={Receipt} tono="bg-amber-50 border-amber-200 text-amber-900">
-          <span className="text-[11px] font-semibold">{ing.length} cobros · {egr.length} gastos</span>
-        </Kpi>
+        <TarjetaKpi titulo="Ingresos" texto={soles(totIng)} emoji="📈" tono="verde" sub={<Variacion actual={totIng} anterior={antIng} />} />
+        <TarjetaKpi titulo="Egresos" texto={soles(totEgr)} emoji="📉" tono="rojo" sub={<Variacion actual={totEgr} anterior={antEgr} invertir />} />
+        <TarjetaKpi titulo="Utilidad" texto={soles(util)} emoji="👛" tono={util >= 0 ? "azul" : "ambar"} sub={<Variacion actual={util} anterior={antIng - antEgr} />} />
+        <TarjetaKpi titulo="Margen" texto={`${margen.toFixed(1)}%`} emoji="💯" tono="violeta" sub={`de cada S/ 100 quedan S/ ${Math.max(0, margen).toFixed(0)}`} />
+        <TarjetaKpi titulo="Ticket promedio" texto={soles(ticket)} emoji="🧾" tono="ambar" sub={`${ing.length} cobros · ${egr.length} gastos`} />
       </div>
 
       {/* Flujo */}

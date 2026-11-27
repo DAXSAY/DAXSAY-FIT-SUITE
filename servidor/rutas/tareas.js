@@ -21,7 +21,7 @@ import { codigoAlumno } from "../codigoAlumno.js";
 
 const router = Router();
 
-export const TIPOS = ["llamada", "whatsapp", "renovacion", "cobro", "pase_libre", "rutina", "seguimiento", "fisio", "abandono", "nutricion", "limpieza", "otro"];
+export const TIPOS = ["llamada", "whatsapp", "visita", "renovacion", "cobro", "pase_libre", "rutina", "seguimiento", "fisio", "abandono", "nutricion", "equipo", "entrega", "limpieza", "nota", "otro"];
 const ROLES_PERSONAL = ["admin", "reception", "trainer", "physio", "nutritionist", "instructor"];
 const DIAS_ABANDONO = 7;
 const DIAS_POR_VENCER = 3;
@@ -133,12 +133,13 @@ function aTarea(f, nombres, hoy, ahora) {
   const abierta = f.estado === "pendiente" || f.estado === "en_curso";
   const fecha = String(f.fecha).slice(0, 10);
   const hora = f.hora ? String(f.hora).slice(0, 5) : "";
-  const atrasada = abierta && (fecha < hoy || (fecha === hoy && hora && hora < ahora));
+  const atrasada = abierta && f.tipo !== "nota" && (fecha < hoy || (fecha === hoy && hora && hora < ahora));
   const cerrada = f.cerrada_en ? String(f.cerrada_en) : null;
   const aTiempo = f.estado === "hecha" && cerrada ? cerrada.slice(0, 10) <= fecha : null;
   return {
     id: String(f.idtarea),
     tipo: f.tipo,
+    prioridad: f.prioridad === "urgente" ? "urgente" : "normal",
     titulo: f.titulo,
     nota: f.nota || "",
     destino: {
@@ -747,7 +748,10 @@ router.post("/", async (req, res, next) => {
        VALUES (?,?,?,?,?,?,?,?,?,?,?, 'manual', ?)`,
       [tipo, titulo, txt(b.nota, 500), d.destino, d.turno, d.rol, d.usuario, idal, idpr, fecha, horaOk(b.hora), req.usuario.idusuario],
     );
-    await historial(r.insertId, "creada", txt(b.nota, 200) || "Tarea creada", req.usuario.idusuario);
+    // Prioridad (columna de la parte 40; si aún no existe, se ignora)
+    if (b.prioridad === "urgente")
+      await consultar("UPDATE tareas SET prioridad = 'urgente' WHERE idtarea = ?", [r.insertId]).catch(() => {});
+    await historial(r.insertId, "creada", txt(b.nota, 200) || (tipo === "nota" ? "Comentario dejado" : "Tarea creada"), req.usuario.idusuario);
     res.status(201).json({ ok: true, id: String(r.insertId) });
   } catch (e) {
     next(e);

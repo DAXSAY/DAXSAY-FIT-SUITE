@@ -299,6 +299,8 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
         return "Personal Training";
       case "physiotherapy":
         return "Fisioterapia";
+      case "master":
+        return "Máster (clase especial)";
       case "nutrition":
         return "Nutrición";
       case "rent":

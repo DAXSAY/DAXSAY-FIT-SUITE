@@ -13,7 +13,7 @@ import { escucharCambios } from "../../utils/tiempoReal";
 import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
 import { TarjetaKpi } from "../common/TarjetaKpi";
 import {
-  TIPOS_TAREA, tipoDe, AREAS, textoTurno, textoDestino, emojiDestino, fechaCorta, cuandoTexto, sumarDiasISO, enlaceWhatsapp, ESTADOS, estadoVisible, primerNombre, diaSemana,
+  TIPOS_TAREA, tipoDe, AREAS, textoTurno, textoDestino, emojiDestino, fechaCorta, cuandoTexto, sumarDiasISO, enlaceWhatsapp, ESTADOS, estadoVisible, primerNombre, diaSemana, PLANTILLAS,
 } from "./tareasComun";
 
 const campo = "w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-800";
@@ -300,7 +300,12 @@ const BuscarPersona = ({ valor, onCambiar }) => {
 
 const NuevaTarea = ({ ctx, fechaInicial, onCerrar, onListo }) => {
   const hoy = ctx.hoy;
-  const [tipo, setTipo] = useState("llamada");
+  // «tarea»: hay que hacer algo · «comentario»: solo dejar dicho (el siguiente turno lo lee)
+  const [modo, setModo] = useState("tarea");
+  const [prioridad, setPrioridad] = useState("normal");
+  const [tipoTarea, setTipoTarea] = useState("llamada");
+  const tipo = modo === "comentario" ? "nota" : tipoTarea;
+  const setTipo = setTipoTarea;
   const [titulo, setTitulo] = useState("");
   const [destino, setDestino] = useState(null);
   const [sobre, setSobre] = useState(null);
@@ -310,20 +315,36 @@ const NuevaTarea = ({ ctx, fechaInicial, onCerrar, onListo }) => {
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
   const tituloAuto = `${tipoDe(tipo).label}${sobre ? `: ${sobre.nombre}` : ""}`;
+  // Por defecto, el comentario va al turno siguiente
+  const siguienteTurno = useMemo(() => {
+    const act = (ctx.turnos || []).filter((x) => x.activo).sort((a, b) => String(a.inicio).localeCompare(String(b.inicio)));
+    const i = act.findIndex((x) => x.id === (ctx.turnoActualId || ctx.yo?.turnoId));
+    return i >= 0 && act.length > 1 ? act[(i + 1) % act.length] : act[0] || null;
+  }, [ctx]);
+  const cambiarModo = (m) => {
+    setModo(m);
+    setError("");
+    if (m === "comentario" && !destino) setDestino(siguienteTurno ? { tipo: "turno", turnoId: siguienteTurno.id } : { tipo: "rol", rol: "reception" });
+  };
   const guardar = async () => {
     setError("");
-    if (!destino) return setError("Elige para quién es la tarea.");
+    if (modo === "comentario" && !(nota.trim() || titulo.trim())) return setError("Escribe el comentario.");
+    if (!destino) return setError(modo === "comentario" ? "Elige quién debe enterarse." : "Elige para quién es la tarea.");
     setGuardando(true);
     try {
       await api("/tareas", {
         method: "POST",
         body: {
           tipo,
-          titulo: titulo.trim() || tituloAuto,
-          nota,
+          prioridad,
+          titulo:
+            modo === "comentario"
+              ? (titulo.trim() || nota.trim()).slice(0, 160)
+              : titulo.trim() || tituloAuto,
+          nota: modo === "comentario" && !titulo.trim() && nota.trim().length <= 160 ? "" : nota,
           destino,
-          fecha,
-          hora,
+          fecha: modo === "comentario" ? hoy : fecha,
+          hora: modo === "comentario" ? "" : hora,
           alumnoId: sobre?.tipo === "alumno" ? sobre.id : null,
           prospectoId: sobre?.tipo === "prospecto" ? sobre.id : null,
         },
@@ -336,9 +357,9 @@ const NuevaTarea = ({ ctx, fechaInicial, onCerrar, onListo }) => {
   };
   return (
     <Modal
-      titulo="Nueva tarea"
-      emoji="📝"
-      subtitulo="Elige con botones: qué, sobre quién, para quién y cuándo."
+      titulo={modo === "comentario" ? "Nuevo comentario" : "Nueva tarea"}
+      emoji={modo === "comentario" ? "🗒️" : "📝"}
+      subtitulo={modo === "comentario" ? "Deja dicho lo que pasó para que el siguiente turno lo sepa." : "Elige con botones: qué, sobre quién, para quién y cuándo."}
       onCerrar={onCerrar}
       lado={
         <>
@@ -349,15 +370,17 @@ const NuevaTarea = ({ ctx, fechaInicial, onCerrar, onListo }) => {
                 <Emo e={tipoDe(tipo).emoji} />
               </span>
               <div className="min-w-0 space-y-1.5">
-                <p className="font-black text-slate-900 leading-snug">{titulo.trim() || tituloAuto}</p>
+                <p className="font-black text-slate-900 leading-snug">{modo === "comentario" ? titulo.trim() || nota.trim() || "Tu comentario aparecerá aquí" : titulo.trim() || tituloAuto}</p>
                 <div className="flex flex-wrap gap-1.5">
+                  {prioridad === "urgente" && <Chip tono="rojo">🔥 Urgente</Chip>}
+                  {modo === "comentario" && <Chip tono="indigo">🗒️ Solo para que sepan</Chip>}
                   <Chip tono="plomo">🗓️ {cuandoTexto(fecha, hoy)}{hora ? ` · ${hora}` : ""}</Chip>
                   <Chip tono="teal">
                     <Emo e={emojiDestino(destino)} /> {destino ? textoDestino({ ...destino, usuario: ctx.personas.find((p) => p.id === destino.usuarioId)?.nombre }, ctx.turnos) : "Falta elegir para quién"}
                   </Chip>
                 </div>
                 {sobre && <p className="text-sm font-bold text-slate-600"><Emo e={sobre.tipo === "alumno" ? "🧑‍🎓" : "🙋"} /> {sobre.nombre} · {sobre.detalle}</p>}
-                {nota && <p className="text-sm text-slate-600">{nota}</p>}
+                {nota && modo !== "comentario" && <p className="text-sm text-slate-600">{nota}</p>}
               </div>
             </div>
           </div>
@@ -366,55 +389,113 @@ const NuevaTarea = ({ ctx, fechaInicial, onCerrar, onListo }) => {
             <p>• La primera persona que pulsa <b>Tomar</b> se queda con la tarea; nadie más la duplica.</p>
             <p>• Si no se termina en el turno, se <b>pasa al siguiente turno</b> con un comentario.</p>
             <p>• Las tareas de <b>renovación</b> y <b>armar rutina</b> se cierran solas cuando se registra la renovación o se guarda la rutina.</p>
+            <p>• Un <b>comentario</b> no pide hacer nada: solo deja dicho lo que pasó. Quien lo lee pulsa <b>Entendido</b>.</p>
           </div>
         </>
       }
     >
-      <div>
-        <Etiqueta>1. ¿Qué hay que hacer?</Etiqueta>
-        <Opciones valor={tipo} onElegir={setTipo} opciones={Object.entries(TIPOS_TAREA).map(([k, t]) => ({ k, emoji: t.emoji, label: t.label, tono: t.tono }))} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {[
+          ["tarea", "📝", "Asignar una tarea", "Alguien tiene que hacer algo (llamar, cobrar, armar rutina…)"],
+          ["comentario", "🗒️", "Solo dejar un comentario", "Para que el siguiente turno sepa lo que pasó; no pide hacer nada"],
+        ].map(([k, e, l, d]) => (
+          <button key={k} type="button" onClick={() => cambiarModo(k)} className={`rounded-2xl border p-3 text-left cursor-pointer ${modo === k ? "rd-kpi-teal rd-aviso-t ring-2 ring-teal-400" : "bg-white border-slate-200 text-slate-700"}`}>
+            <span className="block text-sm font-black"><Emo e={e} /> {l}</span>
+            <span className="block text-[11px] opacity-80">{d}</span>
+          </button>
+        ))}
       </div>
-      <div>
-        <Etiqueta>2. ¿Sobre quién? (opcional)</Etiqueta>
-        <BuscarPersona valor={sobre} onCambiar={setSobre} />
-      </div>
-      <div>
-        <Etiqueta>3. ¿Para quién es?</Etiqueta>
-        <ElegirDestino ctx={ctx} valor={destino} onCambiar={setDestino} />
-      </div>
-      <div>
-        <Etiqueta>4. ¿Cuándo?</Etiqueta>
-        <div className="flex flex-wrap items-center gap-2">
-          <Opciones
-            valor={fecha}
-            onElegir={setFecha}
-            opciones={[
-              { k: hoy, emoji: "📍", label: "Hoy", tono: "teal" },
-              { k: sumarDiasISO(hoy, 1), emoji: "➡️", label: "Mañana", tono: "azul" },
-              { k: sumarDiasISO(hoy, 2), emoji: "📆", label: `${diaSemana(sumarDiasISO(hoy, 2))} ${fechaCorta(sumarDiasISO(hoy, 2))}`, tono: "violeta" },
-            ]}
-          />
-          <input type="date" min={hoy} value={fecha} onChange={(e) => setFecha(e.target.value)} className="px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm" aria-label="Otra fecha" />
-          <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm" aria-label="Hora (opcional)" title="Hora (opcional)" />
-        </div>
-      </div>
-      <div className="grid sm:grid-cols-2 gap-3">
-        <label className="block">
-          <Etiqueta>Título</Etiqueta>
-          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder={tituloAuto} className={campo} maxLength={160} />
-        </label>
-        <label className="block">
-          <Etiqueta>Nota (opcional)</Etiqueta>
-          <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej. Pedir que traiga su DNI" className={campo} maxLength={500} />
-        </label>
-      </div>
+
+      {modo === "comentario" ? (
+        <>
+          <div>
+            <Etiqueta>1. ¿Qué pasó?</Etiqueta>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {PLANTILLAS.nota.map((x) => (
+                <button key={x} type="button" onClick={() => setNota(x)} className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold text-left cursor-pointer ${nota === x ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{x}</button>
+              ))}
+            </div>
+            <textarea value={nota} onChange={(e) => setNota(e.target.value)} rows={3} maxLength={500} placeholder="Ej. Vino una señora a pedir los horarios; dijo que regresa a las 6 p. m. con su hija." className={campo} />
+          </div>
+          <div>
+            <Etiqueta>2. ¿Sobre quién? (opcional)</Etiqueta>
+            <BuscarPersona valor={sobre} onCambiar={setSobre} />
+          </div>
+          <div>
+            <Etiqueta>3. ¿Quién debe enterarse?</Etiqueta>
+            <ElegirDestino ctx={ctx} valor={destino} onCambiar={setDestino} />
+          </div>
+          <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+            <input type="checkbox" checked={prioridad === "urgente"} onChange={(e) => setPrioridad(e.target.checked ? "urgente" : "normal")} /> 🔥 Es importante: que lo lean apenas entren
+          </label>
+        </>
+      ) : (
+        <>
+          <div>
+            <Etiqueta>1. ¿Qué hay que hacer?</Etiqueta>
+            <Opciones valor={tipo} onElegir={setTipo} opciones={Object.entries(TIPOS_TAREA).filter(([, t]) => !t.soloComentario).map(([k, t]) => ({ k, emoji: t.emoji, label: t.label, tono: t.tono }))} />
+            {PLANTILLAS[tipo] && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {PLANTILLAS[tipo].map((x) => (
+                  <button key={x} type="button" onClick={() => setTitulo(x)} className={`px-2.5 py-1 rounded-full border text-[11px] font-bold cursor-pointer ${titulo === x ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{x}</button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <Etiqueta>2. ¿Sobre quién? (opcional)</Etiqueta>
+            <BuscarPersona valor={sobre} onCambiar={setSobre} />
+          </div>
+          <div>
+            <Etiqueta>3. ¿Para quién es?</Etiqueta>
+            <ElegirDestino ctx={ctx} valor={destino} onCambiar={setDestino} />
+          </div>
+          <div>
+            <Etiqueta>4. ¿Cuándo?</Etiqueta>
+            <div className="flex flex-wrap items-center gap-2">
+              <Opciones
+                valor={fecha}
+                onElegir={setFecha}
+                opciones={[
+                  { k: hoy, emoji: "📍", label: "Hoy", tono: "teal" },
+                  { k: sumarDiasISO(hoy, 1), emoji: "➡️", label: "Mañana", tono: "azul" },
+                  { k: sumarDiasISO(hoy, 2), emoji: "📆", label: `${diaSemana(sumarDiasISO(hoy, 2))} ${fechaCorta(sumarDiasISO(hoy, 2))}`, tono: "violeta" },
+                ]}
+              />
+              <input type="date" min={hoy} value={fecha} onChange={(e) => setFecha(e.target.value)} className="px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm" aria-label="Otra fecha" />
+              <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm" aria-label="Hora (opcional)" title="Hora (opcional)" />
+            </div>
+          </div>
+          <div>
+            <Etiqueta>5. ¿Qué tan urgente?</Etiqueta>
+            <Opciones
+              valor={prioridad}
+              onElegir={setPrioridad}
+              opciones={[
+                { k: "normal", emoji: "🟢", label: "Normal", tono: "verde" },
+                { k: "urgente", emoji: "🔥", label: "Urgente", tono: "rojo" },
+              ]}
+            />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="block">
+              <Etiqueta>Título</Etiqueta>
+              <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder={tituloAuto} className={campo} maxLength={160} />
+            </label>
+            <label className="block">
+              <Etiqueta>Detalle (opcional)</Etiqueta>
+              <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej. Pedir que traiga su DNI" className={campo} maxLength={500} />
+            </label>
+          </div>
+        </>
+      )}
       {error && <p className="rd-error-t text-sm font-bold">{error}</p>}
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCerrar} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">
           Cancelar
         </button>
         <button type="button" disabled={guardando} onClick={guardar} className="rd-boton-t px-5 py-2 rounded-xl text-sm font-black cursor-pointer disabled:opacity-50">
-          {guardando ? "Guardando…" : "✅ Crear tarea"}
+          {guardando ? "Guardando…" : modo === "comentario" ? "🗒️ Dejar comentario" : "✅ Asignar tarea"}
         </button>
       </div>
     </Modal>
@@ -619,10 +700,11 @@ export const TarjetaTarea = ({ t, ctx, onAccion, compacta = false }) => {
   const wa = persona ? enlaceWhatsapp(persona.telefono, `Hola ${primerNombre(persona.nombre)}, te escribimos de ${ctx.gimnasio || "RADICAL"}.`) : null;
   const puedeAnular = abierta && (ctx.yo.rol === "admin" || t.creador?.id === ctx.yo.id);
   const [error, setError] = useState("");
-  const accion = async (ruta) => {
+  const esNota = t.tipo === "nota";
+  const accion = async (ruta, body = {}) => {
     setError("");
     try {
-      await api(`/tareas/${t.id}/${ruta}`, { method: "POST", body: {} });
+      await api(`/tareas/${t.id}/${ruta}`, { method: "POST", body });
       onAccion?.("recargar");
     } catch (e) {
       setError(e.message);
@@ -639,9 +721,14 @@ export const TarjetaTarea = ({ t, ctx, onAccion, compacta = false }) => {
             <p className={`font-extrabold text-slate-900 text-sm sm:text-[15px] leading-snug ${t.estado === "hecha" ? "line-through decoration-2 opacity-70" : ""}`}>{t.titulo}</p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <Chip tono={est.tono}>
-              <Emo e={est.emoji} /> {est.label}
-            </Chip>
+            {t.prioridad === "urgente" && abierta && <Chip tono="rojo">🔥 Urgente</Chip>}
+            {esNota ? (
+              <Chip tono={abierta ? "indigo" : "verde"}>{abierta ? "🗒️ Comentario" : "👀 Leído"}</Chip>
+            ) : (
+              <Chip tono={est.tono}>
+                <Emo e={est.emoji} /> {est.label}
+              </Chip>
+            )}
             <Chip tono="plomo">
               🗓️ {cuandoTexto(t.fecha, ctx.hoy)}
               {t.hora ? ` · ${t.hora}` : ""}
@@ -677,7 +764,7 @@ export const TarjetaTarea = ({ t, ctx, onAccion, compacta = false }) => {
               )}
               {t.estado === "hecha" && (
                 <>
-                  ✅ {t.cierreAuto ? "Se cerró sola" : `Hecha por ${t.cerradaPor?.nombre || "—"}`}
+                  {esNota ? `👀 Leído por ${t.cerradaPor?.nombre || "—"}` : `✅ ${t.cierreAuto ? "Se cerró sola" : `Hecha por ${t.cerradaPor?.nombre || "—"}`}`}
                   {t.aTiempo === false && " · fuera de fecha"}
                 </>
               )}
@@ -686,12 +773,17 @@ export const TarjetaTarea = ({ t, ctx, onAccion, compacta = false }) => {
           )}
           {error && <p className="rd-error-t text-xs font-bold">{error}</p>}
           <div className="flex flex-wrap gap-1.5 pt-1">
-            {abierta && !t.tomadaPor && (
+            {esNota && abierta && (
+              <button type="button" onClick={() => accion("hecha", { resultado: "Leído" })} className="rd-boton-t px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer">
+                👀 Entendido
+              </button>
+            )}
+            {!esNota && abierta && !t.tomadaPor && (
               <button type="button" onClick={() => accion("tomar")} className="rd-boton-t px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer">
                 🙋 Tomar
               </button>
             )}
-            {abierta && !tomadaOtro && (
+            {!esNota && abierta && !tomadaOtro && (
               <button type="button" onClick={() => onAccion?.("hecha", t)} className="rd-kpi-verde rd-boton-suave px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer">
                 ✅ Hecha
               </button>
@@ -701,7 +793,7 @@ export const TarjetaTarea = ({ t, ctx, onAccion, compacta = false }) => {
                 ↪️ Pasar
               </button>
             )}
-            {abierta && (
+            {!esNota && abierta && (
               <button type="button" onClick={() => onAccion?.("reprogramar", t)} className="rd-kpi-ambar rd-boton-suave px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer">
                 📅 Reprogramar
               </button>
@@ -992,6 +1084,7 @@ const FILTROS = [
   { k: "abiertas", label: "Por hacer", emoji: "⏳", tono: "ambar" },
   { k: "atrasadas", label: "Atrasadas", emoji: "⏰", tono: "rojo" },
   { k: "mias", label: "Tomadas por mí", emoji: "🙋", tono: "azul" },
+  { k: "comentarios", label: "Comentarios", emoji: "🗒️", tono: "indigo" },
   { k: "hechas", label: "Hechas", emoji: "✅", tono: "verde" },
   { k: "todas", label: "Todas", emoji: "📋", tono: "plomo" },
 ];
@@ -1031,6 +1124,7 @@ const TareasModule = () => {
       if (filtro === "atrasadas" && !t.atrasada) return false;
       if (filtro === "mias" && !(abierta && t.tomadaPor?.id === datos?.yo.id)) return false;
       if (filtro === "hechas" && t.estado !== "hecha") return false;
+      if (filtro === "comentarios" && t.tipo !== "nota") return false;
       if (tipoF && t.tipo !== tipoF) return false;
       if (buscar.trim()) {
         const q = buscar.trim().toLowerCase();
@@ -1050,9 +1144,9 @@ const TareasModule = () => {
   // Tareas del día elegido en el calendario (las atrasadas se ven en «hoy»)
   const delDia = tareas
     .filter((t) => t.fecha === dia || (dia === hoy && t.atrasada && t.fecha < hoy))
-    .sort((a, b) => Number(b.atrasada) - Number(a.atrasada) || String(a.hora || "99").localeCompare(String(b.hora || "99")));
+    .sort((a, b) => Number(b.prioridad === "urgente") - Number(a.prioridad === "urgente") || Number(b.atrasada) - Number(a.atrasada) || String(a.hora || "99").localeCompare(String(b.hora || "99")));
 
-  const lista = filtrar(tareas).sort((a, b) => Number(b.atrasada) - Number(a.atrasada) || a.fecha.localeCompare(b.fecha) || String(a.hora || "99").localeCompare(String(b.hora || "99")));
+  const lista = filtrar(tareas).sort((a, b) => Number(b.prioridad === "urgente" && b.estado !== "hecha") - Number(a.prioridad === "urgente" && a.estado !== "hecha") || Number(b.atrasada) - Number(a.atrasada) || a.fecha.localeCompare(b.fecha) || String(a.hora || "99").localeCompare(String(b.hora || "99")));
   const grupos = [
     ["⏰ Atrasadas", lista.filter((t) => t.atrasada)],
     ["📍 Hoy", lista.filter((t) => !t.atrasada && t.fecha === hoy)],
@@ -1068,7 +1162,7 @@ const TareasModule = () => {
       <CabeceraModulo
         icono={ClipboardList}
         etiqueta="Operativo"
-        titulo="Tareas entre turnos"
+        titulo="Asignación de tareas"
         descripcion="Lo que hay que hacer hoy, quién lo tomó y qué pasa al siguiente turno. Se actualiza solo en todas las pantallas."
         accion={ctx && <AccionCabecera icono={Plus} onClick={() => setNueva(true)}>Nueva tarea</AccionCabecera>}
         activa={vista}

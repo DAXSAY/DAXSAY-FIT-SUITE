@@ -1777,7 +1777,7 @@ export const MacroTarjetas = ({ kcal, p = 0, c = 0, g = 0 }) => {
   return (
     <div className={`grid grid-cols-1 ${kcal ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-3"} gap-2.5`}>
       {kcal != null && (
-        <div className="rd-kpi rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2.5 flex items-center gap-2.5">
+        <div className="rd-kpi rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2.5 flex items-center gap-2.5" style={{ justifyContent: "flex-start" }}>
           <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-md shrink-0"><Flame className="w-[18px] h-[18px]" /></span>
           <span className="min-w-0">
             <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500">Calorías del día</span>
@@ -1789,7 +1789,7 @@ export const MacroTarjetas = ({ kcal, p = 0, c = 0, g = 0 }) => {
       {items.map(([t, gr, k, I, grad, txt, ayuda]) => {
         const pct = Math.round((k / total) * 100);
         return (
-          <div key={t} className="rd-kpi rounded-xl border border-slate-200 bg-white px-3 py-2.5 flex items-center gap-2.5">
+          <div key={t} className="rd-kpi rounded-xl border border-slate-200 bg-white px-3 py-2.5 flex items-center gap-2.5" style={{ justifyContent: "flex-start" }}>
             <span className={`w-9 h-9 rounded-xl bg-gradient-to-br ${grad} text-white flex items-center justify-center shadow-md shrink-0`}><I className="w-[18px] h-[18px]" /></span>
             <span className="min-w-0 flex-1">
               <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500">{t}</span>

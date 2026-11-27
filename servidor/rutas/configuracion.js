@@ -7,7 +7,7 @@ const router = Router();
 const CLAVES = [
   "gym_nombre", "gym_whatsapp", "admin_whatsapp", "gym_direccion", "gym_ruc",
   // % que queda para el gimnasio ("derecho de piso") en servicios de profesionales
-  "pct_gym_entrenamiento", "pct_gym_fisioterapia", "pct_gym_nutricion",
+  "pct_gym_entrenamiento", "pct_gym_fisioterapia", "pct_gym_nutricion", "pct_gym_masters",
   // Reglas de descuento por tardanza del personal (JSON)
   "reglas_tardanza",
   // Días sin renovar para que un alumno cuente como exalumno (gerencia)

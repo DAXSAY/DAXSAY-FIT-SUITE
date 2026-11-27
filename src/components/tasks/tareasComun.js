@@ -1,7 +1,8 @@
-// Datos comunes de las tareas entre turnos (tipos, áreas, textos)
+// Datos comunes de la asignación de tareas (tipos, áreas, textos)
 export const TIPOS_TAREA = {
   llamada: { emoji: "📞", label: "Llamar", tono: "azul" },
   whatsapp: { emoji: "💬", label: "WhatsApp", tono: "verde" },
+  visita: { emoji: "🚶", label: "Vendrá a visitar", tono: "azul" },
   renovacion: { emoji: "🔁", label: "Renovación", tono: "teal" },
   cobro: { emoji: "💰", label: "Cobrar saldo", tono: "ambar" },
   pase_libre: { emoji: "🎟️", label: "Pase libre", tono: "violeta" },
@@ -10,8 +11,29 @@ export const TIPOS_TAREA = {
   fisio: { emoji: "🩺", label: "Fisioterapia", tono: "rosa" },
   abandono: { emoji: "🚶", label: "No viene", tono: "rojo" },
   nutricion: { emoji: "🥗", label: "Nutrición", tono: "lima" },
+  equipo: { emoji: "🔧", label: "Máquina / equipo", tono: "naranja" },
+  entrega: { emoji: "📦", label: "Entregar / guardar algo", tono: "violeta" },
   limpieza: { emoji: "🧹", label: "Orden / limpieza", tono: "plomo" },
   otro: { emoji: "📌", label: "Otro", tono: "plomo" },
+  nota: { emoji: "🗒️", label: "Comentario", tono: "indigo", soloComentario: true },
+};
+
+/** Frases rápidas para no escribir todo (se pueden editar) */
+export const PLANTILLAS = {
+  nota: [
+    "Vino a pedir información y horarios; dijo que vendrá por la tarde",
+    "Llamó preguntando por precios; no dejó datos",
+    "Un alumno olvidó un objeto; está guardado en recepción",
+    "Se acabó un insumo (papel, jabón, agua)",
+    "Hay una máquina con falla; avisar a mantenimiento",
+    "Todo tranquilo en el turno, sin novedades",
+  ],
+  visita: ["Vendrá hoy por la tarde a conocer el gimnasio", "Vendrá mañana con un amigo", "Vendrá a pagar su matrícula"],
+  llamada: ["Llamar para confirmar su visita", "Llamar para recordar su renovación"],
+  whatsapp: ["Enviar horarios y precios por WhatsApp", "Enviar su rutina por WhatsApp"],
+  equipo: ["Revisar máquina que hace ruido", "Cambiar cable de la polea", "Reportar al técnico"],
+  entrega: ["Entregar llaves del casillero", "Entregar el pedido de la tienda", "Guardar el objeto olvidado"],
+  cobro: ["Cobrar saldo pendiente de su matrícula"],
 };
 export const tipoDe = (t) => TIPOS_TAREA[t] || TIPOS_TAREA.otro;
 

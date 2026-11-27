@@ -95,7 +95,7 @@ export const DashboardOverview = ({
       margen: ingresos - egresos,
       memberships: sumar(ing.filter((t) => t.category === "membership")),
       pos: sumar(ing.filter((t) => t.category === "pos_sale")),
-      servicios: sumar(ing.filter((t) => ["physiotherapy", "nutrition", "personal_training"].includes(t.category))),
+      servicios: sumar(ing.filter((t) => ["physiotherapy", "nutrition", "personal_training", "master"].includes(t.category))),
     };
   };
 
@@ -205,7 +205,7 @@ export const DashboardOverview = ({
     const ing = transactions.filter((t) => t.type === "income");
     const memRev = sumar(ing.filter((t) => t.category === "membership"));
     const posRev = sumar(ing.filter((t) => t.category === "pos_sale"));
-    const servRev = sumar(ing.filter((t) => ["physiotherapy", "nutrition", "personal_training"].includes(t.category)));
+    const servRev = sumar(ing.filter((t) => ["physiotherapy", "nutrition", "personal_training", "master"].includes(t.category)));
     const otrosRev = sumar(ing) - memRev - posRev - servRev;
     const total = memRev + posRev + servRev + otrosRev;
     const pct = (v) => (total > 0 ? Math.round((v / total) * 100) : 0);

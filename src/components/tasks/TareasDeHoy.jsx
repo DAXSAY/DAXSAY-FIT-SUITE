@@ -45,9 +45,12 @@ export const TareasDeHoy = ({ usuarioId, nombre, onAbrir }) => {
     consultas.clear();
     setDatos(null);
   };
-  const atrasadas = datos.tareas.filter((t) => t.atrasada);
-  const deHoy = datos.tareas.filter((t) => !t.atrasada);
-  const mias = datos.tareas.filter((t) => t.tomadaPor?.id === datos.yo.id);
+  const urg = (a, b) => Number(b.prioridad === "urgente") - Number(a.prioridad === "urgente");
+  const comentarios = datos.tareas.filter((t) => t.tipo === "nota").sort(urg);
+  const tareas = datos.tareas.filter((t) => t.tipo !== "nota");
+  const atrasadas = tareas.filter((t) => t.atrasada).sort(urg);
+  const deHoy = tareas.filter((t) => !t.atrasada).sort(urg);
+  const mias = tareas.filter((t) => t.tomadaPor?.id === datos.yo.id);
   const turno = datos.yo.turnoId ? datos.turnos.find((t) => t.id === datos.yo.turnoId) : null;
   const ahora = datos.turnoActualId ? datos.turnos.find((t) => t.id === datos.turnoActualId) : null;
   const MAX = 12;
@@ -59,9 +62,12 @@ export const TareasDeHoy = ({ usuarioId, nombre, onAbrir }) => {
           <span className="rd-emoji">{tipo.emoji}</span>
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm sm:text-[15px] font-extrabold text-slate-900 leading-snug">{t.titulo}</p>
+          <p className="text-sm sm:text-[15px] font-extrabold text-slate-900 leading-snug">
+            {t.prioridad === "urgente" && <span className="rd-kpi-rojo rd-chip-t inline-block mr-1.5 px-2 py-0.5 rounded-full text-[10px] font-black align-middle">🔥 Urgente</span>}
+            {t.titulo}
+          </p>
           <p className="text-xs text-slate-500 mt-0.5">
-            {t.atrasada ? <b className="rd-texto-k">⏰ Atrasada · </b> : null}
+            {t.tipo === "nota" ? <b className="rd-texto-k">🗒️ Comentario de {primerNombre(t.creador?.nombre) || "otro turno"} · </b> : t.atrasada ? <b className="rd-texto-k">⏰ Atrasada · </b> : null}
             {cuandoTexto(t.fecha, datos.hoy)}
             {t.hora ? ` ${t.hora}` : ""} · {textoDestino(t.destino, datos.turnos)}
             {t.tomadaPor ? ` · la tiene ${t.tomadaPor.id === datos.yo.id ? "tú" : primerNombre(t.tomadaPor.nombre)}` : ""}
@@ -124,12 +130,14 @@ export const TareasDeHoy = ({ usuarioId, nombre, onAbrir }) => {
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${comentarios.length ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-3`}>
+          {comentarios.length > 0 && <Cuenta tono="indigo" emoji="🗒️" n={comentarios.length} l="Comentarios para ti" />}
           <Cuenta tono="teal" emoji="📍" n={deHoy.length} l="Para hoy" />
           <Cuenta tono="rojo" emoji="⏰" n={atrasadas.length} l="Atrasadas" />
           <Cuenta tono="azul" emoji="🙋" n={mias.length} l="Ya son tuyas" />
         </div>
         <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-5">
+          <Grupo titulo="🗒️ Para que sepas (comentarios del turno anterior)" lista={comentarios} />
           <Grupo titulo="⏰ Atrasadas: empieza por aquí" lista={atrasadas} />
           <Grupo titulo="📍 Para hoy" lista={deHoy} />
         </div>
