@@ -44,6 +44,7 @@ const cargadores = {
   RoutinesAndExercises: () => import("./components/routines/RoutinesAndExercises").then((m) => ({ default: m.RoutinesAndExercises })),
   CrmModule: () => import("./components/crm/CrmModule").then((m) => ({ default: m.CrmModule })),
   TareasModule: () => import("./components/tasks/TareasModule"),
+  ClasesModule: () => import("./components/classes/ClasesModule"),
 };
 const DashboardOverview = lazy(cargadores.DashboardOverview);
 const MembersManagement = lazy(cargadores.MembersManagement);
@@ -65,6 +66,7 @@ const StudentPortalModule = lazy(cargadores.StudentPortalModule);
 const RoutinesAndExercises = lazy(cargadores.RoutinesAndExercises);
 const CrmModule = lazy(cargadores.CrmModule);
 const TareasModule = lazy(cargadores.TareasModule);
+const ClasesModule = lazy(cargadores.ClasesModule);
 
 let precargado = false;
 function precargarModulos() {
@@ -233,6 +235,7 @@ function MainAppContent() {
     mi_dieta: "nutrition",
     mi_fisioterapia: "physio",
     mis_asistencias: "attendance",
+    mis_clases: "clases",
   };
   const studentSection = SECCIONES_ALUMNO[activeTab] || "membership";
 
@@ -310,6 +313,8 @@ function MainAppContent() {
         return <CrmModule />;
       case "tasks":
         return <TareasModule />;
+      case "classes":
+        return <ClasesModule />;
       case "routines":
         return <RoutinesAndExercises />;
       default:

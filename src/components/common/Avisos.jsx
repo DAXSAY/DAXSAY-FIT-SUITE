@@ -124,6 +124,7 @@ export function useAccionAviso(setActiveTab, recargar) {
 const ETIQUETA_IR = {
   routines: "Ver rutina", mi_rutina: "Ver rutina", appointments: "Ver agenda", mis_citas: "Ver mis citas",
   nutrition: "Ver dieta", mi_dieta: "Ver mi dieta", physiotherapy: "Ver ficha", mi_fisioterapia: "Ver mi plan",
+  classes: "Ver clases", mis_clases: "Ver clases",
 };
 const ETIQUETA = { restablecer: "Restablecer (DNI)", atendida: "Marcar atendida", abrir_progreso: "Ver progreso", anotar: "Anotar ahora", proyecciones: "Escribir proyecciones", ir: "Ver rutina" };
 const ESTILO = {

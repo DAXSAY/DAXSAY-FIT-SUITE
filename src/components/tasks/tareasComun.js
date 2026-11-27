@@ -20,6 +20,7 @@ export const AREAS = {
   trainer: { emoji: "🏋️", label: "Entrenadores", corto: "Entrenadores" },
   physio: { emoji: "🩺", label: "Fisioterapia", corto: "Fisioterapia" },
   nutritionist: { emoji: "🥗", label: "Nutrición", corto: "Nutrición" },
+  instructor: { emoji: "🎵", label: "Profesores de clases grupales", corto: "Profesores" },
 };
 
 export const primerNombre = (n) => String(n || "").trim().split(/\s+/)[0] || "";

@@ -19,6 +19,7 @@ const CARGO = {
   physio: "fisioterapeuta",
   nutritionist: "nutricionista",
   reception: "recepcion",
+  instructor: "instructor",
 };
 
 const claveTemporal = () => {

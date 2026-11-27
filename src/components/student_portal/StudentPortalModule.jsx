@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, lazy, Suspense } from "react";
+const MisClases = lazy(() => import("../classes/MisClases"));
 import { AnuncioRenovacion } from "./AnuncioRenovacion";
 import { BarraAlumnoMovil } from "./BarraAlumnoMovil";
 import { PanelComposicion, SiluetaMedidas, edadDe } from "../measurements/VisualMedidas";
@@ -10,6 +11,7 @@ import {
   CheckCircle2,
   Utensils,
   HeartPulse,
+  Music,
   FileText,
   Share2,
   User,
@@ -254,7 +256,7 @@ export const StudentPortalModule = ({
   // Membresía caducada: rutina, alimentación, fisioterapia y medidas son privilegios
   // de los alumnos con membresía vigente (el servidor tampoco las entrega).
   const caducada = !!currentMember && currentMember.status === "expired";
-  const SOLO_VIGENTES = ["routine", "nutrition", "physio", "measurements"];
+  const SOLO_VIGENTES = ["routine", "nutrition", "physio", "measurements", "clases"];
   const tab = caducada && SOLO_VIGENTES.includes(activeTab) ? "caducada" : activeTab;
 
   return (
@@ -480,6 +482,18 @@ export const StudentPortalModule = ({
           >
             <CalendarCheck className="w-4 h-4 text-emerald-300" />
             <span>7. Mis Asistencias</span>
+          </button>
+
+          <button
+            onClick={() => handleTabClick("clases")}
+            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
+              activeTab === "clases"
+                ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 ring-2 ring-blue-400"
+                : "bg-white/10 text-slate-300 hover:bg-white/20 hover:text-white"
+            }`}
+          >
+            <Music className="w-4 h-4 text-amber-300" />
+            <span>8. Clases grupales</span>
           </button>
         </div>
       </div>
@@ -1575,6 +1589,11 @@ export const StudentPortalModule = ({
       )}
       {tab === "nutrition" && <MiDieta plan={memberNutritionPlan} sexo={currentMember?.gender} />}
       {tab === "physio" && <MiFisioterapia records={memberPhysioRecords} />}
+      {tab === "clases" && (
+        <Suspense fallback={<p className="text-sm text-slate-500">Cargando clases…</p>}>
+          <MisClases />
+        </Suspense>
+      )}
       {tab === "attendance" && currentMember && (
         <div className="space-y-3">
           <div className="bg-white rounded-2xl border border-slate-200 p-5">

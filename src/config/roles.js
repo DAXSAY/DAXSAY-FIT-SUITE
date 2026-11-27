@@ -24,6 +24,7 @@ import {
   CalendarCheck,
   Contact,
   ClipboardList,
+  Music,
 } from "lucide-react";
 
 // Catálogo de módulos (pestañas) del sistema
@@ -46,6 +47,7 @@ export const MODULES = {
   alerts: { label: "Notificaciones", code: "NT", icon: BellRing },
   crm: { label: "Interesados (CRM)", code: "CR", icon: Contact },
   tasks: { label: "Tareas entre turnos", code: "TA", icon: ClipboardList },
+  classes: { label: "Clases grupales", code: "CG", icon: Music },
   // Portal del alumno
   mi_membresia: { label: "Mi membresía", code: "MB", icon: CreditCard },
   mis_citas: { label: "Avisos y citas", code: "CT", icon: Calendar },
@@ -54,6 +56,7 @@ export const MODULES = {
   mi_rutina: { label: "Mi rutina", code: "RT", icon: Dumbbell },
   mi_dieta: { label: "Mi alimentación", code: "DT", icon: Utensils },
   mi_fisioterapia: { label: "Mi fisioterapia", code: "FS", icon: HeartPulse },
+  mis_clases: { label: "Clases grupales", code: "CG", icon: Music },
 };
 
 // Definición de cada rol: etiqueta, color y grupos de menú
@@ -65,7 +68,7 @@ export const ROLES = {
     defaultTab: "dashboard",
     groups: [
       { title: "Gestión & Clientes", tabs: ["dashboard", "reports", "members", "crm", "memberships", "goals"] },
-      { title: "Salud & Entrenamiento", tabs: ["routines", "nutrition", "physiotherapy", "appointments"] },
+      { title: "Salud & Entrenamiento", tabs: ["routines", "classes", "nutrition", "physiotherapy", "appointments"] },
       { title: "Operativo & Caja", tabs: ["tasks", "cash", "store", "attendances", "finance", "alerts"] },
       { title: "Personal & Accesos", tabs: ["staff", "users"] },
     ],
@@ -76,7 +79,7 @@ export const ROLES = {
     color: "orange",
     defaultTab: "routines",
     groups: [
-      { title: "Entrenamiento", tabs: ["routines", "tasks", "appointments", "goals"] },
+      { title: "Entrenamiento", tabs: ["routines", "classes", "tasks", "appointments", "goals"] },
       { title: "Alumnos & Asistencia", tabs: ["members", "attendances"] },
     ],
   },
@@ -108,8 +111,15 @@ export const ROLES = {
     groups: [
       { title: "Clientes", tabs: ["members", "crm", "memberships", "goals"] },
       { title: "Operativo & Caja", tabs: ["tasks", "cash", "store", "attendances"] },
-      { title: "Servicios & Avisos", tabs: ["appointments", "alerts"] },
+      { title: "Servicios & Avisos", tabs: ["classes", "appointments", "alerts"] },
     ],
+  },
+  instructor: {
+    label: "Profesor de clases",
+    short: "Profe",
+    color: "orange",
+    defaultTab: "classes",
+    groups: [{ title: "Clases grupales", tabs: ["classes", "tasks"] }],
   },
   student: {
     label: "Alumno / Socio",
@@ -117,7 +127,7 @@ export const ROLES = {
     color: "teal",
     defaultTab: "mi_membresia",
     groups: [
-      { title: "Mi Membresía", tabs: ["mi_membresia", "mis_asistencias", "mis_citas"] },
+      { title: "Mi Membresía", tabs: ["mi_membresia", "mis_asistencias", "mis_citas", "mis_clases"] },
       { title: "Entrenamiento & Salud", tabs: ["mi_rutina", "mi_dieta", "mis_medidas", "mi_fisioterapia"] },
     ],
   },

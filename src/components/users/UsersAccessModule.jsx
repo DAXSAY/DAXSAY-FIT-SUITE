@@ -27,13 +27,14 @@ import { api } from "../../api/cliente";
 import { userCan, ROLES } from "../../config/roles";
 import { coincideAlumno } from "../../utils/buscarPersona";
 
-const ROLES_PERSONAL = ["admin", "reception", "trainer", "physio", "nutritionist"];
+const ROLES_PERSONAL = ["admin", "reception", "trainer", "physio", "nutritionist", "instructor"];
 const COLOR_ROL = {
   admin: "var(--rd-rol-morado)",
   reception: "var(--rd-rol-verde)",
   trainer: "var(--rd-rol-naranja)",
   physio: "var(--rd-rol-azul)",
   nutritionist: "var(--rd-rol-rojo)",
+  instructor: "var(--rd-rol-naranja)",
 };
 const fecha = (dt) => (dt ? `${String(dt).slice(8, 10)}/${String(dt).slice(5, 7)}/${String(dt).slice(0, 4)} ${String(dt).slice(11, 16)}` : "Nunca");
 const sugerirUsuario = (n, a) =>
@@ -894,7 +895,7 @@ export const UsersAccessModule = () => {
             valor={porRol(r)}
             sub="activos · toca para filtrar"
             icono={[IcShield, IcUser, IcDumbbell, IcHeart, IcApple][i] || IcUser}
-            tono={["violeta", "teal", "ambar", "rojo", "verde"][i] || "azul"}
+            tono={["violeta", "teal", "ambar", "rojo", "verde", "naranja"][i] || "azul"}
             activo={filtroRol === r}
             onClick={() => setFiltroRol(filtroRol === r ? "todos" : r)}
           />

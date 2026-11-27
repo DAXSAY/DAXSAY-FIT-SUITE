@@ -4250,3 +4250,33 @@ html.dark .rd-barra-alumno-hoja{background:#0b1626;border-color:rgba(148,163,184
 .rd-perfil-mini{background:color-mix(in srgb,var(--rd-surface) 82%,transparent);border:1px solid var(--kb)}
 .rd-perfil-bloque{background:var(--rd-surface);border-color:var(--kb);border-top:3px solid var(--k)}
 html.dark .rd-perfil-mini{background:rgba(8,16,28,.55)}
+
+/* ===================== Clases grupales: croquis de steps ===================== */
+.rd-croquis{background:linear-gradient(180deg,#f8fbfb,#f1f6f6);border:1px solid #dfe8e8;border-radius:16px;max-width:900px}
+.rd-croquis-editor{background-color:#f8fbfb;background-image:linear-gradient(to right,rgba(15,23,42,.06) 1px,transparent 1px),linear-gradient(to bottom,rgba(15,23,42,.06) 1px,transparent 1px)}
+.rd-zona{background:repeating-linear-gradient(135deg,rgba(100,116,139,.08) 0 6px,rgba(100,116,139,.14) 6px 12px);border:1.5px dashed #a9b6c4;border-radius:8px;color:#64748b}
+.rd-zona-sel{border-color:#47988f;color:#47988f;box-shadow:0 0 0 2px rgba(71,152,143,.25)}
+.rd-step{transition:transform .12s,background .15s,box-shadow .15s}
+.rd-step-libre{background:#ffffff;border-color:#cfdcdb;color:#47988f}
+button.rd-step-libre:not(:disabled):hover{background:#e4f5f3;transform:translateY(-1px);box-shadow:0 3px 8px rgba(71,152,143,.18)}
+.rd-step-reservado{background:#f4ebdc;border-color:#e2c99d;color:#946324}
+.rd-step-llego{background:#dff2e7;border-color:#a9d9bc;color:#2f7a52}
+.rd-step-mio{background:#dbe8fb;border-color:#93b7ee;color:#2c5aa8;box-shadow:0 0 0 2px rgba(59,130,246,.25)}
+.rd-step-sel{background:#47988f;border-color:#47988f;color:#fff;box-shadow:0 0 0 3px rgba(71,152,143,.3)}
+html.dark .rd-croquis{background:linear-gradient(180deg,rgba(20,32,48,.75),rgba(12,22,36,.75));border-color:rgba(94,232,216,.18)}
+html.dark .rd-croquis-editor{background-color:rgba(12,22,36,.8);background-image:linear-gradient(to right,rgba(148,163,184,.10) 1px,transparent 1px),linear-gradient(to bottom,rgba(148,163,184,.10) 1px,transparent 1px)}
+html.dark .rd-zona{background:repeating-linear-gradient(135deg,rgba(148,163,184,.06) 0 6px,rgba(148,163,184,.12) 6px 12px);border-color:rgba(148,163,184,.45);color:#a5b4c8}
+html.dark .rd-zona-sel{border-color:#88f0e5;color:#88f0e5}
+html.dark .rd-step-libre{background:rgba(15,28,44,.9);border-color:rgba(94,232,216,.35);color:#88f0e5}
+html.dark button.rd-step-libre:not(:disabled):hover{background:rgba(94,232,216,.14);box-shadow:0 0 12px rgba(94,232,216,.25)}
+html.dark .rd-step-reservado{background:rgba(255,194,102,.14);border-color:rgba(255,194,102,.5);color:#ffc266}
+html.dark .rd-step-llego{background:rgba(94,232,161,.14);border-color:rgba(94,232,161,.5);color:#88f0c0}
+html.dark .rd-step-mio{background:rgba(120,170,255,.18);border-color:rgba(120,170,255,.6);color:#a9c8ff;box-shadow:0 0 12px rgba(120,170,255,.3)}
+html.dark .rd-step-sel{background:#3fb5aa;border-color:#88f0e5;color:#04121a;box-shadow:0 0 14px rgba(94,232,216,.45)}
+/* Tarjeta de clase en el horario (color de su disciplina) */
+.rd-clase-card{background:var(--kf);border:1px solid var(--kb);border-left:4px solid var(--k);color:var(--kt,var(--k))}
+.rd-clase-card:hover{box-shadow:0 4px 14px color-mix(in srgb,var(--k) 22%,transparent)}
+.rd-dia-col{background:var(--rd-surface,#fff);border:1px solid #e3e8ee}
+.rd-dia-hoy{border-color:#9fc9c5;box-shadow:0 0 0 2px rgba(71,152,143,.15)}
+html.dark .rd-dia-col{border-color:rgba(148,163,184,.18)}
+html.dark .rd-dia-hoy{border-color:rgba(94,232,216,.5);box-shadow:0 0 12px rgba(94,232,216,.15)}

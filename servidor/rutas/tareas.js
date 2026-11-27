@@ -22,7 +22,7 @@ import { codigoAlumno } from "../codigoAlumno.js";
 const router = Router();
 
 export const TIPOS = ["llamada", "whatsapp", "renovacion", "cobro", "pase_libre", "rutina", "seguimiento", "fisio", "abandono", "nutricion", "limpieza", "otro"];
-const ROLES_PERSONAL = ["admin", "reception", "trainer", "physio", "nutritionist"];
+const ROLES_PERSONAL = ["admin", "reception", "trainer", "physio", "nutritionist", "instructor"];
 const DIAS_ABANDONO = 7;
 const DIAS_POR_VENCER = 3;
 const CADA_SEGUIMIENTO = 3;
@@ -848,7 +848,7 @@ router.post("/:id(\\d+)/pasar", async (req, res, next) => {
       const [x] = await consultar("SELECT nombre FROM turnos_recepcion WHERE idturno_recepcion = ?", [d.turno]);
       a = `turno ${nombreCortoTurno(x?.nombre)}`;
     } else if (d.destino === "usuario") a = await nombreDe(d.usuario);
-    else a = { reception: "Recepción", trainer: "Entrenadores", physio: "Fisioterapia", nutritionist: "Nutrición" }[d.rol] || d.rol;
+    else a = { reception: "Recepción", trainer: "Entrenadores", physio: "Fisioterapia", nutritionist: "Nutrición", instructor: "Profesores de clases" }[d.rol] || d.rol;
     await historial(t.idtarea, "pasada", `Pasó a ${a}: ${comentario}`, me.id);
     res.json({ ok: true });
   } catch (e) {

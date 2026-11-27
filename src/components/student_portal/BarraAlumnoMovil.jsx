@@ -13,6 +13,7 @@ const MAS = [
   { k: "appointments", emoji: "📅", label: "Avisos y citas" },
   { k: "physio", emoji: "🩺", label: "Mi fisioterapia" },
   { k: "attendance", emoji: "🙋", label: "Mis asistencias" },
+  { k: "clases", emoji: "🎵", label: "Clases grupales" },
 ];
 
 export const BarraAlumnoMovil = ({ activa, onIr }) => {
