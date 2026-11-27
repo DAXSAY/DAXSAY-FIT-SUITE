@@ -299,7 +299,7 @@ const Horario = ({ datos, recargar, yo, onSteps }) => {
 
       {error && <Error texto={error} />}
       {!sesiones && !error && <p className="text-sm text-slate-500">Cargando horario…</p>}
-      {sesiones && !datos.clases.length && (
+      {sesiones && !datos.clases.length && !sesiones.length && (
         <div className="rd-kpi-teal rd-aviso-t rounded-2xl border p-5 text-center space-y-2">
           <p className="text-3xl">🗓️</p>
           <p className="font-black">El horario de clases grupales está vacío</p>
