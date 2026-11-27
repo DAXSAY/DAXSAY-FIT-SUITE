@@ -3,7 +3,7 @@
 // rutinas, alumnos, CRM, usuarios…).
 // Reglas:
 //   · "1"            → SOLO quien tiene el número 1: el alumno 1 y el
-//                      personal 1-COACH, 1-EXT, 1-NUTRI… (nunca 12, 41 o 111)
+//                      personal 1-ENTR, 1-EXT, 1-NUTRI… (nunca 12, 41 o 111)
 //   · "DR-12" / "dr12" → el alumno 12          · "1-coach" / "1c" → personal
 //   · 8 cifras       → DNI exacto (alumnos y personal)
 //   · 6-7 cifras     → DNI que empieza así
@@ -12,7 +12,7 @@
 
 export const sinTildes = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
-const TIPO_PERSONAL = { COACH: "Entrenador", NUTRI: "Nutrición", FISIO: "Fisioterapia", RECEP: "Recepción", MANT: "Mantenimiento", GEST: "Coordinación", EXT: "Externo", STAFF: "Personal" };
+const TIPO_PERSONAL = { ENTR: "Entrenador", COACH: "Entrenador", NUTRI: "Nutrición", FISIO: "Fisioterapia", RECEP: "Recepción", MANT: "Mantenimiento", GEST: "Coordinación", EXT: "Externo", STAFF: "Personal" };
 
 /** Clasifica lo escrito */
 export function tipoDeBusqueda(texto) {
@@ -33,7 +33,7 @@ export function tipoDeBusqueda(texto) {
 
 const numeroAlumno = (m) => Number(m?.code);
 const numeroPersonal = (c) => Number(String(c?.staffCode || "").split("-")[0]);
-const sufijoPersonal = (c) => String(c?.staffCode || "").split("-")[1] || "";
+const sufijoPersonal = (c) => { const x = String(c?.staffCode || "").split("-")[1] || ""; return x === "COACH" ? "ENTR" : x; };
 
 /** ¿El alumno coincide con lo escrito? (para filtrar listas de alumnos) */
 export function coincideAlumno(m, texto) {
@@ -91,7 +91,7 @@ export function candidatosPorCodigo(texto, members = [], contratos = [], max = 8
     tipo: "alumno",
     codigo: m.codeLabel || (m.code != null ? String(m.code) : ""),
     nombre: m.fullName,
-    detalle: `Alumno${m.planName ? ` · ${m.planName}` : ""}`,
+    detalle: `Socio${m.planName ? ` · ${m.planName}` : ""}`,
     member: m,
   }));
   const personal = unicos(contratos)
@@ -101,7 +101,7 @@ export function candidatosPorCodigo(texto, members = [], contratos = [], max = 8
         case "numero":
           return numeroPersonal(c) === b.n;
         case "codigo_personal":
-          return numeroPersonal(c) === b.n && sufijoPersonal(c).startsWith(b.sufijo);
+          return numeroPersonal(c) === b.n && sufijoPersonal(c).startsWith(/^CO/.test(b.sufijo) ? "ENTR" : b.sufijo);
         case "dni":
           return String(c.dni || "") === b.valor;
         case "dni_parcial":
@@ -124,7 +124,7 @@ export function candidatosPorCodigo(texto, members = [], contratos = [], max = 8
   return [...alumnos, ...personal].slice(0, max);
 }
 
-/** ¿La persona del personal coincide? "1" = 1-COACH, 1-EXT…; "1c"; DNI; nombre o cargo */
+/** ¿La persona del personal coincide? "1" = 1-ENTR, 1-EXT…; "1c"; DNI; nombre o cargo */
 export function coincidePersonal(c, texto) {
   const b = tipoDeBusqueda(texto);
   const num = Number(String(c?.staffCode || "").split("-")[0]);

@@ -4,8 +4,8 @@
 // escribir: código del alumno, código del personal, DNI o pase libre.
 import React, { useEffect, useState } from "react";
 
-export const OPCIONES_MARCAR = ["código del alumno (DF-1 o 1)", "código del personal (1-COACH)", "DNI", "pase libre"];
-export const TEXTO_MARCAR = "Marcar asistencia: código del alumno o del personal, DNI o pase libre";
+export const OPCIONES_MARCAR = ["código del socio (DF-1 o 1)", "código del personal (1-ENTRENADOR)", "DNI", "pase libre"];
+export const TEXTO_MARCAR = "Marcar asistencia: código del socio o del personal, DNI o pase libre";
 
 export const PistaMarcar = ({ visible, className = "", corta = false }) => {
   const [i, setI] = useState(0);

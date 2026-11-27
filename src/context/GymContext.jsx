@@ -124,7 +124,7 @@ export const GymProvider = ({ children }) => {
       ),
     [staffContracts],
   );
-  // Administración guarda el código del personal (1-COACH, 1-NUTRI…) la primera vez,
+  // Administración guarda el código del personal (1-ENTR, 1-NUTRI…) la primera vez,
   // así no cambia aunque se agregue o retire a alguien después.
   useEffect(() => {
     if (currentUser?.role !== "admin" || !staffContracts.some((c) => !c.staffCode)) return;
@@ -717,7 +717,7 @@ export const GymProvider = ({ children }) => {
     if (anterior?.targetStudentId) asignados.add(String(anterior.targetStudentId));
     avisoBreve(
       asignados.size
-        ? `✓ Rutina actualizada · se avisará a ${asignados.size} alumno(s) que la tienen asignada`
+        ? `✓ Rutina actualizada · se avisará a ${asignados.size} socio(s) que la tienen asignada`
         : "✓ Rutina actualizada",
     );
   };

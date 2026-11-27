@@ -264,7 +264,7 @@ export const NotificationCenter = () => {
     });
 
     alert(
-      `¡Aviso de clase enviado a ${sent} alumnos inscritos vía Push y Email!`,
+      `¡Aviso de clase enviado a ${sent} socios inscritos vía Push y Email!`,
     );
   };
 

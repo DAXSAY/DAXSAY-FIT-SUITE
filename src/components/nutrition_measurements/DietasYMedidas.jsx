@@ -75,7 +75,7 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
         },
         {
           etiqueta: "Buscar",
-          contenido: <BuscadorFiltro valor={q} onCambio={setQ} placeholder="Código, nombre o DNI del alumno" total={buscando ? lista.length : null} />,
+          contenido: <BuscadorFiltro valor={q} onCambio={setQ} placeholder="Código, nombre o DNI del socio" total={buscando ? lista.length : null} />,
         },
       ]}
     />
@@ -83,10 +83,10 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
       {/* Izquierda: buscar alumno */}
       <div className="lg:col-span-4 space-y-3 lg:sticky lg:top-3 self-start">
         {!buscando ? (
-          <div className="bg-white p-8 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">Escribe un código, nombre o DNI, o elige un filtro para ver alumnos.</div>
+          <div className="bg-white p-8 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">Escribe un código, nombre o DNI, o elige un filtro para ver socios.</div>
         ) : (
           <div className="space-y-2 max-h-[640px] lg:max-h-[calc(100vh-14rem)] overflow-y-auto pr-1">
-            {lista.length === 0 && <p className="text-xs text-slate-500 px-1 py-4 text-center">Ningún alumno coincide.</p>}
+            {lista.length === 0 && <p className="text-xs text-slate-500 px-1 py-4 text-center">Ningún socio coincide.</p>}
             {lista.map((m) => {
               const p = planDe.get(String(m.id));
               const t = tomasDe.get(String(m.id)) || 0;
@@ -127,7 +127,7 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
         {!alumno ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-14 text-center">
             <User className="w-9 h-9 mx-auto text-slate-400" />
-            <p className="mt-2 text-sm font-bold text-slate-600">Busca y elige un alumno para ver sus medidas y su plan de alimentación.</p>
+            <p className="mt-2 text-sm font-bold text-slate-600">Busca y elige un socio para ver sus medidas y su plan de alimentación.</p>
           </div>
         ) : (
           <>
@@ -145,7 +145,7 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
               >
                 <Plus className="w-4 h-4" /> Nuevo control: dieta y medidas
               </button>
-              <button type="button" onClick={() => setAlumnoId("")} className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center cursor-pointer" title="Cerrar alumno">
+              <button type="button" onClick={() => setAlumnoId("")} className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center cursor-pointer" title="Cerrar socio">
                 <X className="w-4 h-4" />
               </button>
               {/* Pasos, como en fisioterapia */}

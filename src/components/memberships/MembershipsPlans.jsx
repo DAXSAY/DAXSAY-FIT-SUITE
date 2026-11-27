@@ -68,7 +68,7 @@ const BENEFICIOS_BASE = [
   "Consulta de nutrición",
   "Evaluación de fisioterapia",
   "Evaluación de composición corporal (bioimpedancia)",
-  "Acceso a la app del alumno",
+  "Acceso a la app del socio",
   "Casillero",
   "Toalla",
   "Duchas y vestidores",
@@ -451,7 +451,7 @@ export const MembershipsPlans = () => {
             <div className="pt-3 border-t border-slate-100">
               <div className="flex items-center justify-between text-sm mb-1.5">
                 <span className="flex items-center gap-1.5 text-slate-500">
-                  <Users className="w-4 h-4" /> Alumnos activos
+                  <Users className="w-4 h-4" /> Socios activos
                 </span>
                 <span className="font-black text-slate-900">{activos}</span>
               </div>
@@ -470,7 +470,7 @@ export const MembershipsPlans = () => {
                 }}
                 className="mt-3 w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white text-slate-700 text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Users className="w-4 h-4" /> Ver alumnos de este plan
+                <Users className="w-4 h-4" /> Ver socios de este plan
               </button>
             </div>
           )}
@@ -494,7 +494,7 @@ export const MembershipsPlans = () => {
           <div className="grid grid-cols-3 gap-3">
             {[
               ["Planes", ordenados.length],
-              ["Alumnos activos", totalActivos],
+              ["Socios activos", totalActivos],
               ["Ingreso mensual aprox.", soles(ingresoMensual)],
             ].map(([t, v]) => (
               <div key={t} className="bg-white/10 rounded-2xl px-4 py-3">
@@ -525,7 +525,7 @@ export const MembershipsPlans = () => {
               }}
               className={`px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 cursor-pointer ${vista === "alumnos" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
             >
-              <Users className="w-4 h-4" /> Alumnos por plan
+              <Users className="w-4 h-4" /> Socios por plan
             </button>
           </div>
           {puedeCrear && (
@@ -582,7 +582,7 @@ export const MembershipsPlans = () => {
                 ["Nutrición", (p) => (p.includesNutrition ? <Check className="w-5 h-5 text-emerald-600 mx-auto" /> : <X className="w-5 h-5 text-slate-300 mx-auto" />)],
                 ["Fisioterapia", (p) => (p.includesPhysio ? <Check className="w-5 h-5 text-emerald-600 mx-auto" /> : <X className="w-5 h-5 text-slate-300 mx-auto" />)],
                 ["Congelamiento", (p) => (Number(p.freezeDays || 0) ? <span className="text-xs font-bold text-sky-700">{textoCongelamiento(p)}</span> : <span className="text-xs text-slate-400">No</span>)],
-                ["Alumnos activos", (p) => activosPorPlan[p.id] || 0],
+                ["Socios activos", (p) => activosPorPlan[p.id] || 0],
               ].map(([t, f]) => (
                 <tr key={t} className="border-t border-slate-100">
                   <td className="p-4 font-semibold text-slate-700">{t}</td>
@@ -619,7 +619,7 @@ export const MembershipsPlans = () => {
                     <p className="text-sm font-bold text-slate-800 truncate">{p.name}</p>
                     <p className="text-xs text-slate-500">
                       {soles(p.price)} · {duracionTexto(p.durationDays)}
-                      {p.activeMembers > 0 && <b className="text-emerald-700"> · {p.activeMembers} alumno(s) aún lo usan</b>}
+                      {p.activeMembers > 0 && <b className="text-emerald-700"> · {p.activeMembers} socio(s) aún lo usan</b>}
                     </p>
                   </div>
                   <button onClick={() => reactivar(p)} className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer">
@@ -640,7 +640,7 @@ export const MembershipsPlans = () => {
             <ul className="text-sm text-slate-600 space-y-1.5">
               <li>• Deja de aparecer para nuevas matrículas y renovaciones.</li>
               <li>
-                • <b>{activosPorPlan[baja.id] || 0} alumno(s)</b> que ya lo compraron lo conservan: siguen marcando asistencia hasta que venza.
+                • <b>{activosPorPlan[baja.id] || 0} socio(s)</b> que ya lo compraron lo conservan: siguen marcando asistencia hasta que venza.
               </li>
               <li>• Queda guardado en «Planes dados de baja» y puedes <b>reactivarlo</b> cuando quieras (ideal para planes de temporada).</li>
             </ul>
@@ -763,11 +763,11 @@ export const MembershipsPlans = () => {
                   <p className="text-xs text-sky-900">
                     <b>{textoCongelamiento(form)}.</b>{" "}
                     {Number(form.freezeDays || 0) > 0 &&
-                      "Se usa en un solo periodo continuo. Si el alumno retoma antes, los días no usados se pierden. El beneficio vence junto con la membresía."}
+                      "Se usa en un solo periodo continuo. Si el socio retoma antes, los días no usados se pierden. El beneficio vence junto con la membresía."}
                   </p>
                 )}
                 <p className="text-[11px] text-slate-500">
-                  Si cambias estas reglas, los alumnos que ya compraron el plan conservan las condiciones con las que lo compraron.
+                  Si cambias estas reglas, los socios que ya compraron el plan conservan las condiciones con las que lo compraron.
                 </p>
               </fieldset>
               <div>

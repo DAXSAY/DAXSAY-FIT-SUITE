@@ -42,7 +42,7 @@ export function PanelFiltros({ filas }) {
 }
 
 /** Buscador redondeado (igual al «Buscar por nombre de rutina…») */
-export const BuscadorFiltro = ({ valor, onCambio, placeholder, total, unidad = "alumno(s)" }) => (
+export const BuscadorFiltro = ({ valor, onCambio, placeholder, total, unidad = "socio(s)" }) => (
   <>
     <input
       value={valor}

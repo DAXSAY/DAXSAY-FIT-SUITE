@@ -130,7 +130,7 @@ router.post("/olvide-clave", async (req, res, next) => {
     else v.n += 1;
 
     const usuario = String(req.body?.usuario || "").trim().toLowerCase().slice(0, 40);
-    if (!usuario) throw new ErrorHttp(400, "Escribe tu usuario (si eres alumno, tu DNI)");
+    if (!usuario) throw new ErrorHttp(400, "Escribe tu usuario (si eres socio, tu DNI)");
     const [u] = await consultar(
       `SELECT u.idusuario, u.idalumno, r.codigo AS rol,
               COALESCE(CONCAT(a.nombres, ' ', a.apellidos), CONCAT(e.nombres, ' ', e.apellidos), u.usuario) AS nombre
@@ -152,7 +152,7 @@ router.post("/olvide-clave", async (req, res, next) => {
           `INSERT INTO alertas_administracion (tipo, titulo, mensaje, idalumno, idusuario_origen)
            VALUES ('olvido_clave', 'Olvidó su contraseña', ?, ?, ?)`,
           [
-            `${u.nombre} (${usuario}) olvidó su contraseña del ${esAlumno ? "portal del alumno" : "sistema"} y pide restablecerla.`.slice(0, 500),
+            `${u.nombre} (${usuario}) olvidó su contraseña del ${esAlumno ? "portal del socio" : "sistema"} y pide restablecerla.`.slice(0, 500),
             esAlumno ? u.idalumno : null,
             u.idusuario,
           ],

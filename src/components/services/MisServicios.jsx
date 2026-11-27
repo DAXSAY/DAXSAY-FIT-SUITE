@@ -1,7 +1,8 @@
-// Portal del alumno: sus servicios (incluidos en su plan o pagados aparte)
+// Portal del socio: sus servicios (incluidos en su plan o pagados aparte)
 // y los que puede pedir en recepción con su precio.
 import React, { useEffect, useState } from "react";
 import { api } from "../../api/cliente";
+import { useAlCambiar } from "../../utils/tiempoReal";
 
 const fechaCorta = (iso) => {
   if (!iso) return "";
@@ -11,9 +12,11 @@ const fechaCorta = (iso) => {
 
 export default function MisServicios() {
   const [d, setD] = useState(null);
+  const cargar = () => api("/servicios/mios").then(setD).catch(() => setD(null));
   useEffect(() => {
-    api("/servicios/mios").then(setD).catch(() => setD(null));
+    cargar();
   }, []);
+  useAlCambiar(["servicios", "registros"], cargar);
   if (!d?.conServicios) return null;
   const mios = d.servicios.filter((x) => x.vigente || x.futuro);
   const tengo = new Set(mios.map((x) => x.servicioId));

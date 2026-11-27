@@ -28,7 +28,7 @@ export async function alertaCambioFechaPago(cx, { idalumno, anterior, nueva, deu
   const [al] = await ejecutar("SELECT CONCAT(nombres,' ',apellidos) AS nombre FROM alumnos WHERE idalumno = ?", [idalumno]);
   const quienTxt = quien ? `${quien.nombre} (${quien.rol})` : "Un usuario";
   const mensaje =
-    `${quienTxt} cambió la fecha límite de pago de ${al?.nombre || "un alumno"}: ` +
+    `${quienTxt} cambió la fecha límite de pago de ${al?.nombre || "un socio"}: ` +
     `${fechaTexto(anterior)} → ${fechaTexto(nueva)}` +
     (deuda != null ? `. Deuda: S/ ${Number(deuda).toFixed(2)}` : "") +
     (origen === "abono" ? " (al registrar un abono)" : "");

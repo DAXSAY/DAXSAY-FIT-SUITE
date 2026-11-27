@@ -351,7 +351,7 @@ function datosMeta(d) {
   const monto = tipo === "recepcion" ? r2(d.amount) : null;
   const logros = deLogros ? Math.round(Number(d.achievements)) : null;
   if (tipo === "recepcion" && !(monto > 0)) throw new ErrorHttp(400, "Indica el monto de la meta");
-  if (deLogros && !(logros > 0)) throw new ErrorHttp(400, tipo === "entrenador" ? "Indica cuántos logros (mancuernas) debe conseguir" : "Indica cuántos objetivos de alumnos debe lograr");
+  if (deLogros && !(logros > 0)) throw new ErrorHttp(400, tipo === "entrenador" ? "Indica cuántos logros (mancuernas) debe conseguir" : "Indica cuántos objetivos de socios debe lograr");
   const idturno = tipo === "recepcion" ? Number(d.receptionShiftId) || null : null;
   const idemp = deLogros ? Number(d.staffId) || null : null;
   if (tipo === "recepcion" && !idturno) throw new ErrorHttp(400, "Elige el turno de recepción");
@@ -531,7 +531,7 @@ router.post("/objetivos", requierePermiso("goals", "crear"), async (req, res, ne
     if (permitida === "ninguna") throw new ErrorHttp(403, "Solo nutrición, fisioterapia o administración registran objetivos");
     const area = permitida || (d.area === "fisioterapia" ? "fisioterapia" : "nutricion");
     const [a] = await consultar("SELECT idalumno, identrenador FROM alumnos WHERE idalumno = ? AND activo = 1", [d.memberId]);
-    if (!a) throw new ErrorHttp(400, "Elige un alumno");
+    if (!a) throw new ErrorHttp(400, "Elige un socio");
     if (!TIPOS_OBJ.includes(d.type)) throw new ErrorHttp(400, "Elige el tipo de objetivo");
     const descripcion = txt(d.description, 255);
     if (!descripcion) throw new ErrorHttp(400, "Describe el objetivo (ej. bajar de 90 a 85 kg)");

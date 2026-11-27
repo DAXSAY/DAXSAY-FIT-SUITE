@@ -56,16 +56,16 @@ export default function PanelProgresoAlumnos() {
   if (abierto)
     return (
       <div className="space-y-3">
-        <BarraVolver onVolver={() => setAbierto(null)} titulo="Progreso del alumno" subtitulo="Pesos y series registradas" />
+        <BarraVolver onVolver={() => setAbierto(null)} titulo="Progreso del socio" subtitulo="Pesos y series registradas" />
         <ProgresoPesos memberId={abierto} modo="personal" />
       </div>
     );
 
   if (error) return <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl p-4 text-sm font-semibold">{error}</div>;
-  if (!lista) return <p className="text-sm text-slate-500 p-6">Cargando alumnos...</p>;
+  if (!lista) return <p className="text-sm text-slate-500 p-6">Cargando socios...</p>;
 
   const filtros = [
-    ["mios", `Mis alumnos (${lista.filter((a) => a.mio).length})`],
+    ["mios", `Mis socios (${lista.filter((a) => a.mio).length})`],
     ["todos", `Todos (${lista.length})`],
     ["pendientes", `Sin anotar (${lista.filter((a) => a.sinRegistrar30).length})`],
   ];
@@ -74,7 +74,7 @@ export default function PanelProgresoAlumnos() {
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-wrap items-center gap-3">
         <div className="flex-1 min-w-[220px]">
-          <p className="text-base font-black text-slate-900"><IconoEmoji e="💪" /> Progreso de pesos de los alumnos</p>
+          <p className="text-base font-black text-slate-900"><IconoEmoji e="💪" /> Progreso de pesos de los socios</p>
           <p className="text-xs text-slate-500">Busca por nombre o código (DF-1) y entra para ver si sube, se mantiene o baja.</p>
         </div>
         <input
@@ -139,7 +139,7 @@ export default function PanelProgresoAlumnos() {
             </button>
           );
         })}
-        {!visibles.length && <p className="text-sm text-slate-500 col-span-full text-center p-8">No hay alumnos con este filtro.</p>}
+        {!visibles.length && <p className="text-sm text-slate-500 col-span-full text-center p-8">No hay socios con este filtro.</p>}
       </div>
     </div>
   );

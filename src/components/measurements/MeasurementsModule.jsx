@@ -347,7 +347,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
     e.preventDefault();
     const targetMember = members.find((m) => m.id === formMemberId);
     if (!targetMember) {
-      alert("Seleccione el alumno a evaluar.");
+      alert("Seleccione el socio a evaluar.");
       return;
     }
     if (!formWeight || !formHeight) {
@@ -456,7 +456,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
       msg += `• Reducción Cintura: ${historicalDeltas.waistDelta > 0 ? "+" : ""}${historicalDeltas.waistDelta} cm\n\n`;
     }
 
-    msg += `💬 *Comentarios del Coach:*\n${assessment.notes || "¡Gran disciplina y constancia!"}\n\n`;
+    msg += `💬 *Comentarios del Entrenador:*\n${assessment.notes || "¡Gran disciplina y constancia!"}\n\n`;
     msg += `¡Sigue con todo en RADICAL! 💪🔥`;
 
     const url = cleanPhone
@@ -513,7 +513,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-x-3 gap-y-2.5">
                     <div className="col-span-2 md:col-span-3">
-                      <label className={ETQ}>Alumno *</label>
+                      <label className={ETQ}>Socio *</label>
                       <SelectorAlumno
                         alumnos={members}
                         value={formMemberId}
@@ -819,14 +819,14 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
       {alumnoFijo ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-teal-600" /> Medidas del alumno: peso, perímetros y bioimpedancia. Cada control queda en su historial.
+            <Activity className="w-4 h-4 text-teal-600" /> Medidas del socio: peso, perímetros y bioimpedancia. Cada control queda en su historial.
           </p>
           <AccionCabecera icono={Plus} onClick={() => (onNuevoControl ? onNuevoControl() : handleOpenNewAssessment(alumnoFijo))}>Nuevo control: dieta y medidas</AccionCabecera>
         </div>
       ) : (
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
-          <Activity className="w-4 h-4 text-teal-600" /> Antropometría y bioimpedancia: elige un alumno para ver su evolución.
+          <Activity className="w-4 h-4 text-teal-600" /> Antropometría y bioimpedancia: elige un socio para ver su evolución.
         </p>
         <AccionCabecera icono={Plus} onClick={() => handleOpenNewAssessment()}>Registrar nueva medición</AccionCabecera>
       </div>
@@ -840,7 +840,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
           <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
             <label className="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
               <User className="w-3.5 h-3.5 text-blue-600" />
-              <span>Seleccionar Alumno para ver Historial:</span>
+              <span>Seleccionar Socio para ver Historial:</span>
             </label>
 
             <div className="relative">
@@ -1069,7 +1069,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                   <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
                     <IconoEmoji e="💡" /> Registra al menos dos evaluaciones en el tiempo para que
                     el sistema calcule los avances, reducción de grasa y
-                    ganancia de masa magra de este alumno.
+                    ganancia de masa magra de este socio.
                   </div>
                 )}
 
@@ -1269,7 +1269,7 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
               {memberAssessments.length > 0 && (
                 <div className="flex items-center space-x-2 overflow-x-auto pb-1">
                   <span className="text-xs font-bold text-slate-500 shrink-0">
-                    Tomas del Alumno:
+                    Tomas del Socio:
                   </span>
                   {memberAssessments.map((a, idx) => {
                     const isSelected = currentDetailAssessment?.id === a.id;
@@ -1698,14 +1698,14 @@ export const MeasurementsModule = ({ alumnoFijo = "", soloFormulario = false, on
                 </div>
               ) : (
                 <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-400 text-xs">
-                  No hay evaluaciones registradas para este alumno. Presiona
+                  No hay evaluaciones registradas para este socio. Presiona
                   "Registrar Nueva Medición" para iniciar su historial.
                 </div>
               )}
             </>
           ) : (
             <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center text-slate-400">
-              Selecciona un alumno para revisar su historial antropométrico y de
+              Selecciona un socio para revisar su historial antropométrico y de
               bioimpedancia.
             </div>
           )}

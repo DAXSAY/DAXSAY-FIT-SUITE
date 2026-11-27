@@ -53,10 +53,10 @@ export const BuscarSocio = React.forwardRef(function BuscarSocio(
         </div>
       </label>
       {hallado ? (
-        <div className={`rd-socio-hallado rounded-2xl border-2 p-3 flex items-center gap-3 ${vigente ? "rd-kpi-verde rd-aviso-t" : "rd-kpi-ambar rd-aviso-t"}`}>
+        <div className={`rd-socio-hallado rounded-xl border p-2.5 flex items-center gap-3 ${vigente ? "rd-kpi-verde rd-aviso-t" : "rd-kpi-ambar rd-aviso-t"}`}>
           <span className="rd-socio-avatar">{iniciales(hallado.fullName)}</span>
           <div className="min-w-0 flex-1">
-            <p className="text-lg font-black leading-tight truncate">{hallado.fullName}</p>
+            <p className="text-base font-black leading-tight truncate">{hallado.fullName}</p>
             <p className="text-xs font-bold opacity-90">
               {hallado.codeLabel ? `🏷️ ${hallado.codeLabel}` : ""}
               {hallado.dni ? ` · 🪪 ${hallado.dni}` : ""}

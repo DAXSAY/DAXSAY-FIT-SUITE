@@ -88,7 +88,7 @@ export default function ServiciosCatalogo() {
   if (!datos.conServicios)
     return (
       <div className="rd-kpi-ambar rd-aviso-t rounded-2xl border p-4 text-sm">
-        <b>🧾 Servicios por alumno:</b> para vender medidas, dieta, evaluación o fisioterapia aparte de los planes, ejecuta la parte 43 (43_servicios_alumno.sql) en MySQL Workbench.
+        <b>🧾 Servicios por socio:</b> para vender medidas, dieta, evaluación o fisioterapia aparte de los planes, ejecuta la parte 43 (43_servicios_alumno.sql) en MySQL Workbench.
       </div>
     );
   const crear = async (e) => {
@@ -114,7 +114,7 @@ export default function ServiciosCatalogo() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-black text-slate-900">🧾 Servicios aparte y sus precios</h3>
-          <p className="text-xs text-slate-500 max-w-2xl">Lo que un alumno paga aparte si su plan no lo incluye (o quiere más). Ej.: 2 meses solo control de medidas y al tercero suma la dieta. Qué incluye cada plan se elige al editar el plan.</p>
+          <p className="text-xs text-slate-500 max-w-2xl">Lo que un socio paga aparte si su plan no lo incluye (o quiere más). Ej.: 2 meses solo control de medidas y al tercero suma la dieta. Qué incluye cada plan se elige al editar el plan.</p>
         </div>
         <button type="button" onClick={() => setNuevo({ nombre: "", emoji: "⭐", modo: "sesiones", dias: 30, sesiones: 1, precio: 0, categoria: "otros" })} className="px-3 py-1.5 rounded-xl bg-teal-600 text-white text-xs font-black flex items-center gap-1 cursor-pointer"><Plus className="w-3.5 h-3.5" /> Nuevo servicio</button>
       </div>

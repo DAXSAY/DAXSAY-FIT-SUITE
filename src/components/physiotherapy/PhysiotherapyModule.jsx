@@ -1204,7 +1204,7 @@ export const PhysiotherapyModule = () => {
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
-        adaptationNotes: "Supervisión en sala por instructores.",
+        adaptationNotes: "Supervisión en sala por profesores.",
       },
       passiveMobility: {
         techniques: [formPassiveMobility.trim()],
@@ -1357,7 +1357,7 @@ export const PhysiotherapyModule = () => {
     const mem = members.find((m) => m.id === formMemberId);
     if (!mem) {
       alert(
-        "Por favor selecciona un alumno para previsualizar o descargar la ficha PDF.",
+        "Por favor selecciona un socio para previsualizar o descargar la ficha PDF.",
       );
       return;
     }
@@ -1669,14 +1669,14 @@ export const PhysiotherapyModule = () => {
                       Restricciones Médicas y Lesiones Declaradas en Recepción:
                     </span>
                     <span className="text-xs font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
-                      Ficha Alumno
+                      Ficha Socio
                     </span>
                   </div>
                   <p className="text-xs text-slate-800 font-medium leading-relaxed bg-white/70 p-2.5 rounded-lg border border-amber-200/60">
                     {selectedMember.medicalNotes &&
                     selectedMember.medicalNotes.trim().length > 0
                       ? selectedMember.medicalNotes
-                      : "ℹ️ No se registraron restricciones médicas al momento de la inscripción del alumno en recepción."}
+                      : "ℹ️ No se registraron restricciones médicas al momento de la inscripción del socio en recepción."}
                   </p>
                 </div>
 
@@ -1689,7 +1689,7 @@ export const PhysiotherapyModule = () => {
                           <TrendingUp className="w-3.5 h-3.5" />
                         </div>
                         <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
-                          Evolución Clínica & Mejoras del Alumno (
+                          Evolución Clínica & Mejoras del Socio (
                           {progressStats.sessionCount}{" "}
                           {progressStats.sessionCount === 1
                             ? "Sesión"
@@ -2050,7 +2050,7 @@ export const PhysiotherapyModule = () => {
                     <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                       <HeartPulse className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                       <p className="text-xs font-bold text-slate-600">
-                        Sin sesiones registradas para este alumno
+                        Sin sesiones registradas para este socio
                       </p>
                       <p className="text-xs text-slate-400 mt-0.5">
                         Haz clic en &quot;Nueva Sesión con Imágenes&quot; para
@@ -2261,7 +2261,7 @@ export const PhysiotherapyModule = () => {
                                 {session.patientFriendlySummary && (
                                   <div className="bg-blue-50/80 p-2.5 rounded-lg border border-blue-200 text-blue-900">
                                     <strong className="block text-xs uppercase font-bold mb-0.5">
-                                      Explicación para el Alumno:
+                                      Explicación para el Socio:
                                     </strong>
                                     <p className="text-slate-700 leading-relaxed">
                                       {session.patientFriendlySummary}
@@ -2324,7 +2324,7 @@ export const PhysiotherapyModule = () => {
               <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 text-slate-500">
                 <User className="w-10 h-10 mx-auto text-slate-300 mb-2" />
                 <p className="font-bold text-slate-700">
-                  Selecciona un alumno para ver su historial clínico
+                  Selecciona un socio para ver su historial clínico
                 </p>
               </div>
             )}
@@ -2449,7 +2449,7 @@ export const PhysiotherapyModule = () => {
                         />
                         {members.length === 0 && (
                           <p className="text-xs text-amber-700 mt-1">
-                            Aún no hay alumnos registrados en el sistema.
+                            Aún no hay socios registrados en el sistema.
                           </p>
                         )}
                       </div>
@@ -2752,7 +2752,7 @@ export const PhysiotherapyModule = () => {
                   />
                       )}
                       <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
-                        <PasoPlan n="2" titulo="Ejercicios terapéuticos" ayuda="Opcional. Elige del banco (derecha) y ajusta series y repeticiones (izquierda). El alumno los verá en su portal." />
+                        <PasoPlan n="2" titulo="Ejercicios terapéuticos" ayuda="Opcional. Elige del banco (derecha) y ajusta series y repeticiones (izquierda). El socio los verá en su portal." />
                         <div>
                   <ExercisePrescriptionCard
                     exercises={formCustomExercises}
@@ -2793,7 +2793,7 @@ export const PhysiotherapyModule = () => {
                     </>
                   ) : (
                     <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
-                      Solo evaluación: no se registrará tratamiento. Las indicaciones para el alumno se eligen en el paso 5.
+                      Solo evaluación: no se registrará tratamiento. Las indicaciones para el socio se eligen en el paso 5.
                     </div>
                   )}
 
@@ -2870,7 +2870,7 @@ export const PhysiotherapyModule = () => {
               {activeModalTab === "evolucion" && (
                 <div className="space-y-4">
                   <div className="space-y-2 bg-white rounded-2xl border border-slate-200 p-4">
-                    <PasoPlan n="1" titulo="Ejercicios e indicaciones para casa" ayuda="Estiramientos 3 × 30 s, movilidad 2 × 15, postura y cuidados. Arriba lo indicado, abajo el catálogo. El alumno lo ve en Mi Rutina y el entrenador en Rutinas asignadas." />
+                    <PasoPlan n="1" titulo="Ejercicios e indicaciones para casa" ayuda="Estiramientos 3 × 30 s, movilidad 2 × 15, postura y cuidados. Arriba lo indicado, abajo el catálogo. El socio lo ve en Mi Rutina y el entrenador en Rutinas asignadas." />
                     <SelectorIndicaciones
                       items={formIndicaciones}
                       onChange={setFormIndicaciones}
@@ -3085,7 +3085,7 @@ export const PhysiotherapyModule = () => {
                   <Card
                     icon={Info}
                     color="text-cyan-700"
-                    title="④ Explicación para el alumno (opcional)"
+                    title="④ Explicación para el socio (opcional)"
                     subtitle="En palabras sencillas: qué tiene y qué debe cuidar. La verá en su portal y en su reporte."
                     right={
                       <button

@@ -30,7 +30,7 @@ const numeroWa = (v) => {
 };
 
 async function miAlumno(req) {
-  if (req.usuario.rol !== "student") throw new ErrorHttp(403, "Solo para alumnos");
+  if (req.usuario.rol !== "student") throw new ErrorHttp(403, "Solo para socios");
   const [u] = await consultar(
     `SELECT a.idalumno, a.codigo, a.nombres, a.apellidos,
             (SELECT MAX(m.fecha_fin) FROM matriculas m WHERE m.idalumno = a.idalumno AND m.estado <> 'anulada') AS fin,
@@ -39,7 +39,7 @@ async function miAlumno(req) {
        FROM usuarios u JOIN alumnos a ON a.idalumno = u.idalumno WHERE u.idusuario = ?`,
     [req.usuario.idusuario],
   );
-  if (!u) throw new ErrorHttp(404, "Tu cuenta no está vinculada a un alumno");
+  if (!u) throw new ErrorHttp(404, "Tu cuenta no está vinculada a un socio");
   return u;
 }
 
@@ -148,7 +148,7 @@ router.post("/solicitud", async (req, res, next) => {
           [`Quiere renovar: ${nombre}`.slice(0, 160), nota, destino.tipo, destino.turno, destino.rol, al.idalumno, hoy, `portal:${al.idalumno}:${hoy}:${plan.idplan}`],
         );
         if (r.affectedRows) {
-          await historial(r.insertId, "creada", `El alumno la pidió desde el anuncio del portal: ${plan.nombre} (S/ ${precio})`, null);
+          await historial(r.insertId, "creada", `El socio la pidió desde el anuncio del portal: ${plan.nombre} (S/ ${precio})`, null);
           tarea = String(r.insertId);
         }
       }

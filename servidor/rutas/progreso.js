@@ -111,7 +111,7 @@ export function planDe(rutina) {
 async function acceso(req, escribir = false) {
   const { idusuario, rol } = req.usuario;
   const pedido = String(req.params.idalumno || "");
-  if (!/^\d+$/.test(pedido)) throw new ErrorHttp(400, "Alumno inválido");
+  if (!/^\d+$/.test(pedido)) throw new ErrorHttp(400, "Socio inválido");
   if (rol === "student") {
     const [u] = await consultar("SELECT idalumno FROM usuarios WHERE idusuario = ?", [idusuario]);
     if (!u?.idalumno || String(u.idalumno) !== pedido) throw new ErrorHttp(403, "Solo puedes ver tu propio progreso");
@@ -119,9 +119,9 @@ async function acceso(req, escribir = false) {
     return { idalumno: Number(pedido), esAlumno: true, puedeAnotar: true };
   }
   const ver = await tienePermiso(idusuario, ["members", "routines"], "ver");
-  if (!ver) throw new ErrorHttp(403, "No tienes permiso para ver el progreso de los alumnos");
+  if (!ver) throw new ErrorHttp(403, "No tienes permiso para ver el progreso de los socios");
   const anotar = await tienePermiso(idusuario, "routines", "editar");
-  if (escribir && !anotar) throw new ErrorHttp(403, "Solo el entrenador o administración pueden anotar pesos de un alumno");
+  if (escribir && !anotar) throw new ErrorHttp(403, "Solo el entrenador o administración pueden anotar pesos de un socio");
   return { idalumno: Number(pedido), esAlumno: false, puedeAnotar: anotar };
 }
 
@@ -130,7 +130,7 @@ async function alumnoBasico(idalumno) {
     "SELECT idalumno, codigo, nombres, apellidos, objetivo, activo FROM alumnos WHERE idalumno = ?",
     [idalumno],
   );
-  if (!a) throw new ErrorHttp(404, "Alumno no encontrado");
+  if (!a) throw new ErrorHttp(404, "Socio no encontrado");
   return {
     id: String(a.idalumno),
     nombre: `${a.nombres} ${a.apellidos}`.trim(),

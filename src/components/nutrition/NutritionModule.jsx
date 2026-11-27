@@ -455,7 +455,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
     if (fromCalculator) {
       const student = members.find((m) => m.id === calcSelectedStudentId);
       setFormTitle(
-        `Plan Personalizado - ${student ? student.fullName : "Nuevo Alumno"} (${calculatedMetrics.targetCalories} kcal)`,
+        `Plan Personalizado - ${student ? student.fullName : "Nuevo Socio"} (${calculatedMetrics.targetCalories} kcal)`,
       );
       setFormStudentId(calcSelectedStudentId);
       setFormObjective(calcGoal);
@@ -609,7 +609,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
       });
     }
 
-    msg += `\n💬 *Recomendación del Coach (${plan.trainerName || "RADICAL"}):*\n${plan.recommendations}\n`;
+    msg += `\n💬 *Recomendación del Entrenador (${plan.trainerName || "RADICAL"}):*\n${plan.recommendations}\n`;
     msg += `\n¡A darlo todo con tu alimentación! 💪`;
 
     const url = cleanPhone
@@ -759,7 +759,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 font-medium">
                 Pautas alimentarias personalizadas, cálculo de requerimientos
-                calóricos y macronutrientes por alumno.
+                calóricos y macronutrientes por socio.
               </p>
             </div>
           </div>
@@ -830,7 +830,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Código del alumno (12 o DR-12), nombre o plan..."
+                  placeholder="Código del socio (12 o DR-12), nombre o plan..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
@@ -933,13 +933,13 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                       <div className="flex items-center space-x-3 text-xs text-slate-300 mt-2">
                         <span className="flex items-center space-x-1">
                           <User className="w-3.5 h-3.5 text-blue-400" />
-                          <strong className="text-white">Alumno:</strong>{" "}
+                          <strong className="text-white">Socio:</strong>{" "}
                           {selectedPlan.targetStudentName ||
                             "Sin asignar (Plantilla Base)"}
                         </span>
                         <span>•</span>
                         <span>
-                          <strong className="text-white">Coach:</strong>{" "}
+                          <strong className="text-white">Entrenador:</strong>{" "}
                           {selectedPlan.trainerName || "Carlos Mendoza"}
                         </span>
                       </div>
@@ -1153,7 +1153,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
             ) : (
               alumnoFijo ? (
                 <div className="bg-white p-10 rounded-2xl border border-dashed border-slate-300 text-center">
-                  <p className="text-sm font-bold text-slate-600">Este alumno aún no tiene un plan de alimentación.</p>
+                  <p className="text-sm font-bold text-slate-600">Este socio aún no tiene un plan de alimentación.</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -1183,7 +1183,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
             <h3 className="font-extrabold text-slate-900 mb-1"><IconoEmoji e="✋" /> Porciones con la mano</h3>
-            <p className="text-xs text-slate-500 mb-4">Esta misma guía la ve el alumno en su portal (Mi Alimentación), junto con su plato.</p>
+            <p className="text-xs text-slate-500 mb-4">Esta misma guía la ve el socio en su portal (Mi Alimentación), junto con su plato.</p>
             <GuiaPorciones />
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
@@ -1208,7 +1208,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                 <p className="text-xs text-slate-500">Cuánto carbohidrato al día según las horas de entrenamiento.</p>
               </div>
               <label className="text-xs font-bold text-slate-600">
-                Peso del alumno (kg)
+                Peso del socio (kg)
                 <CampoNumero type="number" min="30" max="250" value={guiaPeso} onChange={(e) => setGuiaPeso(Number(e.target.value))} className="ml-2 w-20 p-1.5 rounded-lg border border-slate-300 text-sm" />
               </label>
             </div>
@@ -1243,7 +1243,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
               {/* Optional: Load from member */}
               <div className="p-3.5 bg-blue-50/60 rounded-xl border border-blue-200">
                 <label className="block text-xs font-bold text-blue-900 mb-1.5">
-                  Cargar datos de un alumno registrado (opcional):
+                  Cargar datos de un socio registrado (opcional):
                 </label>
                 <SelectorAlumno
                   alumnos={members}
@@ -1454,7 +1454,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                       : "Crear y asignar dieta y medidas"}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Paso 1: dieta (calorías, macros y comidas). Paso 2: medidas del mismo alumno.
+                    Paso 1: dieta (calorías, macros y comidas). Paso 2: medidas del mismo socio.
                   </p>
                 </div>
               </div>
@@ -1509,7 +1509,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
                   />
                 ) : (
                   <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center">
-                    <p className="text-sm font-bold text-slate-600">Primero elige el alumno en el Paso 1.</p>
+                    <p className="text-sm font-bold text-slate-600">Primero elige el socio en el Paso 1.</p>
                     <button type="button" onClick={() => setPasoCrear("dieta")} className="mt-3 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold cursor-pointer">
                       Ir al Paso 1
                     </button>
@@ -1541,7 +1541,7 @@ export const NutritionModule = ({ vista, onVista, pedirCrear = 0, alumnoFijo = "
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Asignar a Alumno del Gimnasio
+                    Asignar a Socio del Gimnasio
                   </label>
                   <SelectorAlumno
                     alumnos={members}

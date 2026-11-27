@@ -11,6 +11,7 @@ import { useGym } from "../../context/GymContext";
 import { enlaceWhatsApp } from "./TelWhatsApp";
 import { SeccionProgramados, usePendientes } from "./Programados";
 import { IconoEmoji, ConIconos } from "./IconoEmoji";
+import { useAlCambiar } from "../../utils/tiempoReal";
 
 const claveOcultos = (id) => `radical_avisos_ocultos_${id || "x"}`;
 const leerOcultos = (id) => {
@@ -33,6 +34,8 @@ export function useAvisos() {
       .then((r) => setTodos(r.avisos || []))
       .catch(() => {});
   }, []);
+  // Rutina, cita, dieta, máster… guardados por otro usuario: el aviso llega al instante
+  useAlCambiar(null, () => uid && cargar());
 
   useEffect(() => {
     if (!uid) return undefined;
@@ -75,7 +78,7 @@ export function useAccionAviso(setActiveTab, recargar) {
   const ejecutar = async (a) => {
     const ac = a.accion || {};
     if (ac.tipo === "restablecer") {
-      if (!confirm("¿Confirmaste que es el alumno (en persona o llamando a su celular)?\n\nSu contraseña volverá a ser su DNI y deberá crear una nueva al ingresar.")) return;
+      if (!confirm("¿Confirmaste que es el socio (en persona o llamando a su celular)?\n\nSu contraseña volverá a ser su DNI y deberá crear una nueva al ingresar.")) return;
       try {
         const r = await api(`/avisos/clave/${ac.idalerta}/restablecer`, { method: "POST" });
         setHecho({ ...r, mensaje: mensajeRestablecida(r.nombre, gym) });
@@ -190,7 +193,7 @@ export function ListaAvisos({ avisos, onOcultar, onAccion, hecho, onCerrarHecho,
                     type="button"
                     onClick={() => onAccion({ ...a, accion: { ...a.accion, tipo: "atendida" } })}
                     className="px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-600 font-semibold cursor-pointer"
-                    title="No era el alumno o ya se resolvió"
+                    title="No era el socio o ya se resolvió"
                   >
                     Descartar
                   </button>

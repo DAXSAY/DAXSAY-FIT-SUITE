@@ -24,7 +24,7 @@ export const grupoDe = (a) =>
   a.category === "student" || a.userRole === "student" ? "alumnos" : a.userRole === "trainer" ? "entrenadores" : "personal";
 
 const GRUPOS = [
-  { id: "alumnos", nombre: "Alumnos / Socios", icono: GraduationCap, color: "emerald", hex: "16,185,129" },
+  { id: "alumnos", nombre: "Socios", icono: GraduationCap, color: "emerald", hex: "16,185,129" },
   { id: "entrenadores", nombre: "Entrenadores", icono: Dumbbell, color: "sky", hex: "14,165,233" },
   { id: "personal", nombre: "Personal de trabajo", icono: Briefcase, color: "violet", hex: "139,92,246" },
 ];
@@ -162,7 +162,7 @@ export const CalendarioGeneral = ({ onVerLista }) => {
         {/* Lista del día */}
         {!grupo ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center">
-            <p className="text-sm font-bold text-slate-600">Elige arriba Alumnos / Socios, Entrenadores o Personal de trabajo para ver sus ingresos.</p>
+            <p className="text-sm font-bold text-slate-600">Elige arriba Socios, Entrenadores o Personal de trabajo para ver sus ingresos.</p>
           </div>
         ) : (
         <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col">

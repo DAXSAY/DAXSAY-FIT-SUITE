@@ -514,7 +514,7 @@ export const INITIAL_NOTIFICATION_RULES = [
     timingValueDays: 0,
     templateTitle: "⏰ ¡Tu clase comienza en 2 horas!",
     templateBody:
-      "Hola {{nombre}}, tienes reservada la clase de {{clase}} con el coach {{instructor}} a las {{hora}} en {{sala}}. ¡Prepara tu toalla y botella de agua!",
+      "Hola {{nombre}}, tienes reservada la clase de {{clase}} con el entrenador {{profesor}} a las {{hora}} en {{sala}}. ¡Prepara tu toalla y botella de agua!",
     badgeTag: "Clases",
   },
   {
@@ -549,7 +549,7 @@ export const INITIAL_NOTIFICATION_RULES = [
     category: "birthday",
     enabled: true,
     channels: ["push", "email", "whatsapp"],
-    triggerTiming: "El día del cumpleaños del alumno",
+    triggerTiming: "El día del cumpleaños del socio",
     timingValueDays: 0,
     templateTitle: "🎂 ¡Feliz Cumpleaños de parte del equipo RADICAL!",
     templateBody:

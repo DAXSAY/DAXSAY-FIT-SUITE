@@ -103,7 +103,7 @@ async function actualizarRenovaciones(hechos) {
   try {
     await aplicarRenovaciones(hechos);
   } catch (e) {
-    console.error(`No se pudo preparar «renovaciones y exalumnos» (${e.code || e.message}). Ejecuta en Workbench la parte 36 de base_datos/gestion_radicalgym.sql.`);
+    console.error(`No se pudo preparar «renovaciones y exsocios» (${e.code || e.message}). Ejecuta en Workbench la parte 36 de base_datos/gestion_radicalgym.sql.`);
   }
   soporte.tipoIngreso = await existeColumna("matriculas", "tipo_ingreso");
 }
@@ -117,7 +117,7 @@ async function aplicarRenovaciones(hechos) {
     await pool.query(
       `ALTER TABLE matriculas
          ADD COLUMN tipo_ingreso ENUM('nuevo','renovacion','reingreso') NOT NULL DEFAULT 'nuevo'
-             COMMENT 'nuevo = primera vez · renovacion = volvió dentro del plazo · reingreso = exalumno recuperado' AFTER es_renovacion,
+             COMMENT 'nuevo = primera vez · renovacion = volvió dentro del plazo · reingreso = exsocio recuperado' AFTER es_renovacion,
          ADD COLUMN dias_sin_membresia SMALLINT NULL
              COMMENT 'Días que estuvo sin membresía antes de esta matrícula (0 = sin pausa)' AFTER tipo_ingreso`,
     );
@@ -135,7 +135,7 @@ async function aplicarRenovaciones(hechos) {
       const prev = finDe.get(f.idalumno);
       if (f.fin && (!prev || f.fin > prev)) finDe.set(f.idalumno, f.fin);
     }
-    hechos.push(`matriculas: tipo de ingreso (nuevo / renovación / exalumno recuperado) en ${filas.length} matrículas (script 24)`);
+    hechos.push(`matriculas: tipo de ingreso (nuevo / renovación / exsocio recuperado) en ${filas.length} matrículas (script 24)`);
   }
   await pool.query(VISTA_ESTADO_ALUMNOS).catch(() => {}); // la vista la crea el script 36 si el usuario no tiene permiso
 }
@@ -144,7 +144,7 @@ async function aplicarRenovaciones(hechos) {
 export async function aplicarActualizaciones() {
   const hechos = [];
   await actualizarRenovaciones(hechos);
-  if (!soporte.tipoIngreso) hechos.push("Falta la parte 36 (renovaciones y exalumnos): ejecútala en Workbench");
+  if (!soporte.tipoIngreso) hechos.push("Falta la parte 36 (renovaciones y exsocios): ejecútala en Workbench");
   if (!(await existeTabla("prospectos"))) return hechos; // falta el script 20: no hay CRM todavía
   const largo = await largoColumna("prospectos", "pase_codigo");
   if (largo != null && largo < 24) {

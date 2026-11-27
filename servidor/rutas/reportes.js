@@ -13,13 +13,13 @@ import { SQL_DEUDA, SQL_VENCE_DEUDA, estadoDeuda, saldoMatricula, situacionAlumn
 // Fin de la última membresía del alumno (para saber si está activo, vencido o es exalumno)
 const SQL_FIN_ULTIMA = (alias) =>
   `(SELECT DATE_FORMAT(MAX(mz.fecha_fin), '%Y-%m-%d') FROM matriculas mz WHERE mz.idalumno = ${alias}.idalumno AND mz.estado <> 'anulada')`;
-const ESTADO_TXT = { activo: "Activo", por_vencer: "Por vencer", vencido: "Vencido", exalumno: "Exalumno", sin_matricula: "Sin matrícula" };
+const ESTADO_TXT = { activo: "Activo", por_vencer: "Por vencer", vencido: "Vencido", exalumno: "Exsocio", sin_matricula: "Sin matrícula" };
 async function plazoExalumno() {
   const [c] = await consultar("SELECT valor FROM configuracion WHERE clave = 'dias_exalumno'");
   return Number(c?.valor) || 30;
 }
 const estadoTexto = (fin, plazo) => ESTADO_TXT[situacionAlumno(fin, plazo).memberState] || "";
-const TIPO_INGRESO = { nuevo: "Nueva", renovacion: "Renovación", reingreso: "Exalumno recuperado" };
+const TIPO_INGRESO = { nuevo: "Nueva", renovacion: "Renovación", reingreso: "Exsocio recuperado" };
 import { SQL_CONGELAMIENTOS, aCongelamiento, hoyLima, reglas, saldo, textoReglas } from "../congelamiento.js";
 import { codigoAlumno } from "../codigoAlumno.js";
 
@@ -89,7 +89,7 @@ router.get("/deudas", async (req, res, next) => {
         telefono: f.telefono || "",
         deBaja: !f.activo,
         plan: f.plan,
-        tipo: f.tipo_ingreso === "reingreso" ? "Exalumno recuperado" : f.es_renovacion ? "Renovación" : "Matrícula",
+        tipo: f.tipo_ingreso === "reingreso" ? "Exsocio recuperado" : f.es_renovacion ? "Renovación" : "Matrícula",
         estadoAlumno: f.activo ? estadoTexto(f.fin_ultima, plazo) : "De baja",
         fechaMatricula: f.fecha_matricula,
         inicio: f.fecha_inicio,
@@ -199,7 +199,7 @@ router.get("/alumnos", async (req, res, next) => {
         if (!f.activo) estado = "De baja";
         else if (f.congelado_hasta || f.estado_matricula === "congelada") estado = "Congelado";
         else if (f.fecha_fin)
-          estado = f.dias_restantes < -plazo ? "Exalumno" : f.dias_restantes < 0 ? "Vencido" : f.dias_restantes <= 7 ? "Por vencer" : "Activo";
+          estado = f.dias_restantes < -plazo ? "Exsocio" : f.dias_restantes < 0 ? "Vencido" : f.dias_restantes <= 7 ? "Por vencer" : "Activo";
         return {
           id: String(f.idalumno),
           codigo: codigoAlumno(f.codigo, f.nombres, f.apellidos),
@@ -279,7 +279,7 @@ router.get("/matriculas", async (req, res, next) => {
           planId: String(f.idplan),
           plan: f.plan,
           // Nueva · Renovación (volvió dentro del plazo) · Exalumno recuperado (después del plazo)
-          tipo: f.tipo_ingreso === "reingreso" ? "Exalumno recuperado" : f.es_renovacion ? "Renovación" : "Nueva",
+          tipo: f.tipo_ingreso === "reingreso" ? "Exsocio recuperado" : f.es_renovacion ? "Renovación" : "Nueva",
           diasSinMembresia: f.dias_sin_membresia != null ? Number(f.dias_sin_membresia) : null,
           inicio: f.fecha_inicio,
           vence: f.fecha_fin,

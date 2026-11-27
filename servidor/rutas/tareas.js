@@ -741,7 +741,7 @@ router.post("/", async (req, res, next) => {
     const tipo = TIPOS.includes(b.tipo) ? b.tipo : "otro";
     const idal = Number(b.alumnoId) || null;
     const idpr = Number(b.prospectoId) || null;
-    if (idal && !(await consultar("SELECT 1 FROM alumnos WHERE idalumno = ?", [idal])).length) throw new ErrorHttp(400, "Ese alumno no existe");
+    if (idal && !(await consultar("SELECT 1 FROM alumnos WHERE idalumno = ?", [idal])).length) throw new ErrorHttp(400, "Ese socio no existe");
     if (idpr && !(await consultar("SELECT 1 FROM prospectos WHERE idprospecto = ?", [idpr])).length) throw new ErrorHttp(400, "Ese interesado no existe");
     const r = await consultar(
       `INSERT INTO tareas (tipo, titulo, nota, destino_tipo, idturno_recepcion, rol_codigo, idusuario_destino, idalumno, idprospecto, fecha, hora, origen, idusuario_creador)

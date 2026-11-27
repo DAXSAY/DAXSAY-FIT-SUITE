@@ -691,8 +691,8 @@ export const StorePOS = ({ onAbrirCaja }) => {
               <div className="space-y-1.5 mb-3 text-xs">
                 <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-slate-100">
                   {[
-                    ["externo", "Cliente externo"],
-                    ["alumno", "Alumno matriculado"],
+                    ["externo", "Externo"],
+                    ["alumno", "Socio"],
                   ].map(([k, l]) => (
                     <button
                       key={k}
@@ -713,7 +713,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                 {tipoCliente === "externo" ? (
                   <input
                     type="text"
-                    placeholder="Nombre del cliente (opcional)..."
+                    placeholder="Nombre del externo (opcional)..."
                     value={customCustomerName}
                     onChange={(e) => setCustomCustomerName(e.target.value)}
                     className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-slate-900 placeholder-gray-400 focus:outline-none focus:border-blue-600"
@@ -733,7 +733,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                         {alumnoVenta.phone ? <> · <TelWhatsApp tel={alumnoVenta.phone} /></> : ""}
                       </p>
                     </div>
-                    <button type="button" onClick={() => { setSelectedMemberId(""); setBuscaAlumno(""); }} className="text-slate-400 hover:text-rose-600 cursor-pointer" title="Cambiar alumno">
+                    <button type="button" onClick={() => { setSelectedMemberId(""); setBuscaAlumno(""); }} className="text-slate-400 hover:text-rose-600 cursor-pointer" title="Cambiar socio">
                       ✕
                     </button>
                   </div>
@@ -742,7 +742,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                     <input
                       type="text"
                       autoFocus
-                      placeholder="Código (DF-1), DNI o nombre del alumno"
+                      placeholder="Código (DF-1), DNI o nombre del socio"
                       value={buscaAlumno}
                       onChange={(e) => setBuscaAlumno(e.target.value)}
                       onKeyDown={(e) => {
@@ -772,7 +772,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                       </ul>
                     )}
                     {buscaAlumno.trim().length >= 2 && sugerenciasAlumno.length === 0 && (
-                      <p className="text-[11px] text-rose-600 mt-1">No hay alumnos con ese código, DNI o nombre.</p>
+                      <p className="text-[11px] text-rose-600 mt-1">No hay socios con ese código, DNI o nombre.</p>
                     )}
                   </div>
                 )}
@@ -1512,7 +1512,7 @@ export const StorePOS = ({ onAbrirCaja }) => {
                 <span className="text-gray-500">Pago</span>
                 <span className="text-right uppercase font-bold text-slate-800">{lastReceipt.paymentMethod}</span>
                 <span className="text-gray-500">Cliente</span>
-                <span className="text-right font-bold text-slate-900 truncate">{lastReceipt.relatedMemberName || "Cliente Mostrador"}</span>
+                <span className="text-right font-bold text-slate-900 truncate">{lastReceipt.relatedMemberName || "Externo"}</span>
                 {lastReceipt.seller && (
                   <>
                     <span className="text-gray-500">Atendió</span>

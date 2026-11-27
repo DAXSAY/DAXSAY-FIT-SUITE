@@ -1,5 +1,6 @@
 // Tiempo real con el servidor (/api/eventos): cuando cualquier usuario guarda
 // algo, todas las pantallas abiertas se enteran al instante.
+import React from "react";
 import { obtenerToken, ORIGEN } from "../api/cliente";
 
 const oyentes = new Set();
@@ -44,4 +45,24 @@ export function escucharCambios(fn) {
       clearTimeout(reintento);
     }
   };
+}
+
+/**
+ * Hook: vuelve a cargar cuando otro usuario guarda algo en esos módulos
+ * (ej. ["clases","masters"]). Sin lista, ante cualquier cambio.
+ */
+export function useAlCambiar(modulos, fn) {
+  const ref = React.useRef(fn);
+  ref.current = fn;
+  const clave = Array.isArray(modulos) ? modulos.join(",") : "";
+  React.useEffect(() => {
+    let espera = null;
+    const quitar = escucharCambios((cambiados) => {
+      const lista = clave ? clave.split(",") : null;
+      if (lista && !cambiados.some((m) => lista.includes(m))) return;
+      clearTimeout(espera);
+      espera = setTimeout(() => ref.current?.(), 250);
+    });
+    return () => (clearTimeout(espera), quitar());
+  }, [clave]);
 }

@@ -62,15 +62,15 @@ export const textoHorario = (h) => {
 // Funciones típicas por cargo (se eligen con un clic; se pueden agregar otras)
 export const FUNCIONES_POR_ROL = {
   trainer: [
-    "Orientar a los alumnos en sala de máquinas",
+    "Orientar a los socios en sala de máquinas",
     "Armar y actualizar rutinas",
     "Corregir técnica y postura",
     "Dictar clases grupales",
     "Evaluar progreso (pesos y medidas)",
     "Velar por la seguridad en sala",
     "Ordenar discos y mancuernas al cierre",
-    "Atender personal training",
-    "Hacer seguimiento a alumnos que no vienen",
+    "Atender entrenamiento personal",
+    "Hacer seguimiento a socios que no vienen",
     "Apoyar en ventas de membresías",
   ],
   physiotherapist: [
@@ -91,7 +91,7 @@ export const FUNCIONES_POR_ROL = {
     "Coordinar objetivos con entrenadores",
   ],
   receptionist: [
-    "Atender a los alumnos en recepción",
+    "Atender a los socios en recepción",
     "Registrar matrículas y renovaciones",
     "Abrir y cerrar caja de su turno",
     "Vender productos de la tienda",

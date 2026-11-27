@@ -25,7 +25,7 @@ export const NutritionMeasurementsModule = () => {
         icono={Sparkles}
         etiqueta="Salud"
         titulo="Nutrición y medidas"
-        descripcion="Medidas del alumno y su plan de alimentación, en un solo lugar."
+        descripcion="Medidas del socio y su plan de alimentación, en un solo lugar."
         accion={<AccionCabecera icono={Plus} onClick={() => { setSubTab("dym"); setPedirCrear((n) => n + 1); }}>Crear / asignar dieta</AccionCabecera>}
         activa={subTab}
         onCambiar={setSubTab}

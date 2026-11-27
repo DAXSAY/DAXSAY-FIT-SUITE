@@ -195,7 +195,7 @@ export const AttendanceModule = () => {
       return;
     }
 
-    // 1. Personal: código 1-COACH / 1-NUTRI…, o DNI si no es de un alumno
+    // 1. Personal: código 1-ENTR / 1-NUTRI…, o DNI si no es de un alumno
     const hallado = elegido ? (elegido.tipo === "alumno" ? { member: elegido.member } : null) : buscarAlumno(members, texto);
     const foundStaff = elegido
       ? elegido.tipo === "personal"
@@ -240,7 +240,7 @@ export const AttendanceModule = () => {
       return;
     }
     if (esCodigoPersonal(texto)) {
-      mostrarIngreso({ tipo: "error", codigo: texto.toUpperCase(), titulo: "No hay personal con ese código", detalle: "Revisa el código en Contratos de Personal (ej. 1-COACH, 1-NUTRI)." });
+      mostrarIngreso({ tipo: "error", codigo: texto.toUpperCase(), titulo: "No hay personal con ese código", detalle: "Revisa el código en Contratos de Personal (ej. 1-ENTRENADOR, 1-NUTRI)." });
       return;
     }
 
@@ -251,7 +251,7 @@ export const AttendanceModule = () => {
       const previo = ingresoDeHoy(attendances, foundMember.id, hoy);
       if (previo) {
         mostrarIngreso(avisoAlumno(foundMember, { repetido: previo }));
-        setLastPunchResult({ success: false, name: foundMember.fullName, role: "Alumno / Socio", status: "Ya marcó", planOrRole: foundMember.planName, message: `Ya registró su ingreso hoy a las ${previo.time}. No se volvió a registrar.` });
+        setLastPunchResult({ success: false, name: foundMember.fullName, role: "Socio", status: "Ya marcó", planOrRole: foundMember.planName, message: `Ya registró su ingreso hoy a las ${previo.time}. No se volvió a registrar.` });
         setActiveTab("inicio");
         return;
       }
@@ -278,11 +278,11 @@ export const AttendanceModule = () => {
       setLastPunchResult({
         success: !isExpired,
         name: foundMember.fullName,
-        role: "Alumno / Socio",
+        role: "Socio",
         status: isFrozen ? "Congelado" : isExpired ? "Vencido" : "Autorizado",
         planOrRole: foundMember.planName,
         message: isFrozen
-          ? `❄️ ${foundMember.fullName} tiene la membresía congelada hasta el ${fc(foundMember.freeze?.current?.endDate)}. Si regresó antes, termina el congelamiento en Alumnos.`
+          ? `❄️ ${foundMember.fullName} tiene la membresía congelada hasta el ${fc(foundMember.freeze?.current?.endDate)}. Si regresó antes, termina el congelamiento en Socios.`
           : isExpired
           ? `¡Atención! Membresía de ${foundMember.fullName} se encuentra vencida.`
           : `¡Acceso concedido a ${foundMember.fullName}!`,
@@ -291,7 +291,7 @@ export const AttendanceModule = () => {
       return;
     }
 
-    mostrarIngreso({ tipo: "error", titulo: "No se encontró a nadie", detalle: `Ningún alumno ni personal con «${texto}» (código, DNI o nombre).` });
+    mostrarIngreso({ tipo: "error", titulo: "No se encontró a nadie", detalle: `Ningún socio ni personal con «${texto}» (código, DNI o nombre).` });
   };
 
   // Submit Manual Staff Attendance
@@ -360,7 +360,7 @@ export const AttendanceModule = () => {
       "ID,Categoria,Fecha,Hora,Usuario,DNI,Estado,HorarioProgramado,HorasTrabajadas,Motivo,Notas\n";
     const list = activeTab === "staffCalendar" ? staffRecords : studentRecords;
     list.forEach((r) => {
-      csv += `"${r.id}","${({ student: "Alumno", staff: "Personal" })[r.category] || r.category || "general"}","${r.date}","${r.time}","${r.userName}","${r.userDni}","${({ authorized: "Autorizado", warning: "Con alerta", denied: "Denegado", puntual: "Puntual", tarde: "Tarde", falta: "Falta", permiso: "Permiso" })[r.status] || r.status}","${r.scheduledTime || ""}","${r.hoursWorked || 0}","${r.reason || ""}","${r.notes || ""}"\n`;
+      csv += `"${r.id}","${({ student: "Socio", staff: "Personal" })[r.category] || r.category || "general"}","${r.date}","${r.time}","${r.userName}","${r.userDni}","${({ authorized: "Autorizado", warning: "Con alerta", denied: "Denegado", puntual: "Puntual", tarde: "Tarde", falta: "Falta", permiso: "Permiso" })[r.status] || r.status}","${r.scheduledTime || ""}","${r.hoursWorked || 0}","${r.reason || ""}","${r.notes || ""}"\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -418,13 +418,13 @@ export const AttendanceModule = () => {
           <div>
             <div className="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">
               <UserCheck className="w-4 h-4" />
-              <span>Personal y alumnos</span>
+              <span>Personal y socios</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
               Asistencias
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm mt-1 max-w-2xl">
-              Ingresos de alumnos, puntualidad del personal y permisos.
+              Ingresos de socios, puntualidad del personal y permisos.
             </p>
           </div>
 
@@ -440,7 +440,7 @@ export const AttendanceModule = () => {
               <span>
                 {activeTab === "staffCalendar"
                   ? "Registrar Asistencia Personal"
-                  : "Registrar Ingreso Alumno"}
+                  : "Registrar Ingreso Socio"}
               </span>
             </button>
 
@@ -527,7 +527,7 @@ export const AttendanceModule = () => {
         onCambiar={setActiveTab}
         pestanas={[
           { k: "inicio", icono: CalendarDays, label: "Calendario", tono: "teal" },
-          { k: "calendar", icono: CalendarDays, label: "Historial de un alumno", tono: "emerald" },
+          { k: "calendar", icono: CalendarDays, label: "Historial de un socio", tono: "emerald" },
           { k: "staffCalendar", icono: CalendarDays, label: "Puntualidad del personal", tono: "violet" },
           { k: "permisos", icono: FileCheck2, label: "Permisos", badge: permisosPendientes || null, tono: "amber" },
         ]}
@@ -736,7 +736,7 @@ export const AttendanceModule = () => {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-4 border-b border-slate-200 flex items-center justify-between text-xs">
               <span className="font-bold text-slate-800">
-                Marcaciones de Alumnos ({studentRecords.length})
+                Marcaciones de Socios ({studentRecords.length})
               </span>
               <span className="text-slate-500">
                 Validación de membresía y control de torniquete / QR
@@ -748,7 +748,7 @@ export const AttendanceModule = () => {
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
                   <tr>
                     <th className="py-3 px-4">Hora / Fecha</th>
-                    <th className="py-3 px-4">Alumno</th>
+                    <th className="py-3 px-4">Socio</th>
                     <th className="py-3 px-3">DNI</th>
                     <th className="py-3 px-3">Plan de Membresía</th>
                     <th className="py-3 px-3">Estado de Acceso</th>
@@ -764,7 +764,7 @@ export const AttendanceModule = () => {
                         colSpan={8}
                         className="py-10 text-center text-slate-400"
                       >
-                        No se encontraron ingresos de alumnos registrados para
+                        No se encontraron ingresos de socios registrados para
                         esta fecha.
                       </td>
                     </tr>
@@ -1033,11 +1033,11 @@ export const AttendanceModule = () => {
             <div className="bg-gradient-to-r from-emerald-900 to-slate-900 text-white p-4 sm:p-5 flex items-center justify-between">
               <div>
                 <span className="text-xs font-semibold text-emerald-300 uppercase tracking-wider block">
-                  Acceso de Miembros
+                  Acceso de Socios
                 </span>
                 <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
                   <GraduationCap className="w-5 h-5 text-emerald-400" />
-                  Registrar Ingreso de Alumno
+                  Registrar Ingreso de Socio
                 </h3>
               </div>
               <button
@@ -1054,7 +1054,7 @@ export const AttendanceModule = () => {
             >
               <div>
                 <label className="block font-bold text-slate-800 mb-1">
-                  Seleccionar Alumno *
+                  Seleccionar Socio *
                 </label>
                 <SelectorAlumno alumnos={members} value={modalStudentId} onChange={(id) => setModalStudentId(id)} required />
               </div>
@@ -1107,7 +1107,7 @@ const PreviaIngreso = ({ alumno, asistencias = [] }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
-        <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Estado del alumno</span>
+        <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Estado del socio</span>
         {alumno ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
@@ -1130,7 +1130,7 @@ const PreviaIngreso = ({ alumno, asistencias = [] }) => {
             </div>
           </div>
         ) : (
-          <p className="text-[12px] text-slate-500">Elige al alumno para ver su plan, vencimiento, deuda y últimas asistencias antes de validar.</p>
+          <p className="text-[12px] text-slate-500">Elige al socio para ver su plan, vencimiento, deuda y últimas asistencias antes de validar.</p>
         )}
       </div>
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
@@ -1139,7 +1139,7 @@ const PreviaIngreso = ({ alumno, asistencias = [] }) => {
           <ul className="divide-y divide-slate-200">
             {deHoy.map((a) => (
               <li key={a.id} className="flex items-center justify-between gap-2 py-1.5 text-[12px]">
-                <span className="truncate text-slate-800 font-semibold">{a.userName || a.memberName || "Alumno"}</span>
+                <span className="truncate text-slate-800 font-semibold">{a.userName || a.memberName || "Socio"}</span>
                 <span className="shrink-0 font-mono text-slate-500">{String(a.time || a.checkIn || "").slice(0, 5)}</span>
               </li>
             ))}
@@ -1164,7 +1164,7 @@ const PanelCalendario = ({ members }) => {
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-2">
-        <p className="text-sm font-extrabold text-slate-900">¿De qué alumno quieres ver el historial?</p>
+        <p className="text-sm font-extrabold text-slate-900">¿De qué socio quieres ver el historial?</p>
         <p className="text-xs text-slate-500">Escribe su código (ej. 12 o DR-12), nombre o DNI. Verás mes por mes qué días vino y cuáles faltó.</p>
         <SelectorAlumno alumnos={members} value={elegido?.id || ""} onChange={(id) => setElegido(members.find((m) => m.id === id) || null)} />
       </div>
@@ -1172,7 +1172,7 @@ const PanelCalendario = ({ members }) => {
         <CalendarioAsistencias key={elegido.id} memberId={elegido.id} />
       ) : (
         <p className="text-sm text-slate-500 text-center py-10 bg-white rounded-2xl border border-dashed border-slate-300">
-          Elige un alumno para ver en el calendario qué días vino y qué días no.
+          Elige un socio para ver en el calendario qué días vino y qué días no.
         </p>
       )}
     </div>

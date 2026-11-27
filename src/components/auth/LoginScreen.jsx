@@ -4,12 +4,15 @@ import { useGym } from "../../context/GymContext";
 import { api } from "../../api/cliente";
 import { LogoRadical, NombreRadical, BotonTema, FirmaDaxsay } from "../common/Marca";
 
+// Ejemplos cortos que entran completos en el campo, en PC y en celular
 const EJEMPLOS_USUARIO = [
-  "Administración: tu usuario (ej. administracion)",
-  "Alumno: tu DNI (ej. 45678912)",
-  "Recepción: tu usuario asignado",
-  "Profesor o entrenador: tu usuario",
-  "Nutrición o fisioterapia: tu usuario",
+  "Administración: tu usuario",
+  "Socio: tu DNI · 45678912",
+  "Recepción: tu usuario",
+  "Profesor: tu usuario",
+  "Entrenador: tu usuario",
+  "Nutrición: tu usuario",
+  "Fisioterapia: tu usuario",
 ];
 
 export const LoginScreen = () => {
@@ -63,8 +66,8 @@ export const LoginScreen = () => {
             <span className="rd-sub-marca block text-2xl font-semibold mt-1">Sistema de gestión del gimnasio</span>
           </h1>
           <p className="text-slate-300/90 text-sm leading-relaxed">
-            Alumnos, membresías, rutinas, nutrición, fisioterapia, asistencias,
-            ventas y caja en un solo lugar. Cada miembro del equipo ve solo lo
+            Socios, membresías, rutinas, nutrición, fisioterapia, asistencias,
+            ventas y caja en un solo lugar. Cada socio del equipo ve solo lo
             que necesita para su trabajo.
           </p>
         </div>
@@ -87,7 +90,7 @@ export const LoginScreen = () => {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-900/5 p-7">
             <h2 className="text-xl font-extrabold text-slate-900">Iniciar sesión</h2>
             <p className="text-xs text-slate-500 mt-1 mb-6">
-              Personal del gimnasio: con el usuario que te asignó administración. Alumnos: con tu número de DNI.
+              Personal del gimnasio: con el usuario que te asignó administración. Socios: con su número de DNI.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -214,7 +217,7 @@ function OlvideClave({ usuarioInicial }) {
       ) : (
         <form onSubmit={enviar} className="mt-2 space-y-2">
           <p className="text-slate-400 text-xs">
-            Escribe tu usuario (si eres alumno, tu DNI). Le llegará un aviso a recepción para que restablezca tu contraseña; luego ingresas con tu DNI y creas una nueva.
+            Escribe tu usuario (si eres socio, tu DNI). Le llegará un aviso a recepción para que restablezca tu contraseña; luego ingresas con tu DNI y creas una nueva.
           </p>
           <input
             value={usuario}

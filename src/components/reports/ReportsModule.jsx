@@ -244,7 +244,7 @@ const ESTILO_ESTADO = {
   Activa: ["bg-emerald-100 text-emerald-800 border-emerald-200", "border-l-emerald-500"],
   "Por vencer": ["bg-amber-100 text-amber-800 border-amber-200", "border-l-amber-500"],
   Vencido: ["bg-rose-100 text-rose-800 border-rose-200", "border-l-rose-500"],
-  Exalumno: ["bg-violet-100 text-violet-800 border-violet-200", "border-l-violet-500"],
+  Exsocio: ["bg-violet-100 text-violet-800 border-violet-200", "border-l-violet-500"],
   Vencida: ["bg-rose-100 text-rose-800 border-rose-200", "border-l-rose-500"],
   Congelado: ["bg-sky-100 text-sky-800 border-sky-200", "border-l-sky-500"],
   Congelada: ["bg-sky-100 text-sky-800 border-sky-200", "border-l-sky-500"],
@@ -265,20 +265,20 @@ const DINERO = ["deuda", "saldo", "monto", "pagado", "precio", "total", "cobrado
 // Estado del alumno hoy (activo · por vencer · vencido · exalumno) en cualquier reporte
 const colEstadoAlumno = {
   key: "estadoAlumno",
-  label: "Estado del alumno",
+  label: "Estado del socio",
   ver: (x) =>
     x.estadoAlumno ? (
       <span className={`inline-block px-2 py-0.5 rounded-full border text-[11px] font-bold ${(ESTILO_ESTADO[x.estadoAlumno] || ["bg-slate-100 text-slate-600 border-slate-200"])[0]}`}>
-        {{ Exalumno: "🔁 ", Vencido: "⏳ ", Activo: "✅ ", "Por vencer": "⚠️ ", "De baja": "🚫 " }[x.estadoAlumno] || ""}
+        {{ Exsocio: "🔁 ", Vencido: "⏳ ", Activo: "✅ ", "Por vencer": "⚠️ ", "De baja": "🚫 " }[x.estadoAlumno] || ""}
         {x.estadoAlumno}
       </span>
     ) : (
       "—"
     ),
 };
-const ESTADOS_ALUMNO = ["Activo", "Por vencer", "Vencido", "Exalumno"];
+const ESTADOS_ALUMNO = ["Activo", "Por vencer", "Vencido", "Exsocio"];
 // Fila de tarjetas por situación del alumno (activo · por vencer · vencido · exalumno)
-const KPI_ESTADO = { Activo: ["✅", "text-emerald-600", "Activos"], "Por vencer": ["⚠️", "text-amber-600", "Por vencer"], Vencido: ["⏳", "text-rose-600", "Vencidos"], Exalumno: ["🔁", "text-violet-600", "Exalumnos"] };
+const KPI_ESTADO = { Activo: ["✅", "text-emerald-600", "Activos"], "Por vencer": ["⚠️", "text-amber-600", "Por vencer"], Vencido: ["⏳", "text-rose-600", "Vencidos"], Exsocio: ["🔁", "text-violet-600", "Exsocios"] };
 const KpisEstado = ({ filas, campo = "estadoAlumno", sufijo = "", valor }) => (
   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
     {ESTADOS_ALUMNO.map((e) => {
@@ -477,7 +477,7 @@ const ReporteAlumnos = () => {
   const columnas = [
     { key: "codigo", label: "Código", clase: () => "font-mono font-bold text-blue-700" },
     { key: "dni", label: "DNI" },
-    { key: "nombre", label: "Alumno", clase: () => "font-semibold text-slate-900" },
+    { key: "nombre", label: "Socio", clase: () => "font-semibold text-slate-900" },
     { key: "sexo", label: "Sexo" },
     { key: "edad", label: "Edad" },
     { key: "telefono", label: "Celular" },
@@ -487,7 +487,7 @@ const ReporteAlumnos = () => {
       key: "estado",
       label: "Estado",
       clase: (a) =>
-        `font-bold ${a.estado === "Vencido" ? "text-rose-600" : a.estado === "Por vencer" ? "text-amber-600" : a.estado === "Activo" ? "text-emerald-600" : a.estado === "Congelado" ? "text-sky-600" : a.estado === "Exalumno" ? "text-violet-600" : "text-slate-500"}`,
+        `font-bold ${a.estado === "Vencido" ? "text-rose-600" : a.estado === "Por vencer" ? "text-amber-600" : a.estado === "Activo" ? "text-emerald-600" : a.estado === "Congelado" ? "text-sky-600" : a.estado === "Exsocio" ? "text-violet-600" : "text-slate-500"}`,
     },
     {
       key: "congelamiento",
@@ -518,7 +518,7 @@ const ReporteAlumnos = () => {
     valor: filas.filter((a) => a.edad != null && a.edad >= EDADES[k][1] && a.edad <= EDADES[k][2]).length,
   }));
   const totales = [
-    ["Alumnos", filas.length],
+    ["Socios", filas.length],
     ["Mujeres", filas.filter((a) => a.sexo === "Mujer").length],
     ["Varones", filas.filter((a) => a.sexo === "Varón").length],
     ["Deuda total", soles(deudaTotal)],
@@ -542,7 +542,7 @@ const ReporteAlumnos = () => {
         {/* Atajos */}
         <Atajos>
           <Chip activo={f.estado === "Vencido"} onClick={() => rapido({ estado: "Vencido" })}>Vencidos</Chip>
-          <Chip activo={f.estado === "Exalumno"} onClick={() => rapido({ estado: "Exalumno" })}>🔁 Exalumnos</Chip>
+          <Chip activo={f.estado === "Exsocio"} onClick={() => rapido({ estado: "Exsocio" })}>🔁 Exsocios</Chip>
           <Chip activo={f.estado === "Por vencer"} onClick={() => rapido({ estado: "Por vencer" })}>Por vencer (7 días)</Chip>
           <Chip activo={f.deuda === "si"} onClick={() => rapido({ deuda: "si" })}>Con deuda</Chip>
           <Chip activo={f.registro === "hoy"} onClick={() => rapido({ registro: "hoy" })}>Matriculados hoy</Chip>
@@ -562,7 +562,7 @@ const ReporteAlumnos = () => {
           <Grupo titulo="Membresía" color="blue">
             <div className="grid grid-cols-2 gap-2">
               <Sel label="Estado" value={f.estado} onChange={(v) => set("estado", v)}>
-                {["todos", "Activo", "Por vencer", "Vencido", "Exalumno", "Congelado", "Sin matrícula", "De baja"].map((x) => (
+                {["todos", "Activo", "Por vencer", "Vencido", "Exsocio", "Congelado", "Sin matrícula", "De baja"].map((x) => (
                   <option key={x} value={x}>{x === "todos" ? "Todos" : x}</option>
                 ))}
               </Sel>
@@ -587,7 +587,7 @@ const ReporteAlumnos = () => {
             </div>
           </Grupo>
 
-          <Grupo titulo="Alumno" color="violet">
+          <Grupo titulo="Socio" color="violet">
             <div className="grid grid-cols-2 gap-2">
               <Sel label="Sexo" value={f.sexo} onChange={(v) => set("sexo", v)}>
                 <option value="">Todos</option>
@@ -650,7 +650,7 @@ const ReporteAlumnos = () => {
 
       {error && <p className="text-rose-600 font-bold text-sm">{error}</p>}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Kpi label="Alumnos" value={filas.length} />
+        <Kpi label="Socios" value={filas.length} />
         <Kpi label="Mujeres / Varones" value={`${filas.filter((a) => a.sexo === "Mujer").length} / ${filas.filter((a) => a.sexo === "Varón").length}`} />
         <Kpi label="Edad promedio" value={conEdad.length ? Math.round(conEdad.reduce((s, a) => s + a.edad, 0) / conEdad.length) : "—"} />
         <Kpi label="Con deuda" value={filas.filter((a) => a.deuda > 0).length} tone="text-rose-600" />
@@ -659,18 +659,18 @@ const ReporteAlumnos = () => {
       <KpisEstado filas={filas} campo="estado" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Alumnos por plan</h4>
+          <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Socios por plan</h4>
           <Barras datos={porPlan} />
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Alumnos por edad</h4>
+          <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Socios por edad</h4>
           <Barras datos={porEdad} />
         </div>
       </div>
       <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-sm font-black text-slate-900">Alumnos {descripcion.length ? `· ${descripcion.join(" · ")}` : ""}</h4>
-          <Exportar titulo="Reporte de alumnos" filtros={descripcion} columnas={columnas} filas={filas} totales={totales} />
+          <h4 className="text-sm font-black text-slate-900">Socios {descripcion.length ? `· ${descripcion.join(" · ")}` : ""}</h4>
+          <Exportar titulo="Reporte de socios" filtros={descripcion} columnas={columnas} filas={filas} totales={totales} />
         </div>
         {!datos ? <p className="text-slate-500 text-sm">Cargando…</p> : <Tabla columnas={columnas} filas={filas} />}
       </div>
@@ -728,13 +728,13 @@ const ReporteMatriculas = () => {
     ...(f.metodo ? [METODO[f.metodo]] : []),
     ...(f.saldo ? [f.saldo === "si" ? "Con saldo pendiente" : "Pagadas completas"] : []),
     ...(f.sexo ? [f.sexo === "Mujer" ? "Mujeres" : "Varones"] : []),
-    ...(f.estadoAlumno ? [`Alumno hoy: ${f.estadoAlumno}`] : []),
+    ...(f.estadoAlumno ? [`Socio hoy: ${f.estadoAlumno}`] : []),
     ...(f.usuario ? [`Registró: ${f.usuario}`] : []),
   ];
   const columnas = [
     { key: "fecha", label: "Fecha", excel: (m) => `${fCorta(m.fecha)} ${String(m.fecha).slice(11, 16)}` },
     { key: "dni", label: "DNI" },
-    { key: "alumno", label: "Alumno", clase: () => "font-semibold text-slate-900" },
+    { key: "alumno", label: "Socio", clase: () => "font-semibold text-slate-900" },
     { key: "sexo", label: "Sexo" },
     { key: "edad", label: "Edad" },
     { key: "plan", label: "Plan" },
@@ -742,8 +742,8 @@ const ReporteMatriculas = () => {
       key: "tipo",
       label: "Tipo",
       ver: (m) => (
-        <span className={`inline-block px-2 py-0.5 rounded-full border text-xs font-bold ${m.tipo === "Renovación" ? "bg-indigo-50 text-indigo-700 border-indigo-200" : m.tipo === "Exalumno recuperado" ? "bg-violet-50 text-violet-700 border-violet-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
-          {m.tipo === "Renovación" ? "🔄 " : m.tipo === "Exalumno recuperado" ? "🔁 " : "🆕 "}{m.tipo}
+        <span className={`inline-block px-2 py-0.5 rounded-full border text-xs font-bold ${m.tipo === "Renovación" ? "bg-indigo-50 text-indigo-700 border-indigo-200" : m.tipo === "Exsocio recuperado" ? "bg-violet-50 text-violet-700 border-violet-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+          {m.tipo === "Renovación" ? "🔄 " : m.tipo === "Exsocio recuperado" ? "🔁 " : "🆕 "}{m.tipo}
         </span>
       ),
     },
@@ -767,7 +767,7 @@ const ReporteMatriculas = () => {
     ["Matrículas", filas.length],
     ["Nuevas", filas.filter((m) => m.tipo === "Nueva").length],
     ["Renovaciones", filas.filter((m) => m.tipo === "Renovación").length],
-    ["Exalumnos recuperados", filas.filter((m) => m.tipo === "Exalumno recuperado").length],
+    ["Exsocios recuperados", filas.filter((m) => m.tipo === "Exsocio recuperado").length],
     ["Vendido", soles(t.precio)],
     ["Cobrado", soles(t.pagado)],
     ["Saldo pendiente", soles(t.saldo)],
@@ -780,7 +780,7 @@ const ReporteMatriculas = () => {
             ["Todas", {}],
             ["Solo nuevas", { tipo: "Nueva" }],
             ["Renovaciones", { tipo: "Renovación" }],
-            ["🔁 Exalumnos recuperados", { tipo: "Exalumno recuperado" }],
+            ["🔁 Exsocios recuperados", { tipo: "Exsocio recuperado" }],
             ["Con saldo pendiente", { saldo: "si" }],
             ["Pagadas completas", { saldo: "no" }],
             ["Pagadas en efectivo", { metodo: "efectivo" }],
@@ -807,7 +807,7 @@ const ReporteMatriculas = () => {
             <option value="">Todas</option>
             <option value="Nueva">Solo nuevas</option>
             <option value="Renovación">Solo renovaciones</option>
-            <option value="Exalumno recuperado">Solo exalumnos recuperados</option>
+            <option value="Exsocio recuperado">Solo exsocios recuperados</option>
           </Sel>
           <Sel label="Método de pago" value={f.metodo} onChange={(v) => set("metodo", v)}>
             <option value="">Todos</option>
@@ -823,7 +823,7 @@ const ReporteMatriculas = () => {
             <option value="Mujer">Mujeres</option>
             <option value="Varón">Varones</option>
           </Sel>
-          <Sel label="Alumno hoy" value={f.estadoAlumno} onChange={(v) => set("estadoAlumno", v)}>
+          <Sel label="Socio hoy" value={f.estadoAlumno} onChange={(v) => set("estadoAlumno", v)}>
             <option value="">Todos</option>
             {[...ESTADOS_ALUMNO, "De baja"].map((e) => <option key={e}>{e}</option>)}
           </Sel>
@@ -907,13 +907,13 @@ const ReporteIngresos = ({ ventas = false }) => {
     ...(f.turno ? [f.turno] : []),
     ...(f.cajero ? [`Cajero: ${f.cajero}`] : []),
     ...(f.membresia ? [`Membresía: ${f.membresia}`] : []),
-    ...(f.estadoAlumno ? [`Alumno: ${f.estadoAlumno}`] : []),
+    ...(f.estadoAlumno ? [`Socio: ${f.estadoAlumno}`] : []),
   ];
   const columnas = [
     { key: "fecha", label: "Fecha", excel: (m) => `${fCorta(m.fecha)} ${String(m.fecha).slice(11, 16)}` },
     { key: "tipo", label: "Tipo", clase: (m) => (m.tipo === "Ingreso" ? "font-bold text-emerald-600" : "font-bold text-rose-600") },
     { key: "categoria", label: "Categoría", excel: (m) => CATEGORIA[m.categoria] || m.categoria },
-    { key: "tipoMatricula", label: "Membresía", ver: (m) => (m.tipoMatricula ? `${m.tipoMatricula === "Renovación" ? "🔄" : m.tipoMatricula === "Exalumno recuperado" ? "🔁" : "🆕"} ${m.tipoMatricula}` : "—") },
+    { key: "tipoMatricula", label: "Membresía", ver: (m) => (m.tipoMatricula ? `${m.tipoMatricula === "Renovación" ? "🔄" : m.tipoMatricula === "Exsocio recuperado" ? "🔁" : "🆕"} ${m.tipoMatricula}` : "—") },
     colEstadoAlumno,
     { key: "descripcion", label: "Descripción" },
     { key: "metodo", label: "Método", excel: (m) => METODO[m.metodo] },
@@ -983,10 +983,10 @@ const ReporteIngresos = ({ ventas = false }) => {
               <option value="">Todas</option>
               <option>Nueva</option>
               <option>Renovación</option>
-              <option>Exalumno recuperado</option>
+              <option>Exsocio recuperado</option>
             </Sel>
           )}
-          <Sel label="Estado del alumno" value={f.estadoAlumno} onChange={(v) => set("estadoAlumno", v)}>
+          <Sel label="Estado del socio" value={f.estadoAlumno} onChange={(v) => set("estadoAlumno", v)}>
             <option value="">Todos</option>
             {ESTADOS_ALUMNO.map((e) => <option key={e}>{e}</option>)}
           </Sel>
@@ -999,7 +999,7 @@ const ReporteIngresos = ({ ventas = false }) => {
       </div>
       {!ventas && filas.some((m) => m.tipoMatricula) && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[["🆕 Membresías nuevas", "Nueva", "text-emerald-600"], ["🔄 Renovaciones", "Renovación", "text-indigo-600"], ["🔁 Exalumnos recuperados", "Exalumno recuperado", "text-violet-600"]].map(([l, t, tono]) => (
+          {[["🆕 Membresías nuevas", "Nueva", "text-emerald-600"], ["🔄 Renovaciones", "Renovación", "text-indigo-600"], ["🔁 Exsocios recuperados", "Exsocio recuperado", "text-violet-600"]].map(([l, t, tono]) => (
             <Kpi key={t} label={l} tone={tono} value={soles(filas.filter((m) => m.tipo === "Ingreso" && m.tipoMatricula === t).reduce((a, m) => a + m.monto, 0))} />
           ))}
         </div>
@@ -1096,7 +1096,7 @@ const ReporteDeudas = () => {
   ];
   const columnas = [
     { key: "dni", label: "DNI" },
-    { key: "alumno", label: "Alumno", clase: () => "font-semibold text-slate-900", excel: (d) => `${d.alumno}${d.deBaja ? " (de baja)" : ""}` },
+    { key: "alumno", label: "Socio", clase: () => "font-semibold text-slate-900", excel: (d) => `${d.alumno}${d.deBaja ? " (de baja)" : ""}` },
     { key: "telefono", label: "Celular" },
     { key: "plan", label: "Plan" },
     { key: "tipo", label: "Tipo" },
@@ -1142,7 +1142,7 @@ const ReporteDeudas = () => {
     ["Total por cobrar", soles(total)],
     ["Vencido", soles(suma("Vencida"))],
     ["Por vencer (3 días)", soles(suma("Por vencer"))],
-    ["Alumnos con deuda", String(alumnos)],
+    ["Socios con deuda", String(alumnos)],
   ];
   return (
     <div className="space-y-4">
@@ -1160,7 +1160,7 @@ const ReporteDeudas = () => {
         </Atajos>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <label className="block text-xs col-span-2 md:col-span-1">
-            <span className="font-bold text-slate-500">Buscar alumno o DNI</span>
+            <span className="font-bold text-slate-500">Buscar socio o DNI</span>
             <div className="relative mt-0.5">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2.5" />
               <input value={f.texto} onChange={(e) => set("texto", e.target.value)} className="w-full pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 text-sm" />
@@ -1181,7 +1181,7 @@ const ReporteDeudas = () => {
         <Kpi label="Total por cobrar" value={soles(total)} tone="text-rose-600" />
         <Kpi label="Vencido" value={soles(suma("Vencida"))} tone="text-rose-700" />
         <Kpi label="Vence en 3 días" value={soles(suma("Por vencer"))} tone="text-amber-600" />
-        <Kpi label="Alumnos con deuda" value={alumnos} />
+        <Kpi label="Socios con deuda" value={alumnos} />
         <Kpi label="Saldos cobrados (periodo)" value={soles(cobrado)} tone="text-emerald-600" />
       </div>
       <KpisEstado filas={filas} sufijo=" · deben" valor={(de) => soles(de.reduce((a, d) => a + d.saldo, 0))} />
@@ -1235,7 +1235,7 @@ const ReporteDeudas = () => {
         <Tabla
           columnas={[
             { key: "fecha", label: "Fecha", excel: (c) => fCorta(c.fecha) },
-            { key: "alumno", label: "Alumno", clase: () => "font-semibold text-slate-900" },
+            { key: "alumno", label: "Socio", clase: () => "font-semibold text-slate-900" },
             { key: "plan", label: "Plan" },
             { key: "metodo", label: "Método", excel: (c) => METODO[c.metodo] },
             { key: "monto", label: "Monto", ver: (c) => soles(c.monto), clase: () => "font-bold text-emerald-600" },
@@ -1287,7 +1287,7 @@ const ReporteAsistencias = () => {
     { key: "dia", label: "Fecha", excel: (a) => fCorta(a.dia) },
     { key: "hora", label: "Hora" },
     { key: "dni", label: "DNI" },
-    { key: "alumno", label: "Alumno", clase: () => "font-semibold text-slate-900" },
+    { key: "alumno", label: "Socio", clase: () => "font-semibold text-slate-900" },
     { key: "sexo", label: "Sexo" },
     { key: "resultado", label: "Resultado" },
     colEstadoAlumno,
@@ -1322,7 +1322,7 @@ const ReporteAsistencias = () => {
           </Sel>
         </div>
         <div className="w-44">
-          <Sel label="Estado del alumno" value={estadoAl} onChange={setEstadoAl}>
+          <Sel label="Estado del socio" value={estadoAl} onChange={setEstadoAl}>
             <option value="">Todos</option>
             {ESTADOS_ALUMNO.map((e) => <option key={e}>{e}</option>)}
           </Sel>
@@ -1331,7 +1331,7 @@ const ReporteAsistencias = () => {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Kpi label="Ingresos al gimnasio" value={filas.length} />
-        <Kpi label="Alumnos distintos" value={new Set(filas.map((a) => a.dni)).size} />
+        <Kpi label="Socios distintos" value={new Set(filas.map((a) => a.dni)).size} />
         <Kpi label="Hora punta" value={porHora.reduce((a, b) => (b.valor > a.valor ? b : a), { nombre: "—", valor: 0 }).nombre} tone="text-blue-700" />
       </div>
       <KpisEstado filas={filas} sufijo=" · ingresos" />
@@ -1346,7 +1346,7 @@ const ReporteAsistencias = () => {
         </div>
       </div>
       <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Alumnos más constantes</h4>
+        <h4 className="text-xs font-black uppercase text-slate-500 mb-2">Socios más constantes</h4>
         <ol className="text-sm text-slate-700 grid grid-cols-1 md:grid-cols-2 gap-x-6">
           {top.map((t, i) => <li key={t.nombre}>{i + 1}. {t.nombre}: <strong>{t.valor}</strong> asistencias</li>)}
           {!top.length && <li className="text-slate-500">Sin asistencias en el periodo.</li>}
@@ -1497,7 +1497,7 @@ const ReporteCongelamientos = () => {
 
   const columnas = [
     { key: "memberDni", label: "DNI" },
-    { key: "memberName", label: "Alumno", clase: () => "font-bold text-slate-800" },
+    { key: "memberName", label: "Socio", clase: () => "font-bold text-slate-800" },
     { key: "memberPhone", label: "Celular" },
     { key: "planName", label: "Plan" },
     { key: "startDate", label: "Desde", excel: (c) => fCorta(c.startDate) },
@@ -1539,7 +1539,7 @@ const ReporteCongelamientos = () => {
   }, [datos, fd]);
   const colDerechos = [
     { key: "memberDni", label: "DNI" },
-    { key: "memberName", label: "Alumno", clase: () => "font-bold text-slate-800" },
+    { key: "memberName", label: "Socio", clase: () => "font-bold text-slate-800" },
     { key: "memberPhone", label: "Celular" },
     { key: "planName", label: "Plan" },
     { key: "rules", label: "Condición del plan" },
@@ -1576,7 +1576,7 @@ const ReporteCongelamientos = () => {
             <Periodo desde={desde} hasta={hasta} setRango={(a, b) => (setDesde(a), setHasta(b))} />
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <label className="text-xs">
-                <span className="font-bold text-slate-500 block mb-1">Buscar alumno o DNI</span>
+                <span className="font-bold text-slate-500 block mb-1">Buscar socio o DNI</span>
                 <input value={f.texto} onChange={(e) => set("texto", e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-sm" />
               </label>
               <Sel label="Estado" value={f.estado} onChange={(v) => set("estado", v)}>
@@ -1658,7 +1658,7 @@ const ReporteCongelamientos = () => {
             </Atajos>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <label className="text-xs">
-                <span className="font-bold text-slate-500 block mb-1">Buscar alumno o DNI</span>
+                <span className="font-bold text-slate-500 block mb-1">Buscar socio o DNI</span>
                 <input value={fd.texto} onChange={(e) => setFd((p) => ({ ...p, texto: e.target.value }))} className="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-sm" />
               </label>
               <Sel label="Plan" value={fd.plan} onChange={(v) => setFd((p) => ({ ...p, plan: v }))}>
@@ -1696,7 +1696,7 @@ export const ReportsModule = () => {
   const [tab, setTab] = useState("");
   const [clave, setClave] = useState(0);
   const tabs = [
-    ["alumnos", "Alumnos", Users, "from-blue-600 to-blue-500", "text-blue-600"],
+    ["alumnos", "Socios", Users, "from-blue-600 to-blue-500", "text-blue-600"],
     ["matriculas", "Matrículas y paquetes", CreditCard, "from-indigo-600 to-violet-500", "text-indigo-600"],
     ["ingresos", "Ingresos y egresos", Wallet, "from-emerald-600 to-emerald-500", "text-emerald-600"],
     ["ventas", "Ventas", ShoppingBag, "from-orange-500 to-amber-500", "text-orange-600"],

@@ -4252,21 +4252,21 @@ html.dark .rd-barra-alumno-hoja{background:#0b1626;border-color:rgba(148,163,184
 html.dark .rd-perfil-mini{background:rgba(8,16,28,.55)}
 
 /* ===================== Clases grupales: croquis de steps ===================== */
-.rd-croquis{background:linear-gradient(180deg,#f8fbfb,#f1f6f6);border:1px solid #dfe8e8;border-radius:16px;max-width:900px}
+.rd-croquis{background:linear-gradient(180deg,#f8fbfb,#f1f6f6);border:1px solid #dfe8e8;border-radius:16px;max-width:760px;padding:2.2%}
 .rd-croquis-editor{background-color:#f8fbfb;background-image:linear-gradient(to right,rgba(15,23,42,.06) 1px,transparent 1px),linear-gradient(to bottom,rgba(15,23,42,.06) 1px,transparent 1px)}
 .rd-zona{background:repeating-linear-gradient(135deg,rgba(100,116,139,.08) 0 6px,rgba(100,116,139,.14) 6px 12px);border:1.5px dashed #a9b6c4;border-radius:8px;color:#64748b}
 .rd-zona-sel{border-color:#47988f;color:#47988f;box-shadow:0 0 0 2px rgba(71,152,143,.25)}
 .rd-zona-muro{background:repeating-linear-gradient(45deg,#475569 0 4px,#334155 4px 8px);border:1px solid #1e293b;border-radius:3px}
 .rd-zona-columna{background:radial-gradient(circle at 35% 30%,#94a3b8,#475569 70%);border:1.5px solid #1e293b;border-radius:6px}
 .rd-zona-baranda{background:repeating-linear-gradient(90deg,#cbd5e1 0 6px,#94a3b8 6px 8px);border:1px solid #94a3b8;border-radius:4px;color:#334155}
-.rd-zona-instructor{background:linear-gradient(180deg,#e4f5f3,#d3ece8);border:1.5px solid #8fcac2;color:#2f7a72}
+.rd-zona-profesor{background:linear-gradient(180deg,#e4f5f3,#d3ece8);border:1.5px solid #8fcac2;color:#2f7a72}
 .rd-zona-consola{background:#e8e4f8;border:1.5px solid #b8acec;color:#5b48b3}
 .rd-zona-puerta{background:#fdf0db;border:1.5px dashed #e2b25c;color:#9a6512}
 .rd-zona-espejo{background:linear-gradient(90deg,#e0f2fe,#f0f9ff,#e0f2fe);border:1.5px solid #9fd2f2;color:#2a77a8}
 html.dark .rd-zona.rd-zona-muro{background:repeating-linear-gradient(45deg,#64748b 0 4px,#475569 4px 8px);border-color:#94a3b8}
 html.dark .rd-zona.rd-zona-columna{background:radial-gradient(circle at 35% 30%,#a5b4c8,#4b5b70 70%);border-color:#a5b4c8}
 html.dark .rd-zona.rd-zona-baranda{background:repeating-linear-gradient(90deg,rgba(203,213,225,.35) 0 6px,rgba(148,163,184,.6) 6px 8px);border-color:#94a3b8;color:#e2e8f0}
-html.dark .rd-zona.rd-zona-instructor{background:rgba(94,232,216,.12);border-color:rgba(94,232,216,.5);color:#88f0e5}
+html.dark .rd-zona.rd-zona-profesor{background:rgba(94,232,216,.12);border-color:rgba(94,232,216,.5);color:#88f0e5}
 html.dark .rd-zona.rd-zona-consola{background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.5);color:#c4b5fd}
 html.dark .rd-zona.rd-zona-puerta{background:rgba(255,194,102,.12);border-color:rgba(255,194,102,.55);color:#ffc266}
 html.dark .rd-zona.rd-zona-espejo{background:rgba(125,211,252,.14);border-color:rgba(125,211,252,.5);color:#a5ddfc}
@@ -4276,6 +4276,7 @@ button.rd-step-libre:not(:disabled):hover{background:#f1f5f9;border-color:#47988
 .rd-step-reservado{background:#f59e0b;border-color:#d97706;color:#ffffff;text-shadow:0 1px 0 rgba(0,0,0,.18)}
 .rd-step-llego{background:#16a34a;border-color:#15803d;color:#ffffff;text-shadow:0 1px 0 rgba(0,0,0,.18)}
 .rd-step-externo{background:#7c3aed;border-color:#6d28d9;color:#ffffff;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+.rd-step-deuda{background:#e11d48;border-color:#be123c;color:#ffffff;text-shadow:0 1px 0 rgba(0,0,0,.2)}
 .rd-step-mio{background:#2563eb;border-color:#1d4ed8;color:#ffffff;box-shadow:0 0 0 3px rgba(37,99,235,.3)}
 .rd-step-sel{background:#0f172a;border-color:#0f172a;color:#fff;box-shadow:0 0 0 3px rgba(245,158,11,.55);transform:scale(1.06);z-index:2}
 html.dark .rd-croquis{background:linear-gradient(180deg,rgba(20,32,48,.75),rgba(12,22,36,.75));border-color:rgba(94,232,216,.18)}
@@ -4287,6 +4288,7 @@ html.dark button.rd-step-libre:not(:disabled):hover{background:rgba(94,232,216,.
 html.dark .rd-step-reservado{background:#f5a524;border-color:#ffc266;color:#1f1300;text-shadow:none}
 html.dark .rd-step-llego{background:#22c55e;border-color:#86efac;color:#03200d;text-shadow:none}
 html.dark .rd-step-externo{background:#a78bfa;border-color:#c4b5fd;color:#1b0b3d;text-shadow:none}
+html.dark .rd-step-deuda{background:#fb7185;border-color:#fecdd3;color:#3b0410;text-shadow:none}
 html.dark .rd-step-mio{background:#60a5fa;border-color:#bfdbfe;color:#06182f;box-shadow:0 0 12px rgba(96,165,250,.45)}
 html.dark .rd-step-sel{background:#f8fafc;border-color:#ffffff;color:#0b1220;box-shadow:0 0 0 3px rgba(255,194,102,.6),0 0 16px rgba(255,255,255,.35);transform:scale(1.06);z-index:2}
 /* Tarjeta de clase en el horario (color de su disciplina) */
@@ -4297,16 +4299,23 @@ html.dark .rd-step-sel{background:#f8fafc;border-color:#ffffff;color:#0b1220;box
 html.dark .rd-dia-col{border-color:rgba(148,163,184,.18)}
 html.dark .rd-dia-hoy{border-color:rgba(94,232,216,.5);box-shadow:0 0 12px rgba(94,232,216,.15)}
 
-/* Buscador de socio por código: grande y con presencia */
-.rd-codigo{position:relative;border-radius:1.1rem;padding:3px;background:linear-gradient(135deg,#47988f,#f59e0b,#7c3aed);box-shadow:0 8px 24px rgba(71,152,143,.18)}
-.rd-codigo input{width:100%;border:0;outline:0;border-radius:calc(1.1rem - 3px);background:#ffffff;color:#0f172a;padding:.9rem 1rem .9rem 3.1rem;font-size:1.6rem;font-weight:900;letter-spacing:.12em}
-.rd-codigo input::placeholder{font-size:.95rem;font-weight:700;letter-spacing:.02em;color:#94a3b8}
-.rd-codigo .rd-codigo-ico{position:absolute;left:1rem;top:50%;transform:translateY(-50%);font-size:1.35rem;pointer-events:none}
-.rd-codigo:focus-within{box-shadow:0 0 0 4px rgba(71,152,143,.22),0 10px 28px rgba(71,152,143,.25)}
-html.dark .rd-codigo{box-shadow:0 0 22px rgba(94,232,216,.18)}
+/* Buscador de socio por código: mismo tamaño que los demás campos, con acento */
+.rd-codigo{position:relative;border-radius:.85rem;padding:2px;background:linear-gradient(135deg,#47988f,#7c3aed)}
+.rd-codigo input{width:100%;border:0;outline:0;border-radius:calc(.85rem - 2px);background:#ffffff;color:#0f172a;padding:.55rem .8rem .55rem 2.4rem;font-size:1.05rem;font-weight:800;letter-spacing:.06em}
+.rd-codigo input::placeholder{font-size:.85rem;font-weight:600;letter-spacing:0;color:#94a3b8}
+.rd-codigo .rd-codigo-ico{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);font-size:1rem;pointer-events:none}
+.rd-codigo:focus-within{box-shadow:0 0 0 3px rgba(71,152,143,.22)}
 html.dark .rd-codigo input{background:#0c1624;color:#e2f7f4}
 html.dark .rd-codigo input::placeholder{color:#64748b}
 .rd-socio-hallado{animation:rdSocioIn .22s ease-out}
 @keyframes rdSocioIn{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
-.rd-socio-avatar{width:3.25rem;height:3.25rem;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.2rem;color:#fff;background:linear-gradient(135deg,#47988f,#2c6f68);flex-shrink:0}
+.rd-socio-avatar{width:2.6rem;height:2.6rem;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.2rem;color:#fff;background:linear-gradient(135deg,#47988f,#2c6f68);flex-shrink:0}
 html.dark .rd-socio-avatar{background:linear-gradient(135deg,#3fb5aa,#1d6f68);color:#04121a}
+
+/* Editor del croquis: sombra del elemento antes de colocarlo y choques */
+.rd-sombra{background:rgba(71,152,143,.16);border:2px dashed #47988f;color:#2f7a72}
+.rd-sombra-mal{background:rgba(225,29,72,.14);border-color:#e11d48;color:#be123c}
+html.dark .rd-sombra{background:rgba(94,232,216,.14);border-color:#88f0e5;color:#88f0e5}
+html.dark .rd-sombra-mal{background:rgba(251,113,133,.16);border-color:#fb7185;color:#fda4af}
+.rd-choca{outline:2px solid #e11d48;outline-offset:1px;animation:rdChoca 1s ease-in-out infinite}
+@keyframes rdChoca{50%{outline-color:rgba(225,29,72,.35)}}

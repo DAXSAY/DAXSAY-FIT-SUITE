@@ -42,7 +42,7 @@ export const CorregirIngreso = () => {
   const nuevo = members.find((m) => String(m.id) === String(nuevoId));
 
   const guardar = () => {
-    if (!nuevo) return setError("Elige al alumno correcto.");
+    if (!nuevo) return setError("Elige al socio correcto.");
     const ya = ingresoDeHoy(attendances.filter((a) => a.id !== registro.id), nuevo.id, registro.date);
     if (ya) return setError(`${nuevo.fullName} ya tiene un ingreso ese día (${ya.time}). Elimina este registro en su lugar.`);
     updateAttendance(registro.id, {
@@ -94,7 +94,7 @@ export const CorregirIngreso = () => {
             )}
           </div>
         ) : (
-          <p className="text-sm text-slate-600">Para el personal, elimina este registro y vuelve a marcar con el código correcto (ej. 1-COACH).</p>
+          <p className="text-sm text-slate-600">Para el personal, elimina este registro y vuelve a marcar con el código correcto (ej. 1-ENTRENADOR).</p>
         )}
         {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
         <div className="flex flex-wrap justify-between gap-2 pt-1">

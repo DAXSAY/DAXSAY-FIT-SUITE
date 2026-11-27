@@ -88,7 +88,7 @@ async function avisosClave(req) {
     nivel: "alto",
     titulo: f.idalumno ? `🔑 ${f.nombres} ${f.apellidos} olvidó su contraseña` : `🔑 ${f.usuario} (personal) olvidó su contraseña`,
     mensaje: f.idalumno
-      ? `Código ${codigoAlumno(f.codigo, f.nombres, f.apellidos)}. Confirma que es el alumno (en persona o llamando a su celular) y restablece: su contraseña será su DNI.`
+      ? `Código ${codigoAlumno(f.codigo, f.nombres, f.apellidos)}. Confirma que es el socio (en persona o llamando a su celular) y restablece: su contraseña será su DNI.`
       : "Restablécela en Usuarios & Accesos y márcala como atendida.",
     fecha: f.fecha,
     accion: { tipo: f.idalumno ? "restablecer" : "atendida", idalerta: f.idalerta, telefono: f.telefono || "" },
@@ -414,7 +414,7 @@ async function avisosAgendaYCambios(req, hoy) {
           id: `cita-nueva-${c.id}`,
           tipo: "cita",
           nivel: c.date === hoy ? "alto" : "medio",
-          titulo: rol === "student" ? `📅 Tienes cita de ${servicioTxt}` : `📅 Nueva cita: ${c.memberName || "Alumno"}`,
+          titulo: rol === "student" ? `📅 Tienes cita de ${servicioTxt}` : `📅 Nueva cita: ${c.memberName || "Socio"}`,
           mensaje:
             rol === "student"
               ? `${fechaYhora(c, hoy)} con ${c.staffName || "el especialista"}${c.roomOrDesk ? ` · ${c.roomOrDesk}` : ""}.`
@@ -427,7 +427,7 @@ async function avisosAgendaYCambios(req, hoy) {
           id: `cita-cambio-${c.id}-${cambiada}`,
           tipo: "cita",
           nivel: "medio",
-          titulo: `✏️ Cita modificada: ${rol === "student" ? servicioTxt : c.memberName || "Alumno"}`,
+          titulo: `✏️ Cita modificada: ${rol === "student" ? servicioTxt : c.memberName || "Socio"}`,
           mensaje: `Ahora es ${fechaYhora(c, hoy)}. Cambio hecho por ${await quien(f.actualizado_por)}.`,
           fecha: c.date,
           accion: { tipo: "ir", tab: rol === "student" ? "mis_citas" : "appointments" },
@@ -441,7 +441,7 @@ async function avisosAgendaYCambios(req, hoy) {
         tipo: "cita",
         nivel: "alto",
         titulo: `🗓️ Hoy atiendes ${citasHoy.length} cita(s)`,
-        mensaje: citasHoy.map((c) => `${hora(c)} ${c.memberName || "Alumno"}`).join(" · "),
+        mensaje: citasHoy.map((c) => `${hora(c)} ${c.memberName || "Socio"}`).join(" · "),
         fecha: hoy,
         accion: { tipo: "ir", tab: "appointments" },
       });
@@ -464,7 +464,7 @@ async function avisosAgendaYCambios(req, hoy) {
         id: `asignacion-${a.id || a.routineId}-${a.memberId}`,
         tipo: "rutina_asignada",
         nivel: "bajo",
-        titulo: `🏋️ Rutina asignada a ${al?.nombre || a.memberName || "un alumno"}`,
+        titulo: `🏋️ Rutina asignada a ${al?.nombre || a.memberName || "un socio"}`,
         mensaje: `${await quien(f.creado_por)} le asignó ${tituloRutina ? `«${tituloRutina}»` : "una rutina"}.`,
         fecha: String(f.fecha_creacion?.toISOString?.() ?? f.fecha_creacion).slice(0, 10),
         accion: { tipo: "ir", tab: "routines" },
@@ -498,7 +498,7 @@ async function avisosAgendaYCambios(req, hoy) {
           const [al] = await consultar("SELECT CONCAT(nombres, ' ', apellidos) AS nombre FROM alumnos WHERE idalumno = ?", [idAl]);
           alumno = al?.nombre;
         }
-        nombres.push(alumno || d.title || d.name || "Alumno");
+        nombres.push(alumno || d.title || d.name || "Socio");
       }
       const fecha = String(lista[0].fecha_actualizacion?.toISOString?.() ?? lista[0].fecha_actualizacion).slice(0, 10);
       const varios = lista.length > 1;
@@ -568,7 +568,7 @@ async function avisosEvolucionFisio(req, hoy) {
     if (!d?.memberId) continue;
     const k = String(d.memberId);
     const clave = `${d.date || ""}${d.time || ""}`;
-    if (!ultima.has(k) || clave > ultima.get(k).clave) ultima.set(k, { clave, d, nombre: f.nombre || d.memberName || "Alumno", id: f.idregistro });
+    if (!ultima.has(k) || clave > ultima.get(k).clave) ultima.set(k, { clave, d, nombre: f.nombre || d.memberName || "Socio", id: f.idregistro });
   }
   const avisos = [];
   for (const [idAl, { d, nombre, id }] of ultima) {
@@ -658,7 +658,7 @@ router.post("/clave/:id/restablecer", async (req, res, next) => {
       [req.params.id],
     );
     if (!al) throw new ErrorHttp(404, "La solicitud ya fue atendida o no existe");
-    if (!al.activo) throw new ErrorHttp(409, "El alumno está dado de baja");
+    if (!al.activo) throw new ErrorHttp(409, "El socio está dado de baja");
     const cuenta = await crearOCambiarCuenta(null, al.idalumno, al.dni, req.usuario.idusuario);
     await consultar(
       "UPDATE alertas_administracion SET vista = 1, fecha_vista = NOW(), idusuario_vista = ? WHERE idalerta = ?",

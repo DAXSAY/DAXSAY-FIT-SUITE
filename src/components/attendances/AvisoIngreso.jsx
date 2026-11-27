@@ -108,7 +108,7 @@ export function avisoAlumno(m, { repetido, visitasPrevias = 1 } = {}) {
   if (repetido) {
     return { tipo: "repetido", codigo: m.codeLabel, titulo: `${primerNombre(m.fullName)} ya marcó su ingreso hoy`, detalle: `Registrado a las ${repetido.time}. No se volvió a registrar.` };
   }
-  if (m.status === "frozen") return { tipo: "error", codigo: m.codeLabel, titulo: `${primerNombre(m.fullName)}: membresía congelada`, detalle: `Vuelve el ${fecha(m.freeze?.current?.returnDate)}. Si regresó antes, termina el congelamiento en Alumnos.` };
+  if (m.status === "frozen") return { tipo: "error", codigo: m.codeLabel, titulo: `${primerNombre(m.fullName)}: membresía congelada`, detalle: `Vuelve el ${fecha(m.freeze?.current?.returnDate)}. Si regresó antes, termina el congelamiento en Socios.` };
   if (m.status === "expired") return { tipo: "error", codigo: m.codeLabel, titulo: `Acceso denegado: membresía vencida`, detalle: `${m.fullName} · venció el ${fecha(m.membershipEndDate)}. Pásalo por caja para renovar.` };
   const saludo = visitasPrevias > 0 ? `¡Bienvenido(a) de nuevo, ${primerNombre(m.fullName)}!` : `¡Bienvenido(a) a RADICAL, ${primerNombre(m.fullName)}!`;
   if (m.status === "expiring_soon") return { tipo: "alerta", codigo: m.codeLabel, titulo: saludo, detalle: `Su membresía vence el ${fecha(m.membershipEndDate)}. Recuérdale renovar.` };

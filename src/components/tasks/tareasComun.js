@@ -23,7 +23,7 @@ export const PLANTILLAS = {
   nota: [
     "Vino a pedir información y horarios; dijo que vendrá por la tarde",
     "Llamó preguntando por precios; no dejó datos",
-    "Un alumno olvidó un objeto; está guardado en recepción",
+    "Un socio olvidó un objeto; está guardado en recepción",
     "Se acabó un insumo (papel, jabón, agua)",
     "Hay una máquina con falla; avisar a mantenimiento",
     "Todo tranquilo en el turno, sin novedades",

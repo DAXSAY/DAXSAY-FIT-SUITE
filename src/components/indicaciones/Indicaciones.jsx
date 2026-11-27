@@ -126,7 +126,7 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
       await cargarCatalogo();
       setSel((s) => ordenar([...s, desdeCatalogo(it)], { ...orden, [it.id]: it.order }));
       setNueva(null);
-      setMsg({ ok: `"${it.name}" agregada al catálogo y a este alumno.`, error: "" });
+      setMsg({ ok: `"${it.name}" agregada al catálogo y a este socio.`, error: "" });
     } catch (er) {
       setMsg({ ok: "", error: er.message });
     }
@@ -344,7 +344,7 @@ export function SelectorIndicaciones({ items: sel = [], onChange, notas = "", on
           onChange={(e) => setNotas(e.target.value)}
           rows={2}
           maxLength={500}
-          placeholder="Nota para el alumno (opcional). Ej.: si no te alcanza el tiempo, haz los estiramientos en casa."
+          placeholder="Nota para el socio (opcional). Ej.: si no te alcanza el tiempo, haz los estiramientos en casa."
           className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
         />}
         {(mensaje?.error || msg.error) && <p className="text-sm font-semibold text-rose-600">{mensaje?.error || msg.error}</p>}
@@ -455,7 +455,7 @@ export function EditorIndicaciones({ member }) {
         body: { items: sel.map((x) => ({ ...x, id: /^\d+$/.test(String(x.id)) ? x.id : null })), notes: notas },
       });
       setDatos(d);
-      setMsg({ ok: `Indicaciones guardadas. ${member.firstName || "El alumno"} ya las ve en su portal (Mi Rutina).`, error: "" });
+      setMsg({ ok: `Indicaciones guardadas. ${member.firstName || "El socio"} ya las ve en su portal (Mi Rutina).`, error: "" });
     } catch (e) {
       setMsg({ ok: "", error: e.message });
     } finally {
@@ -557,7 +557,7 @@ export function PanelIndicaciones() {
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 p-4">
-        <p className="text-sm font-bold text-slate-800 mb-2">Indicaciones de fisioterapia y nutrición · busca al alumno</p>
+        <p className="text-sm font-bold text-slate-800 mb-2">Indicaciones de fisioterapia y nutrición · busca al socio</p>
         {elegido ? (
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2">
             <span className="font-mono font-black text-blue-800 bg-white border border-blue-200 rounded-lg px-2 py-0.5">{elegido.codeLabel}</span>
@@ -566,7 +566,7 @@ export function PanelIndicaciones() {
               <span className="text-xs text-slate-500">{elegido.planName || "Sin plan"} · DNI {elegido.dni}</span>
             </span>
             <button type="button" onClick={() => { setElegido(null); setTexto(""); }} className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50">
-              Cambiar alumno
+              Cambiar socio
             </button>
           </div>
         ) : (

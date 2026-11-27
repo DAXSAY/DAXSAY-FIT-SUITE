@@ -5,7 +5,7 @@
 // medio de pago. Al final se ve un resumen de lo que entrará a caja.
 //
 // Servicios de profesionales (personal training, fisioterapia, nutrición):
-// el profesional (por su código, ej. 1-COACH) atiende a un socio (por su
+// el profesional (por su código, ej. 1-ENTR) atiende a un socio (por su
 // código) o a una persona externa. Se cobra sesiones × precio y a CAJA solo
 // entra el % del gimnasio ("derecho de piso", editable); el resto es del
 // profesional. Se imprime una boleta con el reparto.
@@ -29,7 +29,7 @@ export const TIPOS_INGRESO = {
 };
 
 const AVISO = {
-  membership: "Para matricular o renovar a un alumno usa Alumnos / Socios: así su membresía queda activa y el pago enlazado. Aquí registra pagos sueltos (inscripción, carnet, cuota atrasada).",
+  membership: "Para matricular o renovar a un socio usa Socios: así su membresía queda activa y el pago enlazado. Aquí registra pagos sueltos (inscripción, carnet, cuota atrasada).",
   day_pass: "Para quien entrena un solo día (visita, turista, sesión suelta). No hace falta registrar sus datos: solo elige el pase y el monto.",
   personal_training: "El entrenador cobra sus sesiones; a caja solo entra el porcentaje del gimnasio (derecho de piso). El resto le corresponde al entrenador.",
   physiotherapy: "Sirve para socios o pacientes externos. A caja entra solo el porcentaje del gimnasio; el resto es del fisioterapeuta.",
@@ -38,7 +38,7 @@ const AVISO = {
 
 // Conceptos rápidos por tipo de ingreso (un clic llena el concepto)
 const CONCEPTOS_MEMBRESIA = ["Inscripción / matrícula", "Cuota mensual", "Cuota atrasada", "Adelanto de membresía", "Saldo pendiente", "Carnet de acceso", "Reposición de carnet"];
-const CONCEPTOS_PASE = ["Pase del día", "Sesión libre", "Clase grupal suelta", "Pase con instructor"];
+const CONCEPTOS_PASE = ["Pase del día", "Sesión libre", "Clase grupal suelta", "Pase con profesor"];
 const MONTOS_PASE = [5, 8, 10, 15, 20];
 const OTROS_RAPIDOS = ["Aporte / fondo para caja", "Alquiler de espacio", "Evento / clase especial", "Carnet o tarjeta", "Casillero", "Toalla / candado", "Donación o patrocinio"];
 
@@ -57,7 +57,7 @@ const ChipCodigo = ({ c }) => (
   </span>
 );
 
-/** Desplegable con buscador: por nombre, código (1-COACH, 2-EXT) o DNI */
+/** Desplegable con buscador: por nombre, código (1-ENTR, 2-EXT) o DNI */
 const SelectorProfesional = ({ opciones, value, onChange, quien }) => {
   const [abierto, setAbierto] = useState(false);
   const [q, setQ] = useState("");
@@ -104,7 +104,7 @@ const SelectorProfesional = ({ opciones, value, onChange, quien }) => {
                   if (lista[0]) elegir(lista[0]);
                 }
               }}
-              placeholder="Buscar: nombre, 1-COACH, 2-EXT o DNI"
+              placeholder="Buscar: nombre, 1-ENTRENADOR, 2-EXT o DNI"
               className="w-full pl-8 pr-2 py-1.5 rounded-lg border border-slate-300 text-sm"
             />
           </div>
@@ -394,7 +394,7 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
         {T.conAlumno && (
           <div className="space-y-2">
             <p className="text-sm font-bold text-slate-800">
-              {esServicio ? "3. ¿Para quién es el servicio? *" : <>2. ¿De qué alumno? <span className="font-normal text-slate-500">(opcional)</span></>}
+              {esServicio ? "3. ¿Para quién es el servicio? *" : <>2. ¿De qué socio? <span className="font-normal text-slate-500">(opcional)</span></>}
             </p>
             {esServicio && (
               <div className="inline-flex p-1 rounded-xl bg-slate-100 gap-1">
@@ -411,7 +411,7 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
               </div>
             )}
             {(!esServicio || clienteTipo === "socio") && (
-              <SelectorAlumno alumnos={members} value={alumno?.id || ""} onChange={(id) => setAlumno(members.find((m) => m.id === id) || null)} vacio={esServicio ? undefined : "-- Sin alumno --"} />
+              <SelectorAlumno alumnos={members} value={alumno?.id || ""} onChange={(id) => setAlumno(members.find((m) => m.id === id) || null)} vacio={esServicio ? undefined : "-- Sin socio --"} />
             )}
             {esServicio && clienteTipo === "externo" && (
               <div className="grid sm:grid-cols-2 gap-2">

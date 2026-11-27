@@ -120,7 +120,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (yaInscrito) {
-      setErrorForm(`Este DNI ya es del alumno ${yaInscrito.codeLabel}. Usa «Renovar membresía»: se mantiene su mismo código.`);
+      setErrorForm(`Este DNI ya es del socio ${yaInscrito.codeLabel}. Usa «Renovar membresía»: se mantiene su mismo código.`);
       return;
     }
 
@@ -185,7 +185,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
   };
 
   if (cuenta) {
-    const texto = `¡Bienvenido(a) a RADICAL, ${cuenta.nombre}!\nTu código para marcar asistencia: ${cuenta.codigo}\nTu acceso al portal del alumno:\nUsuario: ${cuenta.usuario}\nContraseña temporal: ${cuenta.claveTemporal}\nAl ingresar por primera vez el sistema te pedirá crear tu propia contraseña.`;
+    const texto = `¡Bienvenido(a) a RADICAL, ${cuenta.nombre}!\nTu código para marcar asistencia: ${cuenta.codigo}\nTu acceso al portal del socio:\nUsuario: ${cuenta.usuario}\nContraseña temporal: ${cuenta.claveTemporal}\nAl ingresar por primera vez el sistema te pedirá crear tu propia contraseña.`;
     const tel = String(cuenta.telefono || "").replace(/\D/g, "");
     return (
       <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
@@ -194,8 +194,8 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
             <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl">
               ✓
             </div>
-            <h2 className="text-2xl font-extrabold mt-3">Alumno registrado</h2>
-            <p className="text-slate-500">{cuenta.nombre} ya tiene su acceso al portal del alumno.</p>
+            <h2 className="text-2xl font-extrabold mt-3">Socio registrado</h2>
+            <p className="text-slate-500">{cuenta.nombre} ya tiene su acceso al portal del socio.</p>
           </div>
           <div className="rounded-2xl bg-slate-900 text-white p-6 text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Código para marcar asistencia</p>
@@ -252,7 +252,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900">
-                Registro de Nuevo Alumno
+                Registro de Nuevo Socio
               </h2>
               <p className="text-xs text-gray-500">
                 Inscripción, asignación de plan y registro de pago inicial
@@ -329,7 +329,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
               {yaInscrito && (() => {
                 const st = yaInscrito.memberState;
                 const ex = st === "exalumno" || yaInscrito.deBaja;
-                const titulo = ex ? "🔁 Exalumno" : st === "vencido" ? "⏳ Alumno con membresía vencida" : st === "sin_matricula" ? "📇 Ya registrado" : "✅ Alumno activo";
+                const titulo = ex ? "🔁 Exsocio" : st === "vencido" ? "⏳ Socio con membresía vencida" : st === "sin_matricula" ? "📇 Ya registrado" : "✅ Socio activo";
                 const detalle =
                   st === "activo" || st === "por_vencer"
                     ? `Su membresía (${yaInscrito.planName}) está vigente hasta el ${String(yaInscrito.membershipEndDate || "").split("-").reverse().join("/")}.`
@@ -343,7 +343,7 @@ export const NewMemberModal = ({ isOpen, onClose, inicial = null, onCreado }) =>
                     </p>
                     <p className="text-xs text-slate-700 mt-0.5">
                       {detalle} {yaInscrito.deBaja ? "Estaba dado de baja: al renovar se reactiva. " : ""}
-                      Este DNI ya está en el sistema: se renueva con su <b>mismo código</b>, sin crear otro alumno.
+                      Este DNI ya está en el sistema: se renueva con su <b>mismo código</b>, sin crear otro socio.
                     </p>
                     <button type="button" onClick={irARenovar} className="mt-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black cursor-pointer">
                       🔄 Renovar membresía de {String(yaInscrito.fullName).split(" ")[0]}

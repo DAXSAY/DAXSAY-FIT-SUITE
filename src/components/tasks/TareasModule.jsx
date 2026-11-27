@@ -274,7 +274,7 @@ const BuscarPersona = ({ valor, onCambiar }) => {
   return (
     <div className="relative">
       <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre, DNI o código del alumno o interesado (opcional)" className={`${campo} pl-9`} />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre, DNI o código del socio o interesado (opcional)" className={`${campo} pl-9`} />
       {res.length > 0 && (
         <div className="absolute z-10 left-0 right-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-60 overflow-y-auto">
           {res.map((r) => (
@@ -675,7 +675,7 @@ const Historial = ({ t, ctx, onCerrar }) => {
     <Modal titulo="Detalle e historial" emoji="🕓" subtitulo={t.titulo} onCerrar={onCerrar} lado={<FichaTarea t={t} ctx={ctx} recargar={n} />}>
       <div>
         <Etiqueta>💬 Agregar un comentario</Etiqueta>
-        <p className="text-sm text-slate-500 mb-2">Queda en el historial para el siguiente turno: qué se hizo, qué respondió el alumno, qué falta.</p>
+        <p className="text-sm text-slate-500 mb-2">Queda en el historial para el siguiente turno: qué se hizo, qué respondió el socio, qué falta.</p>
         <textarea value={comentario} onChange={(e) => setComentario(e.target.value)} rows={4} placeholder="Ej. Dijo que pasa el sábado por la mañana a renovar." className={campo} maxLength={400} />
         <div className="flex justify-end mt-2">
           <button type="button" onClick={comentar} disabled={!comentario.trim()} className="rd-boton-t px-5 py-2 rounded-xl text-sm font-black cursor-pointer disabled:opacity-50">
@@ -1251,7 +1251,7 @@ const TareasModule = () => {
                 <Opciones valor={filtro} onElegir={setFiltro} opciones={FILTROS} />
                 <div className="relative lg:ml-auto lg:w-72">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar tarea o alumno" className={`${campo} pl-9`} />
+                  <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar tarea o socio" className={`${campo} pl-9`} />
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">

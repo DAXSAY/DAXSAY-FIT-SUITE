@@ -287,7 +287,7 @@ router.post("/sincronizacion", async (req, res, next) => {
 // PUT /api/registros/:modulo/:id  { datos }  -> crea o actualiza
 const guardarRegistro = async (req, res, next) => {
   try {
-    if (req.usuario.rol === "student") throw new ErrorHttp(403, "El alumno solo puede consultar sus datos");
+    if (req.usuario.rol === "student") throw new ErrorHttp(403, "El socio solo puede consultar sus datos");
     const cfg = validarModulo(req.params.modulo);
     const id = String(req.params.id).slice(0, 64);
     const datos = req.body?.datos;
@@ -386,7 +386,7 @@ router.put("/:modulo/:id", (req, res, next) => enFila(filaDe(req), () => guardar
 // DELETE /api/registros/:modulo/:id
 const borrarRegistro = async (req, res, next) => {
   try {
-    if (req.usuario.rol === "student") throw new ErrorHttp(403, "El alumno solo puede consultar sus datos");
+    if (req.usuario.rol === "student") throw new ErrorHttp(403, "El socio solo puede consultar sus datos");
     const cfg = validarModulo(req.params.modulo);
     if (!(await tienePermiso(req.usuario.idusuario, [cfg.permiso, ...(cfg.escritura || [])], "eliminar"))) {
       // Quien puede editar también puede quitar sus registros (ej. asignaciones)

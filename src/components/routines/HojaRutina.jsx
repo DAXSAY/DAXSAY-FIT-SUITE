@@ -59,7 +59,7 @@ export function HojaRutina({ rutina }) {
         <h1 className="rd-hr-titulo">{rutina.title}</h1>
         {rutina.description && <p className="rd-hr-desc">{rutina.description}</p>}
         <div className="rd-hr-datos">
-          <Dato icono={User} etiqueta="Alumno" valor={rutina.targetStudentName || "Uso general"} />
+          <Dato icono={User} etiqueta="Socio" valor={rutina.targetStudentName || "Uso general"} />
           <Dato icono={UserCheck} etiqueta="Entrenador" valor={rutina.trainerName || rutina.creadaPor} />
           <Dato icono={CalendarDays} etiqueta="Días por semana" valor={`${dias.length} ${dias.length === 1 ? "día" : "días"}`} />
           <Dato icono={Dumbbell} etiqueta="Ejercicios" valor={`${totalEj} en total`} />
@@ -131,7 +131,7 @@ export function HojaRutina({ rutina }) {
         </div>
         <div>
           <p className="rd-hr-indic-tit"><Target className="w-3.5 h-3.5" /> Progreso</p>
-          <p>Anota tus pesos en el portal del alumno. Si algo duele, avisa a tu entrenador.</p>
+          <p>Anota tus pesos en el portal del socio. Si algo duele, avisa a tu entrenador.</p>
         </div>
       </section>
       <footer className="rd-hr-pie" data-salto>

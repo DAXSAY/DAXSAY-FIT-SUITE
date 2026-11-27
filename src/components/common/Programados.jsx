@@ -179,7 +179,7 @@ export const ProgramadosCompleto = () => {
       </div>
       <div className="relative max-w-md">
         <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar alumno o código…" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar socio o código…" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500" />
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
         {Object.entries(TIPOS_PROG).map(([k, t]) => {
@@ -204,7 +204,7 @@ export const ProgramadosCompleto = () => {
         })}
       </div>
       <p className="text-xs text-slate-500">
-        Se agregan con el botón <b>Programar</b> (Rutinas asignadas, Nutrición o Fisioterapia → Seguimiento). Salen solos de aquí cuando el alumno ya tiene su rutina, plan o evaluación.
+        Se agregan con el botón <b>Programar</b> (Rutinas asignadas, Nutrición o Fisioterapia → Seguimiento). Salen solos de aquí cuando el socio ya tiene su rutina, plan o evaluación.
       </p>
     </div>
   );
@@ -247,7 +247,7 @@ export const BotonPerfil = ({ member }) => (
       e.stopPropagation();
       abrirPerfilAlumno(member.id);
     }}
-    title="Ver perfil del alumno (teléfono, datos)"
+    title="Ver perfil del socio (teléfono, datos)"
     className="rd-btn-perfil"
   >
     <UserRound className="w-3.5 h-3.5" /> Perfil
@@ -263,7 +263,7 @@ export const COLUMNAS_SEG = "md:grid-cols-[100px_minmax(0,1.3fr)_minmax(0,1.4fr)
 export const CabeceraSeguimiento = ({ detalle }) => (
   <div className={`hidden md:grid ${COLUMNAS_SEG} gap-3 px-4 py-2 rd-cab-seg text-[10px] font-black uppercase tracking-wider`}>
     <span>Código</span>
-    <span>Alumno</span>
+    <span>Socio</span>
     <span>{detalle}</span>
     <span>Estado</span>
     <span>Acción</span>
@@ -312,12 +312,12 @@ export const SeguimientoServicio = ({ tipo }) => {
               if (e.target.value.trim() && vista) setVista("");
             }}
             onKeyDown={(e) => e.key === "Enter" && document.getElementById(`rd-lista-seg-${tipo}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            aria-label="Buscar alumno por código, nombre o DNI"
+            aria-label="Buscar socio por código, nombre o DNI"
             className="rd-campo-checkin w-full h-full pl-9 pr-24 py-2.5 rounded-xl text-sm font-semibold focus:outline-none transition-all"
           />
           {!q && (
             <span className="absolute left-9 right-24 top-1/2 -translate-y-1/2 pointer-events-none text-sm text-slate-400 truncate">
-              Buscar alumno: <b className="font-semibold">código (DF-1 o 1), nombre o DNI</b>
+              Buscar socio: <b className="font-semibold">código (DF-1 o 1), nombre o DNI</b>
             </span>
           )}
           <UserCheck className="rd-icono-checkin w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -362,7 +362,7 @@ export const SeguimientoServicio = ({ tipo }) => {
       {(q.trim() || vista) && (
         <div id={`rd-lista-seg-${tipo}`} className="bg-white rounded-2xl border border-slate-200 overflow-hidden scroll-mt-20">
           <CabeceraSeguimiento detalle={tipo === "nutricion" ? "Plan de alimentación" : "Última evaluación"} />
-          {lista.length === 0 && <p className="text-sm text-slate-500 py-6 text-center">Ningún alumno{q ? ` con «${q}»` : ""}.</p>}
+          {lista.length === 0 && <p className="text-sm text-slate-500 py-6 text-center">Ningún socio{q ? ` con «${q}»` : ""}.</p>}
           <div className="divide-y divide-slate-100 max-h-[calc(100vh-22rem)] overflow-y-auto">
             {lista.map((m) => {
               const tiene = cob.has(String(m.id));
@@ -388,7 +388,7 @@ export const SeguimientoServicio = ({ tipo }) => {
       )}
       {!q.trim() && !vista && (
         <p className="text-xs text-slate-500 px-1">
-          Escribe un código o toca <b>{etiquetaCon}</b>, <b>{etiquetaSin}</b> o <b>Todos</b> para ver la lista. Con <b>{t.accion}</b> el alumno queda en <b>Programados</b> y le llega el aviso a {t.area}.
+          Escribe un código o toca <b>{etiquetaCon}</b>, <b>{etiquetaSin}</b> o <b>Todos</b> para ver la lista. Con <b>{t.accion}</b> el socio queda en <b>Programados</b> y le llega el aviso a {t.area}.
         </p>
       )}
     </div>

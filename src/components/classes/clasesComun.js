@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/cliente";
 import { hoyISO, sumarDias } from "../../utils/fecha";
+import { useAlCambiar } from "../../utils/tiempoReal";
 
 export const DIAS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 export const DIAS_CORTO = ["", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -68,6 +69,7 @@ export function useCroquis(sedeId = null) {
   useEffect(() => {
     cargar();
   }, [cargar]);
+  useAlCambiar(["clases"], cargar); // otro usuario cambió el croquis o el tiempo de reserva
   return { croquis, setCroquis, cargarCroquis: cargar };
 }
 
@@ -85,6 +87,7 @@ export function useSesiones(desde, hasta, extra = "") {
     setSes(null);
     cargar();
   }, [cargar]);
+  useAlCambiar(["clases"], cargar); // horario o disco cambiados por otro usuario
   return { sesiones: ses, error, cargar };
 }
 

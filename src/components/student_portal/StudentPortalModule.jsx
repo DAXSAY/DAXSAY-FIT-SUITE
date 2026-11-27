@@ -248,7 +248,7 @@ export const StudentPortalModule = ({
   if (!currentMember) {
     return (
       <div className="max-w-xl mx-auto mt-12 bg-white rounded-2xl border border-slate-200 p-8 text-center">
-        <h2 className="text-xl font-extrabold text-slate-900">Tu usuario aún no está vinculado a una ficha de alumno</h2>
+        <h2 className="text-xl font-extrabold text-slate-900">Tu usuario aún no está vinculado a una ficha de socio</h2>
         <p className="text-sm text-slate-500 mt-2">Acércate a recepción para que revisen tu registro.</p>
       </div>
     );
@@ -287,7 +287,7 @@ export const StudentPortalModule = ({
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="bg-cyan-500/20 text-cyan-300 text-xs font-black uppercase px-2.5 py-0.5 rounded-full border border-cyan-400/30">
-                  Portal del Alumno
+                  Portal del Socio
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${
@@ -411,7 +411,7 @@ export const StudentPortalModule = ({
             {currentMember?.daysExpired ? <> (hace {currentMember.daysExpired} día{currentMember.daysExpired === 1 ? "" : "s"})</> : null}.
           </p>
           <p className="text-sm text-slate-600">
-            Tu rutina, tu plan de alimentación, tu ficha de fisioterapia y tus medidas son exclusivas de los alumnos con membresía vigente.
+            Tu rutina, tu plan de alimentación, tu ficha de fisioterapia y tus medidas son exclusivas de los socios con membresía vigente.
             <b> Todo está guardado:</b> al renovar vuelves a verlo con tu mismo código <span className="font-mono font-bold">{currentMember?.codeLabel}</span>.
           </p>
           <div className="flex flex-wrap justify-center gap-2 pt-1">

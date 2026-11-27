@@ -36,7 +36,7 @@ export const estadoDe = (m) =>
       : m.status === "expiring_soon"
         ? { e: "⏳", l: "Por vencer", t: "ambar" }
         : m.memberState === "exalumno"
-          ? { e: "👋", l: "Exalumno", t: "plomo" }
+          ? { e: "👋", l: "Exsocio", t: "plomo" }
           : { e: "⏰", l: "Vencido", t: "rojo" };
 
 const Bloque = ({ titulo, emoji, tono = "plomo", derecha, children, className = "" }) => (
@@ -93,12 +93,12 @@ export const PerfilAlumno = ({ m, gestiona, trainers = [], routines = [], onCerr
                 DNI <b className="font-mono text-slate-800">{m.dni}</b>
                 {anios ? ` · ${anios} años` : ""}
                 {SEXO[m.gender] ? ` · ${SEXO[m.gender]}` : ""}
-                {m.registrationDate ? ` · alumno desde ${fechaCorta(m.registrationDate)}` : ""}
+                {m.registrationDate ? ` · socio desde ${fechaCorta(m.registrationDate)}` : ""}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 self-end sm:self-start print:hidden">
-            <button type="button" onClick={() => window.print()} title="Imprimir ficha del alumno" className="rd-boton-suave rd-kpi-plomo p-2 rounded-xl cursor-pointer">
+            <button type="button" onClick={() => window.print()} title="Imprimir ficha del socio" className="rd-boton-suave rd-kpi-plomo p-2 rounded-xl cursor-pointer">
               <Printer className="w-4 h-4" />
             </button>
             <BotonesDescarga compacto nombre={`Ficha_${m.codeLabel}_${m.fullName}`} />

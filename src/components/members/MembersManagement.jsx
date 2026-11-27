@@ -190,7 +190,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
             <span>Socios</span>
           </div>
           <h1 className="text-lg font-bold text-slate-900">
-            Alumnos ({members.length})
+            Socios ({members.length})
           </h1>
           <p className="text-xs text-gray-500">
             Matrículas, vencimientos, entrenador asignado y rutinas.
@@ -203,7 +203,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
           className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all shrink-0 self-start sm:self-auto"
         >
           <UserPlus className="w-3.5 h-3.5" />
-          <span>Nuevo alumno</span>
+          <span>Nuevo socio</span>
         </button>
         )}
       </div>
@@ -274,7 +274,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-300"
             }`}
           >
-            <ConIconos texto="🔁" /> Exalumnos ({members.filter((m) => m.memberState === "exalumno").length})
+            <ConIconos texto="🔁" /> Exsocios ({members.filter((m) => m.memberState === "exalumno").length})
           </button>
           <button
             onClick={() => setStatusFilter("debt")}
@@ -333,7 +333,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
         {filteredMembers.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200">
             {members.length === 0 ? (
-              <EstadoVacio icono={UsersRound} titulo="Aún no hay alumnos" texto="Matricula al primer alumno para empezar." accion="Nuevo alumno" onAccion={onOpenNewMemberModal} />
+              <EstadoVacio icono={UsersRound} titulo="Aún no hay socios" texto="Matricula al primer socio para empezar." accion="Nuevo socio" onAccion={onOpenNewMemberModal} />
             ) : (
               <EstadoVacio icono={SearchX} titulo="Nadie coincide con la búsqueda" texto="Prueba con otro nombre, código o DNI, o quita los filtros." accion="Quitar filtros" onAccion={() => (setSearchTerm(""), setStatusFilter("all"))} />
             )}
@@ -348,7 +348,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                   : member.status === "expiring_soon"
                     ? ["⏳", "Por vencer", "ambar"]
                     : member.memberState === "exalumno"
-                      ? ["👋", "Exalumno", "plomo"]
+                      ? ["👋", "Exsocio", "plomo"]
                       : ["⏰", "Vencido", "rojo"];
             const fin = String(member.membershipEndDate || "").slice(0, 10).split("-").reverse().join("/");
             return (
@@ -388,7 +388,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
           <table className="w-full min-w-[960px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                <th className="px-4 py-2.5">Alumno</th>
+                <th className="px-4 py-2.5">Socio</th>
                 <th className="px-4 py-2.5">DNI / Contacto</th>
                 <th className="px-4 py-2.5">Plan Actual</th>
                 <th className="px-4 py-2.5">Vencimiento</th>
@@ -402,7 +402,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 <tr>
                   <td colSpan={7}>
                     {members.length === 0 ? (
-                      <EstadoVacio icono={UsersRound} titulo="Aún no hay alumnos" texto="Matricula al primer alumno para empezar." accion="Nuevo alumno" onAccion={onOpenNewMemberModal} />
+                      <EstadoVacio icono={UsersRound} titulo="Aún no hay socios" texto="Matricula al primer socio para empezar." accion="Nuevo socio" onAccion={onOpenNewMemberModal} />
                     ) : (
                       <EstadoVacio icono={SearchX} titulo="Nadie coincide con la búsqueda" texto="Prueba con otro nombre, código o DNI, o quita los filtros." accion="Quitar filtros" onAccion={() => (setSearchTerm(""), setStatusFilter("all"))} />
                     )}
@@ -555,7 +555,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                             : member.status === "expiring_soon"
                               ? "Por Vencer"
                               : member.memberState === "exalumno"
-                                ? "Exalumno"
+                                ? "Exsocio"
                                 : "Vencido"}
                         </span>
                         {member.status === "expired" && member.daysExpired > 0 && (
@@ -573,7 +573,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                             target="_blank"
                             rel="noreferrer"
                             className="p-1.5 bg-green-50 hover:bg-green-600 text-green-700 hover:text-white rounded border border-green-200 transition-colors cursor-pointer"
-                            title="Enviar WhatsApp al alumno"
+                            title="Enviar WhatsApp al socio"
                           >
                             <MessageCircle className="w-3.5 h-3.5" />
                           </a>
@@ -673,7 +673,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 onClick={() => {
                   if (
                     confirm(
-                      `¿Estás seguro de eliminar al alumno ${selectedMember.fullName}?`,
+                      `¿Estás seguro de eliminar al socio ${selectedMember.fullName}?`,
                     )
                   ) {
                     deleteMember(selectedMember.id);
@@ -683,7 +683,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                 className="text-xs text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer font-medium"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Eliminar Alumno
+                Eliminar Socio
               </button>
               ) : (
                 <span className="text-xs text-slate-500">Solo consulta: renovaciones, congelamientos y mensajes los hace recepción.</span>
@@ -712,7 +712,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                     if (r) setAccesoInfo({ ...r.cuentaNueva, nombre: r.fullName });
                   }}
                   className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-md text-xs font-semibold cursor-pointer"
-                  title="Usuario y contraseña del portal del alumno"
+                  title="Usuario y contraseña del portal del socio"
                 >
                   {selectedMember.accessUser ? `Acceso: ${selectedMember.accessUser} · Restablecer` : "Crear acceso al portal"}
                 </button>
@@ -848,7 +848,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
       {accesoInfo && (
         <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto">
           <div className="w-full max-w-xl mx-auto min-h-full bg-white p-8 flex flex-col justify-center gap-5 text-slate-800">
-            <h3 className="text-2xl font-extrabold text-center">Acceso del alumno listo</h3>
+            <h3 className="text-2xl font-extrabold text-center">Acceso del socio listo</h3>
             <p className="text-center text-slate-500">{accesoInfo.nombre}</p>
             <div className="rounded-2xl border-2 border-blue-200 bg-blue-50 p-6 space-y-3 text-lg">
               <div className="flex justify-between">
@@ -883,7 +883,7 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
                   Renovación de Membresía
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Alumno: {renewingMember.fullName}
+                  Socio: {renewingMember.fullName}
                   {renewingMember.codeLabel && <> · Código <b className="font-mono">{renewingMember.codeLabel}</b> (se mantiene)</>}
                 </p>
               </div>
@@ -901,15 +901,15 @@ export const MembersManagement = ({ onOpenNewMemberModal }) => {
               const plazo = Number(renewingMember.exAlumnoDays || 30);
               const ex = dias > plazo;
               return (
-                <div className={`mt-3 rounded-xl border px-3 py-2.5 text-xs ${ex ? "rd-aviso-exalumno bg-slate-50 border-slate-300 text-slate-800" : "bg-emerald-50 border-emerald-200 text-emerald-900"}`}>
+                <div className={`mt-3 rounded-xl border px-3 py-2.5 text-xs ${ex ? "rd-aviso-exsocio bg-slate-50 border-slate-300 text-slate-800" : "bg-emerald-50 border-emerald-200 text-emerald-900"}`}>
                   <p className="font-black text-sm">
-                    {ex ? "🔁 Exalumno recuperado" : dias > 0 ? "🔄 Renovación" : "🔄 Renovación anticipada"}
+                    {ex ? "🔁 Exsocio recuperado" : dias > 0 ? "🔄 Renovación" : "🔄 Renovación anticipada"}
                   </p>
                   <p className="mt-0.5">
                     {dias > 0
-                      ? `Su membresía venció hace ${dias} día${dias === 1 ? "" : "s"}${renewingMember.membershipEndDate ? ` (${fechaCorta(renewingMember.membershipEndDate)})` : ""}. ${ex ? `Pasó el plazo de ${plazo} días: cuenta como exalumno que vuelve.` : `Está dentro del plazo de ${plazo} días: cuenta como renovación.`}`
+                      ? `Su membresía venció hace ${dias} día${dias === 1 ? "" : "s"}${renewingMember.membershipEndDate ? ` (${fechaCorta(renewingMember.membershipEndDate)})` : ""}. ${ex ? `Pasó el plazo de ${plazo} días: cuenta como exsocio que vuelve.` : `Está dentro del plazo de ${plazo} días: cuenta como renovación.`}`
                       : "Su membresía sigue vigente: la nueva empieza al día siguiente de que termine."}
-                    {" "}Se renueva con su mismo código; no se crea otro alumno.
+                    {" "}Se renueva con su mismo código; no se crea otro socio.
                   </p>
                 </div>
               );

@@ -219,9 +219,9 @@ const METODOS = ["efectivo", "tarjeta", "transferencia", "yape_plin"];
 function validarFicha(d, parcial = false) {
   const tiene = (k) => !parcial || d[k] !== undefined;
   if (tiene("fullName") && String(d.fullName || "").trim().split(/\s+/).length < 2) {
-    throw new ErrorHttp(400, "Escribe nombres y apellidos del alumno");
+    throw new ErrorHttp(400, "Escribe nombres y apellidos del socio");
   }
-  if (tiene("gender") && !["M", "F"].includes(d.gender)) throw new ErrorHttp(400, "Indica el sexo del alumno");
+  if (tiene("gender") && !["M", "F"].includes(d.gender)) throw new ErrorHttp(400, "Indica el sexo del socio");
   if (tiene("birthDate")) {
     const f = String(d.birthDate || "");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(f) || f > hoy() || f < "1920-01-01") {
@@ -295,7 +295,7 @@ export async function crearOCambiarCuenta(cx, idalumno, dni, creadoPor) {
 
 async function obtener(id) {
   const filas = await consultar(`${sqlAlumnos()} AND a.idalumno = ?`, [id]);
-  if (!filas.length) throw new ErrorHttp(404, "Alumno no encontrado");
+  if (!filas.length) throw new ErrorHttp(404, "Socio no encontrado");
   return aAlumno(filas[0]);
 }
 
@@ -369,7 +369,7 @@ router.post("/", requierePermiso("members", "crear"), async (req, res, next) => 
     // El DNI identifica al alumno: si ya estuvo inscrito no se crea otro código, se renueva
     const [ya] = await consultar("SELECT idalumno, codigo, nombres, apellidos FROM alumnos WHERE dni = ?", [dni]);
     if (ya) {
-      throw new ErrorHttp(409, `Este DNI ya es del alumno ${codigoAlumno(ya.codigo, ya.nombres, ya.apellidos)} (${ya.nombres} ${ya.apellidos}). Usa «Renovar membresía»: se mantiene su mismo código.`);
+      throw new ErrorHttp(409, `Este DNI ya es del socio ${codigoAlumno(ya.codigo, ya.nombres, ya.apellidos)} (${ya.nombres} ${ya.apellidos}). Usa «Renovar membresía»: se mantiene su mismo código.`);
     }
 
     await exigirCajaAbierta(req);
@@ -419,10 +419,10 @@ router.post("/", requierePermiso("members", "crear"), async (req, res, next) => 
     res.status(201).json({ ...(await obtener(id)), cuentaNueva: { usuario: dni, claveTemporal: dni }, crm });
   } catch (e) {
     if (e.code === "ER_DUP_ENTRY" && e.message.includes("codigo")) {
-      return next(new ErrorHttp(409, "Se registraron dos alumnos al mismo tiempo. Vuelve a guardar."));
+      return next(new ErrorHttp(409, "Se registraron dos socios al mismo tiempo. Vuelve a guardar."));
     }
     if (e.code === "ER_DUP_ENTRY") {
-      return next(new ErrorHttp(409, e.message.includes("correo") ? "Ya existe un alumno con ese correo" : "Ya existe un alumno con ese DNI"));
+      return next(new ErrorHttp(409, e.message.includes("correo") ? "Ya existe un socio con ese correo" : "Ya existe un socio con ese DNI"));
     }
     next(e);
   }
@@ -466,7 +466,7 @@ router.put("/:id", requierePermiso("members", "editar"), async (req, res, next) 
 router.post("/:id/cuenta", requierePermiso("members", "editar"), soloGestion, async (req, res, next) => {
   try {
     const [a] = await consultar("SELECT idalumno, dni FROM alumnos WHERE idalumno = ? AND activo = 1", [req.params.id]);
-    if (!a) throw new ErrorHttp(404, "Alumno no encontrado");
+    if (!a) throw new ErrorHttp(404, "Socio no encontrado");
     const cuenta = await crearOCambiarCuenta(null, a.idalumno, a.dni, req.usuario.idusuario);
     res.json({ ...(await obtener(a.idalumno)), cuentaNueva: cuenta });
   } catch (e) {
@@ -479,7 +479,7 @@ router.delete("/:id", requierePermiso("members", "eliminar"), async (req, res, n
   try {
     await consultar("UPDATE alumnos SET activo = 0 WHERE idalumno = ?", [req.params.id]);
     await consultar("UPDATE usuarios SET activo = 0 WHERE idalumno = ?", [req.params.id]);
-    res.json({ mensaje: "Alumno dado de baja" });
+    res.json({ mensaje: "Socio dado de baja" });
   } catch (e) {
     next(e);
   }
@@ -493,7 +493,7 @@ router.post("/:id/renovar", requierePermiso(["members", "alerts"], "crear"), sol
     if (!plan) throw new ErrorHttp(400, "El plan no existe");
     // Un exalumno dado de baja vuelve con su mismo código: se reactiva
     const [baja] = await consultar("SELECT activo FROM alumnos WHERE idalumno = ?", [req.params.id]);
-    if (!baja) throw new ErrorHttp(404, "Alumno no encontrado");
+    if (!baja) throw new ErrorHttp(404, "Socio no encontrado");
     if (!baja.activo) {
       await consultar("UPDATE alumnos SET activo = 1 WHERE idalumno = ?", [req.params.id]);
       await consultar("UPDATE usuarios SET activo = 1 WHERE idalumno = ?", [req.params.id]);
@@ -545,10 +545,10 @@ router.get("/:id/ficha", async (req, res, next) => {
   try {
     if (req.usuario.rol === "student") throw new ErrorHttp(403, "Solo para el personal del gimnasio");
     const permitido = await tienePermiso(req.usuario.idusuario, ["members", "routines", "physiotherapy", "nutrition"], "ver");
-    if (!permitido) throw new ErrorHttp(403, "No tienes permiso para ver este alumno");
+    if (!permitido) throw new ErrorHttp(403, "No tienes permiso para ver este socio");
     const id = String(req.params.id);
     const [al] = await consultar("SELECT idalumno, restricciones_medicas, objetivo FROM alumnos WHERE idalumno = ?", [id]);
-    if (!al) throw new ErrorHttp(404, "Alumno no encontrado");
+    if (!al) throw new ErrorHttp(404, "Socio no encontrado");
     const filas = await consultar(
       `SELECT modulo, datos FROM registros_app
         WHERE idalumno = ? AND modulo IN ('fisioterapia', 'planes_nutricion', 'asignaciones_rutina', 'evaluaciones_corporales')`,
@@ -717,7 +717,7 @@ router.post("/:id/pagos", requierePermiso(["members", "finance"], "crear"), solo
       );
       const conSaldo = mats.filter((m) => Number(m.saldo) > 0.004);
       const total = conSaldo.reduce((a, m) => a + Number(m.saldo), 0);
-      if (!conSaldo.length) throw new ErrorHttp(400, "Este alumno no tiene deuda");
+      if (!conSaldo.length) throw new ErrorHttp(400, "Este socio no tiene deuda");
       if (monto > total + 0.001) throw new ErrorHttp(400, `La deuda es S/ ${total.toFixed(2)}; no puedes cobrar más`);
       let resto = monto;
       for (const m of conSaldo) {
@@ -765,7 +765,7 @@ router.put("/:id/fecha-limite", requierePermiso(["members", "finance"], "editar"
           WHERE m.idalumno = ? AND m.estado <> 'anulada' AND ${saldoMatricula("m")} > 0.004`,
         [req.params.id],
       );
-      if (!Number(antes?.n)) throw new ErrorHttp(400, "Este alumno no tiene deuda");
+      if (!Number(antes?.n)) throw new ErrorHttp(400, "Este socio no tiene deuda");
       await cx.execute(
         `UPDATE matriculas m SET m.fecha_limite_pago = ?
           WHERE m.idalumno = ? AND m.estado <> 'anulada' AND ${saldoMatricula("m")} > 0.004`,
@@ -789,7 +789,7 @@ router.put("/:id/fecha-limite", requierePermiso(["members", "finance"], "editar"
 //  -> días que vino (primera entrada del día), membresías y congelamientos del rango
 router.get("/:id/asistencias", async (req, res, next) => {
   try {
-    if (!(await puedeVerAlumno(req, req.params.id))) throw new ErrorHttp(403, "No tienes permiso para ver este alumno");
+    if (!(await puedeVerAlumno(req, req.params.id))) throw new ErrorHttp(403, "No tienes permiso para ver este socio");
     const ok = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || "") ? v : null);
     const h = hoy();
     const hasta = ok(req.query.hasta) || h;
@@ -817,7 +817,7 @@ router.get("/:id/asistencias", async (req, res, next) => {
       ),
       consultar("SELECT codigo, nombres, apellidos, fecha_registro FROM alumnos WHERE idalumno = ?", [req.params.id]),
     ]);
-    if (!al) throw new ErrorHttp(404, "Alumno no encontrado");
+    if (!al) throw new ErrorHttp(404, "Socio no encontrado");
     res.json({
       desde,
       hasta,
@@ -877,7 +877,7 @@ router.get("/:id/seguimiento-asistencia", async (req, res, next) => {
   try {
     if (req.usuario.rol === "student") throw new ErrorHttp(403, "Solo para el personal del gimnasio");
     if (!(await puedeVerAlumno(req, req.params.id)) && !(await tienePermiso(req.usuario.idusuario, "routines", "ver")))
-      throw new ErrorHttp(403, "No tienes permiso para ver este alumno");
+      throw new ErrorHttp(403, "No tienes permiso para ver este socio");
     const filas = await consultar(
       `SELECT s.*, COALESCE(NULLIF(TRIM(CONCAT(COALESCE(e.nombres,''),' ',COALESCE(e.apellidos,''))),''), u.usuario) AS registrado_por
          FROM seguimiento_asistencia s
@@ -897,7 +897,7 @@ router.post("/:id/seguimiento-asistencia", async (req, res, next) => {
   try {
     if (req.usuario.rol === "student") throw new ErrorHttp(403, "Solo para el personal del gimnasio");
     if (!(await puedeVerAlumno(req, req.params.id)) && !(await tienePermiso(req.usuario.idusuario, "routines", "ver")))
-      throw new ErrorHttp(403, "No tienes permiso para este alumno");
+      throw new ErrorHttp(403, "No tienes permiso para este socio");
     const b = req.body || {};
     const f = /^\d{4}-\d{2}-\d{2}$/.test(b.date || "") ? b.date : hoy();
     const hasta = /^\d{4}-\d{2}-\d{2}$/.test(b.until || "") && b.until >= f ? b.until : null;
@@ -905,7 +905,7 @@ router.post("/:id/seguimiento-asistencia", async (req, res, next) => {
     const medio = MEDIOS.includes(b.channel) ? b.channel : "ninguno";
     const detalle = String(b.detail || "").trim().slice(0, 300) || null;
     const [al] = await consultar("SELECT idalumno FROM alumnos WHERE idalumno = ?", [req.params.id]);
-    if (!al) throw new ErrorHttp(404, "Alumno no encontrado");
+    if (!al) throw new ErrorHttp(404, "Socio no encontrado");
     const r = await consultar(
       `INSERT INTO seguimiento_asistencia (idalumno, fecha, fecha_hasta, motivo, detalle, contactado, medio, idusuario_registro)
        VALUES (?,?,?,?,?,?,?,?)`,
@@ -959,7 +959,7 @@ export async function puedeVerAlumno(req, idalumno) {
 // GET /api/alumnos/:id/congelamientos -> derecho por matrícula + historial
 router.get("/:id/congelamientos", async (req, res, next) => {
   try {
-    if (!(await puedeVerAlumno(req, req.params.id))) throw new ErrorHttp(403, "No tienes permiso para ver este alumno");
+    if (!(await puedeVerAlumno(req, req.params.id))) throw new ErrorHttp(403, "No tienes permiso para ver este socio");
     const mats = await consultar(
       `${SQL_MATRICULA_CONG} WHERE m.idalumno = ? AND m.estado <> 'anulada' ORDER BY m.fecha_fin DESC, m.idmatricula DESC`,
       [req.params.id],

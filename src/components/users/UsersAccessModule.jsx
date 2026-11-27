@@ -266,7 +266,7 @@ const FormUsuario = ({ usuario, onVolver, onGuardado, esUnoMismo }) => {
               </label>
             )}
             <label className="block sm:col-span-2">
-              <span className="text-sm font-bold text-slate-700">Presentación (la ven los alumnos)</span>
+              <span className="text-sm font-bold text-slate-700">Presentación (la ven los socios)</span>
               <textarea rows={2} value={f.biografia} onChange={cambiar("biografia")} className={campo} />
             </label>
           </div>
@@ -341,7 +341,7 @@ const ModulosContratados = () => {
     setMsg(null);
     try {
       await api("/licencia", { method: "PUT", body: { clave, activos, ...(claveNueva ? { claveNueva } : {}) } });
-      setMsg({ ok: true, texto: "✅ Módulos actualizados. Recargando para aplicar el menú… (el resto del personal y los alumnos los verán al volver a entrar)" });
+      setMsg({ ok: true, texto: "✅ Módulos actualizados. Recargando para aplicar el menú… (el resto del personal y los socios los verán al volver a entrar)" });
       setTimeout(() => window.location.reload(), 1800);
       setEditando(false);
       setClave("");
@@ -373,7 +373,7 @@ const ModulosContratados = () => {
           );
         })}
       </div>
-      <p className="text-[11px] text-slate-500 mt-2">Siempre incluidos: alumnos, planes y tarifas, asistencias, usuarios, inicio y el portal del alumno (membresía, avisos y asistencias). Apagar un módulo no borra sus datos.</p>
+      <p className="text-[11px] text-slate-500 mt-2">Siempre incluidos: socios, planes y tarifas, asistencias, usuarios, inicio y el portal del socio (membresía, avisos y asistencias). Apagar un módulo no borra sus datos.</p>
       {msg && <p className={`text-sm font-bold rounded-xl border p-3 mt-3 ${msg.ok ? "rd-kpi-verde rd-aviso-t" : "text-rose-700 bg-rose-50 border-rose-200"}`}>{msg.texto}</p>}
       {!editando ? (
         datos.conLicencia && (
@@ -434,12 +434,12 @@ const ConfiguracionGimnasio = () => {
             <label className="block sm:col-span-2"><span className="text-sm font-bold text-slate-700">Dirección</span><input value={f.gym_direccion} onChange={set("gym_direccion")} placeholder="Av. ..., distrito, ciudad" className={campo} /></label>
           </div>
         </Seccion>
-        <Seccion icono={IcPhone} titulo="WhatsApp" sub="Números a los que escriben los alumnos y llegan los reportes.">
+        <Seccion icono={IcPhone} titulo="WhatsApp" sub="Números a los que escriben los socios y llegan los reportes.">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block">
               <span className="text-sm font-bold text-slate-700">WhatsApp de recepción</span>
               <input value={f.gym_whatsapp} onChange={set("gym_whatsapp")} placeholder="9XX XXX XXX" inputMode="tel" className={campo} />
-              <span className="text-xs text-slate-500">Los alumnos escriben aquí desde su portal.</span>
+              <span className="text-xs text-slate-500">Los socios escriben aquí desde su portal.</span>
             </label>
             <label className="block">
               <span className="text-sm font-bold text-slate-700">WhatsApp del administrador / dueño</span>
@@ -448,7 +448,7 @@ const ConfiguracionGimnasio = () => {
             </label>
           </div>
         </Seccion>
-        <Seccion icono={IcCalendario} titulo="Vencimientos" sub="Desde cuándo un alumno que no renueva cuenta como exalumno (para reportes y avisos).">
+        <Seccion icono={IcCalendario} titulo="Vencimientos" sub="Desde cuándo un socio que no renueva cuenta como exsocio (para reportes y avisos).">
           <div className="grid grid-cols-1 sm:grid-cols-[200px_minmax(0,1fr)] gap-4 items-start">
             <label className="block">
               <span className="text-sm font-bold text-slate-700">Días sin renovar</span>
@@ -467,8 +467,8 @@ const ConfiguracionGimnasio = () => {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1.5">
               <p><b>✅ Activo:</b> su membresía está vigente.</p>
               <p><b>⏳ Vencido:</b> del día siguiente al vencimiento hasta {f.dias_exalumno || 30} días. Si renueva aquí, cuenta como <b>renovación</b>.</p>
-              <p><b>🔁 Exalumno:</b> más de {f.dias_exalumno || 30} días sin renovar. Si vuelve, cuenta como <b>exalumno recuperado</b>.</p>
-              <p className="text-slate-500">En los dos casos se renueva con el <b>mismo código</b> del alumno: el DNI lo identifica y nunca se crea otro.</p>
+              <p><b>🔁 Exsocio:</b> más de {f.dias_exalumno || 30} días sin renovar. Si vuelve, cuenta como <b>exsocio recuperado</b>.</p>
+              <p className="text-slate-500">En los dos casos se renueva con el <b>mismo código</b> del socio: el DNI lo identifica y nunca se crea otro.</p>
             </div>
           </div>
         </Seccion>
@@ -608,7 +608,7 @@ const TurnosRecepcion = () => {
                 </label>
                 <label className="text-xs font-bold text-slate-500">
                   WhatsApp del turno
-                  <input value={t.whatsapp || ""} onChange={(e) => cambiar(i, "whatsapp", e.target.value)} placeholder="9XX XXX XXX" inputMode="tel" className={`${campo} block mt-0.5 w-36`} title="Número al que escriben los alumnos en este horario (anuncio de renovación)" />
+                  <input value={t.whatsapp || ""} onChange={(e) => cambiar(i, "whatsapp", e.target.value)} placeholder="9XX XXX XXX" inputMode="tel" className={`${campo} block mt-0.5 w-36`} title="Número al que escriben los socios en este horario (anuncio de renovación)" />
                 </label>
                 <label className="flex items-center gap-2 text-xs font-bold text-slate-600 pb-2.5 cursor-pointer">
                   <input type="checkbox" checked={t.active} onChange={(e) => cambiar(i, "active", e.target.checked)} className="w-4 h-4" /> Activo
@@ -723,7 +723,7 @@ const SociosAccesos = ({ puedeEditar, onCredenciales }) => {
       setAbierto(null);
       setPropia("");
       await cargar();
-      onCredenciales({ nombre: a.fullName, rol: `Alumno · ${a.codeLabel}`, usuario: r.usuario, clave: r.claveTemporal, telefono: a.phone });
+      onCredenciales({ nombre: a.fullName, rol: `Socio · ${a.codeLabel}`, usuario: r.usuario, clave: r.claveTemporal, telefono: a.phone });
     } catch (e) {
       setError(e.message);
     }
@@ -744,7 +744,7 @@ const SociosAccesos = ({ puedeEditar, onCredenciales }) => {
       <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-900 flex items-start gap-2">
         <Lock className="w-4 h-4 mt-0.5 shrink-0" />
         <span>
-          Por seguridad las contraseñas se guardan <b>cifradas</b>: nadie puede leerlas, ni administración. Si un alumno no puede entrar,
+          Por seguridad las contraseñas se guardan <b>cifradas</b>: nadie puede leerlas, ni administración. Si un socio no puede entrar,
           restablécela aquí y se aplica <b>al instante</b>: su usuario es su DNI y al ingresar el sistema le pedirá crear su propia clave.
         </span>
       </div>
@@ -773,7 +773,7 @@ const SociosAccesos = ({ puedeEditar, onCredenciales }) => {
             <thead className="sticky top-0 z-10">
               <tr className="text-left text-xs uppercase text-slate-500">
                 <th className="py-2.5 px-3">Código</th>
-                <th className="py-2.5 px-3">Alumno</th>
+                <th className="py-2.5 px-3">Socio</th>
                 <th className="py-2.5 px-3">Usuario</th>
                 <th className="py-2.5 px-3">Último ingreso</th>
                 <th className="py-2.5 px-3">Estado de la clave</th>
@@ -828,7 +828,7 @@ const SociosAccesos = ({ puedeEditar, onCredenciales }) => {
                 );
               })}
               {!cargando && vistos.length === 0 && (
-                <tr><td colSpan={6} className="py-8 text-center text-slate-500">No hay alumnos con ese filtro.</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-slate-500">No hay socios con ese filtro.</td></tr>
               )}
             </tbody>
           </table>
@@ -981,11 +981,11 @@ export const UsersAccessModule = () => {
             onClick={() => setFiltroRol(filtroRol === r ? "todos" : r)}
           />
         ))}
-        <TarjetaKpi titulo="Alumnos con acceso" valor={datos.cuentasAlumnos.activas} sub="ver credenciales →" icono={IcKey} tono="azul" onClick={() => setPestana("socios")} />
+        <TarjetaKpi titulo="Socios con acceso" valor={datos.cuentasAlumnos.activas} sub="ver credenciales →" icono={IcKey} tono="azul" onClick={() => setPestana("socios")} />
       </div>
 
       <div className="flex flex-wrap gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 w-full sm:w-fit">
-        {[["usuarios", "Usuarios del personal"], ["socios", "Socios (alumnos)"], ["turnos", "Turnos de recepción"], ["config", "Configuración del gimnasio"]].map(([k, l]) => (
+        {[["usuarios", "Usuarios del personal"], ["socios", "Socios"], ["turnos", "Turnos de recepción"], ["config", "Configuración del gimnasio"]].map(([k, l]) => (
           <button key={k} onClick={() => setPestana(k)} className={`px-3 py-2 rounded-lg text-sm font-bold cursor-pointer ${pestana === k ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
             {l}
           </button>

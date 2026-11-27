@@ -196,7 +196,7 @@ export const FichaDeportiva = ({ member, onVerCalendario }) => {
               {f.indicaciones?.length > 0 && (
                 <details className="group">
                   <summary className="text-xs font-bold text-rose-700 cursor-pointer flex items-center gap-1 list-none">
-                    <ChevronDown className="w-3.5 h-3.5 group-open:rotate-180 transition-transform" /> {f.indicaciones.length} {f.indicaciones.length === 1 ? "indicación" : "indicaciones"} para el alumno
+                    <ChevronDown className="w-3.5 h-3.5 group-open:rotate-180 transition-transform" /> {f.indicaciones.length} {f.indicaciones.length === 1 ? "indicación" : "indicaciones"} para el socio
                   </summary>
                   <ul className="mt-1.5 space-y-1">
                     {f.indicaciones.map((x, i) => (

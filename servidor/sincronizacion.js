@@ -288,7 +288,7 @@ const MAPAS = {
 
   async asignaciones_rutina(cx, id, d) {
     const idalumno = await idAlumno(cx, d.memberId || id);
-    if (!idalumno) throw new ErrorSincronizacion("El alumno de la asignación no existe");
+    if (!idalumno) throw new ErrorSincronizacion("El socio de la asignación no existe");
     const [[r]] = await cx.query("SELECT idrutina FROM rutinas WHERE idregistro_app = ?", [String(d.routineId || "")]);
     await cx.query("UPDATE alumnos SET idrutina = ? WHERE idalumno = ?", [r?.idrutina || null, idalumno]);
     if (d.routineId && !r) throw new ErrorSincronizacion("La rutina asignada aún no está en la tabla rutinas");
@@ -371,7 +371,7 @@ const MAPAS = {
 
   async evaluaciones_corporales(cx, id, d) {
     const idalumno = await idAlumno(cx, d.memberId);
-    if (!idalumno) throw new ErrorSincronizacion("El alumno de la evaluación no existe");
+    if (!idalumno) throw new ErrorSincronizacion("El socio de la evaluación no existe");
     const p = d.perimeters || {};
     const m = d.measurements || {};
     const s = d.skinfolds || {};
@@ -514,7 +514,7 @@ const MAPAS = {
       return;
     }
     const idalumno = await idAlumno(cx, d.memberId || d.userId);
-    if (!idalumno) throw new ErrorSincronizacion("El alumno de la asistencia no existe");
+    if (!idalumno) throw new ErrorSincronizacion("El socio de la asistencia no existe");
     await guardarFila(cx, "asistencias_alumno", "idasistencia_alumno", id, {
       idalumno,
       fecha: fechaAsis,

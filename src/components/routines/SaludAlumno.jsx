@@ -81,7 +81,7 @@ export const SaludAlumno = ({ member, abiertoInicial = true, className = "" }) =
         {!ficha && !error ? <Stethoscope className="w-4 h-4 text-slate-400 animate-pulse" /> : hayFisio ? <AlertTriangle className="w-4 h-4 text-rose-600" /> : <ShieldCheck className="w-4 h-4 text-emerald-600" />}
         <span className="flex-1 min-w-0">
           <span className={`flex flex-wrap items-center gap-1.5 text-xs font-black uppercase tracking-wider ${hayFisio ? "text-rose-800" : "text-emerald-800"}`}>
-            Cuidados del alumno · fisioterapia y nutrición
+            Cuidados del socio · fisioterapia y nutrición
             <span className="inline-flex items-center gap-0.5 normal-case tracking-normal text-[10px] font-bold px-1.5 py-px rounded-full bg-white border border-slate-200 text-slate-600">
               <Lock className="w-2.5 h-2.5" /> solo lectura
             </span>

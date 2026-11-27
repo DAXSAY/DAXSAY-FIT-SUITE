@@ -74,7 +74,7 @@ export default function Calificaciones({ datos, esProfe }) {
     { key: "estrellas", label: "Estrellas", excel: (x) => `${x.estrellas} de 5` },
     { key: "etiquetas", label: "Etiquetas", excel: (x) => x.etiquetas.join(", ") },
     { key: "comentario", label: "Comentario" },
-    ...(anonimo ? [] : [{ key: "alumno", label: "Alumno" }]),
+    ...(anonimo ? [] : [{ key: "alumno", label: "Socio" }]),
   ];
   const filtros = [`Del ${fechaBonita(desde)} al ${fechaBonita(hasta)} (${rangos[r][0]})`, disc && `Disciplina: ${datos.disciplinas.find((d) => d.id === Number(disc))?.nombre}`, prof && `Profesor: ${prof}`, estr && `${estr} estrellas`].filter(Boolean);
   return (
@@ -101,7 +101,7 @@ export default function Calificaciones({ datos, esProfe }) {
             </select>
           )}
         </div>
-        {anonimo && <p className="text-[11px] text-slate-500">🔒 Ves tus calificaciones sin el nombre del alumno, para que opinen con confianza.</p>}
+        {anonimo && <p className="text-[11px] text-slate-500">🔒 Ves tus calificaciones sin el nombre del socio, para que opinen con confianza.</p>}
       </div>
       {error && <p className="text-sm font-bold rounded-xl border p-3 rd-kpi-ambar rd-aviso-t">{error}</p>}
       {!rep ? (
@@ -110,16 +110,16 @@ export default function Calificaciones({ datos, esProfe }) {
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <TarjetaKpi titulo="Promedio" valor={prom(base)} decimales={1} sub={<Estrellas n={prom(base)} />} emoji="⭐" tono="ambar" />
-            <TarjetaKpi titulo="Calificaciones" valor={base.length} sub="de los alumnos" emoji="🗳️" tono="teal" />
+            <TarjetaKpi titulo="Calificaciones" valor={base.length} sub="de los socios" emoji="🗳️" tono="teal" />
             <TarjetaKpi titulo="Les gustó" valor={base.length ? Math.round((buenas / base.length) * 100) : 0} sufijo="%" sub="4 o 5 estrellas" emoji="😍" tono="verde" />
-            <TarjetaKpi titulo="Comentarios" valor={conComentario} sub="escritos por alumnos" emoji="💬" tono="violeta" />
+            <TarjetaKpi titulo="Comentarios" valor={conComentario} sub="escritos por socios" emoji="💬" tono="violeta" />
           </div>
 
           {!base.length ? (
             <div className="rd-kpi-ambar rd-aviso-t rounded-2xl border p-5 text-center space-y-1">
               <p className="text-3xl">⭐</p>
               <p className="font-black">Aún no hay calificaciones en este periodo</p>
-              <p className="text-sm">Al terminar cada clase o máster, a los alumnos les llega un aviso para calificarla (tienen 7 días).</p>
+              <p className="text-sm">Al terminar cada clase o máster, a los socios les llega un aviso para calificarla (tienen 7 días).</p>
             </div>
           ) : (
             <>

@@ -21,10 +21,11 @@ import { buscarAlumno } from "../../utils/codigo";
 import { ingresoDeHoy } from "../../utils/codigoPersonal";
 import { hoyISO } from "../../utils/fecha";
 import { DIAS, DIAS_CORTO, COLORES, diaDe, lunesDe, fechaBonita, sumarDias, aMin, deMin, estadoVentana, useDatosClases, useCroquis, useSesiones, nombreSede } from "./clasesComun";
-import { Croquis, EditorCroquis, LeyendaCroquis } from "./Croquis";
+import { Croquis, EditorCroquis, LeyendaCroquis, solapados } from "./Croquis";
 import { BuscarSocio } from "./BuscarSocio";
 import Masters from "./Masters";
 import Calificaciones from "./Calificaciones";
+import { useAlCambiar } from "../../utils/tiempoReal";
 
 const GESTIONA = ["admin", "reception"];
 const campo = "mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800";
@@ -214,7 +215,7 @@ const FormDisco = ({ sesion, onListo, onCerrar }) => {
           <input autoFocus value={disco} onChange={(e) => setDisco(e.target.value)} maxLength={120} placeholder="Ej. Ayahuasca" className={campo} />
         </label>
         <label className="block text-sm">
-          <span className="font-bold text-slate-700">Nota para los alumnos (opcional)</span>
+          <span className="font-bold text-slate-700">Nota para los socios (opcional)</span>
           <input value={nota} onChange={(e) => setNota(e.target.value)} maxLength={300} placeholder="Ej. Traer toalla y agua" className={campo} />
         </label>
         <p className="text-xs text-slate-500">Si lo dejas vacío, se quita el disco de esta clase.</p>
@@ -449,6 +450,7 @@ const Steps = ({ yo, claseInicial, sedes = [] }) => {
     const t = setInterval(() => (cargar(), cargarCroquis()), 20000);
     return () => clearInterval(t);
   }, [claseId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useAlCambiar(["clases"], cargar); // un socio reservó o recepción sentó a alguien: se ve al instante
 
   const activas = (info?.reservas || []).filter((r) => r.estado === "reservado" || r.estado === "asistio");
   const marcarAsistencia = (m) => {
@@ -471,7 +473,7 @@ const Steps = ({ yo, claseInicial, sedes = [] }) => {
     e.preventDefault();
     const hallado = buscarAlumno(members, codigo.trim());
     const m = hallado?.member;
-    if (!m) return setMensaje({ ok: false, texto: `No se encontró ningún alumno con «${codigo}»` });
+    if (!m) return setMensaje({ ok: false, texto: `No se encontró ningún socio con «${codigo}»` });
     try {
       const r = await api("/clases/reservas", { method: "POST", body: { clase: claseId, fecha: hoy, step: step.z.id, alumno: Number(m.id), estado: "asistio" } });
       const marco = marcarAsistencia(m);
@@ -531,7 +533,7 @@ const Steps = ({ yo, claseInicial, sedes = [] }) => {
           <TarjetaKpi titulo="Steps" valor={(croquis?.steps || []).filter((z) => z.tipo === "step").length} sub="en el croquis" emoji="🧱" tono="teal" />
           <TarjetaKpi titulo="Reservados" valor={activas.filter((r) => r.estado === "reservado").length} sub="por confirmar" emoji="🎫" tono="ambar" />
           <TarjetaKpi titulo="Asistieron" valor={activas.filter((r) => r.estado === "asistio").length} sub="confirmados" emoji="✅" tono="verde" />
-          <TarjetaKpi titulo="Reserva del alumno" valor={0} texto={v?.estado === "abierta" ? "Abierta" : v?.estado === "pronto" ? `Desde ${v.abre}` : v?.estado === "en_curso" ? "En clase" : "Cerrada"} sub={`${croquis?.minutosReserva || 30} min antes`} emoji="⏰" tono="violeta" />
+          <TarjetaKpi titulo="Reserva del socio" valor={0} texto={v?.estado === "abierta" ? "Abierta" : v?.estado === "pronto" ? `Desde ${v.abre}` : v?.estado === "en_curso" ? "En clase" : "Cerrada"} sub={`${croquis?.minutosReserva || 30} min antes`} emoji="⏰" tono="violeta" />
         </div>
       )}
 
@@ -621,7 +623,7 @@ const MisDiscos = () => {
   const enviar = async () => {
     try {
       const r = await api("/clases/discos", { method: "POST", body: { discos: cambiados.map((s) => ({ claseId: s.claseId, fecha: s.fecha, disco: borrador[s.id].disco, nota: borrador[s.id].nota })) } });
-      setMsg({ ok: true, texto: `✅ ${r.guardados} disco${r.guardados === 1 ? "" : "s"} enviado${r.guardados === 1 ? "" : "s"} a administración y recepción. Los alumnos lo verán en su recordatorio.` });
+      setMsg({ ok: true, texto: `✅ ${r.guardados} disco${r.guardados === 1 ? "" : "s"} enviado${r.guardados === 1 ? "" : "s"} a administración y recepción. Los socios lo verán en su recordatorio.` });
       cargar();
     } catch (er) {
       setMsg({ ok: false, texto: er.message });
@@ -1175,11 +1177,27 @@ const Configuracion = ({ datos, recargar }) => {
     if (croquis) (setBorrador(croquis.steps), setMinutos(croquis.minutosReserva));
   }, [croquis]);
   const sinGuardar = croquis && borrador && (JSON.stringify(borrador) !== JSON.stringify(croquis.steps) || Number(minutos) !== croquis.minutosReserva);
+  const encimados = borrador ? solapados(borrador).length : 0;
+  // Plantillas de croquis guardadas por el gimnasio
+  const [plantillas, setPlantillas] = useState([]);
+  const cargarPlantillas = () => api("/clases/plantillas").then((d) => setPlantillas(d.plantillas)).catch(() => setPlantillas([]));
+  useEffect(() => {
+    cargarPlantillas();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const guardarPlantilla = async (nombre, elementos) => {
+    await api("/clases/plantillas", { method: "POST", body: { nombre, elementos } });
+    await cargarPlantillas();
+  };
+  const borrarPlantilla = async (id) => {
+    await api(`/clases/plantillas/${id}`, { method: "DELETE" });
+    await cargarPlantillas();
+  };
   const guardar = async () => {
+    if (encimados) return setMsg({ ok: false, texto: "Hay elementos uno encima del otro: usa los botones «Desplazar» del croquis antes de guardar." });
     try {
       const r = await api("/clases/croquis", { method: "PUT", body: { sede: sedeOk, steps: borrador, minutosReserva: Number(minutos) } });
       setCroquis((c) => ({ ...c, steps: r.steps, minutosReserva: r.minutosReserva }));
-      setMsg({ ok: true, texto: `✅ Croquis${sedes.length > 1 ? ` de ${sedes.find((x) => x.id === sedeOk)?.nombre}` : ""} guardado. Ya lo ven recepción, los profesores y los alumnos.${r.liberados ? ` ⚠️ ${r.liberados} inscrito${r.liberados === 1 ? "" : "s"} de másters ${r.liberados === 1 ? "quedó" : "quedaron"} sin step: dales otro en Másters.` : ""}` });
+      setMsg({ ok: true, texto: `✅ Croquis${sedes.length > 1 ? ` de ${sedes.find((x) => x.id === sedeOk)?.nombre}` : ""} guardado. Ya lo ven recepción, los profesores y los socios.${r.liberados ? ` ⚠️ ${r.liberados} inscrito${r.liberados === 1 ? "" : "s"} de másters ${r.liberados === 1 ? "quedó" : "quedaron"} sin step: dales otro en Másters.` : ""}` });
     } catch (er) {
       setMsg({ ok: false, texto: er.message });
     }
@@ -1239,7 +1257,7 @@ const Configuracion = ({ datos, recargar }) => {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-sm font-black text-slate-800">🧱 Croquis del salón (steps){sedes.length > 1 ? ` · ${sedes.find((x) => x.id === sedeOk)?.nombre}` : ""}</p>
-            <p className="text-xs text-slate-500">Lo que guardes aquí lo ven todos: recepción, profesores y la app de los alumnos.</p>
+            <p className="text-xs text-slate-500">Lo que guardes aquí lo ven todos: recepción, profesores y la app de los socios.</p>
             {sedes.length > 1 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {sedes.map((x) => (
@@ -1250,7 +1268,7 @@ const Configuracion = ({ datos, recargar }) => {
           </div>
         </div>
         <div className="rounded-2xl border border-violet-200 bg-violet-50/60 p-3 space-y-2">
-          <p className="text-sm font-black text-slate-800"><Clock className="inline w-4 h-4 -mt-0.5" /> ¿Desde cuándo reservan los alumnos por la app?</p>
+          <p className="text-sm font-black text-slate-800"><Clock className="inline w-4 h-4 -mt-0.5" /> ¿Desde cuándo reservan los socios por la app?</p>
           <p className="text-xs text-slate-600">La reserva se abre este tiempo antes de cada clase y se cierra al empezar. El primero que toma un step se lo queda. Vale para todas las sedes.</p>
           <div className="flex flex-wrap items-center gap-1.5">
             {[[15, "15 min"], [30, "30 min"], [60, "1 hora"], [120, "2 horas"], [360, "6 horas"], [720, "12 horas"], [1440, "24 horas"]].map(([n, l]) => (
@@ -1262,11 +1280,11 @@ const Configuracion = ({ datos, recargar }) => {
           </div>
           {Number(minutos) !== croquis?.minutosReserva && <p className="text-[11px] font-bold text-violet-700">Toca «Guardar» abajo para aplicar el nuevo tiempo.</p>}
         </div>
-        {borrador ? <EditorCroquis croquis={{ ...croquis, steps: borrador }} onCambiar={setBorrador} /> : <p className="text-sm text-slate-500">Cargando croquis…</p>}
+        {borrador ? <EditorCroquis croquis={{ ...croquis, steps: borrador }} onCambiar={setBorrador} plantillas={plantillas} onGuardarPlantilla={guardarPlantilla} onBorrarPlantilla={borrarPlantilla} /> : <p className="text-sm text-slate-500">Cargando croquis…</p>}
         {msg && <p className={`text-sm font-bold rounded-xl border p-3 ${msg.ok ? "rd-kpi-verde rd-aviso-t" : "text-rose-700 bg-rose-50 border-rose-200"}`}>{msg.texto}</p>}
         <div className="flex flex-wrap justify-end gap-2">
           {sinGuardar && <button type="button" onClick={() => (cargarCroquis(), setMsg(null))} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">Descartar cambios</button>}
-          <button type="button" disabled={!sinGuardar} onClick={guardar} className="px-5 py-2 rounded-xl bg-teal-600 disabled:opacity-50 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer">
+          <button type="button" disabled={!sinGuardar || !!encimados} title={encimados ? "Primero desplaza los elementos encimados" : ""} onClick={guardar} className="px-5 py-2 rounded-xl bg-teal-600 disabled:opacity-50 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer">
             <Save className="w-4 h-4" /> Guardar cambios
           </button>
         </div>
@@ -1303,7 +1321,7 @@ export default function ClasesModule() {
         icono={Music}
         etiqueta="Salud & Entrenamiento"
         titulo="Clases grupales"
-        descripcion={esProfe ? "Tus clases de la semana y el disco que dictarás. Lo que envíes lo ven administración, recepción y los alumnos." : "Horario semanal, steps del salón con sus reservas y los discos que dictará cada profesor."}
+        descripcion={esProfe ? "Tus clases de la semana y el disco que dictarás. Lo que envíes lo ven administración, recepción y los socios." : "Horario semanal, steps del salón con sus reservas y los discos que dictará cada profesor."}
         accion={GESTIONA.includes(yo.rol) && v && v !== "horario" && <AccionCabecera icono={CalendarDays} onClick={() => setVista("horario")}>Ver horario</AccionCabecera>}
         activa={v}
         onCambiar={(k) => (setVista(k), setClaseSteps(null))}

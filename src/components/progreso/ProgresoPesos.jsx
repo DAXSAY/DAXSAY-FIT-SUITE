@@ -150,7 +150,7 @@ function Anotar({ datos, resumen, fechaInicial, onGuardado, esAlumno }) {
   if (!plan || !plan.dias.length)
     return (
       <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center">
-        <p className="text-base font-bold text-slate-800">{esAlumno ? "Aún no tienes una rutina asignada" : "El alumno aún no tiene rutina asignada"}</p>
+        <p className="text-base font-bold text-slate-800">{esAlumno ? "Aún no tienes una rutina asignada" : "El socio aún no tiene rutina asignada"}</p>
         <p className="text-sm text-slate-500 mt-1">Cuando el entrenador la asigne, aquí aparecerán sus ejercicios para anotar los pesos.</p>
       </div>
     );
@@ -818,7 +818,7 @@ export default function ProgresoPesos({ memberId, modo = "alumno", abrirAnotar =
               <p className="text-xs text-rose-700 mt-2">
                 {esAlumno
                   ? "Puede ser cansancio, poco descanso o alimentación. Coméntalo con tu entrenador."
-                  : "Conversa con el alumno: descanso, alimentación, dolor o técnica."}
+                  : "Conversa con el socio: descanso, alimentación, dolor o técnica."}
               </p>
             </div>
           )}

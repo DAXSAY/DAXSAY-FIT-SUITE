@@ -33,8 +33,8 @@ export const BarraAlumnoMovil = ({ activa, onIr }) => {
   return (
     <>
       {mas && (
-        <div className="rd-barra-alumno-velo md:hidden fixed inset-0 z-[55]" onClick={() => setMas(false)}>
-          <div className="rd-barra-alumno-hoja absolute left-3 right-3 bottom-[5.25rem] rounded-2xl border p-2 space-y-1" onClick={(e) => e.stopPropagation()}>
+        <div className="rd-barra-socio-velo md:hidden fixed inset-0 z-[55]" onClick={() => setMas(false)}>
+          <div className="rd-barra-socio-hoja absolute left-3 right-3 bottom-[5.25rem] rounded-2xl border p-2 space-y-1" onClick={(e) => e.stopPropagation()}>
             {MAS.map((m) => (
               <button
                 key={m.k}
@@ -48,7 +48,7 @@ export const BarraAlumnoMovil = ({ activa, onIr }) => {
           </div>
         </div>
       )}
-      <nav className="rd-barra-alumno md:hidden fixed left-0 right-0 bottom-0 z-[56] border-t px-2 pt-1.5 pb-[max(.5rem,env(safe-area-inset-bottom))]" aria-label="Secciones del portal">
+      <nav className="rd-barra-socio md:hidden fixed left-0 right-0 bottom-0 z-[56] border-t px-2 pt-1.5 pb-[max(.5rem,env(safe-area-inset-bottom))]" aria-label="Secciones del portal">
         <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${PRINCIPALES.length + (MAS.length ? 1 : 0)}, minmax(0, 1fr))` }}>
           {[...PRINCIPALES, ...(MAS.length ? [{ k: "_mas", emoji: "☰", label: "Más" }] : [])].map((m) => {
             const on = m.k === "_mas" ? enMas || mas : activa === m.k;

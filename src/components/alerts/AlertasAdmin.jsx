@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { CalendarClock, Check, CheckCheck } from "lucide-react";
 import { api } from "../../api/cliente";
 import { ConIconos } from "../common/IconoEmoji";
+import { useAlCambiar } from "../../utils/tiempoReal";
 
 const fc = (f) => (f ? String(f).slice(0, 10).split("-").reverse().join("/") : "—");
 
@@ -28,6 +29,7 @@ export function useAlertasAdmin(activo, limite = 30) {
       /* sin conexión: se reintenta en el siguiente ciclo */
     }
   }, [activo, limite]);
+  useAlCambiar(null, cargar);
 
   useEffect(() => {
     if (!activo) return undefined;
@@ -71,7 +73,7 @@ export function AlertaFechaPago({ alerta, onVista, compacta = false }) {
         <CalendarClock className={`w-4 h-4 mt-0.5 shrink-0 ${alerta.seen ? "text-slate-400" : "text-blue-600"}`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold truncate">{alerta.memberName || "Alumno"}</span>
+            <span className="font-semibold truncate">{alerta.memberName || "Socio"}</span>
             <span className="text-[11px] text-slate-400 shrink-0">{hace(alerta.date)}</span>
           </div>
           <p className="mt-0.5">

@@ -618,7 +618,7 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
                 <Gauge className="w-4 h-4 text-violet-600" /> Cómo dosificarlo según el objetivo
               </h3>
               <p className="text-[11px] text-slate-500 mb-2">
-                Tipo de ejercicio: <b className="text-slate-700">{dosis.nombre}</b> · guía indicativa (el peso lo elige y anota el alumno). Resaltados: lo más recomendado.
+                Tipo de ejercicio: <b className="text-slate-700">{dosis.nombre}</b> · guía indicativa (el peso lo elige y anota el socio). Resaltados: lo más recomendado.
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
@@ -651,7 +651,7 @@ export const ExerciseDetail = ({ ex: inicial, onClose, onAdd }) => {
                   </tbody>
                 </table>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1.5">Guía general: ajústala al nivel del alumno y a sus indicaciones de fisioterapia y nutrición.</p>
+              <p className="text-[11px] text-slate-500 mt-1.5">Guía general: ajústala al nivel del socio y a sus indicaciones de fisioterapia y nutrición.</p>
             </div>
             {similares.length > 0 && (
               <div className="bg-white rounded-2xl border border-slate-200 p-4">

@@ -105,7 +105,7 @@ export const Header = ({
   const totalUrgentAlerts =
     renewalAlerts.length + lowStockProducts.length + (esAdmin ? alertasAdmin.pendientes : 0) + avisosRol.avisos.length + pendientesProg.length + permisosPend.length;
 
-  // Quién coincide con lo escrito (código exacto: "2" = alumno 2, 2-COACH, 2-EXT…)
+  // Quién coincide con lo escrito (código exacto: "2" = alumno 2, 2-ENTR, 2-EXT…)
   const candidatosCheckIn = React.useMemo(
     () => (esCodigoPase(searchCheckIn.trim()) ? [] : candidatosPorCodigo(searchCheckIn, members, todoElPersonal || staffContracts)),
     [searchCheckIn, members, todoElPersonal, staffContracts],
@@ -152,7 +152,7 @@ export const Header = ({
       return;
     }
 
-    // 2) Personal de trabajo: código 1-COACH, 1-NUTRI… (o su DNI si no es de un alumno)
+    // 2) Personal de trabajo: código 1-ENTR, 1-NUTRI… (o su DNI si no es de un alumno)
     const hallado = elegido ? (elegido.tipo === "alumno" ? { member: elegido.member } : null) : buscarAlumno(members, texto);
     const personal = elegido
       ? elegido.tipo === "personal"
@@ -190,14 +190,14 @@ export const Header = ({
       return;
     }
     if (esCodigoPersonal(texto)) {
-      mostrarIngreso({ tipo: "error", codigo: texto.toUpperCase(), titulo: "No hay personal con ese código", detalle: "Revisa el código en Contratos de Personal (ej. 1-COACH, 1-NUTRI)." });
+      mostrarIngreso({ tipo: "error", codigo: texto.toUpperCase(), titulo: "No hay personal con ese código", detalle: "Revisa el código en Contratos de Personal (ej. 1-ENTRENADOR, 1-NUTRI)." });
       return;
     }
 
     // 3) Alumno: código (DR-12 o 12), DNI o nombre
     const m = hallado?.member;
     if (!m) {
-      mostrarIngreso({ tipo: "error", titulo: "No se encontró a nadie", detalle: `Ningún alumno ni personal con «${texto}» (código, DNI o nombre).` });
+      mostrarIngreso({ tipo: "error", titulo: "No se encontró a nadie", detalle: `Ningún socio ni personal con «${texto}» (código, DNI o nombre).` });
       return;
     }
     const previo = ingresoDeHoy(attendances, m.id, hoy);
@@ -408,10 +408,10 @@ export const Header = ({
             <button
               onClick={onOpenNewMemberModal}
               className="flex items-center gap-1.5 px-3 py-1.5 whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-lg text-xs font-bold rd-brillo transition-all cursor-pointer"
-              title="Matricular a un alumno nuevo"
+              title="Matricular a un socio nuevo"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="hidden xl:inline">Nuevo alumno</span>
+              <span className="hidden xl:inline">Nuevo socio</span>
             </button>
           )}
 

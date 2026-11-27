@@ -133,7 +133,7 @@ router.get("/pendientes", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     await exigirTabla();
-    if (req.usuario.rol !== "student") throw new ErrorHttp(403, "Solo los alumnos califican sus clases");
+    if (req.usuario.rol !== "student") throw new ErrorHttp(403, "Solo los socios califican sus clases");
     const yo = await alumnoDe(req);
     const b = req.body || {};
     const estrellas = Math.round(Number(b.estrellas));
@@ -207,7 +207,7 @@ router.get("/", async (req, res, next) => {
         estrellas: Number(f.estrellas),
         etiquetas: f.etiquetas ? String(f.etiquetas).split(", ") : [],
         comentario: f.comentario || "",
-        alumno: profe ? "Alumno" : `${f.nombres} ${f.apellidos}`.trim(),
+        alumno: profe ? "Socio" : `${f.nombres} ${f.apellidos}`.trim(),
         creada: String(f.creada_en).replace("T", " ").slice(0, 16),
       })),
     });

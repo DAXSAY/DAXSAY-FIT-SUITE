@@ -17,6 +17,7 @@ import { DIAS, diaDe, fechaBonita, sumarDias, aMin, deMin, nombreSede } from "./
 import { Croquis, LeyendaCroquis } from "./Croquis";
 import { BuscarSocio } from "./BuscarSocio";
 import { useStepsMaster, ElegirStep, VentanaStep } from "./StepsMaster";
+import { useAlCambiar } from "../../utils/tiempoReal";
 
 const campo = "mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800";
 const soles = (n) => `S/ ${Number(n || 0).toFixed(2)}`;
@@ -130,7 +131,7 @@ const FormMaster = ({ datos, inicial, pctDefecto = 50, onListo, onCerrar }) => {
                 {datos.profesores.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
               </select>
             </label>
-            <label className="block text-sm"><span className="font-bold text-slate-700">Profesor invitado / otros (opcional)</span><input value={f.invitado} onChange={(e) => set("invitado", e.target.value)} maxLength={120} placeholder="Ej. Coach invitado de Lima" className={campo} /></label>
+            <label className="block text-sm"><span className="font-bold text-slate-700">Profesor invitado / otros (opcional)</span><input value={f.invitado} onChange={(e) => set("invitado", e.target.value)} maxLength={120} placeholder="Ej. Entrenador invitado de Lima" className={campo} /></label>
           </div>
         </div>
 
@@ -207,7 +208,7 @@ const FormMaster = ({ datos, inicial, pctDefecto = 50, onListo, onCerrar }) => {
           {conLimite && (
             <label className="block text-sm"><span className="font-bold text-slate-700">Máximo de personas</span><input type="number" min={1} value={f.cupo ?? ""} onChange={(e) => set("cupo", e.target.value)} placeholder="Ej. 45 (los steps del salón)" className={campo} /></label>
           )}
-          <label className="block text-sm"><span className="font-bold text-slate-700">Indicaciones para los alumnos (opcional)</span><input value={f.descripcion} onChange={(e) => set("descripcion", e.target.value)} maxLength={400} placeholder="Ej. Traer toalla y agua" className={campo} /></label>
+          <label className="block text-sm"><span className="font-bold text-slate-700">Indicaciones para los socios (opcional)</span><input value={f.descripcion} onChange={(e) => set("descripcion", e.target.value)} maxLength={400} placeholder="Ej. Traer toalla y agua" className={campo} /></label>
           {inicial?.id && (
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(ESTADOS).map(([k, l]) => (
@@ -227,16 +228,17 @@ const FormMaster = ({ datos, inicial, pctDefecto = 50, onListo, onCerrar }) => {
 };
 
 // ---------------------------------------------------------------------
-// Inscribir (recepción)
+// Reservar un lugar en el máster (recepción)
 // ---------------------------------------------------------------------
-const FormInscribir = ({ master, onListo, onCerrar }) => {
+const FormInscribir = ({ master, onListo, onCerrar, stepInicial = null }) => {
   const { members = [] } = useGym();
   const [modo, setModo] = useState("alumno");
   const [codigo, setCodigo] = useState("");
   const [p, setP] = useState({ nombre: "", dni: "", celular: "" });
-  const [pagado, setPagado] = useState(true);
+  const [pago, setPago] = useState("todo"); // todo | adelanto | despues
+  const [adelanto, setAdelanto] = useState("");
   const [metodo, setMetodo] = useState("efectivo");
-  const [step, setStep] = useState(null);
+  const [step, setStep] = useState(stepInicial);
   const { info: pasos } = useStepsMaster(master.id, 6000);
   const [msg, setMsg] = useState(null);
   const hallado = modo === "alumno" && codigo.trim().length >= 1 ? buscarAlumno(members, codigo.trim())?.member : null;
@@ -245,14 +247,15 @@ const FormInscribir = ({ master, onListo, onCerrar }) => {
     try {
       const body = modo === "alumno" ? { alumnoId: Number(hallado?.id) } : p;
       if (modo === "alumno" && !hallado) return setMsg({ ok: false, texto: "Busca al socio por su código o DNI" });
-      const r = await api(`/masters/${master.id}/inscribir`, { method: "POST", body: { ...body, pagado, metodo, step } });
-      onListo(`✅ ${r.nombre} inscrito${r.step ? ` en el step ${r.step}` : ""} · ${r.socio ? "precio socio" : "precio externo"} ${soles(r.precio)}${r.pagado ? " · pagado" : " · por cobrar"}`);
+      if (pago === "adelanto" && !(Number(adelanto) > 0)) return setMsg({ ok: false, texto: "Escribe cuánto dejó de adelanto" });
+      const r = await api(`/masters/${master.id}/inscribir`, { method: "POST", body: { ...body, pagado: pago === "todo", adelanto: pago === "adelanto" ? Number(adelanto) : 0, metodo, step } });
+      onListo(`✅ Reserva de ${r.nombre}${r.step ? ` en el step ${r.step}` : " (sin step)"} · ${r.socio ? "precio socio" : "precio externo"} ${soles(r.precio)}${r.pagado ? " · pagado" : r.adelanto ? ` · adelanto ${soles(r.adelanto)} · saldo ${soles(r.saldo)}` : " · por cobrar"}`);
     } catch (er) {
       setMsg({ ok: false, texto: er.message });
     }
   };
   return (
-    <Ventana titulo={`Inscribir · ${master.titulo}`} onCerrar={onCerrar}>
+    <Ventana titulo={`Reservar · ${master.titulo}`} onCerrar={onCerrar}>
       <form onSubmit={guardar} className="space-y-4">
         <div className="grid grid-cols-2 gap-2">
           {[
@@ -281,8 +284,18 @@ const FormInscribir = ({ master, onListo, onCerrar }) => {
           {step && <p className="text-xs font-bold text-amber-700">Elegido: step {pasos?.croquis?.steps?.find((z) => z.id === step)?.numero} (tócalo otra vez para quitarlo)</p>}
         </div>
         <div className="rounded-2xl border border-slate-200 p-3 space-y-2">
-          <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={pagado} onChange={(e) => setPagado(e.target.checked)} /> Ya pagó</label>
-          {pagado && (
+          <p className="text-sm font-bold text-slate-700">💰 Pago</p>
+          <div className="grid grid-cols-3 gap-1.5">
+            {[["todo", "Pagó todo"], ["adelanto", "Dejó adelanto"], ["despues", "Paga después"]].map(([k, l]) => (
+              <button key={k} type="button" onClick={() => setPago(k)} className={`px-2 py-2 rounded-xl border text-xs font-bold cursor-pointer ${pago === k ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{l}</button>
+            ))}
+          </div>
+          {pago === "adelanto" && (
+            <label className="block text-xs font-bold text-slate-600">Monto del adelanto (S/)
+              <input type="number" min={0.5} step="0.5" value={adelanto} onChange={(e) => setAdelanto(e.target.value)} placeholder="Ej. 5" className={campo} />
+            </label>
+          )}
+          {pago !== "despues" && (
             <div className="flex flex-wrap gap-1.5">
               {METODOS.map(([k, l]) => (
                 <button key={k} type="button" onClick={() => setMetodo(k)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${metodo === k ? "bg-emerald-600 border-emerald-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{l}</button>
@@ -291,8 +304,57 @@ const FormInscribir = ({ master, onListo, onCerrar }) => {
           )}
         </div>
         <Aviso m={msg} />
-        <button className={`w-full px-5 py-3 rounded-xl text-white text-base font-black cursor-pointer ${modo === "externo" ? "bg-violet-600 hover:bg-violet-700" : "bg-teal-600 hover:bg-teal-700"}`}>✅ Inscribir{modo === "alumno" && hallado ? ` a ${hallado.fullName.split(" ")[0]}` : modo === "externo" && p.nombre.trim() ? ` a ${p.nombre.trim().split(" ")[0]} (externo)` : ""}</button>
+        <button className={`w-full px-5 py-3 rounded-xl text-white text-sm font-black cursor-pointer ${modo === "externo" ? "bg-violet-600 hover:bg-violet-700" : "bg-teal-600 hover:bg-teal-700"}`}>✅ Reservar{modo === "alumno" && hallado ? ` a ${hallado.fullName.split(" ")[0]}` : modo === "externo" && p.nombre.trim() ? ` a ${p.nombre.trim().split(" ")[0]} (externo)` : ""}</button>
       </form>
+    </Ventana>
+  );
+};
+
+// ---------------------------------------------------------------------
+// Ficha de una reserva: se abre desde el croquis o desde la lista.
+// Muestra lo pagado y el saldo; cobra todo o un abono, asistencia y step.
+// ---------------------------------------------------------------------
+const FichaReserva = ({ i, m, gestiona, onCerrar, onAccion, onStep }) => {
+  const saldo = i.saldo ?? (i.pagado ? 0 : i.precio);
+  const [monto, setMonto] = useState(String(saldo));
+  const n = Number(monto);
+  const valido = n > 0 && n <= saldo + 0.001;
+  return (
+    <Ventana titulo={`${i.step ? `Step ${i.step} · ` : ""}${i.nombre}`} onCerrar={onCerrar}>
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-1.5 text-xs font-black">
+          <span className={`px-2 py-0.5 rounded-full text-white ${i.alumnoId ? "bg-teal-600" : "bg-violet-600"}`}>{i.socio ? "⭐ Socio" : i.alumnoId ? "⭐ Socio sin plan vigente" : "🎟️ Externo"}</span>
+          {i.step ? <span className="px-2 py-0.5 rounded-full border border-slate-300 text-slate-700">🧱 Step {i.step}</span> : <span className="px-2 py-0.5 rounded-full border border-slate-300 text-slate-500">Sin step</span>}
+          {i.asistio && <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white">✓ Asistió</span>}
+          {i.origen === "alumno" && <span className="px-2 py-0.5 rounded-full border border-slate-300 text-slate-600">📱 Desde la app</span>}
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rd-kpi-plomo rd-aviso-t rounded-xl border p-2.5"><p className="text-[11px] font-black uppercase">Precio</p><p className="text-base font-black">{soles(i.precio)}</p></div>
+          <div className="rd-kpi-verde rd-aviso-t rounded-xl border p-2.5"><p className="text-[11px] font-black uppercase">Pagado</p><p className="text-base font-black">{soles(i.montoPagado ?? (i.pagado ? i.precio : 0))}</p></div>
+          <div className={`${saldo > 0 ? "rd-kpi-rosa" : "rd-kpi-verde"} rd-aviso-t rounded-xl border p-2.5`}><p className="text-[11px] font-black uppercase">Saldo</p><p className="text-base font-black">{saldo > 0 ? soles(saldo) : "Al día ✓"}</p></div>
+        </div>
+        {gestiona && saldo > 0 && (
+          <div className="rounded-xl border border-slate-200 p-3 space-y-2">
+            <label className="block text-xs font-bold text-slate-600">Monto a cobrar (todo el saldo o una parte)
+              <input type="number" min={0.5} step="0.5" max={saldo} value={monto} onChange={(e) => setMonto(e.target.value)} className={campo} />
+            </label>
+            <p className="text-xs font-bold text-slate-600">Cobrar {valido ? soles(n) : ""} con:</p>
+            <div className="grid grid-cols-2 gap-2">
+              {METODOS.map(([k, l]) => (
+                <button key={k} type="button" disabled={!valido} onClick={() => onAccion(i, "pagar", { metodo: k, monto: n })} className="rounded-xl border border-slate-200 py-2.5 text-sm font-black cursor-pointer hover:bg-emerald-50 disabled:opacity-40">{l}</button>
+              ))}
+            </div>
+            {!valido && <p className="text-xs font-bold text-rose-700">El monto debe ser mayor a 0 y como máximo {soles(saldo)}.</p>}
+          </div>
+        )}
+        {gestiona && (
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => (onAccion(i, i.asistio ? "no_asistio" : "asistio"), onCerrar())} className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1 cursor-pointer ${i.asistio ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}><Check className="w-3.5 h-3.5" /> {i.asistio ? "Quitar asistencia" : "Asistió"}</button>
+            {String(m.fecha) >= hoyISO() && <button type="button" onClick={onStep} className="px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs font-bold cursor-pointer">🧱 {i.step ? "Cambiar step" : "Dar step"}</button>}
+            <button type="button" onClick={() => window.confirm(`¿Anular la reserva de ${i.nombre}?${(i.montoPagado || 0) > 0 ? ` Se le devuelve ${soles(i.montoPagado)} (sale de caja).` : ""}`) && (onAccion(i, "anular"), onCerrar())} className="px-3 py-2 rounded-xl border border-rose-200 text-rose-700 text-xs font-bold cursor-pointer">Anular</button>
+          </div>
+        )}
+      </div>
     </Ventana>
   );
 };
@@ -307,10 +369,11 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
   const [cobrar, setCobrar] = useState(null);
   const [busca, setBusca] = useState("");
   const [paraStep, setParaStep] = useState(null);
-  const [verSala, setVerSala] = useState(false);
-  const { info: sala, cargar: cargarSala } = useStepsMaster(m.id, verSala ? 8000 : 0);
+  const [stepInicial, setStepInicial] = useState(null);
+  const { info: sala, cargar: cargarSala } = useStepsMaster(m.id, 8000);
   const gestiona = rol === "admin" || rol === "reception";
   const cargar = () => api(`/masters/${m.id}/inscritos`).then((d) => setLista(d.inscritos)).catch((e) => setMsg({ ok: false, texto: e.message }));
+  useAlCambiar(["masters"], () => (cargar(), onCambio()));
   useEffect(() => {
     setLista(null);
     setMsg(null);
@@ -318,8 +381,8 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
   }, [m.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const accion = async (i, accion, extra = {}) => {
     try {
-      await api(`/masters/inscripciones/${i.id}`, { method: "POST", body: { accion, ...extra } });
-      setMsg({ ok: true, texto: accion === "pagar" ? `💰 Cobrado a ${i.nombre} · ${soles(i.precio)}` : accion === "anular" ? `Inscripción de ${i.nombre} anulada` : accion === "asistio" ? `✓ ${i.nombre} asistió` : `${i.nombre}: sin asistencia` });
+      const r = await api(`/masters/inscripciones/${i.id}`, { method: "POST", body: { accion, ...extra } });
+      setMsg({ ok: true, texto: accion === "pagar" ? `💰 Cobrado a ${i.nombre} · ${soles(r.cobrado ?? i.saldo ?? i.precio)}${r.saldo > 0 ? ` · aún debe ${soles(r.saldo)}` : " · pagado completo"}` : accion === "anular" ? `Inscripción de ${i.nombre} anulada` : accion === "asistio" ? `✓ ${i.nombre} asistió` : `${i.nombre}: sin asistencia` });
       setCobrar(null);
       cargar();
       cargarSala();
@@ -346,9 +409,10 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
     { key: "step", label: "Step", excel: (i) => (i.step ? `Step ${i.step}` : "Sin step") },
     { key: "tipo", label: "Tipo", excel: (i) => (i.socio ? "Socio" : i.alumnoId ? "Socio sin plan vigente" : "Externo") },
     { key: "precio", label: "Precio", excel: (i) => soles(i.precio) },
-    { key: "pago", label: "Pago", excel: (i) => (i.pagado ? `Pagado · ${nombreMetodo(i.metodo)}` : "Por cobrar") },
+    { key: "pago", label: "Pago", excel: (i) => (i.pagado ? `Pagado · ${nombreMetodo(i.metodo)}` : i.montoPagado > 0 ? `Adelanto ${soles(i.montoPagado)}` : "Por cobrar") },
+    { key: "saldo", label: "Saldo", excel: (i) => (i.saldo > 0 ? soles(i.saldo) : "") },
     { key: "asistio", label: "Asistió", excel: (i) => (i.asistio ? "Sí" : "") },
-    { key: "origen", label: "Inscrito por", excel: (i) => (i.origen === "alumno" ? "App del alumno" : "Recepción") },
+    { key: "origen", label: "Inscrito por", excel: (i) => (i.origen === "alumno" ? "App del socio" : "Recepción") },
   ];
   return (
     <div className="space-y-4">
@@ -363,7 +427,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
         </div>
         <div className="flex flex-wrap gap-2">
           {gestiona && m.estado === "abierto" && (
-            <button type="button" onClick={() => setInscribir(true)} className="px-4 py-2 rounded-xl bg-teal-600 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer"><UserPlus className="w-4 h-4" /> Inscribir</button>
+            <button type="button" onClick={() => (setStepInicial(null), setInscribir(true))} className="px-4 py-2 rounded-xl bg-teal-600 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer"><UserPlus className="w-4 h-4" /> Reservar</button>
           )}
           {rol === "admin" && (
             <button type="button" onClick={onEditar} className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-bold flex items-center gap-1.5 cursor-pointer"><Pencil className="w-4 h-4" /> Editar / precio</button>
@@ -372,9 +436,9 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <TarjetaKpi titulo="Inscritos" valor={m.inscritos} sub={`${m.inscritos - (m.externos || 0)} socio${m.inscritos - (m.externos || 0) === 1 ? "" : "s"} · ${m.externos || 0} externo${m.externos === 1 ? "" : "s"}${m.cupo ? ` · de ${m.cupo}` : ""}`} emoji="🙋" tono="teal" />
+        <TarjetaKpi titulo="Reservas" valor={m.inscritos} sub={`${m.inscritos - (m.externos || 0)} socio${m.inscritos - (m.externos || 0) === 1 ? "" : "s"} · ${m.externos || 0} externo${m.externos === 1 ? "" : "s"}${m.cupo ? ` · de ${m.cupo}` : ""}`} emoji="🙋" tono="teal" />
         <TarjetaKpi titulo="Recaudado" valor={m.recaudado} prefijo="S/ " decimales={2} sub={`${m.pagados} pagaron`} emoji="💰" tono="verde" />
-        <TarjetaKpi titulo="Por cobrar" valor={m.porCobrar} prefijo="S/ " decimales={2} sub={`${m.inscritos - m.pagados} sin pagar`} emoji="⏳" tono="ambar" />
+        <TarjetaKpi titulo="Por cobrar" valor={m.porCobrar} prefijo="S/ " decimales={2} sub={`${m.inscritos - m.pagados} con saldo${m.conAdelanto ? ` · ${m.conAdelanto} con adelanto` : ""}`} emoji="⏳" tono="ambar" />
         <TarjetaKpi titulo="Asistieron" valor={m.asistieron} sub="el día del máster" emoji="✅" tono="violeta" />
       </div>
 
@@ -414,41 +478,57 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
       </div>
       <Aviso m={msg} />
 
-      {/* Sitios del salón: quién está en cada step */}
+      {/* Reservas del máster: el croquis siempre visible, socios y externos juntos */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-black text-slate-800">🧱 Steps del máster <span className="font-semibold text-slate-500">· {activos.filter((i) => i.step).length} con step · {activos.filter((i) => !i.step).length} sin step</span></p>
-          <button type="button" onClick={() => (setVerSala((v) => !v), cargarSala())} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50">{verSala ? "Ocultar croquis" : "Ver croquis"}</button>
+          <p className="text-sm font-black text-slate-800">🎫 Reservas del salón <span className="font-semibold text-slate-500">· {activos.filter((i) => i.step).length} con step · {activos.filter((i) => !i.step).length} sin step</span></p>
+          {sala?.conSteps && (
+            <span className="text-xs font-black flex flex-wrap gap-1.5">
+              <span className="px-2 py-0.5 rounded-full bg-teal-600 text-white">⭐ {sala.socios ?? 0} socio{sala.socios === 1 ? "" : "s"}</span>
+              <span className="px-2 py-0.5 rounded-full bg-violet-600 text-white">🎟️ {sala.externos ?? 0} externo{sala.externos === 1 ? "" : "s"}</span>
+              <span className="px-2 py-0.5 rounded-full border border-slate-300 text-slate-600">{Math.max(0, sala.libres)} libre{sala.libres === 1 ? "" : "s"}</span>
+            </span>
+          )}
         </div>
-        {verSala && (sala?.conSteps ? (
-          <>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <LeyendaCroquis conExterno />
-              <span className="text-xs font-black flex gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-teal-600 text-white">⭐ {sala.socios ?? 0} socio{sala.socios === 1 ? "" : "s"}</span>
-                <span className="px-2 py-0.5 rounded-full bg-violet-600 text-white">🎟️ {sala.externos ?? 0} externo{sala.externos === 1 ? "" : "s"}</span>
-                <span className="px-2 py-0.5 rounded-full border border-slate-300 text-slate-600">{Math.max(0, sala.libres)} libre{sala.libres === 1 ? "" : "s"}</span>
-              </span>
-            </div>
-            <Croquis croquis={sala.croquis} reservas={sala.reservas} nombres onStep={(z, r) => setMsg({ ok: !!r, texto: r ? `Step ${z.numero}: ${r.alumno} · ${r.externo ? "🎟️ externo" : "⭐ socio"}${r.estado === "asistio" ? " · ✓ asistió" : ""}` : `Step ${z.numero}: libre. Usa «Dar step» en la lista para asignarlo.` })} />
-          </>
+        {!sala ? (
+          <p className="text-xs text-slate-500">Cargando croquis…</p>
+        ) : !sala.conSteps ? (
+          <p className="text-xs text-slate-500">Falta ejecutar la parte 41 (41_steps_masters_calificaciones.sql) en MySQL Workbench.</p>
         ) : (
-          <p className="text-xs text-slate-500">{sala ? "Falta ejecutar la parte 41 (41_steps_masters_calificaciones.sql) en MySQL Workbench." : "Cargando croquis…"}</p>
-        ))}
+          <>
+            <LeyendaCroquis conExterno conDeuda={gestiona} />
+            <p className="text-xs text-slate-500">{gestiona && m.estado === "abierto" ? "Toca un step libre para reservarlo; toca uno ocupado para ver la reserva, cobrar el saldo o marcar su asistencia. Se actualiza solo." : "Toca un step ocupado para ver de quién es. Se actualiza solo."}</p>
+            <Croquis
+              croquis={sala.croquis}
+              reservas={sala.reservas}
+              nombres
+              onStep={(z, r) => {
+                if (r) {
+                  const ins = (lista || []).find((x) => x.id === r.inscripcionId);
+                  if (ins) return setCobrar(ins);
+                  return setMsg({ ok: true, texto: `Step ${z.numero}: ${r.alumno} · ${r.externo ? "🎟️ externo" : "⭐ socio"}` });
+                }
+                if (gestiona && m.estado === "abierto") return setStepInicial(z.id), setInscribir(true);
+                setMsg({ ok: true, texto: `Step ${z.numero}: libre.` });
+              }}
+            />
+          </>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div className="p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2">
+          <p className="w-full text-sm font-black text-slate-800">📋 Reservados <span className="font-semibold text-slate-500">· {activos.length}</span></p>
           <label className="relative flex-1 min-w-[200px]">
             <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar inscrito…" className="w-full pl-8 pr-2 py-2 rounded-lg border border-slate-200 text-sm" />
+            <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar reservado…" className="w-full pl-8 pr-2 py-2 rounded-lg border border-slate-200 text-sm" />
           </label>
-          <Exportar titulo={`Máster · ${m.titulo}`} filtros={[`${fechaBonita(m.fecha)} · ${m.inicio} – ${m.fin}`, `Profesor: ${m.profesor}`, `Socio ${soles(m.precioSocio)} · Externo ${soles(m.precioPublico)}`]} columnas={columnas} filas={vistos} totales={[["Inscritos", vistos.length], ["Pagaron", vistos.filter((i) => i.pagado).length], ["Recaudado", soles(vistos.filter((i) => i.pagado).reduce((a, i) => a + i.precio, 0))], ["Por cobrar", soles(vistos.filter((i) => !i.pagado).reduce((a, i) => a + i.precio, 0))]]} />
+          <Exportar titulo={`Máster · ${m.titulo}`} filtros={[`${fechaBonita(m.fecha)} · ${m.inicio} – ${m.fin}`, `Profesor: ${m.profesor}`, `Socio ${soles(m.precioSocio)} · Externo ${soles(m.precioPublico)}`]} columnas={columnas} filas={vistos} totales={[["Inscritos", vistos.length], ["Pagaron", vistos.filter((i) => i.pagado).length], ["Recaudado", soles(vistos.reduce((a, i) => a + (i.montoPagado ?? (i.pagado ? i.precio : 0)), 0))], ["Por cobrar", soles(vistos.reduce((a, i) => a + (i.saldo ?? (i.pagado ? 0 : i.precio)), 0))]]} />
         </div>
         {!lista ? (
-          <p className="px-4 pb-4 text-sm text-slate-500">Cargando inscritos…</p>
+          <p className="px-4 pb-4 text-sm text-slate-500">Cargando reservas…</p>
         ) : !vistos.length ? (
-          <p className="px-4 pb-6 text-center text-sm text-slate-400">{activos.length ? "Nadie coincide con la búsqueda." : "Aún no hay inscritos. Se van inscribiendo durante la semana."}</p>
+          <p className="px-4 pb-6 text-center text-sm text-slate-400">{activos.length ? "Nadie coincide con la búsqueda." : "Aún no hay reservas. Toca un step libre del croquis o «Reservar»."}</p>
         ) : (
           <div className="divide-y divide-slate-100">
             {vistos.map((i) => (
@@ -456,7 +536,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
                 <div className="min-w-0">
                   <p className="font-bold text-slate-900 truncate">{i.nombre} {i.codigo && <span className="text-xs text-slate-400">· {i.codigo}</span>}</p>
                   <p className="text-xs text-slate-500">
-                    {i.socio ? "⭐ Socio" : i.alumnoId ? "Socio sin plan vigente" : <b className="text-violet-700">🎟️ Externo</b>} · {soles(i.precio)} · {i.pagado ? <b className="text-emerald-700">Pagado ({nombreMetodo(i.metodo)})</b> : <b className="text-amber-700">Por cobrar</b>}
+                    {i.socio ? "⭐ Socio" : i.alumnoId ? "Socio sin plan vigente" : <b className="text-violet-700">🎟️ Externo</b>} · {soles(i.precio)} · {i.pagado ? <b className="text-emerald-700">Pagado ({nombreMetodo(i.metodo)})</b> : i.montoPagado > 0 ? <b className="text-rose-700">Adelanto {soles(i.montoPagado)} · debe {soles(i.saldo)}</b> : <b className="text-rose-700">Debe {soles(i.saldo ?? i.precio)}</b>}
                     {" · "}{i.step ? <b className="text-amber-700">🧱 Step {i.step}</b> : <span className="text-slate-400">sin step</span>}
                     {i.origen === "alumno" && " · 📱 desde la app"}
                     {i.asistio && <b className="text-emerald-700"> · ✓ Asistió</b>}
@@ -465,7 +545,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
                 {gestiona && (
                   <div className="flex flex-wrap gap-1.5">
                     <button type="button" onClick={() => setParaStep(i)} className="px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-xs font-bold cursor-pointer">🧱 {i.step ? "Cambiar step" : "Dar step"}</button>
-                    {!i.pagado && <button type="button" onClick={() => setCobrar(i)} className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-black flex items-center gap-1 cursor-pointer"><Wallet className="w-3.5 h-3.5" /> Cobrar</button>}
+                    {!i.pagado && <button type="button" onClick={() => setCobrar(i)} className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-black flex items-center gap-1 cursor-pointer"><Wallet className="w-3.5 h-3.5" /> Cobrar {soles(i.saldo ?? i.precio)}</button>}
                     <button type="button" onClick={() => accion(i, i.asistio ? "no_asistio" : "asistio")} className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 cursor-pointer ${i.asistio ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}><Check className="w-3.5 h-3.5" /> Asistió</button>
                     <button type="button" onClick={() => window.confirm(`¿Anular la inscripción de ${i.nombre}?`) && accion(i, "anular")} className="px-3 py-1.5 rounded-lg border border-rose-200 text-rose-700 text-xs font-bold cursor-pointer">Anular</button>
                   </div>
@@ -476,7 +556,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
         )}
       </div>
 
-      {inscribir && <FormInscribir master={m} onCerrar={() => setInscribir(false)} onListo={(t) => (setInscribir(false), setMsg({ ok: true, texto: t }), cargar(), onCambio())} />}
+      {inscribir && <FormInscribir master={m} stepInicial={stepInicial} onCerrar={() => setInscribir(false)} onListo={(t) => (setInscribir(false), setMsg({ ok: true, texto: t }), cargar(), cargarSala(), onCambio())} />}
       {paraStep && (
         <VentanaStep
           master={m}
@@ -494,16 +574,7 @@ const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
           }}
         />
       )}
-      {cobrar && (
-        <Ventana titulo={`Cobrar a ${cobrar.nombre}`} onCerrar={() => setCobrar(null)}>
-          <p className="text-sm">Monto: <b>{soles(cobrar.precio)}</b> ({cobrar.socio ? "precio socio" : "precio externo"})</p>
-          <div className="grid grid-cols-2 gap-2">
-            {METODOS.map(([k, l]) => (
-              <button key={k} type="button" onClick={() => accion(cobrar, "pagar", { metodo: k })} className="rounded-xl border border-slate-200 py-3 text-sm font-black cursor-pointer hover:bg-emerald-50">{l}</button>
-            ))}
-          </div>
-        </Ventana>
-      )}
+      {cobrar && <FichaReserva i={cobrar} m={m} gestiona={gestiona} onCerrar={() => setCobrar(null)} onAccion={accion} onStep={() => (setParaStep(cobrar), setCobrar(null))} />}
     </div>
   );
 };
@@ -541,7 +612,7 @@ export default function Masters({ datos, rol }) {
         <div className="rd-kpi-ambar rd-aviso-t rounded-2xl border p-5 text-center space-y-1">
           <p className="text-3xl">🌟</p>
           <p className="font-black">{ver === "proximos" ? "No hay másters programados" : "Aún no hay másters pasados"}</p>
-          {ver === "proximos" && <p className="text-sm">{rol === "admin" ? "Crea el máster del sábado o domingo con su precio y los alumnos se irán inscribiendo." : "Administración los publica con su precio."}</p>}
+          {ver === "proximos" && <p className="text-sm">{rol === "admin" ? "Crea el máster del sábado o domingo con su precio y los socios se irán inscribiendo." : "Administración los publica con su precio."}</p>}
         </div>
       )}
       {lista && lista.length > 0 && (

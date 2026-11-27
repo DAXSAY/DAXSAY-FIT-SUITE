@@ -21,7 +21,7 @@ const ESTADOS = {
   por_vencer: { label: "Por vencer", emoji: "⏳", tono: "ambar" },
   vencido: { label: "Vencido", emoji: "⏰", tono: "rojo" },
   congelado: { label: "Congelado", emoji: "❄️", tono: "azul" },
-  exalumno: { label: "Exalumno", emoji: "👋", tono: "plomo" },
+  exalumno: { label: "Exsocio", emoji: "👋", tono: "plomo" },
 };
 
 export const AlumnosPorPlan = ({ planesIniciales = [] }) => {
@@ -92,7 +92,7 @@ export const AlumnosPorPlan = ({ planesIniciales = [] }) => {
 
   const columnas = [
     { key: "codigo", label: "Código" },
-    { key: "alumno", label: "Alumno" },
+    { key: "alumno", label: "Socio" },
     { key: "dni", label: "DNI" },
     { key: "telefono", label: "Teléfono" },
     { key: "plan", label: "Plan" },
@@ -145,7 +145,7 @@ export const AlumnosPorPlan = ({ planesIniciales = [] }) => {
             ["activo", "✅", "Activos", cuenta("activo"), "verde"],
             ["por_vencer", "⏳", "Por vencer", cuenta("por_vencer"), "ambar"],
             ["vencido", "⏰", "Vencidos", cuenta("vencido"), "rojo"],
-            ["exalumno", "👋", "Exalumnos", cuenta("exalumno"), "plomo"],
+            ["exalumno", "👋", "Exsocios", cuenta("exalumno"), "plomo"],
             ["todos", "📋", "Todos", delPlan.length, "violeta"],
           ].map(([k, e, l, n, tono]) => (
             <button
@@ -186,7 +186,7 @@ export const AlumnosPorPlan = ({ planesIniciales = [] }) => {
             </div>
           </div>
           <Exportar
-            titulo={`Alumnos del plan: ${nombresPlanes.join(", ") || "—"}`}
+            titulo={`Socios del plan: ${nombresPlanes.join(", ") || "—"}`}
             filtros={[`Estado: ${{ vigentes: "Vigentes", todos: "Todos" }[estado] || ESTADOS[estado]?.label}`, buscar && `Búsqueda: ${buscar}`].filter(Boolean)}
             columnas={columnas}
             filas={filas}
@@ -237,7 +237,7 @@ export const AlumnosPorPlan = ({ planesIniciales = [] }) => {
                 {filas.length === 0 && (
                   <tr>
                     <td colSpan={columnas.length} className="py-10 text-center text-slate-500">
-                      {elegidos.length ? "No hay alumnos con este filtro." : "Elige un plan para ver a sus alumnos."}
+                      {elegidos.length ? "No hay socios con este filtro." : "Elige un plan para ver a sus socios."}
                     </td>
                   </tr>
                 )}

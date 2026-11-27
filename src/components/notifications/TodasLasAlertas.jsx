@@ -92,7 +92,7 @@ export const TodasLasAlertas = () => {
         {[
           [BellRing, "Alertas en total", clientes.length + productos.length, "Todo lo que hay por atender", "text-cyan-600", "from-cyan-500 to-teal-600", clientes.length + productos.length],
           [Siren, "Urgentes", urgentes, "Vencidos y productos agotados", "text-rose-600", "from-rose-500 to-red-600", clientes.length + productos.length],
-          [Users, "Clientes por atender", clientes.length, "Membresías por vencer, vencidas y deudas", "text-blue-600", "from-blue-500 to-indigo-600", clientes.length + productos.length],
+          [Users, "Socios por atender", clientes.length, "Membresías por vencer, vencidas y deudas", "text-blue-600", "from-blue-500 to-indigo-600", clientes.length + productos.length],
           [Package, "Productos por reponer", productos.length, "Stock bajo el mínimo o agotado", "text-orange-600", "from-orange-500 to-amber-500", clientes.length + productos.length],
         ].map(([Icono, t, v, d, color, grad, total]) => (
           <TarjetaKpi
@@ -128,7 +128,7 @@ export const TodasLasAlertas = () => {
 
       <div className="relative max-w-md">
         <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-        <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar alumno, código o producto…"
+        <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar socio, código o producto…"
           className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-blue-500" />
       </div>
 
@@ -136,7 +136,7 @@ export const TodasLasAlertas = () => {
         <section className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4">
           <header className="flex items-center justify-between gap-2 mb-3">
             <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-blue-800">
-              <Users className="w-4 h-4" /> Clientes ({clientes.length})
+              <Users className="w-4 h-4" /> Socios ({clientes.length})
             </h3>
             <span className="text-[11px] font-semibold text-slate-500">
               {cuenta(clientes, "critica")} urgentes · {cuenta(clientes, "alta")} altas · {cuenta(clientes, "media")} medias
@@ -145,7 +145,7 @@ export const TodasLasAlertas = () => {
           {filtrar(clientes).length ? (
             <ul className="space-y-2 max-h-[560px] overflow-y-auto pr-1">{filtrar(clientes).map((a) => <Fila key={a.id} a={a} />)}</ul>
           ) : (
-            <p className="text-sm text-slate-500 py-6 text-center">Sin alertas de clientes.</p>
+            <p className="text-sm text-slate-500 py-6 text-center">Sin alertas de socios.</p>
           )}
         </section>
 

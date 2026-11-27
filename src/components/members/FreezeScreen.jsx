@@ -128,7 +128,7 @@ export const FreezeScreen = ({ member, onVolver }) => {
       setOk(
         cierre.accion === "anular"
           ? `Congelamiento anulado: se devolvieron los días. Ahora vence el ${fechaCorta(m.membershipEndDate)}.`
-          : `Congelamiento terminado: el alumno ya puede ingresar. Ahora vence el ${fechaCorta(m.membershipEndDate)}.`,
+          : `Congelamiento terminado: el socio ya puede ingresar. Ahora vence el ${fechaCorta(m.membershipEndDate)}.`,
       );
       setCierre(null);
       setNotaCierre("");
@@ -175,7 +175,7 @@ export const FreezeScreen = ({ member, onVolver }) => {
         {!data ? (
           <p className="text-sm text-slate-500 py-10 text-center">Cargando…</p>
         ) : !actual ? (
-          <p className="text-sm text-slate-500 py-10 text-center bg-white rounded-2xl border border-slate-200">Este alumno no tiene membresía.</p>
+          <p className="text-sm text-slate-500 py-10 text-center bg-white rounded-2xl border border-slate-200">Este socio no tiene membresía.</p>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
             {/* Derecho de congelamiento */}
@@ -208,7 +208,7 @@ export const FreezeScreen = ({ member, onVolver }) => {
                       </div>
                     </div>
                     <p className="text-[11px] text-slate-500 leading-snug">
-                      Es <b>todo o nada</b>: se congela en bloques de al menos {actual.minimo} días; si el alumno vuelve antes, los días no usados se
+                      Es <b>todo o nada</b>: se congela en bloques de al menos {actual.minimo} días; si el socio vuelve antes, los días no usados se
                       pierden. El derecho caduca cuando vence la membresía.
                     </p>
                   </>
@@ -432,7 +432,7 @@ export const FreezeScreen = ({ member, onVolver }) => {
           <div className="fixed inset-0 z-[60] bg-slate-900/50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl p-5 w-full max-w-md space-y-3">
               <p className="font-extrabold text-slate-900">
-                {cierre.accion === "anular" ? "Anular congelamiento" : "El alumno volvió antes"}
+                {cierre.accion === "anular" ? "Anular congelamiento" : "El socio volvió antes"}
               </p>
               <p className="text-sm text-slate-600">
                 {cierre.accion === "anular"

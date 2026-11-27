@@ -1,5 +1,5 @@
 // Lista bajo un campo de marcación: muestra a QUIÉN se va a marcar.
-// Si varias personas tienen el mismo código (alumno 2, 2-COACH, 2-EXT…),
+// Si varias personas tienen el mismo código (alumno 2, 2-ENTR, 2-EXT…),
 // se elige con el mouse o con las flechas + Enter.
 // Se dibuja flotando sobre la página (portal), así ninguna tarjeta la recorta.
 import React, { useLayoutEffect, useRef, useState } from "react";

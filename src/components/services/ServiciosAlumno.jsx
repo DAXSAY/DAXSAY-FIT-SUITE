@@ -11,6 +11,7 @@ import React, { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { api } from "../../api/cliente";
 import { useGym } from "../../context/GymContext";
+import { useAlCambiar } from "../../utils/tiempoReal";
 
 const soles = (n) => `S/ ${Number(n || 0).toFixed(2)}`;
 const fechaCorta = (iso) => {
@@ -131,6 +132,7 @@ export default function ServiciosAlumno({ idalumno, nombre = "", modulos = null,
     cargar();
     api("/servicios/catalogo").then((d) => setCatalogo(d.servicios || [])).catch(() => {});
   }, [idalumno]); // eslint-disable-line react-hooks/exhaustive-deps
+  useAlCambiar(["servicios", "registros"], cargar);
   if (!datos || !datos.conServicios) return null;
   const delModulo = (x) => !modulos || modulos.includes(catalogo.find((c) => c.id === x.servicioId)?.modulo);
   const lista = datos.servicios.filter(delModulo).filter((x) => x.vigente || x.futuro);
@@ -148,7 +150,7 @@ export default function ServiciosAlumno({ idalumno, nombre = "", modulos = null,
     <div className={`bg-white rounded-2xl border border-slate-200 ${compacto ? "p-3" : "p-4"} space-y-3`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-black text-slate-800">🧾 Servicios {compacto ? "de este alumno" : ""}</p>
+          <p className="text-sm font-black text-slate-800">🧾 Servicios {compacto ? "de este socio" : ""}</p>
           {!compacto && <p className="text-xs text-slate-500">{datos.plan ? `Plan ${datos.plan.nombre} hasta el ${fechaCorta(datos.plan.hasta)}.` : "Sin membresía vigente."} Lo incluido en el plan más lo que pagó aparte.</p>}
         </div>
         {vende && ofrecer.length > 0 && (

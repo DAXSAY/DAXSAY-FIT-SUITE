@@ -160,7 +160,7 @@ export const RoutinesAndExercises = () => {
   const asignadosDe = (routine) => {
     const copias = copiasDe(routine.id).map((c) => ({
       id: c.targetStudentId,
-      nombre: c.targetStudentName || members.find((m) => String(m.id) === String(c.targetStudentId))?.fullName || "Alumno",
+      nombre: c.targetStudentName || members.find((m) => String(m.id) === String(c.targetStudentId))?.fullName || "Socio",
       copia: c,
     }));
     const ya = new Set(copias.map((c) => String(c.id)));
@@ -344,7 +344,7 @@ export const RoutinesAndExercises = () => {
       updateRoutine(editando.id, { ...datos, personalizada: true });
     } else {
       const n = updateRoutineGeneral(editando.id, datos, { incluirPersonalizadas });
-      if (n) setTimeout(() => avisoBreve(`✓ Cambios aplicados también a ${n} alumno(s) con esta rutina`), 900);
+      if (n) setTimeout(() => avisoBreve(`✓ Cambios aplicados también a ${n} socio(s) con esta rutina`), 900);
     }
     setEditando(null);
 
@@ -358,7 +358,7 @@ export const RoutinesAndExercises = () => {
 
     assignRoutineToMember(studentToAssignId, assigningRoutine.id);
     const alumnoAsignado = members.find((m) => String(m.id) === String(studentToAssignId));
-    avisoBreve(`✓ Rutina asignada a ${alumnoAsignado?.fullName || "el alumno"}`);
+    avisoBreve(`✓ Rutina asignada a ${alumnoAsignado?.fullName || "el socio"}`);
     setAssigningRoutine(null);
     setStudentToAssignId("");
 
@@ -381,7 +381,7 @@ export const RoutinesAndExercises = () => {
             icono={Dumbbell}
             etiqueta="Entrenamiento"
             titulo="Rutinas y ejercicios"
-            descripcion="Crea rutinas, asígnalas a tus alumnos y ajústalas a cada uno."
+            descripcion="Crea rutinas, asígnalas a tus socios y ajústalas a cada uno."
             accion={
               <AccionCabecera icono={editando ? Pencil : Plus} onClick={() => cambiarSeccion("builder")}>
                 {editando ? "Seguir editando" : "Crear rutina"}
@@ -408,7 +408,7 @@ export const RoutinesAndExercises = () => {
               <Dumbbell className="w-10 h-10 text-slate-300 mx-auto mb-3" />
               <p className="text-base font-bold text-slate-800">Aún no hay rutinas</p>
               <p className="text-sm text-slate-500 mb-4">
-                Crea una con el banco de ejercicios, o en <b>Rutinas asignadas</b> usa «Guardar como rutina general» sobre la rutina de un alumno.
+                Crea una con el banco de ejercicios, o en <b>Rutinas asignadas</b> usa «Guardar como rutina general» sobre la rutina de un socio.
               </p>
               <button
                 onClick={nuevaRutina}
@@ -504,7 +504,7 @@ export const RoutinesAndExercises = () => {
                               <span className="block text-[11px] font-black text-blue-700 leading-tight truncate" title={routine.trainerName || routine.creadaPor || ""}>
                                 {routine.trainerName || routine.creadaPor || "—"}
                               </span>
-                              <span className="text-[10px] font-semibold text-slate-500">coach</span>
+                              <span className="text-[10px] font-semibold text-slate-500">entrenador</span>
                             </div>
                           </div>
                           {routine.creadaPor && routine.creadaPor !== routine.trainerName && (
@@ -516,7 +516,7 @@ export const RoutinesAndExercises = () => {
                               <div>
                                 <details className="rounded-xl bg-white border border-violet-200">
                                   <summary className="px-2 py-1.5 cursor-pointer select-none font-bold text-violet-800 flex items-center gap-1">
-                                    <Users className="w-3.5 h-3.5" /> Asignada a {asignados.length} alumno(s)
+                                    <Users className="w-3.5 h-3.5" /> Asignada a {asignados.length} socio(s)
                                   </summary>
                                   <div className="px-2 pb-2 space-y-1">
                                     {asignados.length === 0 ? (
@@ -556,7 +556,7 @@ export const RoutinesAndExercises = () => {
                             <button
                               onClick={() => (routine.targetStudentId ? editarParaAlumno(routine, { id: routine.targetStudentId }) : abrirEditor(routine, "general"))}
                               className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-semibold rounded-md flex items-center gap-1 cursor-pointer"
-                              title={routine.targetStudentId ? "Editar solo la rutina de este alumno" : "Editar la rutina general (llega a todos sus alumnos)"}
+                              title={routine.targetStudentId ? "Editar solo la rutina de este socio" : "Editar la rutina general (llega a todos sus socios)"}
                             >
                               <Pencil className="w-3.5 h-3.5" />
                               <span>Editar</span>
@@ -567,7 +567,7 @@ export const RoutinesAndExercises = () => {
                             <button
                               onClick={() => setAssigningRoutine(routine)}
                               className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md flex items-center gap-1 cursor-pointer shadow-2xs"
-                              title="Asignar a un alumno"
+                              title="Asignar a un socio"
                             >
                               <UserCheck className="w-3.5 h-3.5" />
                               <span>Asignar</span>
@@ -575,7 +575,7 @@ export const RoutinesAndExercises = () => {
                             <button
                               onClick={() => {
                                 const n = copiasDe(routine.id).length;
-                                if (confirm(`¿Eliminar la rutina "${routine.title}"?${n ? `\n\nSus ${n} copia(s) por alumno se mantienen.` : ""}`)) {
+                                if (confirm(`¿Eliminar la rutina "${routine.title}"?${n ? `\n\nSus ${n} copia(s) por socio se mantienen.` : ""}`)) {
                                   deleteRoutine(routine.id);
                                 }
                               }}
@@ -608,7 +608,7 @@ export const RoutinesAndExercises = () => {
           onAsignar={(mid, rid) => {
             assignRoutineToMember(mid, rid);
             const a = members.find((m) => String(m.id) === String(mid));
-            avisoBreve(`✓ Rutina asignada a ${a?.fullName || "el alumno"}`);
+            avisoBreve(`✓ Rutina asignada a ${a?.fullName || "el socio"}`);
           }}
           onPlantilla={(r) => {
             const { id, targetStudentId, targetStudentName, baseRoutineId, personalizada, cambios, actualizadaEn, actualizadaPor, actualizadaPorId, ultimoCambio, ...resto } = r;
@@ -725,7 +725,7 @@ export const RoutinesAndExercises = () => {
                 <Pencil className="w-4 h-4 text-amber-700 shrink-0" />
                 <div className="flex-1 min-w-[220px] text-xs text-amber-900">
                   <b>Editando la rutina general.</b>{" "}
-                  {n ? `Al guardar, el cambio llega a ${n - pers} alumno(s) que la tienen asignada (su portal se actualiza y reciben aviso).` : "Aún no tiene alumnos asignados."}
+                  {n ? `Al guardar, el cambio llega a ${n - pers} socio(s) que la tienen asignada (su portal se actualiza y reciben aviso).` : "Aún no tiene socios asignados."}
                   {pers > 0 && (
                     <label className="mt-1.5 flex items-center gap-1.5 font-semibold cursor-pointer">
                       <input type="checkbox" checked={incluirPersonalizadas} onChange={(e) => setIncluirPersonalizadas(e.target.checked)} className="accent-amber-600 w-4 h-4" />
@@ -741,7 +741,7 @@ export const RoutinesAndExercises = () => {
               <div className="rounded-xl border border-violet-200 bg-violet-50 p-3 flex flex-wrap items-center gap-3">
                 <Pencil className="w-4 h-4 text-violet-700 shrink-0" />
                 <p className="flex-1 min-w-[220px] text-xs text-violet-900">
-                  <b>Editando solo la rutina de {editando.alumno || "este alumno"}.</b> El cambio no afecta a la rutina general ni a otros alumnos
+                  <b>Editando solo la rutina de {editando.alumno || "este socio"}.</b> El cambio no afecta a la rutina general ni a otros socios
                   {editando.base ? "; esta copia quedará como personalizada." : "."}
                 </p>
                 <button type="button" onClick={() => { limpiarCreador(); setActiveSubTab("asignadas"); }} className="px-3 py-1.5 rounded-lg border border-violet-300 bg-white text-violet-800 text-xs font-bold cursor-pointer">
@@ -770,7 +770,7 @@ export const RoutinesAndExercises = () => {
 
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
-                  Objetivo del Alumno
+                  Objetivo del Socio
                 </label>
                 <select
                   value={routineObjective}
@@ -838,7 +838,7 @@ export const RoutinesAndExercises = () => {
 
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
-                  Asignar a Alumno Directo (Opcional)
+                  Asignar a Socio Directo (Opcional)
                 </label>
                 <SelectorAlumno alumnos={members} value={routineTargetMemberId} onChange={(id) => setRoutineTargetMemberId(id)} vacio="Dejar como rutina general" />
               </div>
@@ -1010,7 +1010,7 @@ export const RoutinesAndExercises = () => {
                                   <input
                                     type="text"
                                     value={ex.notes || ""}
-                                    placeholder="Nota para el alumno (opcional), ej. cuidar rodilla derecha"
+                                    placeholder="Nota para el socio (opcional), ej. cuidar rodilla derecha"
                                     onChange={(e) => upd({ notes: e.target.value })}
                                     className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-slate-800 text-sm"
                                   />
@@ -1047,7 +1047,7 @@ export const RoutinesAndExercises = () => {
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md shadow-xs cursor-pointer flex items-center gap-1.5 transition-all"
               >
                 <Check className="w-4 h-4" />
-                <span>{!editando ? "Guardar Rutina Completa" : editando.modo === "general" ? "Guardar cambios para todos" : "Guardar solo para este alumno"}</span>
+                <span>{!editando ? "Guardar Rutina Completa" : editando.modo === "general" ? "Guardar cambios para todos" : "Guardar solo para este socio"}</span>
               </button>
             </div>
           </form>
@@ -1089,7 +1089,7 @@ export const RoutinesAndExercises = () => {
             <BarraVolver
               className="mb-4"
               onVolver={() => setAssigningRoutine(null)}
-              titulo="Asignar Rutina a Alumno"
+              titulo="Asignar Rutina a Socio"
               subtitulo={<>Rutina seleccionada: <span className="text-blue-700 font-bold">{assigningRoutine.title}</span></>}
             />
 
@@ -1099,7 +1099,7 @@ export const RoutinesAndExercises = () => {
             >
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">
-                  Seleccionar Alumno
+                  Seleccionar Socio
                 </label>
                 <SelectorAlumno alumnos={members} value={studentToAssignId} onChange={(id) => setStudentToAssignId(id)} required />
               </div>

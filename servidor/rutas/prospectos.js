@@ -332,7 +332,7 @@ router.post("/:id(\\d+)/estado", requierePermiso("crm", "editar"), async (req, r
     let idalumno = null;
     if (estado === "matriculado" && req.body?.memberId) {
       const [a] = await consultar("SELECT idalumno FROM alumnos WHERE idalumno = ?", [req.body.memberId]);
-      if (!a) throw new ErrorHttp(400, "El alumno indicado no existe");
+      if (!a) throw new ErrorHttp(400, "El socio indicado no existe");
       idalumno = a.idalumno;
     }
     await transaccion(async (cx) => {

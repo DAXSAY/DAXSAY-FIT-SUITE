@@ -31,13 +31,13 @@ export const EstadoAlumno = ({ m, siempre = false, className = "" }) => {
     activo: ["✅", "Activo", "rd-est-activo"],
     por_vencer: ["⚠️", "Por vencer", "rd-est-porvencer"],
     vencido: ["⏳", `Vencido ${m.daysExpired ? `hace ${m.daysExpired} d` : ""}`.trim(), "rd-est-vencido"],
-    exalumno: ["🔁", "Exalumno", "rd-est-exalumno"],
+    exalumno: ["🔁", "Exsocio", "rd-est-exalumno"],
     sin_matricula: ["➖", "Sin membresía", "rd-est-exalumno"],
   }[st];
   if (!info) return null;
   return (
     <span
-      className={`rd-est-alumno ${info[2]} ${className}`}
+      className={`rd-est-socio ${info[2]} ${className}`}
       title={st === "exalumno" ? `Más de ${m.exAlumnoDays || 30} días sin renovar` : st === "vencido" ? "Su membresía venció: puede renovar con su mismo código" : undefined}
     >
       <span className="rd-emoji">{info[0]}</span> {info[1]}
@@ -141,7 +141,7 @@ export const SelectorAlumno = ({ alumnos = [], value, onChange, placeholder = "C
               {vacio}
             </button>
           )}
-          {lista.length === 0 && <p className="px-3 py-2 text-sm text-slate-400">Ningún alumno con «{texto}».</p>}
+          {lista.length === 0 && <p className="px-3 py-2 text-sm text-slate-400">Ningún socio con «{texto}».</p>}
           {lista.map((m, i) => (
             <button
               type="button"

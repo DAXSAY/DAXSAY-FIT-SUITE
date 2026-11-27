@@ -59,7 +59,7 @@ async function alumnoDe(req) {
   return u?.idalumno || null;
 }
 
-const SQL_MASTER = `
+const sqlMaster = (abonos) => `
   SELECT m.*, d.nombre AS disciplina, d.emoji, d.color,
          TRIM(CONCAT(IFNULL(e.nombres,''),' ',IFNULL(e.apellidos,''))) AS profesor,
          (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito') AS inscritos,
@@ -67,8 +67,9 @@ const SQL_MASTER = `
          (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.es_socio = 1) AS socios,
          (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.idalumno IS NULL) AS externos,
          (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.asistio = 1) AS asistieron,
-         (SELECT COALESCE(SUM(i.precio),0) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.pagado = 1) AS recaudado,
-         (SELECT COALESCE(SUM(i.precio),0) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.pagado = 0) AS por_cobrar
+         (SELECT COALESCE(SUM(${abonos ? "i.monto_pagado" : "i.precio"}),0) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' ${abonos ? "" : "AND i.pagado = 1"}) AS recaudado,
+         (SELECT COALESCE(SUM(${abonos ? "i.precio - i.monto_pagado" : "i.precio"}),0) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.pagado = 0) AS por_cobrar,
+         ${abonos ? "(SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.pagado = 0 AND i.monto_pagado > 0)" : "0"} AS con_adelanto
     FROM masters m
     LEFT JOIN disciplinas d ON d.iddisciplina = m.iddisciplina
     LEFT JOIN empleados e ON e.idempleado = m.idempleado`;
@@ -83,6 +84,19 @@ async function parte40() {
   p40 = { v: Number(f?.n) === 1, t: Date.now() };
   return p40.v;
 }
+/** ¿Ya existe la columna de abonos (parte 44)? Permite dejar adelanto y pagar el saldo después */
+let p44 = { v: null, t: 0 };
+async function parte44() {
+  if (p44.v === true || Date.now() - p44.t < 20000) return p44.v;
+  const [f] = await consultar(
+    "SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'master_inscripciones' AND COLUMN_NAME = 'monto_pagado'",
+  );
+  p44 = { v: Number(f?.n) === 1, t: Date.now() };
+  return p44.v;
+}
+/** Lo que ya pagó una inscripción (sin la parte 44: todo o nada) */
+const pagadoDe = (i) => (i.monto_pagado !== undefined && i.monto_pagado !== null ? Number(i.monto_pagado) : i.pagado ? Number(i.precio) : 0);
+const redondear = (n) => Math.round(Number(n) * 100) / 100;
 /** ¿Ya existe la columna del step (parte 41)? */
 let p41 = { v: null, t: 0 };
 async function parte41() {
@@ -119,15 +133,15 @@ async function pctDefecto() {
   return n >= 0 && n <= 100 && c ? n : 50;
 }
 /** El cobro de una inscripción entra a caja como ingreso «master» */
-async function registrarCobro(req, ins, m, metodo) {
+async function registrarCobro(req, ins, m, metodo, monto = Number(ins.precio), tipo = "") {
   if (!(await parte40())) return null;
   await exigirCajaAbierta(req);
   const r = await consultar(
     `INSERT INTO movimientos_caja (tipo, categoria, monto, descripcion, metodo_pago, idreferencia, idalumno, nombre_relacionado, idusuario_registro)
      VALUES ('ingreso', 'master', ?, ?, ?, ?, ?, ?, ?)`,
     [
-      Number(ins.precio),
-      `Máster «${m.titulo}» ${String(m.fecha).slice(0, 10)} · ${ins.nombre} (${ins.es_socio ? "socio" : ins.idalumno ? "socio sin plan vigente" : "externo"})`.slice(0, 255),
+      redondear(monto),
+      `Máster «${m.titulo}» ${String(m.fecha).slice(0, 10)}${tipo ? ` · ${tipo}` : ""} · ${ins.nombre} (${ins.es_socio ? "socio" : ins.idalumno ? "socio sin plan vigente" : "externo"})`.slice(0, 255),
       metodo === "yape_plin" || metodo === "tarjeta" || metodo === "transferencia" ? metodo : "efectivo",
       ins.idinscripcion,
       ins.idalumno || null,
@@ -169,6 +183,7 @@ const masterJson = (f) => ({
   asistieron: Number(f.asistieron) || 0,
   recaudado: Number(f.recaudado) || 0,
   porCobrar: Number(f.por_cobrar) || 0,
+  conAdelanto: Number(f.con_adelanto) || 0,
 });
 
 // GET /api/masters?ver=proximos|pasados|todos
@@ -179,7 +194,7 @@ router.get("/", async (req, res, next) => {
     const alumno = req.usuario.rol === "student";
     const ver = alumno ? "proximos" : req.query.ver || "proximos";
     const filtro = ver === "pasados" ? "WHERE m.fecha < ?" : ver === "todos" ? "WHERE ? IS NOT NULL" : "WHERE m.fecha >= ?";
-    let filas = (await consultar(`${SQL_MASTER} ${filtro} ORDER BY m.fecha ${ver === "pasados" ? "DESC" : "ASC"}, m.hora_inicio LIMIT 200`, [hoy])).map(masterJson);
+    let filas = (await consultar(`${sqlMaster(await parte44())} ${filtro} ORDER BY m.fecha ${ver === "pasados" ? "DESC" : "ASC"}, m.hora_inicio LIMIT 200`, [hoy])).map(masterJson);
     if (alumno) {
       filas = filas.filter((m) => m.estado === "abierto" || m.estado === "cerrado");
       const yo = await alumnoDe(req);
@@ -187,7 +202,7 @@ router.get("/", async (req, res, next) => {
       const mias = yo
         ? await consultar(
             (await parte41())
-              ? `SELECT i.idinscripcion, i.idmaster, i.pagado, i.precio, i.idstep, COALESCE(NULLIF(s.etiqueta,''), s.numero) AS step_numero
+              ? `SELECT i.idinscripcion, i.idmaster, i.pagado, i.precio, ${(await parte44()) ? "i.monto_pagado," : ""} i.idstep, COALESCE(NULLIF(s.etiqueta,''), s.numero) AS step_numero
                    FROM master_inscripciones i LEFT JOIN clase_steps s ON s.idstep = i.idstep
                   WHERE i.idalumno = ? AND i.estado = 'inscrito'`
               : "SELECT idinscripcion, idmaster, pagado, precio FROM master_inscripciones WHERE idalumno = ? AND estado = 'inscrito'",
@@ -203,7 +218,7 @@ router.get("/", async (req, res, next) => {
           miPrecio: socio ? m.precioSocio : m.precioPublico,
           soySocio: socio,
           lleno: !!m.cupo && m.inscritos >= m.cupo,
-          miInscripcion: i ? { id: i.idinscripcion, pagado: !!i.pagado, precio: Number(i.precio), stepId: i.idstep || null, step: nombreStep(i.step_numero) || null } : null,
+          miInscripcion: i ? { id: i.idinscripcion, pagado: !!i.pagado, precio: Number(i.precio), saldo: redondear(Number(i.precio) - pagadoDe(i)), stepId: i.idstep || null, step: nombreStep(i.step_numero) || null } : null,
         };
       });
     }
@@ -312,6 +327,8 @@ router.get("/:id(\\d+)/inscritos", async (req, res, next) => {
         socio: !!f.es_socio,
         precio: Number(f.precio),
         pagado: !!f.pagado,
+        montoPagado: pagadoDe(f),
+        saldo: redondear(Number(f.precio) - pagadoDe(f)),
         metodo: f.metodo_pago || "",
         pagadoEn: f.pagado_en ? String(f.pagado_en).replace("T", " ").slice(0, 16) : "",
         asistio: !!f.asistio,
@@ -337,7 +354,7 @@ router.get("/:id(\\d+)/steps", async (req, res, next) => {
     const pasos = await croquis(mm?.idsede || null);
     const filas = (await parte41())
       ? await consultar(
-          `SELECT i.idinscripcion, i.idstep, i.idalumno, i.nombre, i.asistio, COALESCE(NULLIF(s.etiqueta,''), s.numero) AS numero
+          `SELECT i.idinscripcion, i.idstep, i.idalumno, i.nombre, i.asistio, i.precio, i.pagado, ${(await parte44()) ? "i.monto_pagado," : ""} COALESCE(NULLIF(s.etiqueta,''), s.numero) AS numero
              FROM master_inscripciones i JOIN clase_steps s ON s.idstep = i.idstep
             WHERE i.idmaster = ? AND i.estado = 'inscrito' AND i.idstep IS NOT NULL ORDER BY i.idinscripcion`,
           [id],
@@ -357,6 +374,9 @@ router.get("/:id(\\d+)/steps", async (req, res, next) => {
           numero: nombreStep(f.numero),
           estado: f.asistio ? "asistio" : "reservado",
           externo: !f.idalumno,
+          // Solo el personal ve quién debe: saldo pendiente por cobrar
+          saldo: alumno ? undefined : redondear(Number(f.precio) - pagadoDe(f)),
+          debe: alumno ? undefined : Number(f.precio) - pagadoDe(f) > 0.004,
           mia: !!yo && f.idalumno === yo,
           inscripcionId: alumno ? undefined : f.idinscripcion,
           // el alumno solo ve el primer nombre de los demás
@@ -393,7 +413,7 @@ async function inscribir(req, res) {
       const [a] = await consultar("SELECT idalumno, nombres, apellidos, dni, telefono FROM alumnos WHERE idalumno = ?", [idalumno]).catch(() =>
         consultar("SELECT idalumno, nombres, apellidos, dni, NULL AS telefono FROM alumnos WHERE idalumno = ?", [idalumno]),
       );
-      if (!a) throw new ErrorHttp(404, "No existe ese alumno");
+      if (!a) throw new ErrorHttp(404, "No existe ese socio");
       nombre = `${a.nombres} ${a.apellidos}`.trim();
       dni = dni || a.dni || null;
       celular = celular || a.telefono || null;
@@ -424,20 +444,32 @@ async function inscribir(req, res) {
     }
     const socio = await esSocio(idalumno);
     const precio = socio ? Number(m.precio_socio) : Number(m.precio_publico);
-    const pagado = !alumno && !!b.pagado;
-    const metodo = pagado ? (METODOS.includes(b.metodo) ? b.metodo : "efectivo") : null;
-    if (pagado && (await parte40())) await exigirCajaAbierta(req);
+    // Pago al reservar: todo, un adelanto (si ya existe la parte 44) o nada
+    const abonos = await parte44();
+    let monto = 0;
+    if (!alumno) {
+      if (b.pagado) monto = precio;
+      else if (Number(b.adelanto) > 0) {
+        if (!abonos) throw new ErrorHttp(503, "Falta ejecutar la parte 44 en MySQL Workbench para recibir adelantos");
+        monto = redondear(b.adelanto);
+        if (monto > precio) throw new ErrorHttp(400, `El adelanto no puede ser mayor que el precio (${precio.toFixed(2)})`);
+      }
+    }
+    const pagado = !alumno && (precio === 0 ? !!b.pagado : monto >= precio);
+    const metodo = monto > 0 ? (METODOS.includes(b.metodo) ? b.metodo : "efectivo") : null;
+    if (monto > 0 && (await parte40())) await exigirCajaAbierta(req);
     const r = await consultar(
       `INSERT INTO master_inscripciones (idmaster, idalumno, nombre, dni, celular, es_socio, precio, pagado, metodo_pago, pagado_en, origen, nota, idusuario)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${pagado ? "NOW()" : "NULL"}, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${monto > 0 ? "NOW()" : "NULL"}, ?, ?, ?)`,
       [id, idalumno, nombre, dni, celular, socio ? 1 : 0, precio, pagado ? 1 : 0, metodo, alumno ? "alumno" : "recepcion", txt(b.nota, 200), req.usuario.idusuario],
     );
+    if (abonos) await consultar("UPDATE master_inscripciones SET monto_pagado = ? WHERE idinscripcion = ?", [monto, r.insertId]);
     if (st) await consultar("UPDATE master_inscripciones SET idstep = ? WHERE idinscripcion = ?", [st.idstep, r.insertId]);
-    if (pagado) {
+    if (monto > 0) {
       const [ins] = await consultar("SELECT * FROM master_inscripciones WHERE idinscripcion = ?", [r.insertId]);
-      await registrarCobro(req, ins, m, metodo);
+      await registrarCobro(req, ins, m, metodo, monto, pagado ? "" : "adelanto");
     }
-    res.status(201).json({ ok: true, id: r.insertId, nombre, socio, precio, pagado, step: st?.numero || null });
+    res.status(201).json({ ok: true, id: r.insertId, nombre, socio, precio, pagado, adelanto: pagado ? 0 : monto, saldo: redondear(precio - monto), step: st?.numero || null });
   }
 }
 
@@ -451,7 +483,7 @@ router.post("/inscripciones/:id(\\d+)", async (req, res, next) => {
     const accion = String(req.body?.accion || "");
     if (req.usuario.rol === "student") {
       if (!["anular", "step"].includes(accion) || i.idalumno !== (await alumnoDe(req))) throw new ErrorHttp(403, "Solo puedes cambiar tu propia inscripción");
-      if (accion === "anular" && i.pagado) throw new ErrorHttp(409, "Ya pagaste: para anular acércate a recepción");
+      if (accion === "anular" && pagadoDe(i) > 0) throw new ErrorHttp(409, "Ya pagaste: para anular acércate a recepción");
     } else exigir(req, STAFF, "Solo recepción y administración");
     const [m] = await consultar("SELECT * FROM masters WHERE idmaster = ?", [i.idmaster]);
     if (accion === "step") {
@@ -477,18 +509,30 @@ router.post("/inscripciones/:id(\\d+)", async (req, res, next) => {
       if (i.pagado) throw new ErrorHttp(409, "Ya estaba pagado");
       if (i.estado !== "inscrito") throw new ErrorHttp(409, "La inscripción está anulada");
       const metodo = METODOS.includes(req.body?.metodo) ? req.body.metodo : "efectivo";
+      const abonos = await parte44();
+      const saldo = redondear(Number(i.precio) - pagadoDe(i));
+      // Sin monto se cobra todo el saldo; con monto es un abono parcial
+      const monto = req.body?.monto !== undefined && req.body?.monto !== null && req.body?.monto !== "" ? redondear(req.body.monto) : saldo;
+      if (!(monto > 0)) throw new ErrorHttp(400, "Escribe cuánto paga");
+      if (monto > saldo) throw new ErrorHttp(400, `El saldo pendiente es S/ ${saldo.toFixed(2)}: no se puede cobrar más`);
+      if (monto < saldo && !abonos) throw new ErrorHttp(503, "Falta ejecutar la parte 44 en MySQL Workbench para cobrar por partes");
       if (await parte40()) await exigirCajaAbierta(req);
-      await consultar("UPDATE master_inscripciones SET pagado = 1, metodo_pago = ?, pagado_en = NOW(), idusuario = ? WHERE idinscripcion = ?", [metodo, req.usuario.idusuario, id]);
-      await registrarCobro(req, i, m, metodo);
+      const completo = monto >= saldo;
+      await consultar(
+        `UPDATE master_inscripciones SET pagado = ?, metodo_pago = ?, pagado_en = NOW(), idusuario = ?${abonos ? ", monto_pagado = monto_pagado + ?" : ""} WHERE idinscripcion = ?`,
+        abonos ? [completo ? 1 : 0, metodo, req.usuario.idusuario, monto, id] : [1, metodo, req.usuario.idusuario, id],
+      );
+      await registrarCobro(req, i, m, metodo, monto, pagadoDe(i) > 0 ? (completo ? "saldo" : "abono") : completo ? "" : "adelanto");
+      return res.json({ ok: true, cobrado: monto, saldo: redondear(saldo - monto), pagado: completo });
     } else if (accion === "anular") {
       if (i.estado !== "inscrito") throw new ErrorHttp(409, "Ya estaba anulada");
       // Si ya había pagado, la devolución sale de caja como egreso
-      if (i.pagado && i.idmovimiento && (await parte40())) {
+      if (pagadoDe(i) > 0 && i.idmovimiento && (await parte40())) {
         await exigirCajaAbierta(req);
         await consultar(
           `INSERT INTO movimientos_caja (tipo, categoria, monto, descripcion, metodo_pago, idreferencia, idalumno, nombre_relacionado, idusuario_registro)
            VALUES ('egreso', 'master', ?, ?, ?, ?, ?, ?, ?)`,
-          [Number(i.precio), `Devolución máster «${m.titulo}» · ${i.nombre}`.slice(0, 255), i.metodo_pago || "efectivo", i.idinscripcion, i.idalumno || null, i.nombre, req.usuario.idusuario],
+          [pagadoDe(i), `Devolución máster «${m.titulo}» · ${i.nombre}`.slice(0, 255), i.metodo_pago || "efectivo", i.idinscripcion, i.idalumno || null, i.nombre, req.usuario.idusuario],
         );
       }
       await consultar("UPDATE master_inscripciones SET estado = 'anulado', idusuario = ? WHERE idinscripcion = ?", [req.usuario.idusuario, id]);
@@ -508,7 +552,7 @@ router.post("/:id(\\d+)/pago-profesor", async (req, res, next) => {
     exigir(req, STAFF, "Solo recepción y administración registran el pago al profesor");
     if (!(await parte40())) throw new ErrorHttp(503, "Falta ejecutar la parte 40 (40_masters_caja_tareas.sql) en MySQL Workbench.");
     const id = Number(req.params.id);
-    const [m] = (await consultar(`${SQL_MASTER} WHERE m.idmaster = ?`, [id])).map(masterJson);
+    const [m] = (await consultar(`${sqlMaster(await parte44())} WHERE m.idmaster = ?`, [id])).map(masterJson);
     if (!m) throw new ErrorHttp(404, "El máster no existe");
     const parte = Math.round(m.recaudado * (100 - m.pctGym)) / 100;
     const falta = Math.round((parte - m.pagadoProfesor) * 100) / 100;

@@ -88,7 +88,7 @@ export const MODELOS_PLATO = {
 // guía DASH (NIH, sodio < 2300 mg/día), dieta mediterránea (PREDIMED), cetogénica (< 50 g de carbohidratos/día),
 // OMS (grasa 20–35 % de la energía, azúcar libre < 10 %). Son rangos orientativos, no prescripción médica.
 export const INFO_MODELO = {
-  equilibrado: { para: "Mantenimiento y salud general", cal: "P 20–30 % · C 40–50 % · G 25–30 %", clave: "Base para la mayoría de alumnos sin una meta especial." },
+  equilibrado: { para: "Mantenimiento y salud general", cal: "P 20–30 % · C 40–50 % · G 25–30 %", clave: "Base para la mayoría de socios sin una meta especial." },
   mediterraneo: { para: "Salud cardiovascular y longevidad", cal: "P 15–20 % · C 45–50 % · G 30–35 %", clave: "La grasa viene del aceite de oliva, frutos secos y pescado azul." },
   perdida_grasa: { para: "Bajar grasa conservando músculo", cal: "P 30–35 % · C 30–40 % · G 25–30 %", clave: "Déficit de 300–500 kcal/día y proteína de 1.6–2.2 g por kg de peso." },
   masa_muscular: { para: "Ganar músculo (volumen)", cal: "P 25–30 % · C 45–55 % · G 20–25 %", clave: "Superávit de 250–500 kcal/día; proteína 1.6–2.2 g/kg repartida en 3–5 comidas." },

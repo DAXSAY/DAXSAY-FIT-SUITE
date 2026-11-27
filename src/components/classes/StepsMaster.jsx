@@ -9,6 +9,7 @@ import { LayoutGrid, X, RefreshCw } from "lucide-react";
 import { api } from "../../api/cliente";
 import { Croquis, LeyendaCroquis } from "./Croquis";
 import { DIAS, diaDe, fechaBonita } from "./clasesComun";
+import { useAlCambiar } from "../../utils/tiempoReal";
 
 /** Carga el croquis del máster y lo actualiza solo cada pocos segundos */
 export function useStepsMaster(idmaster, cada = 5000) {
@@ -24,6 +25,7 @@ export function useStepsMaster(idmaster, cada = 5000) {
     const t = cada ? setInterval(cargar, cada) : null;
     return () => ((vivo.current = false), t && clearInterval(t));
   }, [idmaster]); // eslint-disable-line react-hooks/exhaustive-deps
+  useAlCambiar(["masters", "clases"], cargar); // otra persona reservó o cambió de step
   return { info, cargar };
 }
 

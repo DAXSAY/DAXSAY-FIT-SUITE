@@ -315,7 +315,7 @@ const FormMeta = ({ tipo, meta, mes, historial = [], onVolver, onGuardada }) => 
   return (
     <Pantalla
       titulo={meta ? "Editar meta" : tipo === "recepcion" ? "Nueva meta de recepción" : tipo === "nutricion" ? "Nueva meta de nutrición" : tipo === "fisioterapia" ? "Nueva meta de fisioterapia" : "Nueva meta de entrenador"}
-      subtitulo={especialista ? "Cuenta los objetivos de alumnos que este especialista puso y que se cumplieron en el periodo (ej. bajar 3 kg, dolor de 7 a 3)." : undefined}
+      subtitulo={especialista ? "Cuenta los objetivos de socios que este especialista puso y que se cumplieron en el periodo (ej. bajar 3 kg, dolor de 7 a 3)." : undefined}
       onVolver={onVolver}
     >
       <form onSubmit={guardar} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
@@ -366,7 +366,7 @@ const FormMeta = ({ tipo, meta, mes, historial = [], onVolver, onGuardada }) => 
           {tipo === "recepcion" ? (
             <label className="block text-sm"><span className="font-bold text-slate-700">Meta en soles *</span><CampoNumero type="number" min="1" step="0.01" required value={f.amount} onChange={set("amount")} placeholder="5000" className={`${campo} text-lg font-black`} /></label>
           ) : (
-            <label className="block text-sm"><span className="font-bold text-slate-700">{especialista ? "Objetivos de alumnos a lograr *" : "Logros (mancuernas) a conseguir *"}</span><CampoNumero type="number" min="1" required value={f.achievements} onChange={set("achievements")} placeholder="10" className={`${campo} text-lg font-black`} /></label>
+            <label className="block text-sm"><span className="font-bold text-slate-700">{especialista ? "Objetivos de socios a lograr *" : "Logros (mancuernas) a conseguir *"}</span><CampoNumero type="number" min="1" required value={f.achievements} onChange={set("achievements")} placeholder="10" className={`${campo} text-lg font-black`} /></label>
           )}
           <label className="block text-sm"><span className="font-bold text-slate-700">Bono al cumplir (S/)</span><CampoNumero type="number" min="0" step="0.01" value={f.bonus} onChange={set("bonus")} placeholder="0" className={`${campo} text-lg font-black`} /></label>
         </div>
@@ -437,7 +437,7 @@ const VistaPreviaMeta = ({ tipo, f, porFechas, turno, especialista }) => {
           <b className="text-slate-900 truncate">{quien}</b>
           {bono > 0 && <span className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">Bono S/ {bono.toFixed(2)}</span>}
         </div>
-        <p className="text-xs text-slate-500 mt-0.5">{esDinero ? "Meta de cobros del turno" : "Objetivos de alumnos logrados"} · {dias ? `${dias} días` : "elige el periodo"}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{esDinero ? "Meta de cobros del turno" : "Objetivos de socios logrados"} · {dias ? `${dias} días` : "elige el periodo"}</p>
         <div className="mt-3 h-3 rounded-full bg-slate-100 overflow-hidden">
           <div className="h-full w-[8%] rounded-full bg-gradient-to-r from-emerald-400 to-blue-500" />
         </div>
@@ -534,10 +534,10 @@ const FormObjetivo = ({ areaFija, onVolver, onGuardado }) => {
     }
   };
   return (
-    <Pantalla titulo="Nuevo objetivo del alumno" subtitulo="Al hacer el nuevo control podrás marcarlo como conseguido y darle el logro a su entrenador." onVolver={onVolver}>
+    <Pantalla titulo="Nuevo objetivo del socio" subtitulo="Al hacer el nuevo control podrás marcarlo como conseguido y darle el logro a su entrenador." onVolver={onVolver}>
       <form onSubmit={guardar} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
         <div className="text-sm">
-          <span className="font-bold text-slate-700">Alumno *</span>
+          <span className="font-bold text-slate-700">Socio *</span>
           {alumno ? (
             <div className="mt-1 flex items-center justify-between p-3 rounded-xl bg-blue-50 border border-blue-200">
               <span>
@@ -699,7 +699,7 @@ const RegistrarControl = ({ objetivo, onVolver, onListo }) => {
         </div>
         <label className="block text-sm"><span className="font-bold text-slate-700">Observación</span><textarea rows={2} value={f.observation} onChange={set("observation")} placeholder="Ej. cumple la dieta, bajó 1.5 kg / dolor al levantar el brazo bajó de 7 a 5" className={campo} /></label>
         {f.value !== "" && <CaminoObjetivo o={objetivo} hoy={f.value} />}
-        <p className="text-xs text-slate-500">Anota la medida de hoy (peso, % de grasa, dolor…). El objetivo sigue abierto hasta la evaluación final; el entrenador del alumno ve el avance.</p>
+        <p className="text-xs text-slate-500">Anota la medida de hoy (peso, % de grasa, dolor…). El objetivo sigue abierto hasta la evaluación final; el entrenador del socio ve el avance.</p>
         {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
         <button className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black cursor-pointer">Guardar medida de hoy</button>
       </form>
@@ -833,7 +833,7 @@ const ListaObjetivos = ({ puedeCrear, areaPropia, admin }) => {
         {[["en_proceso", "En proceso"], ["vencidos", "Control pendiente"], ["conseguida", "Conseguidos"], ["no_conseguida", "No conseguidos"], ["todos", "Todos"]].map(([k, l]) => (
           <button key={k} onClick={() => setFiltro(k)} className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${filtro === k ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}>{l}</button>
         ))}
-        <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar alumno o entrenador" className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm flex-1 min-w-48" />
+        <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder="Buscar socio o entrenador" className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm flex-1 min-w-48" />
         {puedeCrear && (
           <button onClick={() => setVista("nuevo")} className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-black flex items-center gap-1.5 cursor-pointer">
             <Plus className="w-4 h-4" /> Nuevo objetivo
@@ -1090,14 +1090,14 @@ export const GoalsModule = () => {
   const puedeObjetivos = admin || !!areaPropia;
 
   const pestanas = admin
-    ? [["recepcion", "Metas de recepción"], ["proyecciones", "Proyecciones de recepción"], ["entrenadores", "Entrenadores y logros"], ["especialistas", "Nutrición y fisioterapia"], ["objetivos", "Alumnos: objetivos y progreso"], ["bonos", "Bonos"]]
+    ? [["recepcion", "Metas de recepción"], ["proyecciones", "Proyecciones de recepción"], ["entrenadores", "Entrenadores y logros"], ["especialistas", "Nutrición y fisioterapia"], ["objetivos", "Socios: objetivos y progreso"], ["bonos", "Bonos"]]
     : rol === "trainer"
-      ? [["mias", "Mis mancuernas"], ["objetivos", "Mis alumnos: objetivos y progreso"], ["bonos", "Mis bonos"]]
+      ? [["mias", "Mis mancuernas"], ["objetivos", "Mis socios: objetivos y progreso"], ["bonos", "Mis bonos"]]
       : rol === "reception"
         ? [["mias", "Mi meta"], ["proyecciones", "Mis proyecciones"], ["bonos", "Mis bonos"]]
         : areaPropia
-          ? [["mias", "Mi meta"], ["objetivos", "Objetivos de alumnos"], ["ranking", "Logros del equipo"], ["bonos", "Mis bonos"]]
-          : [["objetivos", "Objetivos de alumnos"], ["ranking", "Logros de entrenadores"]];
+          ? [["mias", "Mi meta"], ["objetivos", "Objetivos de socios"], ["ranking", "Logros del equipo"], ["bonos", "Mis bonos"]]
+          : [["objetivos", "Objetivos de socios"], ["ranking", "Logros de entrenadores"]];
 
   const [tab, setTab] = useState(() => {
     // Desde la campanita: abrir directo en Proyecciones o en el progreso de un alumno
@@ -1194,15 +1194,15 @@ export const GoalsModule = () => {
           <span className="text-xs font-black uppercase tracking-widest text-amber-300 flex items-center gap-1.5">
             <Target className="w-4 h-4" /> Metas & logros
           </span>
-          <h1 className="text-2xl font-black mt-1">{admin ? "Metas del equipo" : rol === "reception" ? "Mi meta del mes" : rol === "trainer" ? "Mis logros" : areaPropia ? "Mis metas y objetivos de alumnos" : "Objetivos de los alumnos"}</h1>
+          <h1 className="text-2xl font-black mt-1">{admin ? "Metas del equipo" : rol === "reception" ? "Mi meta del mes" : rol === "trainer" ? "Mis logros" : areaPropia ? "Mis metas y objetivos de socios" : "Objetivos de los socios"}</h1>
           <p className="text-sm text-slate-300 max-w-2xl">
             {admin
-              ? "Asigna metas en soles a cada turno de recepción y metas de logros a entrenadores, nutricionistas y fisioterapeutas. Cada objetivo de alumno cumplido es un logro para el especialista que lo puso y una mancuerna para el entrenador."
+              ? "Asigna metas en soles a cada turno de recepción y metas de logros a entrenadores, nutricionistas y fisioterapeutas. Cada objetivo de socio cumplido es un logro para el especialista que lo puso y una mancuerna para el entrenador."
               : rol === "reception"
                 ? "Lo que se cobra en tu turno suma a la meta. Mira cuánto falta en el mes, la semana y hoy."
                 : rol === "trainer"
-                  ? "Mira lo que nutrición y fisioterapia les pusieron a tus alumnos y cómo van en cada control. Cada objetivo cumplido es una mancuerna para ti."
-                  : "Registra el objetivo del alumno, anota cada control (peso, % de grasa, dolor...) y en la evaluación final indica si lo consiguió: es un logro para ti y una mancuerna para su entrenador."}
+                  ? "Mira lo que nutrición y fisioterapia les pusieron a tus socios y cómo van en cada control. Cada objetivo cumplido es una mancuerna para ti."
+                  : "Registra el objetivo del socio, anota cada control (peso, % de grasa, dolor...) y en la evaluación final indica si lo consiguió: es un logro para ti y una mancuerna para su entrenador."}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -1289,7 +1289,7 @@ export const GoalsModule = () => {
               <thead>
                 <tr className="text-left text-xs uppercase text-slate-400 border-b border-slate-200">
                   <th className="py-2">Entrenador</th>
-                  <th className="py-2">Alumnos</th>
+                  <th className="py-2">Socios</th>
                   <th className="py-2">Peso / masa</th>
                   <th className="py-2">Lesión / dolor</th>
                   <th className="py-2">Total</th>

@@ -305,7 +305,7 @@ export const StaffContractsModule = () => {
         return {
           bg: "bg-slate-100 text-slate-800 border-slate-200",
           icon: Briefcase,
-          label: "Staff",
+          label: "Personal",
         };
     }
   };

@@ -290,13 +290,13 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
   const getCategoryLabel = (cat) => {
     switch (cat) {
       case "membership":
-        return "Membresía Alumno";
+        return "Membresía";
       case "pos_sale":
         return "Venta de tienda";
       case "day_pass":
         return "Pase del día";
       case "personal_training":
-        return "Personal Training";
+        return "Entrenamiento personal";
       case "physiotherapy":
         return "Fisioterapia";
       case "master":
@@ -1044,7 +1044,7 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                   <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2" />
                   <input
                     type="text"
-                    placeholder="Buscar por descripción, alumno o N° Comprobante..."
+                    placeholder="Buscar por descripción, socio o N° Comprobante..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-8 pr-3 py-1 bg-gray-50 border border-gray-300 rounded-md text-xs text-slate-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:bg-white"
@@ -2012,7 +2012,7 @@ const CorregirMovimiento = ({ mov, onCerrar, onCorregir, onAnular }) => {
           <span className="font-bold text-slate-700">Motivo *</span>
           <input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder={modo === "corregir" ? "Ej. se digitó 50 en vez de 15" : "Ej. se registró dos veces"} className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 text-sm" />
         </label>
-        <p className="text-[11px] text-slate-500">Matrículas y ventas se corrigen desde su origen (ficha del alumno o ticket). Un movimiento de un turno de caja ya cerrado no se cambia: registra un ajuste en el turno actual.</p>
+        <p className="text-[11px] text-slate-500">Matrículas y ventas se corrigen desde su origen (ficha del socio o ticket). Un movimiento de un turno de caja ya cerrado no se cambia: registra un ajuste en el turno actual.</p>
         {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
         <div className="flex gap-2">
           <button type="button" onClick={onCerrar} className="flex-1 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-700 cursor-pointer">Cancelar</button>

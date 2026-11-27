@@ -595,6 +595,74 @@ router.get("/croquis", async (req, res, next) => {
     next(e);
   }
 });
+// ---------------------------------------------------------------------
+// Plantillas de croquis guardadas por el gimnasio (parte 44)
+// ---------------------------------------------------------------------
+let hayPlantillas = null;
+async function exigirPlantillas() {
+  if (hayPlantillas) return;
+  const t = await consultar("SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'croquis_plantillas'");
+  hayPlantillas = Number(t[0]?.n) > 0;
+  if (!hayPlantillas) throw new ErrorHttp(503, "Falta ejecutar la parte 44 (44_plantillas_croquis.sql) en MySQL Workbench para guardar plantillas.");
+}
+router.get("/plantillas", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    exigirRol(req, ["admin"], "Solo administración usa las plantillas del croquis");
+    await exigirPlantillas();
+    const filas = await consultar("SELECT idplantilla, nombre, elementos, total_steps, creado_en FROM croquis_plantillas ORDER BY nombre");
+    res.json({
+      plantillas: filas.map((f) => {
+        let elementos = [];
+        try { elementos = JSON.parse(f.elementos); } catch { /* plantilla dañada: vacía */ }
+        return { id: f.idplantilla, nombre: f.nombre, steps: Number(f.total_steps) || 0, elementos };
+      }),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+router.post("/plantillas", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    exigirRol(req, ["admin"], "Solo administración guarda plantillas del croquis");
+    await exigirPlantillas();
+    const nombre = txt(req.body?.nombre, 80);
+    if (!nombre) throw new ErrorHttp(400, "Ponle un nombre a la plantilla");
+    const lista = Array.isArray(req.body?.elementos) ? req.body.elementos.slice(0, 400) : [];
+    const elementos = lista.map((z) => ({
+      tipo: z.tipo === "zona" ? "zona" : "step",
+      numero: z.tipo === "zona" ? null : String(z.numero ?? "").toUpperCase().slice(0, 4),
+      etiqueta: z.tipo === "zona" ? txt(z.etiqueta, 40) || "Zona" : "",
+      x: Math.max(0, Math.min(ANCHO - 1, Math.round(Number(z.x) || 0))),
+      y: Math.max(0, Math.min(ALTO - 1, Math.round(Number(z.y) || 0))),
+      w: Math.max(1, Math.min(ANCHO, Math.round(Number(z.w) || 1))),
+      h: Math.max(1, Math.min(ALTO, Math.round(Number(z.h) || 1))),
+    }));
+    if (!elementos.length) throw new ErrorHttp(400, "El croquis está vacío: dibuja algo antes de guardarlo como plantilla");
+    const total = elementos.filter((z) => z.tipo === "step").length;
+    await consultar(
+      `INSERT INTO croquis_plantillas (nombre, elementos, total_steps, idusuario) VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE elementos = VALUES(elementos), total_steps = VALUES(total_steps), idusuario = VALUES(idusuario)`,
+      [nombre, JSON.stringify(elementos), total, req.usuario.idusuario],
+    );
+    res.status(201).json({ ok: true, nombre, steps: total });
+  } catch (e) {
+    next(e);
+  }
+});
+router.delete("/plantillas/:id(\\d+)", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    exigirRol(req, ["admin"], "Solo administración borra plantillas del croquis");
+    await exigirPlantillas();
+    await consultar("DELETE FROM croquis_plantillas WHERE idplantilla = ?", [Number(req.params.id)]);
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // PUT /api/clases/croquis { steps:[{id?, tipo, numero, etiqueta, x, y, w, h}], minutosReserva }
 router.put("/croquis", async (req, res, next) => {
   try {
@@ -633,6 +701,15 @@ router.put("/croquis", async (req, res, next) => {
       const nombres = limpio.filter((z) => z.tipo === "step").map((z) => String(z.letra || z.numero));
       const rep = nombres.find((n, i) => nombres.indexOf(n) !== i);
       if (rep) throw new ErrorHttp(400, `El step ${rep} está repetido: cada step debe tener un nombre distinto`);
+      // En una casilla no puede haber dos elementos: nada se superpone
+      const nombreDe = (z) => (z.tipo === "step" ? `el step ${z.letra || z.numero}` : `«${z.etiqueta}»`);
+      for (let i = 0; i < limpio.length; i++)
+        for (let j = i + 1; j < limpio.length; j++) {
+          const a = limpio[i];
+          const c = limpio[j];
+          if (a.x < c.x + c.w && c.x < a.x + a.w && a.y < c.y + c.h && c.y < a.y + a.h)
+            throw new ErrorHttp(400, `${nombreDe(a)} y ${nombreDe(c)} están uno encima del otro. Desplaza uno de ellos antes de guardar.`.replace(/^./, (l) => l.toUpperCase()));
+        }
       // Los steps con letra guardan un número interno (A=1001, B=1002…) solo para ordenarlos
       limpio
         .filter((z) => z.letra)
@@ -777,7 +854,7 @@ router.post("/reservas", async (req, res, next) => {
     const alumno = req.usuario.rol === "student";
     if (!alumno) exigirRol(req, STAFF_RESERVA, "No puedes reservar steps");
     const idalumno = alumno ? await alumnoDe(req) : Number(b.alumno);
-    if (!idalumno) throw new ErrorHttp(400, "Falta el alumno");
+    if (!idalumno) throw new ErrorHttp(400, "Falta el socio");
     const v = await ventana(c, fecha);
     // Hoy, o mañana si la reserva ya se abrió (cuando administración da más horas)
     const manana = fecha === sumarDias(hoyLima(), 1);
@@ -790,7 +867,7 @@ router.post("/reservas", async (req, res, next) => {
     if (!st) throw new ErrorHttp(404, "Ese step ya no existe en el croquis");
     if (c.idsede && st.idsede && c.idsede !== st.idsede) throw new ErrorHttp(400, "Ese step es del salón de otra sede");
     const [al] = await consultar("SELECT idalumno, nombres, apellidos FROM alumnos WHERE idalumno = ?", [idalumno]);
-    if (!al) throw new ErrorHttp(404, "No existe ese alumno");
+    if (!al) throw new ErrorHttp(404, "No existe ese socio");
     const estado = !alumno && b.estado === "asistio" ? "asistio" : "reservado";
     const [ocupado] = await consultar(
       `SELECT r.idalumno, a.nombres FROM clase_reservas r JOIN alumnos a ON a.idalumno = r.idalumno
@@ -957,7 +1034,7 @@ export async function avisosClases(req, hoy) {
           tipo: "clase_sin_disco",
           nivel: "medio",
           titulo: "🎵 Anota los discos de la próxima semana",
-          mensaje: `Tienes ${prox.length} clase${prox.length === 1 ? "" : "s"} desde el lunes sin disco. Anótalos hoy para que recepción y los alumnos los vean.`,
+          mensaje: `Tienes ${prox.length} clase${prox.length === 1 ? "" : "s"} desde el lunes sin disco. Anótalos hoy para que recepción y los socios los vean.`,
           fecha: hoy,
           accion: { tipo: "ir", tab: "classes", etiqueta: "Anotar discos" },
         });
@@ -972,7 +1049,7 @@ export async function avisosClases(req, hoy) {
         titulo: "🎵 Registra el disco de tus clases",
         mensaje: `Aún no anotas qué disco dictarás: ${faltan
           .map((s) => `${s.nombre} ${s.fecha === hoy ? "hoy" : "mañana"} ${s.inicio}`)
-          .join(" · ")}. Los alumnos lo verán en su recordatorio.`,
+          .join(" · ")}. Los socios lo verán en su recordatorio.`,
         fecha: hoy,
         accion: { tipo: "ir", tab: "classes", etiqueta: "Anotar discos" },
       },

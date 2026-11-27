@@ -30,7 +30,7 @@ import {
 // Catálogo de módulos (pestañas) del sistema
 export const MODULES = {
   dashboard: { label: "Inicio", code: "DB", icon: LayoutDashboard },
-  members: { label: "Alumnos", code: "AL", icon: Users },
+  members: { label: "Socios", code: "AL", icon: Users },
   staff: { label: "Contratos", code: "CP", icon: Briefcase },
   memberships: { label: "Planes y tarifas", code: "MB", icon: CreditCard },
   nutrition: { label: "Nutrición y medidas", code: "NM", icon: Utensils },
@@ -67,7 +67,7 @@ export const ROLES = {
     color: "purple",
     defaultTab: "dashboard",
     groups: [
-      { title: "Gestión & Clientes", tabs: ["dashboard", "reports", "members", "crm", "memberships", "goals"] },
+      { title: "Gestión & Socios", tabs: ["dashboard", "reports", "members", "crm", "memberships", "goals"] },
       { title: "Salud & Entrenamiento", tabs: ["routines", "classes", "nutrition", "physiotherapy", "appointments"] },
       { title: "Operativo & Caja", tabs: ["tasks", "cash", "store", "attendances", "finance", "alerts"] },
       { title: "Personal & Accesos", tabs: ["staff", "users"] },
@@ -75,12 +75,12 @@ export const ROLES = {
   },
   trainer: {
     label: "Entrenador",
-    short: "Coach",
+    short: "Entrenador",
     color: "orange",
     defaultTab: "routines",
     groups: [
       { title: "Entrenamiento", tabs: ["routines", "classes", "tasks", "appointments", "goals"] },
-      { title: "Alumnos & Asistencia", tabs: ["members", "attendances"] },
+      { title: "Socios & Asistencia", tabs: ["members", "attendances"] },
     ],
   },
   physio: {
@@ -90,7 +90,7 @@ export const ROLES = {
     defaultTab: "physiotherapy",
     groups: [
       { title: "Gabinete de Fisioterapia", tabs: ["physiotherapy", "tasks", "appointments"] },
-      { title: "Alumnos", tabs: ["members", "goals"] },
+      { title: "Socios", tabs: ["members", "goals"] },
     ],
   },
   nutritionist: {
@@ -100,7 +100,7 @@ export const ROLES = {
     defaultTab: "nutrition",
     groups: [
       { title: "Consultorio de Nutrición", tabs: ["nutrition", "tasks", "appointments"] },
-      { title: "Alumnos", tabs: ["members", "goals"] },
+      { title: "Socios", tabs: ["members", "goals"] },
     ],
   },
   reception: {
@@ -109,21 +109,21 @@ export const ROLES = {
     color: "green",
     defaultTab: "cash",
     groups: [
-      { title: "Clientes", tabs: ["members", "crm", "memberships", "goals"] },
+      { title: "Socios", tabs: ["members", "crm", "memberships", "goals"] },
       { title: "Operativo & Caja", tabs: ["tasks", "cash", "store", "attendances"] },
       { title: "Servicios & Avisos", tabs: ["classes", "appointments", "alerts"] },
     ],
   },
   instructor: {
     label: "Profesor de clases",
-    short: "Profe",
+    short: "Profesor",
     color: "orange",
     defaultTab: "classes",
     groups: [{ title: "Clases grupales", tabs: ["classes", "tasks"] }],
   },
   student: {
-    label: "Alumno / Socio",
-    short: "Alumno",
+    label: "Socio",
+    short: "Socio",
     color: "teal",
     defaultTab: "mi_membresia",
     groups: [

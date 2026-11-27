@@ -599,7 +599,7 @@ export const ExerciseVisuals = ({
             </div>
             <div>
               <h5 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Cartilla Dosificada para el Alumno ({customExercises.length}{" "}
+                Cartilla Dosificada para el Socio ({customExercises.length}{" "}
                 {customExercises.length === 1 ? "Ejercicio" : "Ejercicios"})
               </h5>
               <p className="text-xs text-slate-500">

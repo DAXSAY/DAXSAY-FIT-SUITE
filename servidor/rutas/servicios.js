@@ -36,7 +36,7 @@ export async function tablaServicios() {
   return hay.v;
 }
 async function exigirTabla() {
-  if (!(await tablaServicios())) throw new ErrorHttp(503, "Falta ejecutar la parte 43 (43_servicios_alumno.sql) en MySQL Workbench para manejar servicios por alumno.");
+  if (!(await tablaServicios())) throw new ErrorHttp(503, "Falta ejecutar la parte 43 (43_servicios_alumno.sql) en MySQL Workbench para manejar servicios por socio.");
 }
 const exigir = (req, roles, msg) => {
   if (!roles.includes(req.usuario.rol)) throw new ErrorHttp(403, msg || "No tienes permiso para esta acción");
@@ -278,7 +278,7 @@ router.get("/mios", async (req, res, next) => {
   try {
     if (!(await tablaServicios())) return res.json({ conServicios: false, servicios: [], historial: [] });
     const yo = await alumnoDe(req);
-    if (!yo) throw new ErrorHttp(403, "Solo para alumnos");
+    if (!yo) throw new ErrorHttp(403, "Solo para socios");
     res.json({ conServicios: true, ...(await serviciosDeAlumno(yo)), catalogo: (await catalogo()).map(({ id, nombre, emoji, precio, modo, dias, sesiones, descripcion }) => ({ id, nombre, emoji, precio, modo, dias, sesiones, descripcion })) });
   } catch (e) {
     next(e);
@@ -302,7 +302,7 @@ router.post("/alumno/:id(\\d+)", async (req, res, next) => {
     const idalumno = Number(req.params.id);
     const b = req.body || {};
     const [al] = await consultar("SELECT idalumno, nombres, apellidos FROM alumnos WHERE idalumno = ?", [idalumno]);
-    if (!al) throw new ErrorHttp(404, "No existe ese alumno");
+    if (!al) throw new ErrorHttp(404, "No existe ese socio");
     const s = (await catalogo()).find((x) => x.id === Number(b.servicio));
     if (!s) throw new ErrorHttp(400, "Elige un servicio");
     const cortesia = !!b.cortesia;
@@ -423,7 +423,7 @@ export async function pendientesSeguimiento(hoy = hoyLima()) {
           if (dias >= umbral) motivo = `${dias} días sin ${s.codigo === "medidas" ? "su control de medidas" : s.codigo === "dieta" ? "su dieta" : s.codigo === "entrenador" ? "entrenador asignado" : "atenderlo"}`;
         } else if (s.codigo === "medidas" && diasEntre(x.ultimaVez, hoy) >= s.dias) motivo = `le toca su control (último hace ${diasEntre(x.ultimaVez, hoy)} días)`;
       } else if (!x.usadas && dias >= umbral) motivo = `${dias} días y aún no usa ${x.sesiones === 1 ? "su sesión" : `sus ${x.sesiones} sesiones`}`;
-      if (motivo) pend.push({ idalumno, alumno: nombres.get(idalumno) || "Alumno", servicio: s, origen: x.origen, plan: x.plan, motivo });
+      if (motivo) pend.push({ idalumno, alumno: nombres.get(idalumno) || "Socio", servicio: s, origen: x.origen, plan: x.plan, motivo });
     }
   }
   return pend;
@@ -442,7 +442,7 @@ export async function avisosServicios(req, hoy) {
       id: `servicio-${s.id}-${hoy}-${l.length}`,
       tipo: "servicio_pendiente",
       nivel: incl ? "alto" : "medio",
-      titulo: `${s.emoji} ${l.length === 1 ? `${l[0].alumno.split(" ")[0]} tiene` : `${l.length} alumnos tienen`} «${s.nombre}» sin atender`,
+      titulo: `${s.emoji} ${l.length === 1 ? `${l[0].alumno.split(" ")[0]} tiene` : `${l.length} socios tienen`} «${s.nombre}» sin atender`,
       mensaje: l
         .slice(0, 5)
         .map((p) => `${p.alumno}: ${p.motivo}${p.origen === "plan" ? ` (incluido en ${p.plan})` : p.origen === "cortesia" ? " (cortesía)" : " (lo pagó)"}`)

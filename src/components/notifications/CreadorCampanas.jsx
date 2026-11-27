@@ -26,7 +26,7 @@ const SEGMENTOS = [
 ];
 
 const CANALES = [
-  { k: "push", nombre: "Aviso en el sistema", ayuda: "Le llega a su portal del alumno", icono: Bell },
+  { k: "push", nombre: "Aviso en el sistema", ayuda: "Le llega a su portal del socio", icono: Bell },
   { k: "whatsapp", nombre: "WhatsApp", ayuda: "Abre el chat con el mensaje listo", icono: MessageCircle },
   { k: "email", nombre: "Correo", ayuda: "Abre Gmail, Outlook o su correo con el mensaje", icono: Mail },
 ];
@@ -89,7 +89,7 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
             <div>
               <p className="text-base font-black text-slate-900">Campaña registrada: {enviada.titulo}</p>
               <p className="text-sm text-slate-600">
-                {enviada.canales.includes("push") ? `El aviso ya está en el portal de ${enviada.lista.length} alumno(s). ` : ""}
+                {enviada.canales.includes("push") ? `El aviso ya está en el portal de ${enviada.lista.length} socio(s). ` : ""}
                 {enviada.canales.some((c) => c !== "push") ? "Abre cada WhatsApp o correo para enviarlo (el mensaje ya va escrito)." : ""}
               </p>
             </div>
@@ -123,7 +123,7 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
     <form onSubmit={enviar} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-5">
       <div>
         <p className="text-xs font-black uppercase tracking-wider text-violet-600 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> Campañas y promociones</p>
-        <h2 className="text-base font-black text-slate-900">Envía un mensaje a un grupo de alumnos</h2>
+        <h2 className="text-base font-black text-slate-900">Envía un mensaje a un grupo de socios</h2>
       </div>
 
       <section>
@@ -144,7 +144,7 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
       </section>
 
       <section>
-        <p className="text-xs font-black uppercase tracking-wide text-slate-500 mb-2">2 · ¿A quién? <span className="normal-case font-semibold">({cuenta.all} alumnos en total)</span></p>
+        <p className="text-xs font-black uppercase tracking-wide text-slate-500 mb-2">2 · ¿A quién? <span className="normal-case font-semibold">({cuenta.all} socios en total)</span></p>
         <div className="flex flex-wrap gap-2">
           {SEGMENTOS.map((sg) => {
             const on = segmento === sg.k;
@@ -156,9 +156,9 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
             );
           })}
         </div>
-        {!segmento && <p className="text-xs font-bold text-teal-700 mt-2">👆 Elige a qué grupo de alumnos se enviará.</p>}
+        {!segmento && <p className="text-xs font-bold text-teal-700 mt-2">👆 Elige a qué grupo de socios se enviará.</p>}
         <p className="text-[11px] text-slate-500 mt-1.5">
-          Activos {cuenta.active} + por vencer {cuenta.expiring_soon} + vencidos {cuenta.expired} + congelados {cuenta.frozen} = {cuenta.active + cuenta.expiring_soon + cuenta.expired + cuenta.frozen} alumnos.
+          Activos {cuenta.active} + por vencer {cuenta.expiring_soon} + vencidos {cuenta.expired} + congelados {cuenta.frozen} = {cuenta.active + cuenta.expiring_soon + cuenta.expired + cuenta.frozen} socios.
         </p>
       </section>
 
@@ -195,10 +195,10 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
           <p className="text-xs font-black uppercase tracking-wide text-slate-500">4 · Mensaje</p>
           <input required value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Título (asunto del correo)" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-900" />
           <textarea required rows={5} value={mensaje} onChange={(e) => setMensaje(e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900" />
-          <p className="text-[11px] text-slate-500">Puedes usar {"{{nombre}}"}, {"{{plan}}"} y {"{{fecha_vencimiento}}"}: se cambian por los datos de cada alumno.</p>
+          <p className="text-[11px] text-slate-500">Puedes usar {"{{nombre}}"}, {"{{plan}}"} y {"{{fecha_vencimiento}}"}: se cambian por los datos de cada socio.</p>
         </div>
         <div className="space-y-2">
-          <p className="text-xs font-black uppercase tracking-wide text-slate-500">Así lo verá {destinatarios[0] ? destinatarios[0].fullName.split(" ")[0] : "el alumno"}</p>
+          <p className="text-xs font-black uppercase tracking-wide text-slate-500">Así lo verá {destinatarios[0] ? destinatarios[0].fullName.split(" ")[0] : "el socio"}</p>
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
             <p className="text-xs font-black text-emerald-800"><IconoEmoji e={t?.emoji} /> {destinatarios[0] ? personalizar(titulo, destinatarios[0]) : titulo}</p>
             <p className="text-sm text-slate-800 mt-1 whitespace-pre-line">{destinatarios[0] ? personalizar(mensaje, destinatarios[0]) : mensaje}</p>
@@ -211,7 +211,7 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
         <span className="text-sm text-slate-600">
           {!tipo || !segmento || !canales.length
             ? `Falta elegir: ${[!tipo && "tipo", !segmento && "a quién", !canales.length && "canal"].filter(Boolean).join(", ")}`
-            : `${destinatarios.length} alumno(s) · ${canales.map((k) => CANALES.find((c) => c.k === k).nombre).join(", ")}`}
+            : `${destinatarios.length} socio(s) · ${canales.map((k) => CANALES.find((c) => c.k === k).nombre).join(", ")}`}
         </span>
         <button type="submit" disabled={!tipo || !segmento || !canales.length || !destinatarios.length} className="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white text-sm font-extrabold flex items-center gap-2 cursor-pointer">
           <Send className="w-4 h-4" /> Preparar envío

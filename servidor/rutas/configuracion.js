@@ -41,7 +41,7 @@ router.put("/", requierePermiso("users", "editar"), async (req, res, next) => {
       }
       if (clave === "dias_exalumno") {
         const n = Math.round(Number(valor));
-        if (!Number.isFinite(n) || n < 1 || n > 365) throw new ErrorHttp(400, "Los días para exalumno deben estar entre 1 y 365");
+        if (!Number.isFinite(n) || n < 1 || n > 365) throw new ErrorHttp(400, "Los días para exsocio deben estar entre 1 y 365");
         valor = String(n);
       }
       if (clave === "reglas_tardanza" && valor) {

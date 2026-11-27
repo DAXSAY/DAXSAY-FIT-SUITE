@@ -243,7 +243,7 @@ async function asignaciones(idalumno, soloVigente) {
 // GET /api/indicaciones/alumno/:id -> { vigente, historial }
 router.get("/alumno/:id", async (req, res, next) => {
   try {
-    if (!(await puedeVerAlumno(req, req.params.id))) throw new ErrorHttp(403, "No tienes permiso para ver este alumno");
+    if (!(await puedeVerAlumno(req, req.params.id))) throw new ErrorHttp(403, "No tienes permiso para ver este socio");
     // Membresía caducada: el alumno no ve sus indicaciones (quedan guardadas)
     if (req.usuario.rol === "student" && !(await membresiaVigente(req.params.id)).vigente) return res.json({ vigente: null, historial: [], caducada: true });
     const todas = await asignaciones(req.params.id, req.usuario.rol === "student");
@@ -275,7 +275,7 @@ router.post("/alumno/:id", soloPersonal, async (req, res, next) => {
     });
     await transaccion(async (cx) => {
       const [[al]] = await cx.execute("SELECT idalumno FROM alumnos WHERE idalumno = ? FOR UPDATE", [req.params.id]);
-      if (!al) throw new ErrorHttp(404, "Alumno no encontrado");
+      if (!al) throw new ErrorHttp(404, "Socio no encontrado");
       await cx.execute("UPDATE alumno_indicaciones SET vigente = 0 WHERE idalumno = ? AND vigente = 1", [req.params.id]);
       const [r] = await cx.execute(
         "INSERT INTO alumno_indicaciones (idalumno, idusuario, notas) VALUES (?,?,?)",

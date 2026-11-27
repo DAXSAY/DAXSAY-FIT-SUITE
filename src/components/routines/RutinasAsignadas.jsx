@@ -149,12 +149,12 @@ export const RutinasAsignadas = ({
               if (e.target.value.trim() && vista) setVista(""); // al buscar se busca entre todos
             }}
             onKeyDown={buscarEnter}
-            aria-label="Buscar alumno por código, nombre o DNI"
+            aria-label="Buscar socio por código, nombre o DNI"
             className="rd-campo-checkin w-full h-full pl-9 pr-24 py-2.5 rounded-xl text-sm font-semibold focus:outline-none transition-all"
           />
           {!q && (
             <span className="absolute left-9 right-24 top-1/2 -translate-y-1/2 pointer-events-none text-sm text-slate-400 truncate">
-              Buscar alumno: <b className="font-semibold">código (DF-1 o 1), nombre o DNI</b>
+              Buscar socio: <b className="font-semibold">código (DF-1 o 1), nombre o DNI</b>
             </span>
           )}
           <UserCheck className="rd-icono-checkin w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -204,7 +204,7 @@ export const RutinasAsignadas = ({
       {!alumno && (vista || q.trim()) && (
         <div id="rd-lista-asignadas" className="bg-white rounded-2xl border border-slate-200 overflow-hidden scroll-mt-20">
           <CabeceraSeguimiento detalle="Rutina" />
-          {lista.length === 0 && <p className="text-sm text-slate-500 py-6 text-center">{q.trim() ? `Ningún alumno con «${q}».` : "No hay alumnos en este grupo."}</p>}
+          {lista.length === 0 && <p className="text-sm text-slate-500 py-6 text-center">{q.trim() ? `Ningún socio con «${q}».` : "No hay socios en este grupo."}</p>}
           <div className="divide-y divide-slate-100 max-h-[calc(100vh-20rem)] overflow-y-auto">
             {lista.map((m) => {
               const rs = porAlumno.get(String(m.id)) || [];
@@ -271,10 +271,10 @@ export const RutinasAsignadas = ({
                     {base ? (
                       <>
                         Basada en la rutina general «{base.title}» ·{" "}
-                        {rutina.personalizada ? <b className="text-amber-700">personalizada para este alumno</b> : "sigue los cambios de la rutina general"}
+                        {rutina.personalizada ? <b className="text-amber-700">personalizada para este socio</b> : "sigue los cambios de la rutina general"}
                       </>
                     ) : rutina.targetStudentId ? (
-                      "Rutina hecha para este alumno"
+                      "Rutina hecha para este socio"
                     ) : (
                       <b className="text-amber-700">Usa la rutina general directamente (editar aquí le crea su propia copia)</b>
                     )}
@@ -369,7 +369,7 @@ export const RutinasAsignadas = ({
             {/* Asignar (o cambiar) plantilla rápido */}
             <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3 flex flex-wrap items-center gap-2">
               <UserPlus className="w-4 h-4 text-blue-700" />
-              <span className="text-xs font-bold text-blue-900">{rutina ? "Asignar otra rutina:" : "Este alumno no tiene rutina. Asignar rutina:"}</span>
+              <span className="text-xs font-bold text-blue-900">{rutina ? "Asignar otra rutina:" : "Este socio no tiene rutina. Asignar rutina:"}</span>
               <select value={plantillaElegida} onChange={(e) => setPlantillaElegida(e.target.value)} className="flex-1 min-w-[200px] px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-sm">
                 <option value="">Elegir rutina…</option>
                 {opcionesRutina.generales.length > 0 && (

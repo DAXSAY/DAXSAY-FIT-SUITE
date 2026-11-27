@@ -427,7 +427,7 @@ export const DashboardOverview = ({
         </div>
         <div className="flex flex-wrap gap-2">
           {userCan(currentUser, "members", "crear") && <button onClick={onOpenNewMemberModal} className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-400 text-marino-950 text-sm font-black rd-brillo cursor-pointer">
-            + Nuevo alumno
+            + Nuevo socio
           </button>}
           {userCanAccess(currentUser, "reports") && <button onClick={() => setActiveTab("reports")} className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-sm font-bold cursor-pointer">
             Ver reportes
@@ -438,7 +438,7 @@ export const DashboardOverview = ({
       {/* Indicadores principales (mismo diseño que el resto del sistema) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <TarjetaKpi
-          titulo="Alumnos activos"
+          titulo="Socios activos"
           valor={metrics.totalActiveMembers}
           sub={`${variacionActivos >= 0 ? "+" : ""}${variacionActivos} vs mes anterior`}
           icono={Users}
@@ -446,7 +446,7 @@ export const DashboardOverview = ({
           serie={memberSparkline}
           activo={chartView === "membership_growth"}
           onClick={() => setChartView("membership_growth")}
-          title="Ver la evolución de alumnos en el gráfico"
+          title="Ver la evolución de socios en el gráfico"
         />
         <TarjetaKpi
           titulo="Ingresos (mes)"
@@ -554,7 +554,7 @@ export const DashboardOverview = ({
               }`}
             >
               <Users className="w-3.5 h-3.5 text-purple-600" />
-              <span>Evolución Alumnos</span>
+              <span>Evolución Socios</span>
             </button>
           </div>
 
@@ -1196,13 +1196,13 @@ export const DashboardOverview = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                 <div>
                   <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    Crecimiento Neto de Alumnos & Tasa de Retención
+                    Crecimiento Neto de Socios & Tasa de Retención
                     <span className="text-xs font-bold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
                       Tasa de Retención 96.2%
                     </span>
                   </h4>
                   <p className="text-slate-500 text-xs">
-                    Comparativa de alumnos activos totales, nuevas inscripciones
+                    Comparativa de socios activos totales, nuevas inscripciones
                     y renovaciones mes a mes.
                   </p>
                 </div>
@@ -1212,7 +1212,7 @@ export const DashboardOverview = ({
                       Total Actual
                     </span>
                     <span className="font-extrabold text-purple-600">
-                      {metrics.totalActiveMembers} alumnos
+                      {metrics.totalActiveMembers} socios
                     </span>
                   </div>
                 </div>
@@ -1254,9 +1254,9 @@ export const DashboardOverview = ({
                         fontSize: "12px",
                       }}
                       formatter={(val, name) => [
-                        `${val} alumnos`,
+                        `${val} socios`,
                         name === "activos"
-                          ? "Alumnos Activos"
+                          ? "Socios Activos"
                           : name === "nuevos"
                             ? "Nuevas Matrículas"
                             : name === "renovaciones"
@@ -1334,7 +1334,7 @@ export const DashboardOverview = ({
 
           <div className="p-2 rounded-lg bg-white border border-slate-200/80">
             <span className="text-xs uppercase font-bold text-slate-400 block">
-              Ticket Medio Alumno
+              Ticket Medio Socio
             </span>
             <span className="text-xs font-black text-emerald-700">
               S/{" "}

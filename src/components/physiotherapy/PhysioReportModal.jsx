@@ -299,7 +299,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
             <button
               onClick={handleShareWhatsApp}
               className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
-              title="Enviar directamente por WhatsApp al alumno"
+              title="Enviar directamente por WhatsApp al socio"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>WhatsApp</span>
@@ -419,7 +419,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs page-break-avoid">
             <div>
               <span className="text-xs text-slate-400 font-bold uppercase block">
-                Alumno / Paciente
+                Socio / Paciente
               </span>
               <p className="font-extrabold text-slate-900 text-sm">
                 {session.memberName}
@@ -489,7 +489,7 @@ export const PhysioReportModal = ({ session, member, onClose }) => {
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-blue-700 shrink-0" />
               <h4 className="text-xs sm:text-sm font-bold text-blue-950 uppercase tracking-wider">
-                Explicación Sencilla para el Alumno / Paciente
+                Explicación Sencilla para el Socio / Paciente
               </h4>
             </div>
 

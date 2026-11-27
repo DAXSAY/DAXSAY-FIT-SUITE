@@ -482,7 +482,7 @@ export const FormularioAlimento = ({ inicial, onCerrar, onGuardado }) => {
                   </div>
                 </div>
                 <label className="block">
-                  <span className="block text-[11px] font-bold text-slate-600">Dato útil para el alumno</span>
+                  <span className="block text-[11px] font-bold text-slate-600">Dato útil para el socio</span>
                   <input value={form.notes || ""} onChange={set("notes")} maxLength={200} placeholder="Ej. Rico en hierro; combinar con limón" className="w-full p-2 rounded-lg border border-slate-300 text-sm" />
                 </label>
               </div>

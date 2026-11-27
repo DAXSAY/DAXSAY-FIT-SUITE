@@ -274,7 +274,7 @@ export const ExercisePrescriptionCard = ({
                 </label>
                 <HerramientasImagen compacto url={ex.imageUrl} nombre={ex.name} onChange={(u) => actualizar(i, "imageUrl", u)} readOnly={readOnly} />
                 <label className="block">
-                  <span className="block text-[11px] font-bold text-slate-500">Cómo hacerlo (lo verá el alumno)</span>
+                  <span className="block text-[11px] font-bold text-slate-500">Cómo hacerlo (lo verá el socio)</span>
                   <textarea disabled={readOnly} rows={2} value={ex.techniqueTips || ""} onChange={(e) => actualizar(i, "techniqueTips", e.target.value)} placeholder="Ej. Respira lento, sin dolor; mantén la espalda neutra." className={INP} />
                 </label>
 
@@ -342,7 +342,7 @@ export const ExercisePrescriptionCard = ({
 
       {exercises.length > 0 && (
         <p className="text-xs text-slate-500 flex items-center gap-1">
-          <Check className="w-3.5 h-3.5 text-emerald-600" /> El alumno verá estos ejercicios con sus imágenes en su portal (Mi Fisioterapia).
+          <Check className="w-3.5 h-3.5 text-emerald-600" /> El socio verá estos ejercicios con sus imágenes en su portal (Mi Fisioterapia).
         </p>
       )}
     </div>

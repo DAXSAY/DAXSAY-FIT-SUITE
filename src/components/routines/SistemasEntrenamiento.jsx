@@ -837,7 +837,7 @@ export const ConfigEjercicio = ({
                   </div>
                 )}
                 <p className="text-[11px] rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-1">
-                  <IconoEmoji e="✍️" /> El alumno anotará en su portal: <b>{filasRegistro({ series: ex[campos.series], reps: ex[campos.reps], metodo }).anota}</b>. El peso no se fija aquí.
+                  <IconoEmoji e="✍️" /> El socio anotará en su portal: <b>{filasRegistro({ series: ex[campos.series], reps: ex[campos.reps], metodo }).anota}</b>. El peso no se fija aquí.
                 </p>
                 {sis.agrupa && (
                   <div className="space-y-1">

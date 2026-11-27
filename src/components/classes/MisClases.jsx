@@ -13,6 +13,7 @@ import { hoyISO } from "../../utils/fecha";
 import { DIAS, diaDe, fechaBonita, sumarDias, estadoVentana, ahoraLima, useCroquis, useSesiones, nombreSede } from "./clasesComun";
 import { Croquis, LeyendaCroquis } from "./Croquis";
 import { VentanaStep } from "./StepsMaster";
+import { useAlCambiar } from "../../utils/tiempoReal";
 
 const textoVentana = (v) =>
   v.estado === "abierta" ? "🟢 Reserva abierta" : v.estado === "pronto" ? `⏰ Reserva desde las ${v.abre}` : v.estado === "en_curso" ? "🏃 En clase" : "Terminó";
@@ -34,6 +35,7 @@ const Reservar = ({ s, onCerrar, onCambio }) => {
     const t = setInterval(cargar, 4000);
     return () => ((vivo.current = false), clearInterval(t));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useAlCambiar(["clases"], cargar);
   const activas = (info?.reservas || []).filter((r) => r.estado === "reservado" || r.estado === "asistio");
   const mia = activas.find((r) => r.mia);
   const abierta = info?.ventana?.estado === "abierta";
@@ -182,6 +184,7 @@ const MastersAlumno = () => {
   useEffect(() => {
     cargar();
   }, []);
+  useAlCambiar(["masters"], cargar);
   if (!lista || !lista.length) return null;
   const soles = (n) => `S/ ${Number(n || 0).toFixed(2)}`;
   const accion = async (m, tipo) => {

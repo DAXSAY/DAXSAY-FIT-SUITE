@@ -22,7 +22,7 @@ export const CATEGORIAS_MSG = [
   { id: "por_vencer", grupo: "urgente", emoji: "⏳", label: "Por vencer", desc: "Vencen en los próximos 7 días" },
   { id: "no_vienen", grupo: "seguimiento", emoji: "🪑", label: "No vienen", desc: "Plan activo y 15+ días sin venir" },
   { id: "congelamiento", grupo: "seguimiento", emoji: "❄️", label: "Regresan", desc: "Vuelven de congelar en ≤ 7 días" },
-  { id: "exalumnos", grupo: "seguimiento", emoji: "👋", label: "Exalumnos", desc: "Vencieron hace más de 30 días" },
+  { id: "exalumnos", grupo: "seguimiento", emoji: "👋", label: "Exsocios", desc: "Vencieron hace más de 30 días" },
   { id: "cumpleanos", grupo: "relacion", emoji: "🎂", label: "Cumpleaños", desc: "Cumplen años este mes" },
   { id: "bienvenida", grupo: "relacion", emoji: "🎉", label: "Nuevos", desc: "Inscritos en los últimos 7 días" },
   { id: "renovaron", grupo: "relacion", emoji: "🙌", label: "Renovaron", desc: "Renovaron en los últimos 7 días" },
@@ -273,7 +273,7 @@ export function MensajesCategorias() {
                   <input value={editando.title} onChange={(e) => setEditando({ ...editando, title: e.target.value })} placeholder="Ej. Recordatorio con cariño" className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm" />
                 </label>
                 <label className="block">
-                  <span className="block text-[11px] font-bold uppercase text-slate-500 mb-1">2. ¿Para qué tipo de alumno?</span>
+                  <span className="block text-[11px] font-bold uppercase text-slate-500 mb-1">2. ¿Para qué tipo de socio?</span>
                   <select value={editando.category || cat} onChange={(e) => setEditando({ ...editando, category: e.target.value })} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm">
                     {CATEGORIAS_MSG.map((c) => (
                       <option key={c.id} value={c.id}>{c.label} — {c.desc}</option>
@@ -306,7 +306,7 @@ export function MensajesCategorias() {
                   className="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm"
                 />
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Lo que queda entre llaves, como {"{{nombre}}"}, se cambia solo por el dato real de cada alumno al enviarlo.
+                  Lo que queda entre llaves, como {"{{nombre}}"}, se cambia solo por el dato real de cada socio al enviarlo.
                 </p>
               </div>
               <div>
@@ -425,7 +425,7 @@ export function MensajesCategorias() {
             </div>
           )}
           {todosCat.length === 0 ? (
-            <p className="text-sm text-slate-500 text-center py-8">No hay alumnos en esta categoría por ahora. <IconoEmoji e="🎉" /></p>
+            <p className="text-sm text-slate-500 text-center py-8">No hay socios en esta categoría por ahora. <IconoEmoji e="🎉" /></p>
           ) : (
             <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
               {alumnos.map((a) => {

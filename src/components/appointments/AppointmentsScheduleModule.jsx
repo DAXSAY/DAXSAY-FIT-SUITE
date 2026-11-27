@@ -269,7 +269,7 @@ export const AppointmentsScheduleModule = () => {
     const conflict = checkScheduleConflict(mem.id, formDate, formSlot);
     if (conflict) {
       setConflictWarning(
-        `¡ALERTA DE CRUCE DE HORARIOS! El alumno ${mem.fullName} ya tiene una cita agendada de ${conflict.serviceType === "nutrition" ? "Nutrición" : "Fisioterapia"} con ${conflict.staffName} el día ${conflict.date} en el horario ${conflict.timeSlot}.`,
+        `¡ALERTA DE CRUCE DE HORARIOS! El socio ${mem.fullName} ya tiene una cita agendada de ${conflict.serviceType === "nutrition" ? "Nutrición" : "Fisioterapia"} con ${conflict.staffName} el día ${conflict.date} en el horario ${conflict.timeSlot}.`,
       );
       return;
     }
@@ -434,9 +434,9 @@ export const AppointmentsScheduleModule = () => {
         ? "Nutrición Deportiva"
         : "Fisioterapia y Rehabilitación";
     const text = encodeURIComponent(
-      `*SOLICITUD DE CITA DESDE EL PORTAL DEL ALUMNO*\n` +
+      `*SOLICITUD DE CITA DESDE EL PORTAL DEL SOCIO*\n` +
         `¡Hola Recepción RADICAL!\n` +
-        `Soy el alumno: *${portalStudentName}*\n` +
+        `Soy el socio: *${portalStudentName}*\n` +
         `Deseo reservar un turno para: *${sName}*\n` +
         `📅 *Fecha solicitada:* ${portalSelectedDate}\n` +
         `⏰ *Hora deseada:* ${portalSelectedSlot}\n` +
@@ -1083,7 +1083,7 @@ export const AppointmentsScheduleModule = () => {
               Vista Exclusiva del Cliente
             </span>
             <h2 className="text-xl font-extrabold text-slate-900">
-              Portal del Alumno: Reserva y Disponibilidad de Horarios
+              Portal del Socio: Reserva y Disponibilidad de Horarios
             </h2>
             <p className="text-xs text-slate-500 mt-1">
               Consulta en tiempo real las horas libres de Fisioterapia y
@@ -1157,7 +1157,7 @@ export const AppointmentsScheduleModule = () => {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Nombre Completo del Alumno
+                  Nombre Completo del Socio
                 </label>
                 <input
                   type="text"
@@ -1297,14 +1297,14 @@ export const AppointmentsScheduleModule = () => {
 
               <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
                 <div className="font-bold text-slate-800">
-                  <IconoEmoji e="📌" /> Reglas de Atención al Alumno:
+                  <IconoEmoji e="📌" /> Reglas de Atención al Socio:
                 </div>
                 <div>
                   • Cada cita dura {duracionDe(portalSelectedService, portalSelectedDate)} minutos.
                 </div>
                 <div>
                   • En caso de no asistir y marcarse falta, el turno queda
-                  disponible para otros miembros.
+                  disponible para otros socios.
                 </div>
                 <div>
                   • Si deseas cancelar o reprogramar, notifica con al menos 2
@@ -1396,10 +1396,10 @@ export const AppointmentsScheduleModule = () => {
                   <h4 className="text-base font-extrabold text-slate-900 mb-4">2. Paciente y especialista</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1.5">Alumno *</label>
+                      <label className="block text-sm font-bold text-slate-700 mb-1.5">Socio *</label>
                       <SelectorAlumno alumnos={members} value={formMemberId} onChange={(id) => setFormMemberId(id)} required />
                       {members.length === 0 && (
-                        <p className="text-xs text-amber-700 mt-1">Aún no hay alumnos registrados.</p>
+                        <p className="text-xs text-amber-700 mt-1">Aún no hay socios registrados.</p>
                       )}
                     </div>
                     <div>
@@ -1538,7 +1538,7 @@ export const AppointmentsScheduleModule = () => {
                     <div className="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-sm text-rose-800 flex gap-2">
                       <AlertCircle className="w-5 h-5 shrink-0" />
                       <span>
-                        Este alumno ya tiene una cita ese día a esa hora ({detectedFormConflict.staffName}). Elija otro
+                        Este socio ya tiene una cita ese día a esa hora ({detectedFormConflict.staffName}). Elija otro
                         horario.
                       </span>
                     </div>
@@ -1604,7 +1604,7 @@ export const AppointmentsScheduleModule = () => {
                   <dl className="p-5 space-y-3 text-sm">
                     {[
                       ["Servicio", formService === "nutrition" ? "Nutrición" : formService ? "Fisioterapia" : "—"],
-                      ["Alumno", members.find((m) => m.id === formMemberId)?.fullName || "—"],
+                      ["Socio", members.find((m) => m.id === formMemberId)?.fullName || "—"],
                       ["Especialista", formStaffName || "—"],
                       ["Lugar", formRoom],
                       ["Duración", formService && turnoEn(formService, formDate, formSlot) ? `${turnoEn(formService, formDate, formSlot).dur} minutos` : "—"],

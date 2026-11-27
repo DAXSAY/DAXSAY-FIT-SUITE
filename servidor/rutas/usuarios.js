@@ -286,8 +286,8 @@ router.get("/socios", requierePermiso("users", "ver"), async (req, res, next) =>
 router.post("/socios/:id/clave", requierePermiso("users", "editar"), async (req, res, next) => {
   try {
     const [a] = await consultar("SELECT idalumno, dni FROM alumnos WHERE idalumno = ? AND activo = 1", [req.params.id]);
-    if (!a) throw new ErrorHttp(404, "Alumno no encontrado");
-    if (!a.dni) throw new ErrorHttp(400, "El alumno no tiene DNI registrado: complétalo en su ficha");
+    if (!a) throw new ErrorHttp(404, "Socio no encontrado");
+    if (!a.dni) throw new ErrorHttp(400, "El socio no tiene DNI registrado: complétalo en su ficha");
     const modo = String(req.body?.modo || "dni");
     // La cuenta siempre existe y queda activa con usuario = DNI
     const cuenta = await crearOCambiarCuenta(null, a.idalumno, a.dni, req.usuario.idusuario);
@@ -308,7 +308,7 @@ router.put("/socios/:id/estado", requierePermiso("users", "editar"), async (req,
   try {
     const activo = req.body?.activo ? 1 : 0;
     const r = await consultar("UPDATE usuarios SET activo = ?, intentos_fallidos = 0, bloqueado_hasta = NULL WHERE idalumno = ?", [activo, req.params.id]);
-    if (!r.affectedRows) throw new ErrorHttp(404, "El alumno aún no tiene cuenta: restablece su clave para crearla");
+    if (!r.affectedRows) throw new ErrorHttp(404, "El socio aún no tiene cuenta: restablece su clave para crearla");
     if (!activo) {
       await consultar(
         "UPDATE sesiones s JOIN usuarios u ON u.idusuario = s.idusuario SET s.fecha_cierre = NOW() WHERE u.idalumno = ? AND s.fecha_cierre IS NULL",
