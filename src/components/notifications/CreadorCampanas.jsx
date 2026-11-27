@@ -3,7 +3,7 @@ import { Send, Bell, MessageCircle, Mail, Users, Check, Sparkles, ExternalLink }
 import { enlaceWhatsApp } from "../common/TelWhatsApp";
 import { IconoEmoji } from "../common/IconoEmoji";
 
-// Tipos de campaña pensados para un gimnasio de pesas (sin clases grupales)
+// Tipos de campaña del gimnasio
 const TIPOS = [
   { k: "special_promo", emoji: "🏷️", nombre: "Promoción o descuento", ayuda: "Precio especial por tiempo limitado", titulo: "🔥 Precio especial esta semana", msg: "¡Hola {{nombre}}! Esta semana tu plan {{plan}} tiene precio especial. Acércate a recepción o respóndenos por aquí. 💪" },
   { k: "renewal_reminder", emoji: "🔁", nombre: "Renovación", ayuda: "Recordar renovar antes de vencer", titulo: "Renueva y sigue entrenando", msg: "¡Hola {{nombre}}! Tu plan {{plan}} vence el {{fecha_vencimiento}}. Renueva a tiempo y no pierdas tu progreso. 💪" },
@@ -43,11 +43,12 @@ const enlaceCorreo = (m, titulo, cuerpo) =>
   `mailto:${encodeURIComponent(m.email || "")}?subject=${encodeURIComponent(personalizar(titulo, m))}&body=${encodeURIComponent(personalizar(cuerpo, m))}`;
 
 export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
-  const [tipo, setTipo] = useState(TIPOS[0].k);
-  const [titulo, setTitulo] = useState(TIPOS[0].titulo);
-  const [mensaje, setMensaje] = useState(TIPOS[0].msg);
-  const [segmento, setSegmento] = useState("all");
-  const [canales, setCanales] = useState(["push", "whatsapp"]);
+  // Nada preseleccionado: el usuario elige tipo, público y canal a mano
+  const [tipo, setTipo] = useState(null);
+  const [titulo, setTitulo] = useState("");
+  const [mensaje, setMensaje] = useState("");
+  const [segmento, setSegmento] = useState(null);
+  const [canales, setCanales] = useState([]);
   const [enviada, setEnviada] = useState(null);
 
   const cuenta = useMemo(() => {
@@ -55,7 +56,7 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
     SEGMENTOS.slice(1).forEach((s) => (c[s.k] = members.filter((m) => m.status === s.k).length));
     return c;
   }, [members]);
-  const destinatarios = segmento === "all" ? members : members.filter((m) => m.status === segmento);
+  const destinatarios = !segmento ? [] : segmento === "all" ? members : members.filter((m) => m.status === segmento);
   const t = TIPOS.find((x) => x.k === tipo);
 
   const elegirTipo = (x) => {
@@ -63,11 +64,11 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
     setTitulo(x.titulo);
     setMensaje(x.msg);
   };
-  const alternarCanal = (k) => setCanales((cs) => (cs.includes(k) ? (cs.length > 1 ? cs.filter((c) => c !== k) : cs) : [...cs, k]));
+  const alternarCanal = (k) => setCanales((cs) => (cs.includes(k) ? cs.filter((c) => c !== k) : [...cs, k]));
 
   const enviar = (e) => {
     e.preventDefault();
-    if (!titulo.trim() || !mensaje.trim() || !destinatarios.length) return;
+    if (!tipo || !segmento || !canales.length || !titulo.trim() || !mensaje.trim() || !destinatarios.length) return;
     sendManualCampaign({
       title: titulo.trim(),
       message: mensaje.trim(),
@@ -139,6 +140,7 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
             );
           })}
         </div>
+        {!tipo && <p className="text-xs font-bold text-violet-700 mt-2">👆 Elige el tipo de campaña para cargar un mensaje de ejemplo.</p>}
       </section>
 
       <section>
@@ -154,6 +156,7 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
             );
           })}
         </div>
+        {!segmento && <p className="text-xs font-bold text-teal-700 mt-2">👆 Elige a qué grupo de alumnos se enviará.</p>}
         <p className="text-[11px] text-slate-500 mt-1.5">
           Activos {cuenta.active} + por vencer {cuenta.expiring_soon} + vencidos {cuenta.expired} + congelados {cuenta.frozen} = {cuenta.active + cuenta.expiring_soon + cuenta.expired + cuenta.frozen} alumnos.
         </p>
@@ -177,8 +180,16 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
             );
           })}
         </div>
+        {!canales.length && <p className="text-xs font-bold text-teal-700 mt-2">👆 Marca uno o más canales (puedes combinar).</p>}
       </section>
 
+      {!tipo ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+          <p className="text-2xl">✉️</p>
+          <p className="text-sm font-black text-slate-800">El mensaje aparecerá aquí</p>
+          <p className="text-xs text-slate-500">Primero elige el tipo de campaña de arriba; luego podrás editar el título y el texto.</p>
+        </div>
+      ) : (
       <section className="grid lg:grid-cols-2 gap-4">
         <div className="space-y-2">
           <p className="text-xs font-black uppercase tracking-wide text-slate-500">4 · Mensaje</p>
@@ -194,12 +205,15 @@ export const CreadorCampanas = ({ members = [], sendManualCampaign }) => {
           </div>
         </div>
       </section>
+      )}
 
       <div className="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-slate-200">
         <span className="text-sm text-slate-600">
-          {destinatarios.length} alumno(s) · {canales.map((k) => CANALES.find((c) => c.k === k).nombre).join(", ")}
+          {!tipo || !segmento || !canales.length
+            ? `Falta elegir: ${[!tipo && "tipo", !segmento && "a quién", !canales.length && "canal"].filter(Boolean).join(", ")}`
+            : `${destinatarios.length} alumno(s) · ${canales.map((k) => CANALES.find((c) => c.k === k).nombre).join(", ")}`}
         </span>
-        <button type="submit" disabled={!destinatarios.length} className="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white text-sm font-extrabold flex items-center gap-2 cursor-pointer">
+        <button type="submit" disabled={!tipo || !segmento || !canales.length || !destinatarios.length} className="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white text-sm font-extrabold flex items-center gap-2 cursor-pointer">
           <Send className="w-4 h-4" /> Preparar envío
         </button>
       </div>
