@@ -10,7 +10,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ClipboardList, Plus, CalendarDays, ListChecks, BarChart3, ArrowLeft, ChevronLeft, ChevronRight, History, Search, MessageCircle } from "lucide-react";
 import { api } from "../../api/cliente";
 import { escucharCambios } from "../../utils/tiempoReal";
-import { CabeceraModulo, AccionCabecera, SinSeleccion } from "../common/CabeceraModulo";
+import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
 import { TarjetaKpi } from "../common/TarjetaKpi";
 import {
   TIPOS_TAREA, tipoDe, AREAS, textoTurno, textoDestino, emojiDestino, fechaCorta, cuandoTexto, sumarDiasISO, enlaceWhatsapp, ESTADOS, estadoVisible, primerNombre, diaSemana, PLANTILLAS,
@@ -1091,15 +1091,15 @@ const FILTROS = [
 
 const TareasModule = () => {
   const hoyLocal = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
-  // Sin pestaña elegida al entrar: primero se ve la bienvenida
+  // Al entrar se ve el calendario
   const [vista, setVista] = useState(() => {
     // «Ver mis tareas» desde la ventana de inicio abre directo la lista
     try {
       const v = sessionStorage.getItem("rd_tareas_vista");
       sessionStorage.removeItem("rd_tareas_vista");
-      return v || null;
+      return v || "calendario";
     } catch {
-      return null;
+      return "calendario";
     }
   });
   const [mes, setMes] = useState(hoyLocal.slice(0, 7));
@@ -1164,7 +1164,6 @@ const TareasModule = () => {
     ["🗂️ Días anteriores", lista.filter((t) => !t.atrasada && t.fecha < hoy)],
   ].filter(([, l]) => l.length);
 
-  const comentariosAbiertos = tareas.filter((t) => t.tipo === "nota" && (t.estado === "pendiente" || t.estado === "en_curso")).length;
   const miTurno = ctx?.yo.turnoId ? ctx.turnos.find((t) => t.id === ctx.yo.turnoId) : null;
   const turnoAhora = ctx?.turnoActualId ? ctx.turnos.find((t) => t.id === ctx.turnoActualId) : null;
 
@@ -1207,35 +1206,6 @@ const TareasModule = () => {
                 </Chip>
               )}
             </div>
-          )}
-
-          {!vista && (
-            <>
-              <div className="rd-kpi-teal rd-tareas-hoy-cab rounded-2xl border px-5 sm:px-6 py-5 flex flex-wrap items-center justify-between gap-4 rd-aparece">
-                <div className="min-w-0">
-                  <p className="text-xs font-black uppercase tracking-widest opacity-80">👋 Bienvenida</p>
-                  <h2 className="text-xl sm:text-2xl font-black">¡Hola, {primerNombre(ctx.yo.nombre) || "equipo"}!</h2>
-                  <p className="text-sm font-semibold opacity-90">
-                    {kpi.atrasadas > 0
-                      ? `Tienes ${kpi.atrasadas} tarea${kpi.atrasadas === 1 ? "" : "s"} atrasada${kpi.atrasadas === 1 ? "" : "s"}: empieza por ahí.`
-                      : kpi.hoy > 0
-                        ? `Hoy hay ${kpi.hoy} tarea${kpi.hoy === 1 ? "" : "s"} por hacer.`
-                        : "Todo al día. ¡Buen trabajo!"}
-                    {comentariosAbiertos > 0 ? ` Te dejaron ${comentariosAbiertos} comentario${comentariosAbiertos === 1 ? "" : "s"}.` : ""}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {comentariosAbiertos > 0 && (
-                    <button type="button" onClick={() => (setVista("lista"), setFiltro("comentarios"))} className="px-4 py-2.5 rounded-xl text-sm font-bold bg-white/70 hover:bg-white text-slate-700 border border-slate-200 cursor-pointer">
-                      🗒️ Leer comentarios
-                    </button>
-                  )}
-                  <button type="button" onClick={() => (setVista("lista"), setFiltro(kpi.atrasadas ? "atrasadas" : "abiertas"))} className="rd-boton-t px-5 py-2.5 rounded-xl text-sm font-black cursor-pointer">
-                    📋 Ver lo que me toca
-                  </button>
-                </div>
-              </div>
-            </>
           )}
 
           {vista !== "reporte" && (
@@ -1318,7 +1288,6 @@ const TareasModule = () => {
           )}
 
           {vista === "reporte" && <Reporte hoy={hoy} />}
-          {!vista && <SinSeleccion tema="tareas" texto="Elige una opción de arriba: Calendario, Lista o Reporte. O toca «Nueva tarea» para asignar algo o dejar un comentario." />}
 
           {nueva && <NuevaTarea ctx={ctx} fechaInicial={typeof nueva === "string" ? nueva : null} onCerrar={() => setNueva(false)} onListo={listo} />}
           <VentanasTarea abierta={ventana} ctx={ctx} onCerrar={() => setVentana(null)} onListo={listo} />
