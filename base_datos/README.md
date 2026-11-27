@@ -179,6 +179,13 @@ La API de Node (`servidor/`) se conecta con el usuario MySQL `radicalgym_app`. E
   - `sedes`: un gimnasio puede tener varias sedes; cada clase, máster y croquis pertenece a una. Lo existente queda en «Sede principal».
   - `licencia`: clave maestra de DAXSAY (bcrypt) para prender o apagar los módulos contratados. La clave inicial es `DAXSAY-Licencia-2026`: cámbiala desde Usuarios › Configuración del gimnasio › Módulos contratados.
 
+- **43 · `43_servicios_alumno.sql`:** servicios por alumno (control de medidas, dieta, evaluación nutricional, fisioterapia, entrenador y los que agregue administración):
+  - `servicios`: catálogo con precio, por tiempo (ej. medidas mensual) o por sesiones (ej. una fisioterapia).
+  - `plan_servicios`: qué incluye cada plan (los planes que decían «incluye nutrición / fisioterapia / entrenador» quedan con esos servicios).
+  - `alumno_servicios`: lo que el alumno paga aparte o recibe de cortesía, con su desde / hasta o sus sesiones. Entra a caja.
+  - `servicio_usos`: sesiones atendidas (la fisioterapia se descuenta sola con sus sesiones registradas).
+  - Si un servicio incluido o pagado no se hace en N días (7 por defecto), avisa al personal para el seguimiento.
+
 ## DAXSAY Fit Suite es un sistema general
 
 Cada gimnasio que firma contrato tiene su propia instalación (su base de datos) y solo los módulos de su plan. Los módulos se apagan o prenden por paquete (clases grupales, fisioterapia, nutrición, rutinas, citas, ventas, caja, finanzas, CRM, tareas, metas, contratos, reportes y notificaciones) desde el panel «Módulos contratados», con la clave maestra. Apagar un módulo lo quita del menú de todos los roles y del portal del alumno, bloquea sus rutas y sus avisos, y no borra datos.

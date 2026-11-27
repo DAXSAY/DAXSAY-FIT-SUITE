@@ -1,3 +1,4 @@
+import ServiciosCatalogo from "../services/ServiciosCatalogo";
 import { CampoNumero } from "../common/CampoNumero";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -243,12 +244,19 @@ export const MembershipsPlans = () => {
     0,
   );
 
+  // Servicios que incluye cada plan (parte 43)
+  const [cat, setCat] = useState({ conServicios: false, servicios: [], planes: {} });
+  const cargarCat = () => api("/servicios/catalogo").then(setCat).catch(() => {});
+  useEffect(() => {
+    cargarCat();
+  }, []);
+  const serviciosDe = (id) => (cat.planes[id] || []).map((x) => ({ ...x, s: cat.servicios.find((c) => c.id === x.id) })).filter((x) => x.s);
   const abrirNuevo = () => {
-    setForm(VACIO);
+    setForm({ ...VACIO, servicios: [] });
     setEditando("nuevo");
   };
   const abrirEditar = (p) => {
-    setForm({ ...VACIO, ...p, featuresStr: (p.features || []).join("\n") });
+    setForm({ ...VACIO, ...p, featuresStr: (p.features || []).join("\n"), servicios: (cat.planes[p.id] || []).map((x) => ({ ...x })) });
     setEditando(p);
   };
   const guardar = async (e) => {
@@ -270,8 +278,18 @@ export const MembershipsPlans = () => {
       freezeMinDays: Number(form.freezeDays || 0) ? (Number(form.freezeParts || 1) === 1 ? Number(form.freezeDays) : Number(form.freezeMinDays || 0)) : 0,
     };
     if (!datos.name || !datos.price || errorCongelamiento(form)) return;
-    if (editando === "nuevo") await addPlan(datos);
-    else await updatePlan(editando.id, datos);
+    if (cat.conServicios) {
+      // Las marcas «incluye…» salen de los servicios elegidos
+      const elegidos = (form.servicios || []).map((x) => cat.servicios.find((c) => c.id === x.id)).filter(Boolean);
+      datos.includesNutrition = elegidos.some((c) => c.modulo === "nutrition");
+      datos.includesPhysio = elegidos.some((c) => c.modulo === "physiotherapy");
+      datos.includesTrainer = elegidos.some((c) => c.codigo === "entrenador");
+    }
+    const guardado = editando === "nuevo" ? await addPlan(datos) : await updatePlan(editando.id, datos);
+    if (cat.conServicios && guardado?.id) {
+      await api(`/servicios/planes/${guardado.id}`, { method: "PUT", body: { servicios: form.servicios || [] } }).catch((er) => alert(er.message));
+      cargarCat();
+    }
     setEditando(null);
   };
 
@@ -381,6 +399,20 @@ export const MembershipsPlans = () => {
 
         <div className="p-4 flex-1 flex flex-col gap-3">
           <p className="text-sm text-slate-600 line-clamp-2 min-h-[2.7em]">{p.description || "\u00a0"}</p>
+          {cat.conServicios ? (
+            <div className="flex flex-wrap gap-1.5">
+              {serviciosDe(p.id).length ? (
+                serviciosDe(p.id).map((x) => (
+                  <span key={x.id} className="inline-flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-1 border bg-blue-50 text-blue-700 border-blue-200">
+                    {x.s.emoji} {x.s.nombre}
+                    {x.s.modo === "sesiones" ? ` ×${x.cantidad}` : ""}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs font-bold text-slate-400">Solo gimnasio (sin servicios incluidos)</span>
+              )}
+            </div>
+          ) : (
           <div className="flex flex-wrap gap-2">
             {[
               [p.includesTrainer, Dumbbell, "Entrenador"],
@@ -397,6 +429,7 @@ export const MembershipsPlans = () => {
               </span>
             ))}
           </div>
+          )}
           <div
             className={`flex items-start gap-2 text-xs font-bold rounded-xl px-3 py-2 border ${
               Number(p.freezeDays || 0) ? "bg-sky-50 text-sky-800 border-sky-200" : "bg-slate-50 text-slate-500 border-slate-200"
@@ -564,6 +597,9 @@ export const MembershipsPlans = () => {
           </table>
         </div>
       )}
+
+      {/* Servicios que se pagan aparte (medidas, dieta, fisioterapia…) y sus precios */}
+      {puedeEditar && currentUser?.role === "admin" && <ServiciosCatalogo />}
 
       {/* Planes dados de baja */}
       {puedeEditar && archivados.length > 0 && (
@@ -775,11 +811,36 @@ export const MembershipsPlans = () => {
                   Toca «+» para elegir cualquier color. También se usa en los reportes del CRM.
                 </p>
               </div>
+              {cat.conServicios && (
+                <div className="space-y-2">
+                  <p className="text-sm font-bold text-slate-700">¿Qué servicios incluye este plan?</p>
+                  <p className="text-xs text-slate-500">Los incluidos no se cobran aparte mientras dure la membresía. Si no se le hacen a tiempo, el sistema avisa para hacer seguimiento.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {cat.servicios.filter((c) => c.activo !== false).map((c) => {
+                      const sel = (form.servicios || []).find((x) => x.id === c.id);
+                      const alternar = () => setForm({ ...form, servicios: sel ? form.servicios.filter((x) => x.id !== c.id) : [...(form.servicios || []), { id: c.id, cantidad: 1 }] });
+                      return (
+                        <div key={c.id} className={`flex items-center gap-2 p-2.5 rounded-xl border-2 text-sm font-semibold ${sel ? "border-blue-500 bg-blue-50 text-blue-900" : "border-slate-200 text-slate-700"}`}>
+                          <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+                            <input type="checkbox" checked={!!sel} onChange={alternar} className="w-4 h-4 accent-blue-600" />
+                            <span className="truncate">{c.emoji} {c.nombre}</span>
+                          </label>
+                          {sel && c.modo === "sesiones" && (
+                            <label className="flex items-center gap-1 text-xs font-bold whitespace-nowrap">
+                              ×
+                              <input type="number" min={1} max={100} value={sel.cantidad} onChange={(e) => setForm({ ...form, servicios: form.servicios.map((x) => (x.id === c.id ? { ...x, cantidad: Number(e.target.value) || 1 } : x)) })} className="w-14 px-1.5 py-1 rounded-lg border border-slate-300 bg-white text-sm" />
+                            </label>
+                          )}
+                          {sel && c.modo === "periodo" && <span className="text-[11px] font-bold whitespace-nowrap opacity-75">toda la membresía</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {[
-                  ["includesTrainer", "Incluye entrenador"],
-                  ["includesNutrition", "Incluye nutrición"],
-                  ["includesPhysio", "Incluye fisioterapia"],
+                  ...(cat.conServicios ? [] : [["includesTrainer", "Incluye entrenador"], ["includesNutrition", "Incluye nutrición"], ["includesPhysio", "Incluye fisioterapia"]]),
                   ["popular", "Marcar como más elegido"],
                 ].map(([k, l]) => (
                   <label key={k} className={`flex items-center gap-2.5 p-3 rounded-xl border-2 cursor-pointer text-sm font-semibold ${form[k] ? "border-blue-500 bg-blue-50 text-blue-900" : "border-slate-200 text-slate-700"}`}>

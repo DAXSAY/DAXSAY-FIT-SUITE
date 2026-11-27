@@ -1,3 +1,4 @@
+import ServiciosAlumno from "../services/ServiciosAlumno";
 import { CampoNumero } from "../common/CampoNumero";
 import { SinSeleccion } from "../common/CabeceraModulo";
 import { SeguimientoServicio } from "../common/Programados";
@@ -1531,6 +1532,7 @@ export const PhysiotherapyModule = () => {
           <div className="lg:col-span-8 space-y-4">
             {selectedMember ? (
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-5">
+                <ServiciosAlumno key={selectedMember.id} idalumno={selectedMember.id} nombre={selectedMember.fullName} modulos={["physiotherapy"]} compacto />
                 {/* Member Card Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div className="flex items-center space-x-3">

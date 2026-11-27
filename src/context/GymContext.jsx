@@ -594,6 +594,7 @@ export const GymProvider = ({ children }) => {
     try {
       const nuevo = await api("/planes", { method: "POST", body: planData });
       setPlans((prev) => [...prev, nuevo].sort((a, b) => a.price - b.price));
+      return nuevo;
     } catch (e) {
       alert(e.message);
     }
@@ -604,6 +605,7 @@ export const GymProvider = ({ children }) => {
       const actual = plans.find((p) => p.id === id) || {};
       const editado = await api(`/planes/${id}`, { method: "PUT", body: { ...actual, ...planData } });
       setPlans((prev) => prev.map((p) => (p.id === id ? editado : p)));
+      return editado;
     } catch (e) {
       alert(e.message);
     }

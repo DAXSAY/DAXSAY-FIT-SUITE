@@ -1,3 +1,4 @@
+import ServiciosAlumno from "../services/ServiciosAlumno";
 import React, { useMemo, useState } from "react";
 import { Search, User, Ruler, Utensils, Flame, X, Plus } from "lucide-react";
 import { useGym } from "../../context/GymContext";
@@ -174,6 +175,7 @@ export const DietasYMedidas = ({ pedirCrear = 0 }) => {
                 ))}
               </div>
             </div>
+            <ServiciosAlumno key={alumno.id} idalumno={alumno.id} nombre={alumno.fullName} modulos={["nutrition"]} compacto />
             {paso === "medidas" ? (
               <MeasurementsModule alumnoFijo={alumno.id} onNuevoControl={() => setControles((n) => n + 1)} />
             ) : (

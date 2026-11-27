@@ -1,3 +1,4 @@
+import MisServicios from "../services/MisServicios";
 import React, { useState, useMemo, lazy, Suspense } from "react";
 const MisClases = lazy(() => import("../classes/MisClases"));
 import { AnuncioRenovacion } from "./AnuncioRenovacion";
@@ -442,6 +443,7 @@ export const StudentPortalModule = ({
         />
       )}
 
+      {tab === "membership" && <MisServicios />}
       {tab === "membership" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Digital Member Card */}

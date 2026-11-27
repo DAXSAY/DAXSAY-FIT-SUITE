@@ -34,6 +34,7 @@ import clases from "./rutas/clases.js";
 import masters from "./rutas/masters.js";
 import calificaciones from "./rutas/calificaciones.js";
 import licencia, { requiereModulo } from "./rutas/licencia.js";
+import servicios from "./rutas/servicios.js";
 import { verificarSincronizacion, sincronizarPendientes } from "./sincronizacion.js";
 import { aplicarActualizaciones } from "./actualizaciones.js";
 import { programarRespaldos, estadoRespaldos, hacerRespaldo } from "./respaldo.js";
@@ -147,6 +148,7 @@ app.use("/api/clases", requiereSesion, requiereModulo("classes", "mis_clases"), 
 app.use("/api/masters", requiereSesion, requiereModulo("classes", "mis_clases"), masters);
 app.use("/api/calificaciones", requiereSesion, requiereModulo("classes", "mis_clases"), calificaciones);
 app.use("/api/licencia", requiereSesion, licencia);
+app.use("/api/servicios", requiereSesion, servicios);
 
 // Imágenes subidas (públicas por enlace, nombres imposibles de adivinar)
 app.use("/uploads", express.static(CARPETA_UPLOADS, { maxAge: "30d" }));

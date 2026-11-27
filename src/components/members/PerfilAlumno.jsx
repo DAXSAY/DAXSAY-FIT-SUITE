@@ -7,6 +7,7 @@
 // =====================================================================
 import React from "react";
 import { Printer, X } from "lucide-react";
+import ServiciosAlumno from "../services/ServiciosAlumno";
 import { FichaDeportiva } from "./FichaDeportiva";
 import { TelWhatsApp } from "../common/TelWhatsApp";
 import { BotonesDescarga } from "../common/BotonesDescarga";
@@ -204,6 +205,9 @@ export const PerfilAlumno = ({ m, gestiona, trainers = [], routines = [], onCerr
 
       {/* Ficha deportiva: rutina de hoy, fisioterapia, dieta y asistencia */}
       <FichaDeportiva member={m} onVerCalendario={onCalendario} />
+
+      {/* Servicios: lo que trae su plan y lo que pagó aparte (medidas, dieta, fisioterapia…) */}
+      <ServiciosAlumno idalumno={m.id} nombre={m.fullName} />
 
       {/* Entrenador y rutina · salud */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

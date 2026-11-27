@@ -20,6 +20,7 @@ import { avisosClases } from "./clases.js";
 import { avisosMasters } from "./masters.js";
 import { avisosCalificaciones } from "./calificaciones.js";
 import { modulosActivos } from "./licencia.js";
+import { avisosServicios } from "./servicios.js";
 
 const router = Router();
 const DIAS_REVISION = 7; // se revisan los últimos 7 días (sin contar hoy)
@@ -637,6 +638,7 @@ router.get("/", async (req, res, next) => {
       si("classes", "mis_clases") ? avisosClases(req, hoy).catch((e) => (console.warn("[avisos clases]", e.message), [])) : nada,
       si("classes", "mis_clases") ? avisosMasters(req, hoy).catch((e) => (console.warn("[avisos masters]", e.message), [])) : nada,
       si("classes", "mis_clases") ? avisosCalificaciones(req, hoy).catch((e) => (console.warn("[avisos calificaciones]", e.message), [])) : nada,
+      avisosServicios(req, hoy).catch((e) => (console.warn("[avisos servicios]", e.message), [])),
     ]);
     res.json({ hoy, avisos: grupos.flat() });
   } catch (e) {
