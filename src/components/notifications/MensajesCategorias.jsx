@@ -1,5 +1,6 @@
 // Mensajes predeterminados por categoría (15 por categoría, editables) y envío por WhatsApp
 // a los alumnos de cada categoría con el texto ya personalizado.
+import { SinSeleccion } from "../common/CabeceraModulo";
 import { BarraVolver } from "../common/BarraVolver";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Copy, Edit3, GripVertical, MessageCircle, Plus, Search, Shuffle, Trash2, X, Users, MousePointerClick } from "lucide-react";
@@ -95,7 +96,7 @@ export function MensajesCategorias() {
   const puedeEditar = userCan(currentUser, "alerts", "editar");
   const [plantillas, setPlantillas] = useState([]);
   const [dest, setDest] = useState({ hoy: "", gym: "", categorias: {} });
-  const [cat, setCat] = useState("por_vencer");
+  const [cat, setCat] = useState(null); // sin categoría elegida al entrar
   const [selMsg, setSelMsg] = useState(null); // mensaje "en la mano" para tocar y poner
   const [asignados, setAsignados] = useState({}); // "cat:idAlumno" -> id del mensaje
   const [arrastrando, setArrastrando] = useState(null);
@@ -246,6 +247,9 @@ export function MensajesCategorias() {
       </div>
       {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
 
+      {!cat ? (
+        <SinSeleccion tema="clientes" texto="Elige una categoría de arriba (por vencer, vencidos, deudas, cumpleaños…) para ver sus mensajes y a quién enviarlos." />
+      ) : (
       <div className="grid lg:grid-cols-2 gap-4 items-start">
         {/* Mensajes */}
         <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
@@ -519,6 +523,7 @@ export function MensajesCategorias() {
           )}
         </section>
       </div>
+      )}
     </div>
   );
 }

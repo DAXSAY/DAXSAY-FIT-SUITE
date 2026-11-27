@@ -138,7 +138,7 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
   const [externo, setExterno] = useState({ nombre: "", celular: "" });
   const [pct, setPct] = useState("");
   const [pctGuardado, setPctGuardado] = useState(false);
-  const [tipo, setTipo] = useState("membership");
+  const [tipo, setTipo] = useState(null); // sin tipo elegido: lo elige quien registra
   const [monto, setMonto] = useState("");
   const [sesiones, setSesiones] = useState("1");
   const [precioSesion, setPrecioSesion] = useState("");
@@ -150,7 +150,7 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
   const [alumno, setAlumno] = useState(null);
   const [error, setError] = useState("");
 
-  const T = TIPOS_INGRESO[tipo];
+  const T = TIPOS_INGRESO[tipo] || { titulo: "", icono: "", concepto: "" };
   const porSesiones = !!T.sesiones && Number(precioSesion) > 0;
   const cobrado = porSesiones ? Math.round(Number(sesiones || 0) * Number(precioSesion) * 100) / 100 : Number(monto) || 0;
   const esServicio = !!T.servicio;
@@ -211,6 +211,7 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
   const guardar = (e) => {
     e.preventDefault();
     setError("");
+    if (!tipo) return setError("Elige de qué es el ingreso.");
     if (esServicio) {
       if (!nombreProf) return setError(`Elige al ${T.quien} que da el servicio.`);
       if (!nombreCliente) return setError(clienteTipo === "socio" ? "Elige al socio (por su código)." : "Escribe el nombre de la persona externa.");
@@ -351,6 +352,10 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
           )}
         </div>
 
+        {!tipo ? (
+          <p className="text-sm font-bold text-slate-500 text-center py-6 rounded-2xl border border-dashed border-slate-300">👆 Elige de qué es el ingreso para continuar.</p>
+        ) : (
+          <>
         {/* 2. Profesional (servicios) */}
         {esServicio && (
           <div className="space-y-2">
@@ -557,6 +562,9 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
           </div>
           <CheckCircle2 className={`w-10 h-10 ${total > 0 ? "text-emerald-500" : "text-slate-300"}`} />
         </div>
+
+          </>
+        )}
 
         {error && <p className="text-sm font-bold text-rose-600">{error}</p>}
         <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-200">

@@ -149,7 +149,7 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
     window.addEventListener("radical:abrir-caja", oir);
     return () => window.removeEventListener("radical:abrir-caja", oir);
   }, []);
-  const [expenseCategory, setExpenseCategory] = useState("staff_payroll");
+  const [expenseCategory, setExpenseCategory] = useState(""); // sin tipo elegido al abrir
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseDesc, setExpenseDesc] = useState("");
   const [expenseMethod, setExpenseMethod] = useState("efectivo");
@@ -345,6 +345,7 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
 
   const handleCreateExpense = (e) => {
     e.preventDefault();
+    if (!expenseCategory) return alert("Elige en qué se gastó.");
     if (!expenseAmount || isNaN(Number(expenseAmount))) return;
 
     let finalDesc = expenseDesc;
@@ -1818,6 +1819,10 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                 </div>
               )}
 
+              {!expenseCategory ? (
+                <p className="text-sm font-bold text-slate-500 text-center py-6 rounded-2xl border border-dashed border-slate-300">👆 Elige en qué se gastó para continuar.</p>
+              ) : (
+                <>
               {/* 2. Monto */}
               <div className="space-y-2 pt-2 border-t border-slate-200">
                 <p className="text-sm font-bold text-slate-800">2. ¿Cuánto sale de caja? *</p>
@@ -1903,6 +1908,9 @@ export const FinanceModule = ({ onOpenNewExpenseModal }) => {
                 </div>
                 <TrendingDown className={`w-10 h-10 shrink-0 ${Number(expenseAmount) > 0 ? "text-rose-500" : "text-slate-300"}`} />
               </div>
+
+                </>
+              )}
 
               {/* Action Buttons */}
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">

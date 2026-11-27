@@ -329,8 +329,9 @@ const AbrirCaja = ({ ultimo, onVolver, onAbierta }) => {
 // Formulario: ingreso o gasto del turno
 // ------------------------------------------------------------
 const MovimientoTurno = ({ turno, onVolver, onGuardado }) => {
-  const [tipo, setTipo] = useState("egreso");
-  const [categoria, setCategoria] = useState("insumos");
+  // Sin nada elegido: quien registra elige si es gasto o ingreso y su categoría
+  const [tipo, setTipo] = useState(null);
+  const [categoria, setCategoria] = useState("");
   const [monto, setMonto] = useState("");
   const [metodo, setMetodo] = useState("efectivo");
   const [descripcion, setDescripcion] = useState("");
@@ -341,6 +342,8 @@ const MovimientoTurno = ({ turno, onVolver, onGuardado }) => {
   const guardar = async (e) => {
     e.preventDefault();
     setError("");
+    if (!tipo) return setError("Elige si es un gasto o un ingreso.");
+    if (!categoria) return setError("Elige la categoría.");
     setEnviando(true);
     try {
       await api(`/turnos-caja/${turno.id}/movimiento`, {
@@ -372,7 +375,7 @@ const MovimientoTurno = ({ turno, onVolver, onGuardado }) => {
               key={k}
               onClick={() => {
                 setTipo(k);
-                setCategoria(CATEGORIAS_TURNO[k][0]);
+                setCategoria("");
               }}
               className={`p-4 rounded-xl border-2 font-black flex items-center justify-center gap-2 cursor-pointer ${
                 tipo === k
@@ -406,7 +409,10 @@ const MovimientoTurno = ({ turno, onVolver, onGuardado }) => {
               onChange={(e) => setCategoria(e.target.value)}
               className="mt-1 w-full px-3 py-3 rounded-xl border border-slate-300 text-sm bg-white"
             >
-              {CATEGORIAS_TURNO[tipo].map((c) => (
+              <option value="" disabled>
+                {tipo ? "Elige la categoría…" : "Primero elige gasto o ingreso"}
+              </option>
+              {(CATEGORIAS_TURNO[tipo] || []).map((c) => (
                 <option key={c} value={c}>
                   {CATEGORIAS[c]}
                 </option>
