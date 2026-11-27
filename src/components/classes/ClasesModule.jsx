@@ -14,7 +14,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Music, CalendarDays, LayoutGrid, Disc3, Settings2, Plus, ChevronLeft, ChevronRight, X, Pencil, Trash2, Check, Send, Users, Clock, Save, BarChart3, Star } from "lucide-react";
 import { api } from "../../api/cliente";
 import { useGym } from "../../context/GymContext";
-import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
+import { CabeceraModulo, AccionCabecera, SinSeleccion } from "../common/CabeceraModulo";
 import { TarjetaKpi } from "../common/TarjetaKpi";
 import { Exportar } from "../reports/ReportsModule";
 import { buscarAlumno } from "../../utils/codigo";
@@ -1021,7 +1021,8 @@ export default function ClasesModule() {
   const esProfe = yo.rol === "instructor";
   const [vista, setVista] = useState(null);
   const [claseSteps, setClaseSteps] = useState(null);
-  const v = vista || (esProfe ? "discos" : "horario");
+  // Sin pestaña elegida al entrar (como el resto de módulos)
+  const v = vista;
   const pestanas = [
     { k: "horario", icono: CalendarDays, label: "Horario", tono: "teal" },
     { k: "steps", icono: LayoutGrid, label: "Reservas", tono: "violet" },
@@ -1037,7 +1038,7 @@ export default function ClasesModule() {
         etiqueta="Salud & Entrenamiento"
         titulo="Clases grupales"
         descripcion={esProfe ? "Tus clases de la semana y el disco que dictarás. Lo que envíes lo ven administración, recepción y los alumnos." : "Horario semanal, steps del salón con sus reservas y los discos que dictará cada profesor."}
-        accion={GESTIONA.includes(yo.rol) && v !== "horario" && <AccionCabecera icono={CalendarDays} onClick={() => setVista("horario")}>Ver horario</AccionCabecera>}
+        accion={GESTIONA.includes(yo.rol) && v && v !== "horario" && <AccionCabecera icono={CalendarDays} onClick={() => setVista("horario")}>Ver horario</AccionCabecera>}
         activa={v}
         onCambiar={(k) => (setVista(k), setClaseSteps(null))}
         pestanas={pestanas}
@@ -1051,6 +1052,7 @@ export default function ClasesModule() {
         <p className="text-sm text-slate-500">{error || "Cargando clases grupales…"}</p>
       ) : (
         <>
+          {!v && <SinSeleccion tema="clases" texto={esProfe ? "Elige una opción de arriba: «Mis discos» para anotar lo que dictarás." : "Elige una opción de arriba: horario, reservas, discos, másters o asistencia."} />}
           {v === "horario" && <Horario datos={datos} recargar={cargar} yo={yo} onSteps={(id) => (setClaseSteps(id), setVista("steps"))} />}
           {v === "steps" && <Steps yo={yo} claseInicial={claseSteps} />}
           {v === "discos" && (esProfe ? <MisDiscos /> : <ReporteDiscos datos={datos} puedeEditar={GESTIONA.includes(yo.rol)} />)}

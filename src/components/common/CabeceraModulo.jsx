@@ -207,6 +207,36 @@ const ILUSTRACIONES = {
       </g>
     </g>
   ),
+  clases: (
+    <g>
+      <circle cx="150" cy="100" r="78" className="ilu-halo" />
+      {/* salón: espejo, profesor y steps */}
+      <Tarjeta x="70" y="38" w="160" h="132" r="14" />
+      <rect x="82" y="48" width="136" height="8" rx="4" className="ilu-c1-suave" />
+      <circle cx="150" cy="72" r="7" className="ilu-c2" />
+      <path d="M140 92 q10 -14 20 0" className="ilu-c2" />
+      {[0, 1, 2].map((f) =>
+        [0, 1, 2, 3].map((c) => (
+          <rect key={`${f}-${c}`} x={88 + c * 32} y={104 + f * 20} width="24" height="12" rx="4" className={(f + c) % 3 === 0 ? "ilu-c1" : "ilu-c1-suave"} />
+        )),
+      )}
+      {/* nota musical (el disco) */}
+      <g className="ilu-flota">
+        <Tarjeta x="214" y="20" w="70" h="62" />
+        <circle cx="240" cy="62" r="8" className="ilu-c3" />
+        <circle cx="264" cy="56" r="8" className="ilu-c3" />
+        <path d="M248 62 V34 l24 -6 v28" className="ilu-linea-dato" />
+      </g>
+      {/* horario */}
+      <g className="ilu-flota ilu-flota-2">
+        <Tarjeta x="2" y="104" w="62" h="62" />
+        <rect x="2" y="104" width="62" height="14" rx="8" className="ilu-c2" />
+        <Linea x="10" y="128" w="36" c="ilu-texto-fuerte" />
+        <Linea x="10" y="140" w="46" />
+        <Linea x="10" y="152" w="26" />
+      </g>
+    </g>
+  ),
 };
 
 /** Pantalla vacía al entrar a un módulo: ilustración del tema con el logo del gimnasio, tenue */
