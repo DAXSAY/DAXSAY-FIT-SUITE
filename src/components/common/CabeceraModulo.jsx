@@ -237,6 +237,34 @@ const ILUSTRACIONES = {
       </g>
     </g>
   ),
+  tareas: (
+    <g>
+      <circle cx="150" cy="100" r="78" className="ilu-halo" />
+      {/* tablero con checks */}
+      <Tarjeta x="86" y="30" w="128" h="146" r="14" />
+      <rect x="126" y="22" width="48" height="16" rx="8" className="ilu-c2" />
+      {[0, 1, 2, 3].map((i) => (
+        <g key={i}>
+          <rect x="100" y={56 + i * 28} width="16" height="16" rx="5" className={i < 2 ? "ilu-c1" : "ilu-c1-suave"} />
+          {i < 2 && <path d={`M104 ${64 + i * 28} l4 4 l7 -8`} className="ilu-linea-dato" />}
+          <Linea x="124" y={58 + i * 28} w={i % 2 ? 56 : 72} c={i < 2 ? "ilu-texto" : "ilu-texto-fuerte"} />
+          <Linea x="124" y={66 + i * 28} w="40" />
+        </g>
+      ))}
+      {/* reloj del turno */}
+      <g className="ilu-flota">
+        <Tarjeta x="216" y="22" w="68" h="62" />
+        <circle cx="250" cy="53" r="20" className="ilu-dona-pista" />
+        <path d="M250 41 v12 l9 6" className="ilu-linea-dato" />
+      </g>
+      {/* comentario al siguiente turno */}
+      <g className="ilu-flota ilu-flota-2">
+        <path d="M8 112 h66 a8 8 0 0 1 8 8 v26 a8 8 0 0 1 -8 8 h-46 l-12 10 v-10 h-8 a8 8 0 0 1 -8 -8 v-26 a8 8 0 0 1 8 -8 z" className="ilu-tarjeta" />
+        <Linea x="18" y="124" w="46" c="ilu-texto-fuerte" />
+        <Linea x="18" y="136" w="34" />
+      </g>
+    </g>
+  ),
 };
 
 /** Pantalla vacía al entrar a un módulo: ilustración del tema con el logo del gimnasio, tenue */

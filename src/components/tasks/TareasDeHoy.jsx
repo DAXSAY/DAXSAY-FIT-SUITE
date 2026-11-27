@@ -122,6 +122,11 @@ export const TareasDeHoy = ({ usuarioId, nombre, onAbrir }) => {
               type="button"
               onClick={() => {
                 cerrar();
+                try {
+                  sessionStorage.setItem("rd_tareas_vista", "lista");
+                } catch {
+                  /* nada */
+                }
                 onAbrir();
               }}
               className="rd-boton-t px-5 py-2.5 rounded-xl text-sm font-black cursor-pointer"
