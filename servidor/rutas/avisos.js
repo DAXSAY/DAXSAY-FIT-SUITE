@@ -18,6 +18,7 @@ import { crearOCambiarCuenta } from "./alumnos.js";
 import { rutinaDe, planDe } from "./progreso.js";
 import { avisosClases } from "./clases.js";
 import { avisosMasters } from "./masters.js";
+import { avisosCalificaciones } from "./calificaciones.js";
 
 const router = Router();
 const DIAS_REVISION = 7; // se revisan los últimos 7 días (sin contar hoy)
@@ -630,6 +631,7 @@ router.get("/", async (req, res, next) => {
       avisosEvolucionFisio(req, hoy).catch((e) => (console.warn("[avisos fisio]", e.message), [])),
       avisosClases(req, hoy).catch((e) => (console.warn("[avisos clases]", e.message), [])),
       avisosMasters(req, hoy).catch((e) => (console.warn("[avisos masters]", e.message), [])),
+      avisosCalificaciones(req, hoy).catch((e) => (console.warn("[avisos calificaciones]", e.message), [])),
     ]);
     res.json({ hoy, avisos: grupos.flat() });
   } catch (e) {

@@ -14,6 +14,8 @@ import { Exportar } from "../reports/ReportsModule";
 import { buscarAlumno } from "../../utils/codigo";
 import { hoyISO } from "../../utils/fecha";
 import { DIAS, diaDe, fechaBonita, sumarDias, aMin, deMin } from "./clasesComun";
+import { Croquis, LeyendaCroquis } from "./Croquis";
+import { useStepsMaster, ElegirStep, VentanaStep } from "./StepsMaster";
 
 const campo = "mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800";
 const soles = (n) => `S/ ${Number(n || 0).toFixed(2)}`;
@@ -222,6 +224,8 @@ const FormInscribir = ({ master, onListo, onCerrar }) => {
   const [p, setP] = useState({ nombre: "", dni: "", celular: "" });
   const [pagado, setPagado] = useState(true);
   const [metodo, setMetodo] = useState("efectivo");
+  const [step, setStep] = useState(null);
+  const { info: pasos } = useStepsMaster(master.id, 6000);
   const [msg, setMsg] = useState(null);
   const hallado = modo === "alumno" && codigo.trim().length >= 1 ? buscarAlumno(members, codigo.trim())?.member : null;
   const vigente = hallado && !["expired", "inactive", "cancelled"].includes(hallado.status);
@@ -230,8 +234,8 @@ const FormInscribir = ({ master, onListo, onCerrar }) => {
     try {
       const body = modo === "alumno" ? { alumnoId: Number(hallado?.id) } : p;
       if (modo === "alumno" && !hallado) return setMsg({ ok: false, texto: "Busca al alumno por su código o DNI" });
-      const r = await api(`/masters/${master.id}/inscribir`, { method: "POST", body: { ...body, pagado, metodo } });
-      onListo(`✅ ${r.nombre} inscrito · ${r.socio ? "precio socio" : "precio público"} ${soles(r.precio)}${r.pagado ? " · pagado" : " · por cobrar"}`);
+      const r = await api(`/masters/${master.id}/inscribir`, { method: "POST", body: { ...body, pagado, metodo, step } });
+      onListo(`✅ ${r.nombre} inscrito${r.step ? ` en el step ${r.step}` : ""} · ${r.socio ? "precio socio" : "precio público"} ${soles(r.precio)}${r.pagado ? " · pagado" : " · por cobrar"}`);
     } catch (er) {
       setMsg({ ok: false, texto: er.message });
     }
@@ -263,6 +267,11 @@ const FormInscribir = ({ master, onListo, onCerrar }) => {
           </div>
         )}
         <div className="rounded-2xl border border-slate-200 p-3 space-y-2">
+          <p className="text-sm font-bold text-slate-700">🧱 Step (sitio) <span className="font-semibold text-slate-500">— opcional, también se puede asignar después</span></p>
+          <ElegirStep info={pasos} seleccionado={step} onElegir={(z) => setStep((x) => (x === z.id ? null : z.id))} />
+          {step && <p className="text-xs font-bold text-amber-700">Elegido: step {pasos?.croquis?.steps?.find((z) => z.id === step)?.numero} (tócalo otra vez para quitarlo)</p>}
+        </div>
+        <div className="rounded-2xl border border-slate-200 p-3 space-y-2">
           <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={pagado} onChange={(e) => setPagado(e.target.checked)} /> Ya pagó</label>
           {pagado && (
             <div className="flex flex-wrap gap-1.5">
@@ -288,6 +297,9 @@ const DetalleMaster = ({ m, rol, onCambio, onEditar }) => {
   const [inscribir, setInscribir] = useState(false);
   const [cobrar, setCobrar] = useState(null);
   const [busca, setBusca] = useState("");
+  const [paraStep, setParaStep] = useState(null);
+  const [verSala, setVerSala] = useState(false);
+  const { info: sala, cargar: cargarSala } = useStepsMaster(m.id, verSala ? 8000 : 0);
   const gestiona = rol === "admin" || rol === "reception";
   const cargar = () => api(`/masters/${m.id}/inscritos`).then((d) => setLista(d.inscritos)).catch((e) => setMsg({ ok: false, texto: e.message }));
   useEffect(() => {
@@ -301,6 +313,7 @@ const DetalleMaster = ({ m, rol, onCambio, onEditar }) => {
       setMsg({ ok: true, texto: accion === "pagar" ? `💰 Cobrado a ${i.nombre} · ${soles(i.precio)}` : accion === "anular" ? `Inscripción de ${i.nombre} anulada` : accion === "asistio" ? `✓ ${i.nombre} asistió` : `${i.nombre}: sin asistencia` });
       setCobrar(null);
       cargar();
+      cargarSala();
       onCambio();
     } catch (e) {
       setMsg({ ok: false, texto: e.message });
@@ -321,6 +334,7 @@ const DetalleMaster = ({ m, rol, onCambio, onEditar }) => {
     { key: "nombre", label: "Nombre" },
     { key: "dni", label: "DNI" },
     { key: "celular", label: "Celular" },
+    { key: "step", label: "Step", excel: (i) => (i.step ? `Step ${i.step}` : "Sin step") },
     { key: "tipo", label: "Tipo", excel: (i) => (i.socio ? "Socio" : i.alumnoId ? "Alumno sin membresía" : "Público") },
     { key: "precio", label: "Precio", excel: (i) => soles(i.precio) },
     { key: "pago", label: "Pago", excel: (i) => (i.pagado ? `Pagado · ${nombreMetodo(i.metodo)}` : "Por cobrar") },
@@ -391,6 +405,22 @@ const DetalleMaster = ({ m, rol, onCambio, onEditar }) => {
       </div>
       <Aviso m={msg} />
 
+      {/* Sitios del salón: quién está en cada step */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-black text-slate-800">🧱 Steps del máster <span className="font-semibold text-slate-500">· {activos.filter((i) => i.step).length} con step · {activos.filter((i) => !i.step).length} sin step</span></p>
+          <button type="button" onClick={() => (setVerSala((v) => !v), cargarSala())} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50">{verSala ? "Ocultar croquis" : "Ver croquis"}</button>
+        </div>
+        {verSala && (sala?.conSteps ? (
+          <>
+            <LeyendaCroquis />
+            <Croquis croquis={sala.croquis} reservas={sala.reservas} nombres onStep={(z, r) => setMsg({ ok: !!r, texto: r ? `Step ${z.numero}: ${r.alumno}` : `Step ${z.numero}: libre. Usa «Dar step» en la lista para asignarlo.` })} />
+          </>
+        ) : (
+          <p className="text-xs text-slate-500">{sala ? "Falta ejecutar la parte 41 (41_steps_masters_calificaciones.sql) en MySQL Workbench." : "Cargando croquis…"}</p>
+        ))}
+      </div>
+
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div className="p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2">
           <label className="relative flex-1 min-w-[200px]">
@@ -411,12 +441,14 @@ const DetalleMaster = ({ m, rol, onCambio, onEditar }) => {
                   <p className="font-bold text-slate-900 truncate">{i.nombre} {i.codigo && <span className="text-xs text-slate-400">· {i.codigo}</span>}</p>
                   <p className="text-xs text-slate-500">
                     {i.socio ? "⭐ Socio" : i.alumnoId ? "Alumno sin membresía" : "Público"} · {soles(i.precio)} · {i.pagado ? <b className="text-emerald-700">Pagado ({nombreMetodo(i.metodo)})</b> : <b className="text-amber-700">Por cobrar</b>}
+                    {" · "}{i.step ? <b className="text-amber-700">🧱 Step {i.step}</b> : <span className="text-slate-400">sin step</span>}
                     {i.origen === "alumno" && " · 📱 desde la app"}
                     {i.asistio && <b className="text-emerald-700"> · ✓ Asistió</b>}
                   </p>
                 </div>
                 {gestiona && (
                   <div className="flex flex-wrap gap-1.5">
+                    <button type="button" onClick={() => setParaStep(i)} className="px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-xs font-bold cursor-pointer">🧱 {i.step ? "Cambiar step" : "Dar step"}</button>
                     {!i.pagado && <button type="button" onClick={() => setCobrar(i)} className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-black flex items-center gap-1 cursor-pointer"><Wallet className="w-3.5 h-3.5" /> Cobrar</button>}
                     <button type="button" onClick={() => accion(i, i.asistio ? "no_asistio" : "asistio")} className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 cursor-pointer ${i.asistio ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}><Check className="w-3.5 h-3.5" /> Asistió</button>
                     <button type="button" onClick={() => window.confirm(`¿Anular la inscripción de ${i.nombre}?`) && accion(i, "anular")} className="px-3 py-1.5 rounded-lg border border-rose-200 text-rose-700 text-xs font-bold cursor-pointer">Anular</button>
@@ -429,6 +461,23 @@ const DetalleMaster = ({ m, rol, onCambio, onEditar }) => {
       </div>
 
       {inscribir && <FormInscribir master={m} onCerrar={() => setInscribir(false)} onListo={(t) => (setInscribir(false), setMsg({ ok: true, texto: t }), cargar(), onCambio())} />}
+      {paraStep && (
+        <VentanaStep
+          master={m}
+          titulo={`Step de ${paraStep.nombre.split(" ")[0]}`}
+          miStepId={paraStep.stepId}
+          permitirQuitar
+          boton="Asignar"
+          onCerrar={() => setParaStep(null)}
+          onGuardar={async (step) => {
+            const r = await api(`/masters/inscripciones/${paraStep.id}`, { method: "POST", body: { accion: "step", step } });
+            setParaStep(null);
+            setMsg({ ok: true, texto: r.step ? `🧱 ${paraStep.nombre} quedó en el step ${r.step}` : `${paraStep.nombre} quedó sin step` });
+            cargar();
+            cargarSala();
+          }}
+        />
+      )}
       {cobrar && (
         <Ventana titulo={`Cobrar a ${cobrar.nombre}`} onCerrar={() => setCobrar(null)}>
           <p className="text-sm">Monto: <b>{soles(cobrar.precio)}</b> ({cobrar.socio ? "precio socio" : "precio público"})</p>

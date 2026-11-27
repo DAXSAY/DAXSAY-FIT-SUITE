@@ -1,6 +1,6 @@
 // Barra de navegación inferior del portal del alumno en el celular (como una
 // app): Membresía, Rutina, Alimentación, Medidas y «Más» (citas, fisioterapia
-// y asistencias). En la PC no se muestra: ahí están las pestañas de arriba.
+// y asistencias). En la PC no se muestra: ahí está el menú de la izquierda.
 import React, { useState } from "react";
 
 const PRINCIPALES = [

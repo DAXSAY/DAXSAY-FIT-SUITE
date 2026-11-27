@@ -8,9 +8,10 @@
 //    quién asistió y descarga la lista.
 // =====================================================================
 import { Router } from "express";
-import { consultar } from "../db.js";
+import { consultar, enFila } from "../db.js";
 import { ErrorHttp, exigirCajaAbierta } from "../seguridad.js";
 import { hoyLima, sumarDias } from "../congelamiento.js";
+import { croquis } from "./clases.js";
 
 const router = Router();
 const STAFF = ["admin", "reception"];
@@ -81,6 +82,35 @@ async function parte40() {
   p40 = { v: Number(f?.n) === 1, t: Date.now() };
   return p40.v;
 }
+/** ¿Ya existe la columna del step (parte 41)? */
+let p41 = { v: null, t: 0 };
+async function parte41() {
+  if (p41.v === true || Date.now() - p41.t < 20000) return p41.v;
+  const [f] = await consultar(
+    "SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'master_inscripciones' AND COLUMN_NAME = 'idstep'",
+  );
+  p41 = { v: Number(f?.n) === 1, t: Date.now() };
+  return p41.v;
+}
+async function exigirParte41() {
+  if (!(await parte41())) throw new ErrorHttp(503, "Falta ejecutar la parte 41 (41_steps_masters_calificaciones.sql) en MySQL Workbench para elegir steps en los másters.");
+}
+/** Valida que el step exista en el croquis */
+async function stepValido(idstep) {
+  const [st] = await consultar("SELECT idstep, numero FROM clase_steps WHERE idstep = ? AND activo = 1 AND tipo = 'step'", [idstep]);
+  if (!st) throw new ErrorHttp(400, "Ese step ya no existe en el croquis");
+  return st;
+}
+/** ¿Quién tiene ese step en el máster? (la inscripción más antigua gana) */
+async function duenoStep(idmaster, idstep) {
+  const [d] = await consultar(
+    "SELECT idinscripcion, nombre FROM master_inscripciones WHERE idmaster = ? AND idstep = ? AND estado = 'inscrito' ORDER BY idinscripcion LIMIT 1",
+    [idmaster, idstep],
+  );
+  return d || null;
+}
+const ocupado = (numero, nombre) => new ErrorHttp(409, `Lugar ocupado: el step ${numero} ya es de ${String(nombre || "otra persona").split(" ")[0]}. Elige otro.`);
+
 async function pctDefecto() {
   const [c] = await consultar("SELECT valor FROM configuracion WHERE clave = 'pct_gym_masters'").catch(() => []);
   const n = Number(c?.valor);
@@ -151,7 +181,14 @@ router.get("/", async (req, res, next) => {
       const yo = await alumnoDe(req);
       const socio = await esSocio(yo);
       const mias = yo
-        ? await consultar("SELECT idinscripcion, idmaster, pagado, precio FROM master_inscripciones WHERE idalumno = ? AND estado = 'inscrito'", [yo])
+        ? await consultar(
+            (await parte41())
+              ? `SELECT i.idinscripcion, i.idmaster, i.pagado, i.precio, i.idstep, s.numero AS step_numero
+                   FROM master_inscripciones i LEFT JOIN clase_steps s ON s.idstep = i.idstep
+                  WHERE i.idalumno = ? AND i.estado = 'inscrito'`
+              : "SELECT idinscripcion, idmaster, pagado, precio FROM master_inscripciones WHERE idalumno = ? AND estado = 'inscrito'",
+            [yo],
+          )
         : [];
       filas = filas.map((m) => {
         const i = mias.find((x) => x.idmaster === m.id);
@@ -162,11 +199,11 @@ router.get("/", async (req, res, next) => {
           miPrecio: socio ? m.precioSocio : m.precioPublico,
           soySocio: socio,
           lleno: !!m.cupo && m.inscritos >= m.cupo,
-          miInscripcion: i ? { id: i.idinscripcion, pagado: !!i.pagado, precio: Number(i.precio) } : null,
+          miInscripcion: i ? { id: i.idinscripcion, pagado: !!i.pagado, precio: Number(i.precio), stepId: i.idstep || null, step: i.step_numero || null } : null,
         };
       });
     }
-    res.json({ hoy, masters: filas, pctDefecto: alumno ? undefined : await pctDefecto(), conCaja: await parte40() });
+    res.json({ hoy, masters: filas, pctDefecto: alumno ? undefined : await pctDefecto(), conCaja: await parte40(), conSteps: !!(await parte41()) });
   } catch (e) {
     next(e);
   }
@@ -247,8 +284,12 @@ router.get("/:id(\\d+)/inscritos", async (req, res, next) => {
     await exigirTablas();
     exigir(req, VEN, "La lista es para el personal");
     const filas = await consultar(
-      `SELECT i.*, a.codigo FROM master_inscripciones i LEFT JOIN alumnos a ON a.idalumno = i.idalumno
-        WHERE i.idmaster = ? ORDER BY i.estado = 'anulado', i.creada_en`,
+      (await parte41())
+        ? `SELECT i.*, a.codigo, s.numero AS step_numero FROM master_inscripciones i
+             LEFT JOIN alumnos a ON a.idalumno = i.idalumno LEFT JOIN clase_steps s ON s.idstep = i.idstep
+            WHERE i.idmaster = ? ORDER BY i.estado = 'anulado', i.creada_en`
+        : `SELECT i.*, a.codigo FROM master_inscripciones i LEFT JOIN alumnos a ON a.idalumno = i.idalumno
+            WHERE i.idmaster = ? ORDER BY i.estado = 'anulado', i.creada_en`,
       [Number(req.params.id)],
     );
     res.json({
@@ -259,6 +300,8 @@ router.get("/:id(\\d+)/inscritos", async (req, res, next) => {
         nombre: f.nombre,
         dni: f.dni || "",
         celular: f.celular || "",
+        stepId: f.idstep || null,
+        step: f.step_numero || null,
         socio: !!f.es_socio,
         precio: Number(f.precio),
         pagado: !!f.pagado,
@@ -276,11 +319,52 @@ router.get("/:id(\\d+)/inscritos", async (req, res, next) => {
   }
 });
 
+// GET /api/masters/:id/steps -> croquis y quién tiene cada step en este máster
+router.get("/:id(\\d+)/steps", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    const id = Number(req.params.id);
+    const alumno = req.usuario.rol === "student";
+    const yo = alumno ? await alumnoDe(req) : null;
+    const pasos = await croquis();
+    const filas = (await parte41())
+      ? await consultar(
+          `SELECT i.idinscripcion, i.idstep, i.idalumno, i.nombre, i.asistio, s.numero
+             FROM master_inscripciones i JOIN clase_steps s ON s.idstep = i.idstep
+            WHERE i.idmaster = ? AND i.estado = 'inscrito' AND i.idstep IS NOT NULL ORDER BY i.idinscripcion`,
+          [id],
+        )
+      : [];
+    const vistos = new Set();
+    res.json({
+      conSteps: !!(await parte41()),
+      croquis: { ancho: 40, alto: 28, steps: pasos },
+      libres: pasos.filter((z) => z.tipo === "step").length - new Set(filas.map((f) => f.idstep)).size,
+      reservas: filas
+        .filter((f) => !vistos.has(f.idstep) && vistos.add(f.idstep))
+        .map((f) => ({
+          stepId: f.idstep,
+          numero: f.numero,
+          estado: f.asistio ? "asistio" : "reservado",
+          mia: !!yo && f.idalumno === yo,
+          inscripcionId: alumno ? undefined : f.idinscripcion,
+          // el alumno solo ve el primer nombre de los demás
+          alumno: alumno ? String(f.nombre || "").split(" ")[0] : f.nombre,
+        })),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // POST /api/masters/:id/inscribir
 //  personal: { alumnoId } o { nombre, dni, celular }, + { pagado, metodo }
 //  alumno:   se inscribe él mismo; queda por pagar en recepción
-router.post("/:id(\\d+)/inscribir", async (req, res, next) => {
-  try {
+router.post("/:id(\\d+)/inscribir", (req, res, next) =>
+  enFila(`master-${req.params.id}`, () => inscribir(req, res)).catch(next),
+);
+async function inscribir(req, res) {
+  {
     await exigirTablas();
     const id = Number(req.params.id);
     const [m] = await consultar("SELECT * FROM masters WHERE idmaster = ?", [id]);
@@ -315,6 +399,18 @@ router.post("/:id(\\d+)/inscribir", async (req, res, next) => {
       const [c] = await consultar("SELECT COUNT(*) AS n FROM master_inscripciones WHERE idmaster = ? AND estado = 'inscrito'", [id]);
       if (Number(c.n) >= m.cupo) throw new ErrorHttp(409, `Cupo lleno (${m.cupo} personas)`);
     }
+    // Step del croquis (gana quien lo tomó primero)
+    let st = null;
+    if (Number(b.step)) {
+      await exigirParte41();
+      st = await stepValido(Number(b.step));
+      const d = await duenoStep(id, st.idstep);
+      if (d) throw ocupado(st.numero, d.nombre);
+    } else if (alumno && (await parte41())) {
+      const libres = (await croquis()).filter((z) => z.tipo === "step").length;
+      const [u] = await consultar("SELECT COUNT(DISTINCT idstep) AS n FROM master_inscripciones WHERE idmaster = ? AND estado = 'inscrito' AND idstep IS NOT NULL", [id]);
+      if (libres > Number(u.n)) throw new ErrorHttp(400, "Elige tu step en el croquis para inscribirte");
+    }
     const socio = await esSocio(idalumno);
     const precio = socio ? Number(m.precio_socio) : Number(m.precio_publico);
     const pagado = !alumno && !!b.pagado;
@@ -325,15 +421,14 @@ router.post("/:id(\\d+)/inscribir", async (req, res, next) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${pagado ? "NOW()" : "NULL"}, ?, ?, ?)`,
       [id, idalumno, nombre, dni, celular, socio ? 1 : 0, precio, pagado ? 1 : 0, metodo, alumno ? "alumno" : "recepcion", txt(b.nota, 200), req.usuario.idusuario],
     );
+    if (st) await consultar("UPDATE master_inscripciones SET idstep = ? WHERE idinscripcion = ?", [st.idstep, r.insertId]);
     if (pagado) {
       const [ins] = await consultar("SELECT * FROM master_inscripciones WHERE idinscripcion = ?", [r.insertId]);
       await registrarCobro(req, ins, m, metodo);
     }
-    res.status(201).json({ ok: true, id: r.insertId, nombre, socio, precio, pagado });
-  } catch (e) {
-    next(e);
+    res.status(201).json({ ok: true, id: r.insertId, nombre, socio, precio, pagado, step: st?.numero || null });
   }
-});
+}
 
 // POST /api/masters/inscripciones/:id { accion: pagar|anular|asistio|no_asistio, metodo }
 router.post("/inscripciones/:id(\\d+)", async (req, res, next) => {
@@ -344,10 +439,29 @@ router.post("/inscripciones/:id(\\d+)", async (req, res, next) => {
     if (!i) throw new ErrorHttp(404, "La inscripción no existe");
     const accion = String(req.body?.accion || "");
     if (req.usuario.rol === "student") {
-      if (accion !== "anular" || i.idalumno !== (await alumnoDe(req))) throw new ErrorHttp(403, "Solo puedes anular tu propia inscripción");
-      if (i.pagado) throw new ErrorHttp(409, "Ya pagaste: para anular acércate a recepción");
+      if (!["anular", "step"].includes(accion) || i.idalumno !== (await alumnoDe(req))) throw new ErrorHttp(403, "Solo puedes cambiar tu propia inscripción");
+      if (accion === "anular" && i.pagado) throw new ErrorHttp(409, "Ya pagaste: para anular acércate a recepción");
     } else exigir(req, STAFF, "Solo recepción y administración");
     const [m] = await consultar("SELECT * FROM masters WHERE idmaster = ?", [i.idmaster]);
+    if (accion === "step") {
+      // Elegir, cambiar o quitar (solo personal) el step de un inscrito
+      await exigirParte41();
+      if (i.estado !== "inscrito") throw new ErrorHttp(409, "La inscripción está anulada");
+      if (String(m.fecha).slice(0, 10) < hoyLima()) throw new ErrorHttp(409, "Este máster ya pasó");
+      const nuevo = Number(req.body?.step) || null;
+      if (!nuevo && req.usuario.rol === "student") throw new ErrorHttp(400, "Elige un step");
+      const numero = await enFila(`master-${i.idmaster}`, async () => {
+        let st = null;
+        if (nuevo) {
+          st = await stepValido(nuevo);
+          const d = await duenoStep(i.idmaster, st.idstep);
+          if (d && d.idinscripcion !== i.idinscripcion) throw ocupado(st.numero, d.nombre);
+        }
+        await consultar("UPDATE master_inscripciones SET idstep = ?, idusuario = ? WHERE idinscripcion = ?", [st?.idstep || null, req.usuario.idusuario, id]);
+        return st?.numero || null;
+      });
+      return res.json({ ok: true, step: numero });
+    }
     if (accion === "pagar") {
       if (i.pagado) throw new ErrorHttp(409, "Ya estaba pagado");
       if (i.estado !== "inscrito") throw new ErrorHttp(409, "La inscripción está anulada");

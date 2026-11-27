@@ -399,7 +399,7 @@ async function minutosReserva() {
   const n = Number(c?.valor);
   return n >= 5 && n <= 240 ? n : 30;
 }
-async function croquis() {
+export async function croquis() {
   const filas = await consultar("SELECT * FROM clase_steps WHERE activo = 1 ORDER BY tipo = 'zona' DESC, numero, idstep");
   return filas.map((f) => ({
     id: f.idstep,

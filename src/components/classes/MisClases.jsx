@@ -12,6 +12,7 @@ import { api } from "../../api/cliente";
 import { hoyISO } from "../../utils/fecha";
 import { DIAS, diaDe, fechaBonita, sumarDias, estadoVentana, ahoraLima, useCroquis, useSesiones } from "./clasesComun";
 import { Croquis, LeyendaCroquis } from "./Croquis";
+import { VentanaStep } from "./StepsMaster";
 
 const textoVentana = (v) =>
   v.estado === "abierta" ? "🟢 Reserva abierta" : v.estado === "pronto" ? `⏰ Reserva desde las ${v.abre}` : v.estado === "en_curso" ? "🏃 En clase" : "Terminó";
@@ -94,10 +95,85 @@ const Reservar = ({ s, croquis, onCerrar, onCambio }) => {
   );
 };
 
+/** Calificar las clases y másters a los que fue (tiene 7 días) */
+const CalificarClases = () => {
+  const [datos, setDatos] = useState(null);
+  const [abierta, setAbierta] = useState(null);
+  const [f, setF] = useState({ estrellas: 0, etiquetas: [], comentario: "" });
+  const [msg, setMsg] = useState(null);
+  const [enviando, setEnviando] = useState(false);
+  const cargar = () => api("/calificaciones/pendientes").then(setDatos).catch(() => setDatos({ pendientes: [], etiquetas: [] }));
+  useEffect(() => {
+    cargar();
+  }, []);
+  if (!datos || (!datos.pendientes.length && !msg)) return null;
+  const abrir = (p, n) => (setAbierta(p.clave), setF({ estrellas: n, etiquetas: [], comentario: "" }), setMsg(null));
+  const enviar = async (p) => {
+    setEnviando(true);
+    try {
+      await api("/calificaciones", { method: "POST", body: { clave: p.clave, ...f } });
+      setMsg({ ok: true, texto: `🙌 ¡Gracias! Calificaste ${p.titulo} con ${f.estrellas} estrella${f.estrellas === 1 ? "" : "s"}.` });
+      setAbierta(null);
+      cargar();
+    } catch (e) {
+      setMsg({ ok: false, texto: e.message });
+    } finally {
+      setEnviando(false);
+    }
+  };
+  const CARAS = ["", "😞 Mala", "😕 Regular", "🙂 Buena", "😃 Muy buena", "🤩 ¡Excelente!"];
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-black uppercase tracking-wider text-slate-500">⭐ Califica tus clases</p>
+      {msg && <p className={`text-sm font-bold rounded-xl border p-3 ${msg.ok ? "rd-kpi-verde rd-aviso-t" : "text-rose-700 bg-rose-50 border-rose-200"}`}>{msg.texto}</p>}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+        {datos.pendientes.map((p) => {
+          const on = abierta === p.clave;
+          return (
+            <div key={p.clave} className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-slate-900 truncate">{p.emoji} {p.titulo}</p>
+                  <p className="text-xs text-slate-500">{DIAS[diaDe(p.fecha)]} {fechaBonita(p.fecha).split(" ").slice(1).join(" ")} · {p.inicio} · 🧑‍🏫 {p.profesor}{p.disco ? ` · 🎵 ${p.disco}` : ""}</p>
+                </div>
+                <div className="flex" role="radiogroup" aria-label="Estrellas">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button key={n} type="button" onClick={() => abrir(p, n)} aria-label={`${n} estrellas`} className={`text-2xl leading-none px-0.5 cursor-pointer transition-transform hover:scale-110 ${on && n <= f.estrellas ? "text-amber-500" : "text-slate-300 hover:text-amber-300"}`}>★</button>
+                  ))}
+                </div>
+              </div>
+              {on && (
+                <div className="space-y-2 pt-1 border-t border-slate-100">
+                  <p className="text-sm font-black text-amber-700">{CARAS[f.estrellas]}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {datos.etiquetas.map((e) => {
+                      const sel = f.etiquetas.includes(e);
+                      return (
+                        <button key={e} type="button" onClick={() => setF((x) => ({ ...x, etiquetas: sel ? x.etiquetas.filter((y) => y !== e) : [...x.etiquetas, e] }))} className={`px-2.5 py-1 rounded-full border text-[11px] font-bold cursor-pointer ${sel ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{e}</button>
+                      );
+                    })}
+                  </div>
+                  <textarea value={f.comentario} onChange={(e) => setF((x) => ({ ...x, comentario: e.target.value }))} maxLength={300} rows={2} placeholder="Cuéntanos algo más (opcional)…" className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800" />
+                  <div className="flex justify-end gap-2">
+                    <button type="button" onClick={() => setAbierta(null)} className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">Cancelar</button>
+                    <button type="button" disabled={enviando} onClick={() => enviar(p)} className="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white text-xs font-black cursor-pointer">Enviar calificación</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-slate-500">Tu opinión ayuda a mejorar las clases. Tienes 7 días después de cada clase para calificarla.</p>
+    </div>
+  );
+};
+
 /** Másters del fin de semana: precio según si es socio, inscribirse desde la app */
 const MastersAlumno = () => {
   const [lista, setLista] = useState(null);
   const [msg, setMsg] = useState(null);
+  const [elegir, setElegir] = useState(null);
   const cargar = () =>
     api("/masters")
       .then((d) => setLista(d.masters))
@@ -109,10 +185,8 @@ const MastersAlumno = () => {
   const soles = (n) => `S/ ${Number(n || 0).toFixed(2)}`;
   const accion = async (m, tipo) => {
     try {
-      if (tipo === "inscribir") {
-        const r = await api(`/masters/${m.id}/inscribir`, { method: "POST", body: {} });
-        setMsg({ ok: true, texto: `✅ ¡Te inscribiste en ${m.titulo}! Paga ${soles(r.precio)} en recepción antes del máster para asegurar tu lugar.` });
-      } else {
+      if (tipo === "inscribir") return setElegir(m);
+      {
         await api(`/masters/inscripciones/${m.miInscripcion.id}`, { method: "POST", body: { accion: "anular" } });
         setMsg({ ok: true, texto: "Anulaste tu inscripción." });
       }
@@ -139,7 +213,8 @@ const MastersAlumno = () => {
             <div className="pt-1 flex flex-wrap items-center gap-2">
               {m.miInscripcion ? (
                 <>
-                  <span className="text-xs font-black">{m.miInscripcion.pagado ? "✅ Inscrito y pagado" : `📝 Inscrito · paga ${soles(m.miInscripcion.precio)} en recepción`}</span>
+                  <span className="text-xs font-black">{m.miInscripcion.pagado ? "✅ Inscrito y pagado" : `📝 Inscrito · paga ${soles(m.miInscripcion.precio)} en recepción`}{m.miInscripcion.step ? ` · 🧱 Step ${m.miInscripcion.step}` : ""}</span>
+                  <button type="button" onClick={() => setElegir(m)} className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 text-[11px] font-bold cursor-pointer">🧱 {m.miInscripcion.step ? "Cambiar step" : "Elegir step"}</button>
                   {!m.miInscripcion.pagado && <button type="button" onClick={() => accion(m, "anular")} className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 text-[11px] font-bold cursor-pointer">Anular</button>}
                 </>
               ) : m.estado !== "abierto" ? (
@@ -147,12 +222,34 @@ const MastersAlumno = () => {
               ) : m.lleno ? (
                 <span className="text-xs font-bold">Cupo lleno</span>
               ) : (
-                <button type="button" onClick={() => accion(m, "inscribir")} className="px-3 py-1.5 rounded-xl bg-amber-500 text-white text-xs font-black cursor-pointer">🌟 Inscribirme</button>
+                <button type="button" onClick={() => accion(m, "inscribir")} className="px-3 py-1.5 rounded-xl bg-amber-500 text-white text-xs font-black cursor-pointer">🌟 Elegir step e inscribirme</button>
               )}
             </div>
           </div>
         ))}
       </div>
+      {elegir && (
+        <VentanaStep
+          master={elegir}
+          conMio
+          titulo={elegir.miInscripcion ? "Cambiar mi step" : "Elige tu step"}
+          miStepId={elegir.miInscripcion?.stepId}
+          boton={elegir.miInscripcion ? "Cambiarme al" : "Inscribirme en el"}
+          sinStep={elegir.miInscripcion ? "" : "🌟 Inscribirme sin step"}
+          onCerrar={() => (setElegir(null), cargar())}
+          onGuardar={async (step) => {
+            if (elegir.miInscripcion) {
+              const r = await api(`/masters/inscripciones/${elegir.miInscripcion.id}`, { method: "POST", body: { accion: "step", step } });
+              setMsg({ ok: true, texto: `✅ Te cambiaste al step ${r.step}.` });
+            } else {
+              const r = await api(`/masters/${elegir.id}/inscribir`, { method: "POST", body: { step } });
+              setMsg({ ok: true, texto: `✅ ¡Te inscribiste en ${elegir.titulo}${r.step ? ` en el step ${r.step}` : ""}! Paga ${soles(r.precio)} en recepción antes del máster para asegurar tu lugar.` });
+            }
+            setElegir(null);
+            cargar();
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -180,6 +277,7 @@ export default function MisClases() {
           El horario de la semana y el disco que dictará cada profesor. Puedes reservar tu step desde {minutos} minutos antes de la clase hasta que empiece. Te avisamos 2 horas antes. 🔔
         </p>
       </div>
+      <CalificarClases />
       <MastersAlumno />
       {error && <p className="text-sm font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">{error}</p>}
       {!sesiones && !error && <p className="text-sm text-slate-500">Cargando clases…</p>}

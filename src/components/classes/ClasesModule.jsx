@@ -23,6 +23,7 @@ import { hoyISO } from "../../utils/fecha";
 import { DIAS, DIAS_CORTO, COLORES, diaDe, lunesDe, fechaBonita, sumarDias, aMin, deMin, estadoVentana, useDatosClases, useCroquis, useSesiones } from "./clasesComun";
 import { Croquis, EditorCroquis, LeyendaCroquis } from "./Croquis";
 import Masters from "./Masters";
+import Calificaciones from "./Calificaciones";
 
 const GESTIONA = ["admin", "reception"];
 const campo = "mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800";
@@ -1029,6 +1030,7 @@ export default function ClasesModule() {
     { k: "discos", icono: Disc3, label: esProfe ? "Mis discos" : "Discos", tono: "amber" },
     { k: "masters", icono: Star, label: "Másters", tono: "amber" },
     { k: "reporte", icono: BarChart3, label: "Asistencia", tono: "teal" },
+    ...(["admin", "reception", "instructor"].includes(yo.rol) ? [{ k: "calificaciones", icono: Star, label: "Calificaciones", tono: "amber" }] : []),
     ...(yo.rol === "admin" ? [{ k: "config", icono: Settings2, label: "Disciplinas y salón", tono: "rose" }] : []),
   ];
   return (
@@ -1052,12 +1054,13 @@ export default function ClasesModule() {
         <p className="text-sm text-slate-500">{error || "Cargando clases grupales…"}</p>
       ) : (
         <>
-          {!v && <SinSeleccion tema="clases" texto={esProfe ? "Elige una opción de arriba: «Mis discos» para anotar lo que dictarás." : "Elige una opción de arriba: horario, reservas, discos, másters o asistencia."} />}
+          {!v && <SinSeleccion tema="clases" texto={esProfe ? "Elige una opción de arriba: «Mis discos» para anotar lo que dictarás o «Calificaciones» para ver cómo califican tus clases." : "Elige una opción de arriba: horario, reservas, discos, másters, asistencia o calificaciones."} />}
           {v === "horario" && <Horario datos={datos} recargar={cargar} yo={yo} onSteps={(id) => (setClaseSteps(id), setVista("steps"))} />}
           {v === "steps" && <Steps yo={yo} claseInicial={claseSteps} />}
           {v === "discos" && (esProfe ? <MisDiscos /> : <ReporteDiscos datos={datos} puedeEditar={GESTIONA.includes(yo.rol)} />)}
           {v === "masters" && <Masters datos={datos} rol={yo.rol} />}
           {v === "reporte" && <ReporteAsistencia datos={datos} />}
+          {v === "calificaciones" && <Calificaciones datos={datos} esProfe={esProfe} />}
           {v === "config" && yo.rol === "admin" && <Configuracion datos={datos} recargar={cargar} />}
         </>
       )}
