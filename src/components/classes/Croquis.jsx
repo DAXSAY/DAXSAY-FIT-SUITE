@@ -178,6 +178,7 @@ export const Croquis = ({ croquis, reservas = [], onStep, seleccionado, nombres 
   return (
     <div className="rd-croquis-marco w-full overflow-x-auto">
       <div className="rd-croquis mx-auto" style={{ minWidth: 320 }}>
+        <div className="rd-croquis-pad">
         <div className="relative" style={{ aspectRatio: `${ancho} / ${alto}` }}>
           {steps.map((z) => {
             if (z.tipo === "zona") return <Zona key={z.id} z={z} estilo={cajaZona(z, ancho, alto)} />;
@@ -206,6 +207,7 @@ export const Croquis = ({ croquis, reservas = [], onStep, seleccionado, nombres 
               </button>
             );
           })}
+        </div>
         </div>
       </div>
     </div>
@@ -239,7 +241,7 @@ export const EditorCroquis = ({ croquis, onCambiar, plantillas = [], onGuardarPl
   const { ancho = 40, alto = 28 } = croquis;
   const steps = croquis.steps;
   const lienzo = useRef(null);
-  const [herramienta, setHerramienta] = useState("step");
+  const [herramienta, setHerramienta] = useState(null); // nada elegido hasta que la persona elija
   const [vertical, setVertical] = useState(false);
   const [sel, setSel] = useState(null);
   const [dibujo, setDibujo] = useState(null); // { x0, y0, x1, y1 }
@@ -272,7 +274,7 @@ export const EditorCroquis = ({ croquis, onCambiar, plantillas = [], onGuardarPl
   // Tamaño normal del elemento elegido (girado si se pidió vertical)
   const base = esStep ? { w: 3, h: 2 } : herr ? { w: herr.w, h: herr.h } : { w: 8, h: 2 };
   const tam = vertical && base.w !== base.h ? { w: base.h, h: base.w } : base;
-  const nombreHerr = herramienta === "step" ? "Step con número" : herramienta === "letra" ? "Step con letra" : herr ? herr.etiqueta : "Texto libre";
+  const nombreHerr = herramienta === "step" ? "Step con número" : herramienta === "letra" ? "Step con letra" : herr ? herr.etiqueta : herramienta === "zona" ? "Texto libre" : "";
 
   // Plantillas: las de ejemplo y las guardadas por el gimnasio
   const [plantilla, setPlantilla] = useState("");
@@ -323,6 +325,7 @@ export const EditorCroquis = ({ croquis, onCambiar, plantillas = [], onGuardarPl
       setArrastre({ key: clave(z), dx: c.x - z.x, dy: c.y - z.y });
     } else {
       setSel(null);
+      if (!herramienta) return setAviso("👆 Primero elige arriba qué quieres dibujar (step, muro, columna…).");
       setDibujo({ x0: c.x, y0: c.y, x1: c.x, y1: c.y });
     }
   };
@@ -414,7 +417,7 @@ export const EditorCroquis = ({ croquis, onCambiar, plantillas = [], onGuardarPl
   const sombra =
     enDibujo && (enDibujo.w > 1 || enDibujo.h > 1)
       ? enDibujo
-      : !arrastre && hover && !enCasilla(hover)
+      : herramienta && !arrastre && hover && !enCasilla(hover)
         ? { x: Math.min(hover.x, ancho - tam.w), y: Math.min(hover.y, alto - tam.h), w: tam.w, h: tam.h }
         : null;
   const sombraChoca = sombra && steps.some((z) => chocan(z, sombra));
@@ -429,27 +432,31 @@ export const EditorCroquis = ({ croquis, onCambiar, plantillas = [], onGuardarPl
           ...ELEMENTOS.map((e) => [e.k, e.icono, e.etiqueta]),
           ["zona", Type, "Texto libre"],
         ].map(([k, I, l]) => (
-          <button key={k} type="button" onClick={() => setHerramienta(k)} className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 cursor-pointer ${herramienta === k ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
+          <button key={k} type="button" onClick={() => setHerramienta((x) => (x === k ? null : k))} className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 cursor-pointer ${herramienta === k ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>
             <I className="w-3.5 h-3.5" /> {l}
           </button>
         ))}
       </div>
 
-      {/* Vista previa del elemento elegido */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-2.5 flex flex-wrap items-center gap-3">
-        <Miniatura k={herramienta} w={tam.w} h={tam.h} />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-black text-slate-800">{nombreHerr}</p>
-          <p className="text-[11px] text-slate-500">Tamaño normal: {tam.w} × {tam.h} casillas. Mueve el puntero sobre el salón y verás su sombra; un toque lo coloca, o arrastra para darle otro tamaño.</p>
-        </div>
-        {!esStep && base.w !== base.h && (
-          <div className="flex rounded-xl border border-slate-200 overflow-hidden text-xs font-bold">
-            {[[false, "▬ Horizontal"], [true, "▮ Vertical"]].map(([v, l]) => (
-              <button key={l} type="button" onClick={() => setVertical(v)} className={`px-3 py-1.5 cursor-pointer ${vertical === v ? "bg-teal-600 text-white" : "bg-white text-slate-600"}`}>{l}</button>
-            ))}
+      {/* Vista previa del elemento elegido (nada elegido al entrar) */}
+      {herramienta ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-2.5 flex flex-wrap items-center gap-3">
+          <Miniatura k={herramienta} w={tam.w} h={tam.h} />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-black text-slate-800">{nombreHerr}</p>
+            <p className="text-[11px] text-slate-500">Tamaño normal: {tam.w} × {tam.h} casillas. Mueve el puntero sobre el salón y verás su sombra; un toque lo coloca, o arrastra para darle otro tamaño. Toca el botón otra vez para soltarlo.</p>
           </div>
-        )}
-      </div>
+          {!esStep && base.w !== base.h && (
+            <div className="flex rounded-xl border border-slate-200 overflow-hidden text-xs font-bold">
+              {[[false, "▬ Horizontal"], [true, "▮ Vertical"]].map(([v, l]) => (
+                <button key={l} type="button" onClick={() => setVertical(v)} className={`px-3 py-1.5 cursor-pointer ${vertical === v ? "bg-teal-600 text-white" : "bg-white text-slate-600"}`}>{l}</button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="rounded-2xl border border-dashed border-slate-300 p-2.5 text-xs text-slate-500">👆 Elige arriba qué quieres dibujar y verás su forma y tamaño antes de colocarlo. Sin elegir nada, puedes tocar un elemento para editarlo o arrastrarlo para moverlo.</p>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={agregarFila} className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 flex items-center gap-1.5 cursor-pointer">
@@ -488,11 +495,13 @@ export const EditorCroquis = ({ croquis, onCambiar, plantillas = [], onGuardarPl
       {aviso && <p className="text-xs font-bold rounded-xl border p-2.5 rd-kpi-ambar rd-aviso-t">{aviso}</p>}
 
       <div className="rd-croquis-marco w-full overflow-x-auto">
-        <div className="rd-croquis mx-auto" style={{ minWidth: 420 }}>
+        {/* La cuadrícula sigue por el margen: el margen mide justo una casilla */}
+        <div className="rd-croquis mx-auto overflow-hidden" style={{ minWidth: 420 }}>
+          <div className="rd-croquis-pad rd-croquis-editor" style={{ backgroundOrigin: "content-box", backgroundSize: `${100 / ancho}% ${100 / alto}%`, backgroundPosition: "0 0" }}>
           <div
             ref={lienzo}
-            className="rd-croquis-editor relative touch-none select-none"
-            style={{ aspectRatio: `${ancho} / ${alto}`, backgroundSize: `${100 / ancho}% ${100 / alto}%` }}
+            className="relative touch-none select-none"
+            style={{ aspectRatio: `${ancho} / ${alto}` }}
             onPointerDown={bajar}
             onPointerMove={mover}
             onPointerUp={soltar}
@@ -510,10 +519,11 @@ export const EditorCroquis = ({ croquis, onCambiar, plantillas = [], onGuardarPl
               );
             })}
             {sombra && (
-              <div className={`rd-sombra ${sombraChoca ? "rd-sombra-mal" : ""} absolute rounded-md pointer-events-none flex items-center justify-center text-[10px] font-black uppercase`} style={cajaZona(sombra, ancho, alto)}>
+              <div className={`rd-sombra ${sombraChoca ? "rd-sombra-mal" : ""} absolute rounded-md pointer-events-none flex items-center justify-center text-[10px] font-black uppercase`} style={esStep ? cajaStep(sombra, ancho, alto) : cajaZona(sombra, ancho, alto)}>
                 {sombra.w >= 3 && sombra.h >= 1 ? (esStep ? (herramienta === "step" ? siguienteNumero() : siguienteLetra()) : herr?.k === "muro" || herr?.k === "columna" ? "" : nombreHerr) : ""}
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>

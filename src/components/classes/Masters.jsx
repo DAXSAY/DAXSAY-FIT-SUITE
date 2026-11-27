@@ -70,19 +70,19 @@ const FormMaster = ({ datos, inicial, pctDefecto = 50, onListo, onCerrar }) => {
     disciplinaId: "",
     profesorId: "",
     invitado: "",
-    fecha: proximoFinde(),
-    inicio: "09:00",
-    fin: "11:00",
+    fecha: "",
+    inicio: "",
+    fin: "",
     precioSocio: "",
     precioPublico: "",
     cupo: "",
     descripcion: "",
     estado: "abierto",
     pctGym: pctDefecto,
-    sedeId: datos.sedes?.[0]?.id || null,
+    sedeId: datos.sedes?.length === 1 ? datos.sedes[0].id : null,
     ...(inicial || {}),
   }));
-  const [conLimite, setConLimite] = useState(!!inicial?.cupo);
+  const [conLimite, setConLimite] = useState(inicial?.id ? !!inicial?.cupo : null); // al crear, se elige
   const { currentUser, saveGymConfig } = useGym();
   const [pctFijado, setPctFijado] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -90,6 +90,10 @@ const FormMaster = ({ datos, inicial, pctDefecto = 50, onListo, onCerrar }) => {
   const desc = f.precioPublico > 0 && f.precioSocio !== "" ? Math.round((1 - Number(f.precioSocio) / Number(f.precioPublico)) * 100) : null;
   const guardar = async (e) => {
     e.preventDefault();
+    if (!f.fecha) return setMsg({ ok: false, texto: "Elige la fecha del máster (sábado o domingo)" });
+    if (!f.inicio || !f.fin) return setMsg({ ok: false, texto: "Escribe la hora de inicio y de fin" });
+    if ((datos.sedes?.length || 0) > 1 && !f.sedeId) return setMsg({ ok: false, texto: "Elige la sede" });
+    if (conLimite === null) return setMsg({ ok: false, texto: "Elige si el máster tiene límite de personas" });
     try {
       const cuerpo = { ...f, cupo: conLimite ? f.cupo : "", profesorId: Number(f.profesorId) || null, disciplinaId: Number(f.disciplinaId) || null };
       if (inicial?.id) await api(`/masters/${inicial.id}`, { method: "PUT", body: cuerpo });
@@ -232,12 +236,12 @@ const FormMaster = ({ datos, inicial, pctDefecto = 50, onListo, onCerrar }) => {
 // ---------------------------------------------------------------------
 const FormInscribir = ({ master, onListo, onCerrar, stepInicial = null }) => {
   const { members = [] } = useGym();
-  const [modo, setModo] = useState("alumno");
+  const [modo, setModo] = useState(null); // socio o externo: lo elige recepción
   const [codigo, setCodigo] = useState("");
   const [p, setP] = useState({ nombre: "", dni: "", celular: "" });
-  const [pago, setPago] = useState("todo"); // todo | adelanto | despues
+  const [pago, setPago] = useState(null); // todo | adelanto | despues
   const [adelanto, setAdelanto] = useState("");
-  const [metodo, setMetodo] = useState("efectivo");
+  const [metodo, setMetodo] = useState(null);
   const [step, setStep] = useState(stepInicial);
   const { info: pasos } = useStepsMaster(master.id, 6000);
   const [msg, setMsg] = useState(null);
@@ -247,6 +251,9 @@ const FormInscribir = ({ master, onListo, onCerrar, stepInicial = null }) => {
     try {
       const body = modo === "alumno" ? { alumnoId: Number(hallado?.id) } : p;
       if (modo === "alumno" && !hallado) return setMsg({ ok: false, texto: "Busca al socio por su código o DNI" });
+      if (!modo) return setMsg({ ok: false, texto: "Elige si es socio o externo" });
+      if (!pago) return setMsg({ ok: false, texto: "Elige cómo paga: todo, adelanto o después" });
+      if (pago !== "despues" && !metodo) return setMsg({ ok: false, texto: "Elige con qué paga (efectivo, Yape/Plin…)" });
       if (pago === "adelanto" && !(Number(adelanto) > 0)) return setMsg({ ok: false, texto: "Escribe cuánto dejó de adelanto" });
       const r = await api(`/masters/${master.id}/inscribir`, { method: "POST", body: { ...body, pagado: pago === "todo", adelanto: pago === "adelanto" ? Number(adelanto) : 0, metodo, step } });
       onListo(`✅ Reserva de ${r.nombre}${r.step ? ` en el step ${r.step}` : " (sin step)"} · ${r.socio ? "precio socio" : "precio externo"} ${soles(r.precio)}${r.pagado ? " · pagado" : r.adelanto ? ` · adelanto ${soles(r.adelanto)} · saldo ${soles(r.saldo)}` : " · por cobrar"}`);
@@ -270,13 +277,15 @@ const FormInscribir = ({ master, onListo, onCerrar, stepInicial = null }) => {
         </div>
         {modo === "alumno" ? (
           <BuscarSocio members={members} value={codigo} onChange={(t) => (setCodigo(t), setMsg(null))} detalleVigente={`precio socio ${soles(master.precioSocio)}`} detalleVencido={`precio externo ${soles(master.precioPublico)}`} />
-        ) : (
+        ) : modo === "externo" ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <label className="block text-sm sm:col-span-3"><span className="font-bold text-slate-700">Nombre completo *</span><input autoFocus value={p.nombre} onChange={(e) => setP({ ...p, nombre: e.target.value })} maxLength={120} className={campo} /></label>
             <label className="block text-sm"><span className="font-bold text-slate-700">DNI</span><input value={p.dni} onChange={(e) => setP({ ...p, dni: e.target.value })} inputMode="numeric" maxLength={15} className={campo} /></label>
             <label className="block text-sm sm:col-span-2"><span className="font-bold text-slate-700">Celular</span><input value={p.celular} onChange={(e) => setP({ ...p, celular: e.target.value })} inputMode="tel" maxLength={20} className={campo} /></label>
             <p className="text-xs text-slate-500 sm:col-span-3">Paga el precio externo: {soles(master.precioPublico)}. Se mostrará en morado en el croquis.</p>
           </div>
+        ) : (
+          <p className="rd-kpi-plomo rd-aviso-t rounded-xl border p-3 text-xs font-bold">👆 Elige arriba si la reserva es de un socio o de un externo.</p>
         )}
         <div className="rounded-2xl border border-slate-200 p-3 space-y-2">
           <p className="text-sm font-bold text-slate-700">🧱 Step (sitio) <span className="font-semibold text-slate-500">— opcional, también se puede asignar después</span></p>
@@ -295,7 +304,7 @@ const FormInscribir = ({ master, onListo, onCerrar, stepInicial = null }) => {
               <input type="number" min={0.5} step="0.5" value={adelanto} onChange={(e) => setAdelanto(e.target.value)} placeholder="Ej. 5" className={campo} />
             </label>
           )}
-          {pago !== "despues" && (
+          {pago && pago !== "despues" && (
             <div className="flex flex-wrap gap-1.5">
               {METODOS.map(([k, l]) => (
                 <button key={k} type="button" onClick={() => setMetodo(k)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${metodo === k ? "bg-emerald-600 border-emerald-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{l}</button>
@@ -316,7 +325,7 @@ const FormInscribir = ({ master, onListo, onCerrar, stepInicial = null }) => {
 // ---------------------------------------------------------------------
 const FichaReserva = ({ i, m, gestiona, onCerrar, onAccion, onStep }) => {
   const saldo = i.saldo ?? (i.pagado ? 0 : i.precio);
-  const [monto, setMonto] = useState(String(saldo));
+  const [monto, setMonto] = useState(""); // lo escribe recepción (o toca «Todo el saldo»)
   const n = Number(monto);
   const valido = n > 0 && n <= saldo + 0.001;
   return (
@@ -336,15 +345,16 @@ const FichaReserva = ({ i, m, gestiona, onCerrar, onAccion, onStep }) => {
         {gestiona && saldo > 0 && (
           <div className="rounded-xl border border-slate-200 p-3 space-y-2">
             <label className="block text-xs font-bold text-slate-600">Monto a cobrar (todo el saldo o una parte)
-              <input type="number" min={0.5} step="0.5" max={saldo} value={monto} onChange={(e) => setMonto(e.target.value)} className={campo} />
+              <input type="number" min={0.5} step="0.5" max={saldo} value={monto} onChange={(e) => setMonto(e.target.value)} placeholder={`Saldo: ${soles(saldo)}`} className={campo} />
             </label>
+            <button type="button" onClick={() => setMonto(String(saldo))} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50">Todo el saldo · {soles(saldo)}</button>
             <p className="text-xs font-bold text-slate-600">Cobrar {valido ? soles(n) : ""} con:</p>
             <div className="grid grid-cols-2 gap-2">
               {METODOS.map(([k, l]) => (
                 <button key={k} type="button" disabled={!valido} onClick={() => onAccion(i, "pagar", { metodo: k, monto: n })} className="rounded-xl border border-slate-200 py-2.5 text-sm font-black cursor-pointer hover:bg-emerald-50 disabled:opacity-40">{l}</button>
               ))}
             </div>
-            {!valido && <p className="text-xs font-bold text-rose-700">El monto debe ser mayor a 0 y como máximo {soles(saldo)}.</p>}
+            {monto !== "" && !valido && <p className="text-xs font-bold text-rose-700">El monto debe ser mayor a 0 y como máximo {soles(saldo)}.</p>}
           </div>
         )}
         {gestiona && (
@@ -594,7 +604,7 @@ export default function Masters({ datos, rol }) {
     setLista(null);
     cargar();
   }, [ver]); // eslint-disable-line react-hooks/exhaustive-deps
-  const actual = useMemo(() => (lista || []).find((m) => m.id === elegido) || (lista || [])[0], [lista, elegido]);
+  const actual = useMemo(() => (lista || []).find((m) => m.id === elegido) || null, [lista, elegido]); // nada elegido al entrar
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 flex flex-wrap items-center gap-2">
@@ -626,6 +636,7 @@ export default function Masters({ datos, rol }) {
               </button>
             ))}
           </div>
+          {!actual && lista?.length > 0 && <p className="rd-kpi-plomo rd-aviso-t rounded-2xl border p-4 text-sm font-bold text-center">👆 Elige un máster para ver sus reservas, cobros y el croquis.</p>}
           {actual && <DetalleMaster key={actual.id} m={actual} rol={rol} sedes={datos.sedes} onCambio={cargar} onEditar={() => setForm(actual)} />}
         </>
       )}

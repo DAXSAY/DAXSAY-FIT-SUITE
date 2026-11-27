@@ -4252,7 +4252,8 @@ html.dark .rd-barra-alumno-hoja{background:#0b1626;border-color:rgba(148,163,184
 html.dark .rd-perfil-mini{background:rgba(8,16,28,.55)}
 
 /* ===================== Clases grupales: croquis de steps ===================== */
-.rd-croquis{background:linear-gradient(180deg,#f8fbfb,#f1f6f6);border:1px solid #dfe8e8;border-radius:16px;max-width:760px;padding:2.2%}
+.rd-croquis{background:linear-gradient(180deg,#f8fbfb,#f1f6f6);border:1px solid #dfe8e8;border-radius:16px;max-width:760px}
+.rd-croquis-pad{padding:2.381%} /* margen = justo 1 casilla (1/42 del ancho) */
 .rd-croquis-editor{background-color:#f8fbfb;background-image:linear-gradient(to right,rgba(15,23,42,.06) 1px,transparent 1px),linear-gradient(to bottom,rgba(15,23,42,.06) 1px,transparent 1px)}
 .rd-zona{background:repeating-linear-gradient(135deg,rgba(100,116,139,.08) 0 6px,rgba(100,116,139,.14) 6px 12px);border:1.5px dashed #a9b6c4;border-radius:8px;color:#64748b}
 .rd-zona-sel{border-color:#47988f;color:#47988f;box-shadow:0 0 0 2px rgba(71,152,143,.25)}
@@ -4277,8 +4278,8 @@ button.rd-step-libre:not(:disabled):hover{background:#f1f5f9;border-color:#47988
 .rd-step-llego{background:#16a34a;border-color:#15803d;color:#ffffff;text-shadow:0 1px 0 rgba(0,0,0,.18)}
 .rd-step-externo{background:#7c3aed;border-color:#6d28d9;color:#ffffff;text-shadow:0 1px 0 rgba(0,0,0,.2)}
 .rd-step-deuda{background:#e11d48;border-color:#be123c;color:#ffffff;text-shadow:0 1px 0 rgba(0,0,0,.2)}
-.rd-step-mio{background:#2563eb;border-color:#1d4ed8;color:#ffffff;box-shadow:0 0 0 3px rgba(37,99,235,.3)}
-.rd-step-sel{background:#0f172a;border-color:#0f172a;color:#fff;box-shadow:0 0 0 3px rgba(245,158,11,.55);transform:scale(1.06);z-index:2}
+.rd-step-mio{background:#2563eb;border-color:#1d4ed8;color:#ffffff}
+.rd-step-sel{background:#0f172a;border-color:#0f172a;color:#fff;box-shadow:inset 0 0 0 2px rgba(245,158,11,.9);z-index:2}
 html.dark .rd-croquis{background:linear-gradient(180deg,rgba(20,32,48,.75),rgba(12,22,36,.75));border-color:rgba(94,232,216,.18)}
 html.dark .rd-croquis-editor{background-color:rgba(12,22,36,.8);background-image:linear-gradient(to right,rgba(148,163,184,.10) 1px,transparent 1px),linear-gradient(to bottom,rgba(148,163,184,.10) 1px,transparent 1px)}
 html.dark .rd-zona{background:repeating-linear-gradient(135deg,rgba(148,163,184,.06) 0 6px,rgba(148,163,184,.12) 6px 12px);border-color:rgba(148,163,184,.45);color:#a5b4c8}
@@ -4289,8 +4290,8 @@ html.dark .rd-step-reservado{background:#f5a524;border-color:#ffc266;color:#1f13
 html.dark .rd-step-llego{background:#22c55e;border-color:#86efac;color:#03200d;text-shadow:none}
 html.dark .rd-step-externo{background:#a78bfa;border-color:#c4b5fd;color:#1b0b3d;text-shadow:none}
 html.dark .rd-step-deuda{background:#fb7185;border-color:#fecdd3;color:#3b0410;text-shadow:none}
-html.dark .rd-step-mio{background:#60a5fa;border-color:#bfdbfe;color:#06182f;box-shadow:0 0 12px rgba(96,165,250,.45)}
-html.dark .rd-step-sel{background:#f8fafc;border-color:#ffffff;color:#0b1220;box-shadow:0 0 0 3px rgba(255,194,102,.6),0 0 16px rgba(255,255,255,.35);transform:scale(1.06);z-index:2}
+html.dark .rd-step-mio{background:#60a5fa;border-color:#bfdbfe;color:#06182f}
+html.dark .rd-step-sel{background:#f8fafc;border-color:#ffffff;color:#0b1220;box-shadow:inset 0 0 0 2px rgba(245,158,11,.9);z-index:2}
 /* Tarjeta de clase en el horario (color de su disciplina) */
 .rd-clase-card{background:var(--kf);border:1px solid var(--kb);border-left:4px solid var(--k);color:var(--kt,var(--k))}
 .rd-clase-card:hover{box-shadow:0 4px 14px color-mix(in srgb,var(--k) 22%,transparent)}
@@ -4317,5 +4318,5 @@ html.dark .rd-socio-avatar{background:linear-gradient(135deg,#3fb5aa,#1d6f68);co
 .rd-sombra-mal{background:rgba(225,29,72,.14);border-color:#e11d48;color:#be123c}
 html.dark .rd-sombra{background:rgba(94,232,216,.14);border-color:#88f0e5;color:#88f0e5}
 html.dark .rd-sombra-mal{background:rgba(251,113,133,.16);border-color:#fb7185;color:#fda4af}
-.rd-choca{outline:2px solid #e11d48;outline-offset:1px;animation:rdChoca 1s ease-in-out infinite}
+.rd-choca{outline:2px solid #e11d48;outline-offset:-2px;animation:rdChoca 1s ease-in-out infinite}
 @keyframes rdChoca{50%{outline-color:rgba(225,29,72,.35)}}

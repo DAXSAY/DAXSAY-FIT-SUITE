@@ -57,11 +57,12 @@ const FormClase = ({ datos, inicial, onListo, onCerrar }) => {
     disciplinaId: inicial?.disciplinaId || "",
     nombre: inicial?.id && inicial.nombre !== inicial.disciplina ? inicial.nombre : "",
     dias: inicial?.dia ? [inicial.dia] : [],
-    inicio: inicial?.inicio || "18:00",
-    fin: inicial?.fin || "19:00",
+    inicio: inicial?.inicio || "",
+    fin: inicial?.fin || "",
     profesorId: inicial?.profesorId || "",
     sala: inicial?.sala || "",
-    sedeId: inicial?.sedeId || datos.sedes?.[0]?.id || null,
+    // Con una sola sede no hay nada que elegir; con varias, la elige la persona
+    sedeId: inicial?.sedeId || (datos.sedes?.length === 1 ? datos.sedes[0].id : null),
   }));
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -83,6 +84,8 @@ const FormClase = ({ datos, inicial, onListo, onCerrar }) => {
     setError("");
     if (!f.disciplinaId) return setError("Elige la disciplina");
     if (!f.dias.length) return setError("Elige al menos un día");
+    if (!f.inicio || !f.fin) return setError("Escribe la hora de inicio y de fin");
+    if ((datos.sedes?.length || 0) > 1 && !f.sedeId) return setError("Elige la sede");
     setGuardando(true);
     try {
       const cuerpo = { ...f, profesorId: Number(f.profesorId) || null };
@@ -431,13 +434,7 @@ const Steps = ({ yo, claseInicial, sedes = [] }) => {
   const entrada = useRef(null);
   const sesion = (sesiones || []).find((s) => s.claseId === claseId);
 
-  useEffect(() => {
-    if (!claseId && sesiones?.length) {
-      const ahora = aMin(new Date().toLocaleTimeString("en-GB", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" }));
-      const proxima = sesiones.find((s) => aMin(s.fin) > ahora) || sesiones[sesiones.length - 1];
-      setClaseId(proxima.claseId);
-    }
-  }, [sesiones, claseId]);
+  // No se elige ninguna clase sola: recepción toca la que quiere ver
   const cargar = () => {
     if (!claseId) return;
     api(`/clases/reservas?clase=${claseId}&fecha=${hoy}`)
@@ -528,6 +525,7 @@ const Steps = ({ yo, claseInicial, sedes = [] }) => {
         ))}
       </div>
 
+      {!sesion && <p className="rd-kpi-plomo rd-aviso-t rounded-2xl border p-4 text-sm font-bold text-center">👆 Elige una clase de hoy para ver su croquis y sus reservas.</p>}
       {sesion && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <TarjetaKpi titulo="Steps" valor={(croquis?.steps || []).filter((z) => z.tipo === "step").length} sub="en el croquis" emoji="🧱" tono="teal" />
@@ -939,11 +937,13 @@ const ReporteAsistencia = ({ datos }) => {
 // Disciplinas, profesores, croquis (administración)
 // ---------------------------------------------------------------------
 const FormDisciplina = ({ datos, inicial, onListo, onCerrar }) => {
-  const [f, setF] = useState(() => ({ nombre: "", emoji: "🎵", color: "teal", descripcion: "", activa: true, profesores: [], ...(inicial || {}) }));
+  const [f, setF] = useState(() => ({ nombre: "", emoji: "", color: "", descripcion: "", activa: true, profesores: [], ...(inicial || {}) }));
   const [error, setError] = useState("");
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
   const guardar = async (e) => {
     e.preventDefault();
+    if (!f.emoji) return setError("Elige un emoji para la disciplina");
+    if (!f.color) return setError("Elige un color para la disciplina");
     try {
       if (inicial?.id) await api(`/clases/disciplinas/${inicial.id}`, { method: "PUT", body: f });
       else await api("/clases/disciplinas", { method: "POST", body: f });
@@ -956,7 +956,7 @@ const FormDisciplina = ({ datos, inicial, onListo, onCerrar }) => {
     <Ventana titulo={inicial?.id ? `Editar ${inicial.nombre}` : "Nueva disciplina"} onCerrar={onCerrar}>
       <form onSubmit={guardar} className="space-y-3">
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
-          <label className="block text-sm"><span className="font-bold text-slate-700">Emoji</span><input value={f.emoji} onChange={(e) => set("emoji", e.target.value)} maxLength={8} className={`${campo} text-center text-lg`} /></label>
+          <label className="block text-sm"><span className="font-bold text-slate-700">Emoji</span><input value={f.emoji} onChange={(e) => set("emoji", e.target.value)} maxLength={8} placeholder="Ej. 🎵" className={`${campo} text-center text-lg`} /></label>
           <label className="block text-sm"><span className="font-bold text-slate-700">Nombre *</span><input autoFocus value={f.nombre} onChange={(e) => set("nombre", e.target.value)} maxLength={60} className={campo} /></label>
         </div>
         <div>
@@ -1000,7 +1000,7 @@ const FormProfesor = ({ datos, inicial, onListo, onCerrar }) => {
     apellidos: inicial ? inicial.apellidos ?? resto.join(" ") : "",
     telefono: inicial?.telefono || "",
     disciplinas: inicial?.disciplinas || [],
-    crearUsuario: true,
+    crearUsuario: !!inicial ? true : null, // al crear, la persona elige si tendrá usuario
     usuario: "",
   });
   const [error, setError] = useState("");
@@ -1010,6 +1010,7 @@ const FormProfesor = ({ datos, inicial, onListo, onCerrar }) => {
   const guardar = async (e) => {
     e.preventDefault();
     setError("");
+    if (!inicial && f.crearUsuario === null) return setError("Elige si tendrá usuario para entrar al sistema");
     try {
       if (inicial) {
         await api(`/clases/profesores/${inicial.id}`, { method: "PUT", body: f });
@@ -1075,9 +1076,12 @@ const FormProfesor = ({ datos, inicial, onListo, onCerrar }) => {
         </div>
         {!inicial && (
           <div className="rounded-2xl border border-slate-200 p-3 space-y-2">
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-              <input type="checkbox" checked={f.crearUsuario} onChange={(e) => set("crearUsuario", e.target.checked)} /> Darle usuario para entrar (ve sus clases y anota sus discos)
-            </label>
+            <p className="text-sm font-bold text-slate-700">¿Tendrá usuario para entrar? <span className="font-normal text-slate-500">(ve sus clases y anota sus discos)</span></p>
+            <div className="flex gap-1.5">
+              {[[true, "Sí, darle usuario"], [false, "No por ahora"]].map(([v, l]) => (
+                <button key={l} type="button" onClick={() => set("crearUsuario", v)} className={`px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer ${f.crearUsuario === v ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{l}</button>
+              ))}
+            </div>
             {f.crearUsuario && (
               <label className="text-xs font-bold text-slate-600 block">
                 Usuario <span className="font-normal">(si lo dejas vacío se crea con su nombre)</span>
