@@ -126,7 +126,7 @@ const TONOS = {
 
 const Acciones = ({ tipo, p, setActiveTab, alHacer }) => {
   const { gymConfig, currentUser } = useGym();
-  const gym = gymConfig?.gym_nombre || "RADICAL";
+  const gym = gymConfig?.gym_nombre || "nuestro gimnasio";
   const quien = currentUser?.fullName || "";
   const btn = "px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer";
   return (
@@ -221,6 +221,8 @@ const Tarjeta = ({ item, onSalir, setActiveTab }) => {
 
 export const CrmToasts = ({ setActiveTab }) => {
   const d = useAvisosCrm();
+  const { gymConfig } = useGym();
+  const gym = gymConfig?.gym_nombre || "DAXSAY Fit Suite";
   const vistos = useRef(null);
   const [cola, setCola] = useState([]);
   const [resumen, setResumen] = useState(null);
@@ -255,7 +257,7 @@ export const CrmToasts = ({ setActiveTab }) => {
       nuevos.forEach((x) => {
         vistos.current.add(x.clave);
         const t = textoAviso(x.tipo, x.p);
-        notificar(`RADICAL · ${t.titulo}`, t.detalle);
+        notificar(`${gym} · ${t.titulo}`, t.detalle);
       });
       if (nuevos.length) setCola((c) => [...c, ...nuevos]);
     }
@@ -333,7 +335,7 @@ const FilaPanel = ({ tipo, p, setActiveTab, onCerrar }) => {
   const { gymConfig, currentUser } = useGym();
   const c = COLOR_SECCION[tipo];
   const hecho = tipo === "hoy" && (p.reminderSeen || p.status === "matriculado");
-  const gym = gymConfig?.gym_nombre || "RADICAL";
+  const gym = gymConfig?.gym_nombre || "nuestro gimnasio";
   const quien = currentUser?.fullName || "";
   // Una sola marca de tiempo (sin repetir la fecha en el texto)
   const d = tipo === "noVino" ? diasDesde(p.passDate) : null;

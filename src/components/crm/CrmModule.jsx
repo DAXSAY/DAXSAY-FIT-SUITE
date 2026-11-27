@@ -746,7 +746,7 @@ export const CrmModule = () => {
   const puedeCrear = userCan(currentUser, "crm", "crear");
   const puedeEditar = userCan(currentUser, "crm", "editar");
   const puedeEliminar = userCan(currentUser, "crm", "eliminar");
-  const gym = gymConfig?.gym_nombre || "RADICAL";
+  const gym = gymConfig?.gym_nombre || "nuestro gimnasio";
 
   const cargar = () =>
     api("/prospectos")

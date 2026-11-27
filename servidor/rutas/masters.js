@@ -11,7 +11,7 @@ import { Router } from "express";
 import { consultar, enFila } from "../db.js";
 import { ErrorHttp, exigirCajaAbierta } from "../seguridad.js";
 import { hoyLima, sumarDias } from "../congelamiento.js";
-import { croquis, nombreStep } from "./clases.js";
+import { croquis, nombreStep, sedeValida } from "./clases.js";
 
 const router = Router();
 const STAFF = ["admin", "reception"];
@@ -96,9 +96,10 @@ async function exigirParte41() {
   if (!(await parte41())) throw new ErrorHttp(503, "Falta ejecutar la parte 41 (41_steps_masters_calificaciones.sql) en MySQL Workbench para elegir steps en los másters.");
 }
 /** Valida que el step exista en el croquis */
-async function stepValido(idstep) {
-  const [st] = await consultar("SELECT idstep, COALESCE(NULLIF(etiqueta,''), numero) AS numero FROM clase_steps WHERE idstep = ? AND activo = 1 AND tipo = 'step'", [idstep]);
+async function stepValido(idstep, idsede = null) {
+  const [st] = await consultar("SELECT *, COALESCE(NULLIF(etiqueta,''), numero) AS numero FROM clase_steps WHERE idstep = ? AND activo = 1 AND tipo = 'step'", [idstep]);
   if (!st) throw new ErrorHttp(400, "Ese step ya no existe en el croquis");
+  if (idsede && st.idsede && st.idsede !== idsede) throw new ErrorHttp(400, "Ese step es del salón de otra sede");
   return { ...st, numero: nombreStep(st.numero) };
 }
 /** ¿Quién tiene ese step en el máster? (la inscripción más antigua gana) */
@@ -139,6 +140,7 @@ async function registrarCobro(req, ins, m, metodo) {
 
 const masterJson = (f) => ({
   id: f.idmaster,
+  sedeId: f.idsede || null,
   titulo: f.titulo,
   disciplinaId: f.iddisciplina,
   disciplina: f.disciplina || "",
@@ -240,6 +242,7 @@ async function validar(b) {
     sala: txt(b.sala, 60),
     descripcion: txt(b.descripcion, 400),
     pct: Math.round(pct * 100) / 100,
+    idsede: await sedeValida(b.sedeId),
   };
 }
 router.post("/", async (req, res, next) => {
@@ -254,6 +257,7 @@ router.post("/", async (req, res, next) => {
       [v.titulo, v.iddisciplina, v.idempleado, v.invitado, v.fecha, v.inicio, v.fin, v.precioSocio, v.precioPublico, v.cupo, v.sala, v.descripcion, req.usuario.idusuario],
     );
     if (await parte40()) await consultar("UPDATE masters SET pct_gym = ? WHERE idmaster = ?", [v.pct, r.insertId]);
+    if (v.idsede) await consultar("UPDATE masters SET idsede = ? WHERE idmaster = ?", [v.idsede, r.insertId]);
     res.status(201).json({ ok: true, id: r.insertId });
   } catch (e) {
     next(e);
@@ -272,6 +276,7 @@ router.put("/:id(\\d+)", async (req, res, next) => {
     );
     if (req.body?.pctGym !== undefined && req.body.pctGym !== "" && (await parte40()))
       await consultar("UPDATE masters SET pct_gym = ? WHERE idmaster = ?", [v.pct, Number(req.params.id)]);
+    if (v.idsede) await consultar("UPDATE masters SET idsede = ? WHERE idmaster = ?", [v.idsede, Number(req.params.id)]);
     res.json({ ok: true });
   } catch (e) {
     next(e);
@@ -326,7 +331,8 @@ router.get("/:id(\\d+)/steps", async (req, res, next) => {
     const id = Number(req.params.id);
     const alumno = req.usuario.rol === "student";
     const yo = alumno ? await alumnoDe(req) : null;
-    const pasos = await croquis();
+    const [mm] = await consultar("SELECT * FROM masters WHERE idmaster = ?", [id]);
+    const pasos = await croquis(mm?.idsede || null);
     const filas = (await parte41())
       ? await consultar(
           `SELECT i.idinscripcion, i.idstep, i.idalumno, i.nombre, i.asistio, COALESCE(NULLIF(s.etiqueta,''), s.numero) AS numero
@@ -403,11 +409,11 @@ async function inscribir(req, res) {
     let st = null;
     if (Number(b.step)) {
       await exigirParte41();
-      st = await stepValido(Number(b.step));
+      st = await stepValido(Number(b.step), m.idsede || null);
       const d = await duenoStep(id, st.idstep);
       if (d) throw ocupado(st.numero, d.nombre);
     } else if (alumno && (await parte41())) {
-      const libres = (await croquis()).filter((z) => z.tipo === "step").length;
+      const libres = (await croquis(m.idsede || null)).filter((z) => z.tipo === "step").length;
       const [u] = await consultar("SELECT COUNT(DISTINCT idstep) AS n FROM master_inscripciones WHERE idmaster = ? AND estado = 'inscrito' AND idstep IS NOT NULL", [id]);
       if (libres > Number(u.n)) throw new ErrorHttp(400, "Elige tu step en el croquis para inscribirte");
     }
@@ -453,7 +459,7 @@ router.post("/inscripciones/:id(\\d+)", async (req, res, next) => {
       const numero = await enFila(`master-${i.idmaster}`, async () => {
         let st = null;
         if (nuevo) {
-          st = await stepValido(nuevo);
+          st = await stepValido(nuevo, m.idsede || null);
           const d = await duenoStep(i.idmaster, st.idstep);
           if (d && d.idinscripcion !== i.idinscripcion) throw ocupado(st.numero, d.nombre);
         }

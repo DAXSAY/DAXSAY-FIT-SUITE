@@ -13,7 +13,7 @@ import { TarjetaKpi } from "../common/TarjetaKpi";
 import { Exportar } from "../reports/ReportsModule";
 import { buscarAlumno } from "../../utils/codigo";
 import { hoyISO } from "../../utils/fecha";
-import { DIAS, diaDe, fechaBonita, sumarDias, aMin, deMin } from "./clasesComun";
+import { DIAS, diaDe, fechaBonita, sumarDias, aMin, deMin, nombreSede } from "./clasesComun";
 import { Croquis, LeyendaCroquis } from "./Croquis";
 import { useStepsMaster, ElegirStep, VentanaStep } from "./StepsMaster";
 
@@ -77,6 +77,7 @@ const FormMaster = ({ datos, inicial, pctDefecto = 50, onListo, onCerrar }) => {
     descripcion: "",
     estado: "abierto",
     pctGym: pctDefecto,
+    sedeId: datos.sedes?.[0]?.id || null,
     ...(inicial || {}),
   }));
   const [conLimite, setConLimite] = useState(!!inicial?.cupo);
@@ -109,6 +110,16 @@ const FormMaster = ({ datos, inicial, pctDefecto = 50, onListo, onCerrar }) => {
               </button>
             ))}
           </div>
+          {(datos.sedes || []).length > 1 && (
+            <div className="space-y-1">
+              <span className="text-sm font-bold text-slate-700">Sede (su salón y sus steps)</span>
+              <div className="flex flex-wrap gap-1.5">
+                {datos.sedes.map((x) => (
+                  <button key={x.id} type="button" onClick={() => set("sedeId", x.id)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${f.sedeId === x.id ? "bg-amber-500 border-amber-500 text-white" : "bg-white border-slate-200 text-slate-600"}`}>📍 {x.nombre}</button>
+                ))}
+              </div>
+            </div>
+          )}
           <label className="block text-sm"><span className="font-bold text-slate-700">Nombre del máster *</span><input value={f.titulo} onChange={(e) => set("titulo", e.target.value)} maxLength={100} placeholder="Ej. Máster Full Body Navideño" className={campo} /></label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="block text-sm">
@@ -291,7 +302,7 @@ const FormInscribir = ({ master, onListo, onCerrar }) => {
 // ---------------------------------------------------------------------
 // Detalle de un máster: inscritos, cobros, asistencia y descarga
 // ---------------------------------------------------------------------
-const DetalleMaster = ({ m, rol, onCambio, onEditar }) => {
+const DetalleMaster = ({ m, rol, sedes = [], onCambio, onEditar }) => {
   const [lista, setLista] = useState(null);
   const [msg, setMsg] = useState(null);
   const [inscribir, setInscribir] = useState(false);
@@ -347,7 +358,7 @@ const DetalleMaster = ({ m, rol, onCambio, onEditar }) => {
         <div className="min-w-0">
           <p className="text-xs font-black uppercase tracking-wider">{ESTADOS[m.estado]}</p>
           <p className="text-xl font-black">{m.emoji} {m.titulo}</p>
-          <p className="text-sm">📅 {DIAS[diaDe(m.fecha)]} {fechaBonita(m.fecha).split(" ").slice(1).join(" ")} · {m.inicio} – {m.fin}{m.sala ? ` · 📍 ${m.sala}` : ""}</p>
+          <p className="text-sm">📅 {DIAS[diaDe(m.fecha)]} {fechaBonita(m.fecha).split(" ").slice(1).join(" ")} · {m.inicio} – {m.fin}{nombreSede(sedes, m.sedeId) ? ` · 📍 ${nombreSede(sedes, m.sedeId)}` : m.sala ? ` · 📍 ${m.sala}` : ""}</p>
           <p className="text-sm">🧑‍🏫 {m.profesor}</p>
           <p className="text-sm font-bold">💰 Socio {soles(m.precioSocio)} · Público {soles(m.precioPublico)}{m.cupo ? ` · Cupo ${m.cupo}` : ""}</p>
           {m.descripcion && <p className="text-xs mt-1">📝 {m.descripcion}</p>}
@@ -539,7 +550,7 @@ export default function Masters({ datos, rol }) {
               </button>
             ))}
           </div>
-          {actual && <DetalleMaster key={actual.id} m={actual} rol={rol} onCambio={cargar} onEditar={() => setForm(actual)} />}
+          {actual && <DetalleMaster key={actual.id} m={actual} rol={rol} sedes={datos.sedes} onCambio={cargar} onEditar={() => setForm(actual)} />}
         </>
       )}
       {form && <FormMaster datos={datos} pctDefecto={pctDef} inicial={form.id ? form : null} onCerrar={() => setForm(null)} onListo={() => (setForm(null), cargar())} />}

@@ -10,7 +10,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Music, LayoutGrid, X, RefreshCw } from "lucide-react";
 import { api } from "../../api/cliente";
 import { hoyISO } from "../../utils/fecha";
-import { DIAS, diaDe, fechaBonita, sumarDias, estadoVentana, ahoraLima, useCroquis, useSesiones } from "./clasesComun";
+import { DIAS, diaDe, fechaBonita, sumarDias, estadoVentana, ahoraLima, useCroquis, useSesiones, nombreSede } from "./clasesComun";
 import { Croquis, LeyendaCroquis } from "./Croquis";
 import { VentanaStep } from "./StepsMaster";
 
@@ -18,7 +18,8 @@ const textoVentana = (v) =>
   v.estado === "abierta" ? "🟢 Reserva abierta" : v.estado === "pronto" ? `⏰ Reserva desde las ${v.abre}` : v.estado === "en_curso" ? "🏃 En clase" : "Terminó";
 
 /** Croquis para reservar (se actualiza solo cada pocos segundos) */
-const Reservar = ({ s, croquis, onCerrar, onCambio }) => {
+const Reservar = ({ s, onCerrar, onCambio }) => {
+  const { croquis } = useCroquis(s.sedeId);
   const [info, setInfo] = useState(null);
   const [msg, setMsg] = useState(null);
   const [enviando, setEnviando] = useState(false);
@@ -259,6 +260,25 @@ export default function MisClases() {
   const { croquis } = useCroquis();
   const { sesiones, error, cargar } = useSesiones(hoy, sumarDias(hoy, 6));
   const [reservar, setReservar] = useState(null);
+  const [sedes, setSedes] = useState([]);
+  const [sede, setSede] = useState(() => {
+    try {
+      return Number(localStorage.getItem("rd_sede_clases")) || null;
+    } catch {
+      return null;
+    }
+  });
+  useEffect(() => {
+    api("/clases/sedes").then((d) => setSedes(d.sedes || [])).catch(() => {});
+  }, []);
+  const elegirSede = (id) => {
+    setSede(id);
+    try {
+      id ? localStorage.setItem("rd_sede_clases", String(id)) : localStorage.removeItem("rd_sede_clases");
+    } catch {
+      /* sin almacenamiento */
+    }
+  };
   const [, setTic] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setTic((x) => x + 1), 30000);
@@ -267,7 +287,8 @@ export default function MisClases() {
   const minutos = croquis?.minutosReserva || 30;
   const hora = ahoraLima();
   // Las clases de hoy que ya terminaron no se muestran
-  const visibles = (sesiones || []).filter((s) => s.fecha !== hoy || estadoVentana(s, minutos, hoy, hora).estado !== "pasada");
+  const sedeOk = sedes.length > 1 && sedes.some((x) => x.id === sede) ? sede : null;
+  const visibles = (sesiones || []).filter((s) => (!sedeOk || (s.sedeId ?? sedes[0]?.id) === sedeOk) && (s.fecha !== hoy || estadoVentana(s, minutos, hoy, hora).estado !== "pasada"));
   const dias = [...new Set(visibles.map((s) => s.fecha))];
   return (
     <div className="space-y-4">
@@ -277,6 +298,14 @@ export default function MisClases() {
           El horario de la semana y el disco que dictará cada profesor. Puedes reservar tu step desde {minutos} minutos antes de la clase hasta que empiece. Te avisamos 2 horas antes. 🔔
         </p>
       </div>
+      {sedes.length > 1 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-500 mr-1">📍 Sede:</span>
+          {[{ id: null, nombre: "Todas" }, ...sedes].map((x) => (
+            <button key={x.id ?? "todas"} type="button" onClick={() => elegirSede(x.id)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${sedeOk === x.id ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{x.nombre}</button>
+          ))}
+        </div>
+      )}
       <CalificarClases />
       <MastersAlumno />
       {error && <p className="text-sm font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">{error}</p>}
@@ -299,7 +328,7 @@ export default function MisClases() {
                   <div key={s.id} className={`rd-kpi-${s.color} rd-clase-card rounded-2xl p-3 space-y-1`}>
                     <p className="text-xs font-black">{s.inicio} – {s.fin}</p>
                     <p className="text-base font-black">{s.emoji} {s.nombre}</p>
-                    <p className="text-xs">🧑‍🏫 {s.profesor}{s.sala ? ` · 📍 ${s.sala}` : ""}</p>
+                    <p className="text-xs">🧑‍🏫 {s.profesor}{nombreSede(sedes, s.sedeId) ? ` · 📍 ${nombreSede(sedes, s.sedeId)}` : s.sala ? ` · 📍 ${s.sala}` : ""}</p>
                     <p className="text-sm">{s.disco ? <b>🎵 Disco «{s.disco}»</b> : <span className="opacity-75">🎵 Disco por anunciar</span>}</p>
                     {s.nota && <p className="text-xs">📝 {s.nota}</p>}
                     {f === hoy && (
@@ -316,7 +345,7 @@ export default function MisClases() {
           </div>
         </div>
       ))}
-      {reservar && <Reservar s={reservar} croquis={croquis} onCerrar={() => (setReservar(null), cargar())} onCambio={cargar} />}
+      {reservar && <Reservar s={reservar} onCerrar={() => (setReservar(null), cargar())} onCambio={cargar} />}
     </div>
   );
 }

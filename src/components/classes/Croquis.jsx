@@ -119,6 +119,14 @@ export const Croquis = ({ croquis, reservas = [], onStep, seleccionado, nombres 
     reservas.filter((r) => r.estado === "reservado" || r.estado === "asistio").forEach((r) => m.set(r.stepId, r));
     return m;
   }, [reservas]);
+  if (croquis && !steps.some((z) => z.tipo === "step"))
+    return (
+      <div className="rd-kpi-plomo rd-aviso-t rounded-2xl border p-5 text-center space-y-1">
+        <p className="text-3xl">🧱</p>
+        <p className="font-black">El salón de esta sede aún no tiene steps</p>
+        <p className="text-sm">Administración lo dibuja en Clases grupales › Disciplinas y salón (hay plantillas para empezar rápido).</p>
+      </div>
+    );
   return (
     <div className="rd-croquis-marco w-full overflow-x-auto">
       <div className="rd-croquis relative mx-auto" style={{ aspectRatio: `${ancho} / ${alto}`, minWidth: 320 }}>

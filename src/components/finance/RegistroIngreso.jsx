@@ -236,7 +236,7 @@ export const RegistroIngreso = ({ onCerrar, onGuardar }) => {
         ? `${alumno.fullName}${alumno.codeLabel ? ` (${alumno.codeLabel})` : ""}`
         : "";
     setHecho({
-      gym: gymConfig?.gym_nombre || "RADICAL",
+      gym: gymConfig?.gym_nombre || "nuestro gimnasio",
       ruc: gymConfig?.gym_ruc,
       direccion: gymConfig?.gym_direccion,
       numero,

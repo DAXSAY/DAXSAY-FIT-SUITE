@@ -697,7 +697,7 @@ export const TarjetaTarea = ({ t, ctx, onAccion, compacta = false }) => {
   const mia = t.tomadaPor?.id === ctx.yo.id;
   const tomadaOtro = t.tomadaPor && !mia;
   const persona = t.alumno || t.prospecto;
-  const wa = persona ? enlaceWhatsapp(persona.telefono, `Hola ${primerNombre(persona.nombre)}, te escribimos de ${ctx.gimnasio || "RADICAL"}.`) : null;
+  const wa = persona ? enlaceWhatsapp(persona.telefono, `Hola ${primerNombre(persona.nombre)}, te escribimos de ${ctx.gimnasio || "nuestro gimnasio"}.`) : null;
   const puedeAnular = abierta && (ctx.yo.rol === "admin" || t.creador?.id === ctx.yo.id);
   const [error, setError] = useState("");
   const esNota = t.tipo === "nota";

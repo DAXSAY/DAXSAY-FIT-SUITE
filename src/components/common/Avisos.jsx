@@ -69,7 +69,7 @@ const mensajeRestablecida = (nombre, gym) =>
 /** Ejecuta la acción de un aviso (navegar o restablecer) */
 export function useAccionAviso(setActiveTab, recargar) {
   const { gymConfig } = useGym();
-  const gym = gymConfig?.gym_nombre || "RADICAL";
+  const gym = gymConfig?.gym_nombre || "nuestro gimnasio";
   const [hecho, setHecho] = useState(null);
 
   const ejecutar = async (a) => {

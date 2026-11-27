@@ -33,6 +33,7 @@ import renovacionPortal from "./rutas/renovacionPortal.js";
 import clases from "./rutas/clases.js";
 import masters from "./rutas/masters.js";
 import calificaciones from "./rutas/calificaciones.js";
+import licencia, { requiereModulo } from "./rutas/licencia.js";
 import { verificarSincronizacion, sincronizarPendientes } from "./sincronizacion.js";
 import { aplicarActualizaciones } from "./actualizaciones.js";
 import { programarRespaldos, estadoRespaldos, hacerRespaldo } from "./respaldo.js";
@@ -137,14 +138,15 @@ app.use("/api/alertas", requiereSesion, alertas);
 app.use("/api/indicaciones", requiereSesion, indicaciones);
 app.use("/api/mensajes", requiereSesion, mensajes);
 app.use("/api/archivos", requiereSesion, archivos);
-app.use("/api/prospectos", requiereSesion, prospectos);
+app.use("/api/prospectos", requiereSesion, requiereModulo("crm"), prospectos);
 app.use("/api/progreso", requiereSesion, progreso);
 app.use("/api/avisos", requiereSesion, avisos);
-app.use("/api/tareas", requiereSesion, tareas);
+app.use("/api/tareas", requiereSesion, requiereModulo("tasks"), tareas);
 app.use("/api/portal-renovacion", requiereSesion, renovacionPortal);
-app.use("/api/clases", requiereSesion, clases);
-app.use("/api/masters", requiereSesion, masters);
-app.use("/api/calificaciones", requiereSesion, calificaciones);
+app.use("/api/clases", requiereSesion, requiereModulo("classes", "mis_clases"), clases);
+app.use("/api/masters", requiereSesion, requiereModulo("classes", "mis_clases"), masters);
+app.use("/api/calificaciones", requiereSesion, requiereModulo("classes", "mis_clases"), calificaciones);
+app.use("/api/licencia", requiereSesion, licencia);
 
 // Imágenes subidas (públicas por enlace, nombres imposibles de adivinar)
 app.use("/uploads", express.static(CARPETA_UPLOADS, { maxAge: "30d" }));
@@ -192,7 +194,7 @@ const puerto = Number(process.env.PORT || process.env.API_PORT || 4000);
 // HOST=0.0.0.0 si el hosting lo pide; por defecto solo escucha en la propia máquina (detrás de Nginx)
 const host = process.env.HOST || "127.0.0.1";
 const servidor = app.listen(puerto, host, async () => {
-  console.log(`API de Radical Gym en http://${host === "0.0.0.0" ? "localhost" : host}:${puerto} (config: ${archivoConfiguracion})`);
+  console.log(`API de DAXSAY Fit Suite en http://${host === "0.0.0.0" ? "localhost" : host}:${puerto} (config: ${archivoConfiguracion})`);
   if (hayWeb) console.log("Sirviendo también la web compilada (carpeta dist).");
   try {
     await pool.query("SELECT 1");

@@ -13,7 +13,7 @@ export const presentacion = (quien, gym) => {
 };
 
 /** Mensaje de WhatsApp para el interesado, firmado por quien lo atiende */
-export const mensajeWhatsApp = (p, gym = "RADICAL", quien = "") => {
+export const mensajeWhatsApp = (p, gym = "nuestro gimnasio", quien = "") => {
   const nombre = primerNombre(p.fullName);
   const yo = presentacion(quien, gym);
   const plan = p.planName ? `el plan *${p.planName}*${p.planPrice ? ` (S/ ${p.planPrice})` : ""}` : "nuestros planes";
@@ -27,7 +27,7 @@ export const mensajeWhatsApp = (p, gym = "RADICAL", quien = "") => {
 };
 
 /** Para quien no vino con su pase: invitarlo a reprogramar */
-export const mensajeReprogramar = (p, gym = "RADICAL", quien = "") => {
+export const mensajeReprogramar = (p, gym = "nuestro gimnasio", quien = "") => {
   const yo = presentacion(quien, gym);
   return `Hola ${primerNombre(p.fullName)} 👋, ${yo}. Te esperábamos el ${fCorta(p.passDate)} con tu pase libre *${p.passCode}* 😊. ¿Te lo reprogramamos para otro día? Dinos qué día y hora te queda mejor.`;
 };

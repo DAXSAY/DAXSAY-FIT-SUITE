@@ -13,6 +13,7 @@ import {
   UserPlus,
   ArrowLeft,
   KeyRound,
+  PackageCheck,
   Power,
   Search,
   Copy,
@@ -67,7 +68,8 @@ const Pantalla = ({ titulo, subtitulo, onVolver, children }) => (
 // Tarjeta con las credenciales para entregar al trabajador
 const Credenciales = ({ datos, onListo }) => {
   const [copiado, setCopiado] = useState(false);
-  const texto = `RADICAL - tu acceso al sistema\nUsuario: ${datos.usuario}\nContraseña temporal: ${datos.clave}\nAl ingresar el sistema te pedirá cambiarla.`;
+  const { gymConfig } = useGym();
+  const texto = `${gymConfig?.gym_nombre || "DAXSAY Fit Suite"} - tu acceso al sistema\nUsuario: ${datos.usuario}\nContraseña temporal: ${datos.clave}\nAl ingresar el sistema te pedirá cambiarla.`;
   return (
     <Pantalla titulo="Credenciales listas" subtitulo="Entrégalas a la persona. Por seguridad no se volverán a mostrar." onVolver={onListo}>
       <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
@@ -316,6 +318,85 @@ const Seccion = ({ icono: I, titulo, sub, children }) => (
     {children}
   </section>
 );
+
+// Módulos contratados: DAXSAY Fit Suite es un sistema general y a cada
+// gimnasio se le activan solo los servicios de su contrato. Solo DAXSAY
+// (con la clave maestra) puede prenderlos o apagarlos.
+const ModulosContratados = () => {
+  const [datos, setDatos] = useState(null);
+  const [editando, setEditando] = useState(false);
+  const [clave, setClave] = useState("");
+  const [activos, setActivos] = useState([]);
+  const [claveNueva, setClaveNueva] = useState("");
+  const [msg, setMsg] = useState(null);
+  const [enviando, setEnviando] = useState(false);
+  const cargar = () => api("/licencia").then((d) => (setDatos(d), setActivos(d.paquetes.filter((p) => p.activo).map((p) => p.k)))).catch((e) => setMsg({ ok: false, texto: e.message }));
+  useEffect(() => {
+    cargar();
+  }, []);
+  if (!datos) return msg ? <p className="text-sm text-rose-600">{msg.texto}</p> : null;
+  const guardar = async (e) => {
+    e.preventDefault();
+    setEnviando(true);
+    setMsg(null);
+    try {
+      await api("/licencia", { method: "PUT", body: { clave, activos, ...(claveNueva ? { claveNueva } : {}) } });
+      setMsg({ ok: true, texto: "✅ Módulos actualizados. Recargando para aplicar el menú… (el resto del personal y los alumnos los verán al volver a entrar)" });
+      setTimeout(() => window.location.reload(), 1800);
+      setEditando(false);
+      setClave("");
+      setClaveNueva("");
+      cargar();
+    } catch (er) {
+      setMsg({ ok: false, texto: er.message });
+    } finally {
+      setEnviando(false);
+    }
+  };
+  return (
+    <Seccion icono={PackageCheck} titulo="Módulos contratados" sub="Servicios que este gimnasio tiene en su plan de DAXSAY Fit Suite. Solo DAXSAY puede cambiarlos.">
+      {!datos.conLicencia && <p className="text-xs font-bold rd-kpi-ambar rd-aviso-t rounded-xl border p-2.5 mb-3">Para poder cambiarlos falta ejecutar la parte 42 (42_sedes_licencia.sql) en MySQL Workbench.</p>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+        {datos.paquetes.filter((p) => p.disponible).map((p) => {
+          const on = editando ? activos.includes(p.k) : p.activo;
+          return (
+            <button
+              key={p.k}
+              type="button"
+              disabled={!editando}
+              onClick={() => setActivos((a) => (a.includes(p.k) ? a.filter((x) => x !== p.k) : [...a, p.k]))}
+              className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-sm ${editando ? "cursor-pointer" : "cursor-default"} ${on ? "rd-kpi-verde rd-aviso-t" : "border-slate-200 text-slate-400"}`}
+            >
+              <span className="font-bold truncate">{p.emoji} {p.nombre}</span>
+              <span className="text-[11px] font-black whitespace-nowrap">{on ? "✓ Incluido" : "No incluido"}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-slate-500 mt-2">Siempre incluidos: alumnos, planes y tarifas, asistencias, usuarios, inicio y el portal del alumno (membresía, avisos y asistencias). Apagar un módulo no borra sus datos.</p>
+      {msg && <p className={`text-sm font-bold rounded-xl border p-3 mt-3 ${msg.ok ? "rd-kpi-verde rd-aviso-t" : "text-rose-700 bg-rose-50 border-rose-200"}`}>{msg.texto}</p>}
+      {!editando ? (
+        datos.conLicencia && (
+          <button type="button" onClick={() => (setEditando(true), setMsg(null))} className="mt-3 px-4 py-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1.5">
+            <KeyRound className="w-4 h-4" /> Cambiar módulos (DAXSAY)
+          </button>
+        )
+      ) : (
+        <form onSubmit={guardar} className="mt-3 rounded-2xl border border-slate-200 p-3 space-y-2">
+          <p className="text-xs text-slate-600">Toca los módulos para incluirlos o quitarlos y confirma con la <b>clave maestra DAXSAY</b>.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input type="password" value={clave} onChange={(e) => setClave(e.target.value)} placeholder="Clave maestra DAXSAY" autoComplete="off" className="px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+            <input type="password" value={claveNueva} onChange={(e) => setClaveNueva(e.target.value)} placeholder="Nueva clave maestra (opcional)" autoComplete="new-password" className="px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+          </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" onClick={() => (setEditando(false), setActivos(datos.paquetes.filter((p) => p.activo).map((p) => p.k)), setClave(""), setClaveNueva(""))} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">Cancelar</button>
+            <button disabled={!clave || enviando} className="px-5 py-2 rounded-xl bg-teal-600 disabled:opacity-40 text-white text-sm font-black cursor-pointer">Guardar módulos</button>
+          </div>
+        </form>
+      )}
+    </Seccion>
+  );
+};
 
 const ConfiguracionGimnasio = () => {
   const { gymConfig, saveGymConfig } = useGym();
@@ -910,7 +991,12 @@ export const UsersAccessModule = () => {
           </button>
         ))}
       </div>
-      {pestana === "config" && <ConfiguracionGimnasio />}
+      {pestana === "config" && (
+        <div className="space-y-4">
+          <ConfiguracionGimnasio />
+          <ModulosContratados />
+        </div>
+      )}
       {pestana === "turnos" && <TurnosRecepcion />}
       {pestana === "socios" && <SociosAccesos puedeEditar={puedeEditar} onCredenciales={(c) => setVista({ credenciales: c })} />}
       {pestana === "usuarios" && <>

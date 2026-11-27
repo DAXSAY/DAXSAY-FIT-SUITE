@@ -64,8 +64,30 @@ async function empleadoDe(req) {
   return u?.idempleado || null;
 }
 
+// ---------------------------------------------------------------------
+// Sedes (parte 42): cada clase, máster y croquis pertenece a una sede.
+// Sin la parte 42 todo funciona como un solo salón.
+// ---------------------------------------------------------------------
+let p42 = { v: null, t: 0 };
+export async function conSedes() {
+  if (p42.v === true || Date.now() - p42.t < 20000) return p42.v;
+  const [f] = await consultar("SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'clase_steps' AND COLUMN_NAME = 'idsede'");
+  p42 = { v: Number(f?.n) === 1, t: Date.now() };
+  return p42.v;
+}
+export async function listaSedes(todas = false) {
+  if (!(await conSedes())) return [];
+  return (await consultar(`SELECT * FROM sedes ${todas ? "" : "WHERE activa = 1"} ORDER BY orden, nombre`)).map((f) => ({ id: f.idsede, nombre: f.nombre, direccion: f.direccion || "", activa: !!f.activa }));
+}
+/** La sede pedida (si existe y está activa) o la primera */
+export async function sedeValida(id) {
+  const sedes = await listaSedes();
+  if (!sedes.length) return null;
+  return (sedes.find((x) => x.id === Number(id)) || sedes[0]).id;
+}
+
 const SQL_CLASES = `
-  SELECT c.idclase_grupal, c.iddisciplina, c.nombre, c.dia_semana, c.hora_inicio, c.hora_fin, c.idempleado, c.sala,
+  SELECT c.*,
          d.nombre AS disciplina, d.emoji, d.color,
          e.nombres AS prof_nombres, e.apellidos AS prof_apellidos
     FROM clases_grupales c
@@ -85,6 +107,7 @@ const claseJson = (f) => ({
   profesorId: f.idempleado || null,
   profesor: nombreProfesor(f) || "Sin profesor",
   sala: f.sala || "",
+  sedeId: f.idsede || null,
 });
 
 // ---------------------------------------------------------------------
@@ -133,6 +156,7 @@ router.get("/", async (req, res, next) => {
         disciplinas: dp.filter((x) => x.idempleado === p.idempleado).map((x) => x.iddisciplina),
       })),
       clases: clases.map(claseJson),
+      sedes: await listaSedes(),
       yo: { rol: req.usuario.rol, empleadoId: idempleado },
       hoy: hoyLima(),
       hora: horaLima(),
@@ -169,6 +193,7 @@ export async function sesiones(desde, hasta, filtro = {}) {
       if (c.dia !== dia) continue;
       if (filtro.profesorId && c.profesorId !== filtro.profesorId) continue;
       if (filtro.disciplinaId && c.disciplinaId !== filtro.disciplinaId) continue;
+      if (filtro.sedeId && c.sedeId !== filtro.sedeId) continue;
       const d = porClave.get(`${c.id}|${f}`);
       const k = porCuenta.get(`${c.id}|${f}`);
       lista.push({
@@ -200,6 +225,7 @@ router.get("/sesiones", async (req, res, next) => {
     const filtro = {
       profesorId: Number(req.query.profesor) || null,
       disciplinaId: Number(req.query.disciplina) || null,
+      sedeId: Number(req.query.sede) || null,
     };
     if (req.query.mias === "1") filtro.profesorId = (await empleadoDe(req)) || -1;
     res.json({ desde, hasta, hoy, hora: horaLima(), sesiones: await sesiones(desde, hasta, filtro) });
@@ -263,7 +289,7 @@ async function validarClase(b) {
     const [e] = await consultar("SELECT idempleado FROM empleados WHERE idempleado = ? AND activo = 1", [idempleado]);
     if (!e) throw new ErrorHttp(400, "El profesor elegido no existe");
   }
-  return { iddisciplina, inicio, fin, idempleado, nombre: txt(b.nombre, 80), sala: txt(b.sala, 60) };
+  return { iddisciplina, inicio, fin, idempleado, nombre: txt(b.nombre, 80), sala: txt(b.sala, 60), idsede: await sedeValida(b.sedeId) };
 }
 /** Otra clase del mismo profesor que se cruza en ese día y hora */
 async function cruceProfesor(idempleado, dia, inicio, fin, excepto = 0) {
@@ -296,6 +322,7 @@ router.post("/", async (req, res, next) => {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [v.iddisciplina, v.nombre, dia, v.inicio, v.fin, v.idempleado, v.sala, req.usuario.idusuario],
       );
+      if (v.idsede) await consultar("UPDATE clases_grupales SET idsede = ? WHERE idclase_grupal = ?", [v.idsede, r.insertId]);
       ids.push(r.insertId);
     }
     res.status(201).json({ ok: true, ids });
@@ -321,6 +348,7 @@ router.put("/:id(\\d+)", async (req, res, next) => {
       "UPDATE clases_grupales SET iddisciplina = ?, nombre = ?, dia_semana = ?, hora_inicio = ?, hora_fin = ?, idempleado = ?, sala = ? WHERE idclase_grupal = ?",
       [v.iddisciplina, v.nombre, dia, v.inicio, v.fin, v.idempleado, v.sala, id],
     );
+    if (v.idsede) await consultar("UPDATE clases_grupales SET idsede = ? WHERE idclase_grupal = ?", [v.idsede, id]);
     res.json({ ok: true });
   } catch (e) {
     next(e);
@@ -478,6 +506,58 @@ router.put("/profesores/:id(\\d+)", async (req, res, next) => {
   }
 });
 
+// POST /api/clases/sedes { nombre, direccion? } · PUT /api/clases/sedes/:id { nombre, direccion, activa }
+router.get("/sedes", async (req, res, next) => {
+  try {
+    res.json({ conSedes: !!(await conSedes()), sedes: await listaSedes(req.usuario.rol === "admin") });
+  } catch (e) {
+    next(e);
+  }
+});
+router.post("/sedes", async (req, res, next) => {
+  try {
+    exigirRol(req, ["admin"], "Solo administración agrega sedes");
+    if (!(await conSedes())) throw new ErrorHttp(503, "Falta ejecutar la parte 42 (42_sedes_licencia.sql) en MySQL Workbench para manejar sedes.");
+    const nombre = txt(req.body?.nombre, 80);
+    if (!nombre) throw new ErrorHttp(400, "Escribe el nombre de la sede");
+    const [o] = await consultar("SELECT COALESCE(MAX(orden),0)+1 AS n FROM sedes");
+    try {
+      const r = await consultar("INSERT INTO sedes (nombre, direccion, orden) VALUES (?, ?, ?)", [nombre, txt(req.body?.direccion, 160) || null, o.n]);
+      res.status(201).json({ ok: true, id: r.insertId });
+    } catch (e) {
+      if (e.code === "ER_DUP_ENTRY") throw new ErrorHttp(409, "Ya existe una sede con ese nombre");
+      throw e;
+    }
+  } catch (e) {
+    next(e);
+  }
+});
+router.put("/sedes/:id(\\d+)", async (req, res, next) => {
+  try {
+    exigirRol(req, ["admin"], "Solo administración cambia las sedes");
+    if (!(await conSedes())) throw new ErrorHttp(503, "Falta ejecutar la parte 42 (42_sedes_licencia.sql) en MySQL Workbench para manejar sedes.");
+    const id = Number(req.params.id);
+    const b = req.body || {};
+    const nombre = txt(b.nombre, 80);
+    if (!nombre) throw new ErrorHttp(400, "Escribe el nombre de la sede");
+    if (b.activa === false) {
+      const [c] = await consultar("SELECT COUNT(*) AS n FROM clases_grupales WHERE activa = 1 AND idsede = ?", [id]);
+      if (Number(c.n)) throw new ErrorHttp(409, `La sede tiene ${c.n} clase${Number(c.n) === 1 ? "" : "s"} en el horario: pásalas a otra sede o quítalas antes de desactivarla`);
+      const [a] = await consultar("SELECT COUNT(*) AS n FROM sedes WHERE activa = 1 AND idsede <> ?", [id]);
+      if (!Number(a.n)) throw new ErrorHttp(409, "Debe quedar al menos una sede activa");
+    }
+    try {
+      await consultar("UPDATE sedes SET nombre = ?, direccion = ?, activa = ? WHERE idsede = ?", [nombre, txt(b.direccion, 160) || null, b.activa === false ? 0 : 1, id]);
+    } catch (e) {
+      if (e.code === "ER_DUP_ENTRY") throw new ErrorHttp(409, "Ya existe una sede con ese nombre");
+      throw e;
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // ---------------------------------------------------------------------
 // Croquis del salón (steps y zonas)
 // ---------------------------------------------------------------------
@@ -490,8 +570,11 @@ async function minutosReserva() {
   const n = Number(c?.valor);
   return n >= 5 && n <= 240 ? n : 30;
 }
-export async function croquis() {
-  const filas = await consultar("SELECT * FROM clase_steps WHERE activo = 1 ORDER BY tipo = 'zona' DESC, numero, idstep");
+export async function croquis(idsede = null) {
+  const sede = await sedeValida(idsede);
+  const filas = sede
+    ? await consultar("SELECT * FROM clase_steps WHERE activo = 1 AND idsede = ? ORDER BY tipo = 'zona' DESC, numero, idstep", [sede])
+    : await consultar("SELECT * FROM clase_steps WHERE activo = 1 ORDER BY tipo = 'zona' DESC, numero, idstep");
   return filas.map((f) => ({
     id: f.idstep,
     tipo: f.tipo,
@@ -506,7 +589,8 @@ export async function croquis() {
 router.get("/croquis", async (req, res, next) => {
   try {
     await exigirTablas();
-    res.json({ ancho: ANCHO, alto: ALTO, steps: await croquis(), minutosReserva: await minutosReserva() });
+    const sede = await sedeValida(req.query.sede);
+    res.json({ ancho: ANCHO, alto: ALTO, sedeId: sede, steps: await croquis(sede), minutosReserva: await minutosReserva() });
   } catch (e) {
     next(e);
   }
@@ -553,7 +637,8 @@ router.put("/croquis", async (req, res, next) => {
         .filter((z) => z.letra)
         .sort((a, b) => a.letra.length - b.letra.length || a.letra.localeCompare(b.letra))
         .forEach((z, k) => (z.numero = 1001 + k));
-      const actuales = new Set((await consultar("SELECT idstep FROM clase_steps WHERE activo = 1")).map((f) => f.idstep));
+      const sede = await sedeValida(b.sede);
+      const actuales = new Set((await consultar(`SELECT idstep FROM clase_steps WHERE activo = 1 ${sede ? "AND idsede = ?" : ""}`, sede ? [sede] : [])).map((f) => f.idstep));
       const quedan = new Set();
       for (const z of limpio) {
         if (z.id && actuales.has(z.id)) {
@@ -562,13 +647,15 @@ router.put("/croquis", async (req, res, next) => {
           ]);
           quedan.add(z.id);
         } else {
-          await consultar("INSERT INTO clase_steps (tipo, numero, etiqueta, x, y, ancho, alto) VALUES (?, ?, ?, ?, ?, ?, ?)", [z.tipo, z.numero, z.etiqueta, z.x, z.y, z.w, z.h]);
+          const ins = await consultar("INSERT INTO clase_steps (tipo, numero, etiqueta, x, y, ancho, alto) VALUES (?, ?, ?, ?, ?, ?, ?)", [z.tipo, z.numero, z.etiqueta, z.x, z.y, z.w, z.h]);
+          if (sede) await consultar("UPDATE clase_steps SET idsede = ? WHERE idstep = ?", [sede, ins.insertId]);
         }
       }
       const fuera = [...actuales].filter((id) => !quedan.has(id));
       if (fuera.length) await consultar(`UPDATE clase_steps SET activo = 0 WHERE idstep IN (${fuera.map(() => "?").join(",")})`, fuera);
     }
-    res.json({ ok: true, steps: await croquis(), minutosReserva: await minutosReserva() });
+    const sedeR = await sedeValida(b.sede);
+    res.json({ ok: true, sedeId: sedeR, steps: await croquis(sedeR), minutosReserva: await minutosReserva() });
   } catch (e) {
     next(e);
   }
@@ -583,7 +670,7 @@ async function alumnoDe(req) {
   return u?.idalumno || null;
 }
 async function claseDelDia(idclase, fecha) {
-  const [c] = await consultar("SELECT idclase_grupal, dia_semana, hora_inicio, hora_fin FROM clases_grupales WHERE idclase_grupal = ? AND activa = 1", [idclase]);
+  const [c] = await consultar("SELECT * FROM clases_grupales WHERE idclase_grupal = ? AND activa = 1", [idclase]);
   if (!c) throw new ErrorHttp(404, "La clase ya no existe");
   if (Number(c.dia_semana) !== diaSemana(fecha)) throw new ErrorHttp(400, "Esa clase no se dicta ese día");
   return c;
@@ -673,8 +760,9 @@ router.post("/reservas", async (req, res, next) => {
     if (alumno && v.estado !== "abierta")
       throw new ErrorHttp(409, v.estado === "pronto" ? `La reserva se abre a las ${v.abre} (${v.minutos} min antes de la clase)` : "La reserva ya cerró: la clase ya empezó");
     if (!alumno && v.estado === "pasada") throw new ErrorHttp(409, "Esa clase ya terminó");
-    const [st] = await consultar("SELECT idstep, COALESCE(NULLIF(etiqueta,''), numero) AS numero FROM clase_steps WHERE idstep = ? AND activo = 1 AND tipo = 'step'", [idstep]);
+    const [st] = await consultar("SELECT *, COALESCE(NULLIF(etiqueta,''), numero) AS numero FROM clase_steps WHERE idstep = ? AND activo = 1 AND tipo = 'step'", [idstep]);
     if (!st) throw new ErrorHttp(404, "Ese step ya no existe en el croquis");
+    if (c.idsede && st.idsede && c.idsede !== st.idsede) throw new ErrorHttp(400, "Ese step es del salón de otra sede");
     const [al] = await consultar("SELECT idalumno, nombres, apellidos FROM alumnos WHERE idalumno = ?", [idalumno]);
     if (!al) throw new ErrorHttp(404, "No existe ese alumno");
     const estado = !alumno && b.estado === "asistio" ? "asistio" : "reservado";

@@ -20,7 +20,7 @@ import { Exportar } from "../reports/ReportsModule";
 import { buscarAlumno } from "../../utils/codigo";
 import { ingresoDeHoy } from "../../utils/codigoPersonal";
 import { hoyISO } from "../../utils/fecha";
-import { DIAS, DIAS_CORTO, COLORES, diaDe, lunesDe, fechaBonita, sumarDias, aMin, deMin, estadoVentana, useDatosClases, useCroquis, useSesiones } from "./clasesComun";
+import { DIAS, DIAS_CORTO, COLORES, diaDe, lunesDe, fechaBonita, sumarDias, aMin, deMin, estadoVentana, useDatosClases, useCroquis, useSesiones, nombreSede } from "./clasesComun";
 import { Croquis, EditorCroquis, LeyendaCroquis } from "./Croquis";
 import Masters from "./Masters";
 import Calificaciones from "./Calificaciones";
@@ -59,6 +59,7 @@ const FormClase = ({ datos, inicial, onListo, onCerrar }) => {
     fin: inicial?.fin || "19:00",
     profesorId: inicial?.profesorId || "",
     sala: inicial?.sala || "",
+    sedeId: inicial?.sedeId || datos.sedes?.[0]?.id || null,
   }));
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -145,6 +146,16 @@ const FormClase = ({ datos, inicial, onListo, onCerrar }) => {
 
         <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
           <p className="text-xs font-black uppercase tracking-wider text-slate-600">3 · Profesor y lugar 🧑‍🏫</p>
+          {(datos.sedes || []).length > 1 && (
+            <div className="space-y-1">
+              <span className="text-sm font-bold text-slate-700">Sede</span>
+              <div className="flex flex-wrap gap-1.5">
+                {datos.sedes.map((x) => (
+                  <button key={x.id} type="button" onClick={() => set("sedeId", x.id)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${f.sedeId === x.id ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>📍 {x.nombre}</button>
+                ))}
+              </div>
+            </div>
+          )}
           <label className="block text-sm">
             <span className="font-bold text-slate-700">Profesor</span>
             <select value={f.profesorId} onChange={(e) => set("profesorId", e.target.value ? Number(e.target.value) : "")} className={campo}>
@@ -264,11 +275,28 @@ const Horario = ({ datos, recargar, yo, onSteps }) => {
   const domingo = sumarDias(lunes, 6);
   const { sesiones, error, cargar } = useSesiones(lunes, domingo);
   const [filtro, setFiltro] = useState(0);
+  const sedes = datos.sedes || [];
+  const [sede, setSede] = useState(() => {
+    try {
+      return Number(localStorage.getItem("rd_sede_clases")) || null;
+    } catch {
+      return null;
+    }
+  });
+  const sedeOk = sedes.length > 1 ? (sedes.some((x) => x.id === sede) ? sede : sedes[0].id) : null;
+  const elegirSede = (id) => {
+    setSede(id);
+    try {
+      localStorage.setItem("rd_sede_clases", String(id));
+    } catch {
+      /* sin almacenamiento */
+    }
+  };
   const [nueva, setNueva] = useState(null);
   const [abierta, setAbierta] = useState(null);
   const [disco, setDisco] = useState(null);
   const gestiona = GESTIONA.includes(yo.rol);
-  const lista = (sesiones || []).filter((s) => !filtro || s.disciplinaId === filtro);
+  const lista = (sesiones || []).filter((s) => (!filtro || s.disciplinaId === filtro) && (!sedeOk || (s.sedeId ?? sedes[0]?.id) === sedeOk));
   const refrescar = () => (cargar(), recargar());
   const quitar = async (s) => {
     if (!window.confirm(`¿Quitar ${s.nombre} del ${DIAS[diaDe(s.fecha)].toLowerCase()} ${s.inicio} de todas las semanas?`)) return;
@@ -280,6 +308,14 @@ const Horario = ({ datos, recargar, yo, onSteps }) => {
 
   return (
     <div className="space-y-4">
+      {sedes.length > 1 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-500 mr-1">📍 Sede:</span>
+          {sedes.map((x) => (
+            <button key={x.id} type="button" onClick={() => elegirSede(x.id)} className={`px-4 py-2 rounded-xl border text-sm font-black cursor-pointer ${sedeOk === x.id ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{x.nombre}</button>
+          ))}
+        </div>
+      )}
       <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => setLunes(sumarDias(lunes, -7))} className="p-2 rounded-xl border border-slate-200 cursor-pointer" aria-label="Semana anterior"><ChevronLeft className="w-4 h-4" /></button>
         <p className="text-sm font-black text-slate-800 min-w-[170px] text-center">
@@ -342,7 +378,7 @@ const Horario = ({ datos, recargar, yo, onSteps }) => {
         </div>
       )}
 
-      {nueva && <FormClase datos={datos} inicial={nueva.id ? nueva : { dia: nueva.dia }} onCerrar={() => setNueva(null)} onListo={() => (setNueva(null), refrescar())} />}
+      {nueva && <FormClase datos={datos} inicial={nueva.id ? nueva : { dia: nueva.dia, sedeId: sedeOk }} onCerrar={() => setNueva(null)} onListo={() => (setNueva(null), refrescar())} />}
       {abierta && (
         <DetalleSesion
           s={abierta}
@@ -370,12 +406,21 @@ const Horario = ({ datos, recargar, yo, onSteps }) => {
 // ---------------------------------------------------------------------
 // Steps y reservas de las clases de hoy
 // ---------------------------------------------------------------------
-const Steps = ({ yo, claseInicial }) => {
+const Steps = ({ yo, claseInicial, sedes = [] }) => {
   const hoy = hoyISO();
   const { members = [], attendances = [], recordAttendance } = useGym();
-  const { croquis, cargarCroquis } = useCroquis();
-  const { sesiones } = useSesiones(hoy, hoy);
+  const { sesiones: todasSesiones } = useSesiones(hoy, hoy);
+  const [sedeVer, setSedeVer] = useState(() => {
+    try {
+      return Number(localStorage.getItem("rd_sede_clases")) || null;
+    } catch {
+      return null;
+    }
+  });
+  const sedeOk = sedes.length > 1 ? (sedes.some((x) => x.id === sedeVer) ? sedeVer : sedes[0].id) : null;
+  const sesiones = todasSesiones && (sedeOk ? todasSesiones.filter((s) => (s.sedeId ?? sedes[0]?.id) === sedeOk || s.claseId === claseInicial) : todasSesiones);
   const [claseId, setClaseId] = useState(claseInicial || null);
+  const { croquis, cargarCroquis } = useCroquis((sesiones || []).find((s) => s.claseId === claseId)?.sedeId || null);
   const [info, setInfo] = useState(null);
   const [error, setError] = useState("");
   const [step, setStep] = useState(null); // { z, r }
@@ -463,6 +508,14 @@ const Steps = ({ yo, claseInicial }) => {
   const v = sesion ? estadoVentana(sesion, croquis?.minutosReserva || 30) : null;
   return (
     <div className="space-y-4">
+      {sedes.length > 1 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-500 mr-1">📍 Sede:</span>
+          {sedes.map((x) => (
+            <button key={x.id} type="button" onClick={() => { setSedeVer(x.id); setClaseId(null); setInfo(null); try { localStorage.setItem("rd_sede_clases", String(x.id)); } catch { /* sin almacenamiento */ } }} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${sedeOk === x.id ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{x.nombre}</button>
+          ))}
+        </div>
+      )}
       <div className="flex gap-2 overflow-x-auto p-1.5 -mx-1.5">
         {sesiones.map((s) => (
           <button key={s.id} type="button" onClick={() => (setClaseId(s.claseId), setMensaje(null))} className={`rd-kpi-${s.color} shrink-0 rounded-xl border px-3 py-2 text-left cursor-pointer ${s.claseId === claseId ? "rd-clase-card ring-2 ring-teal-400" : "bg-white border-slate-200 text-slate-700"}`}>
@@ -1050,8 +1103,67 @@ const FormProfesor = ({ datos, inicial, onListo, onCerrar }) => {
   );
 };
 
+/** Sedes del gimnasio: cada una con su horario y su salón */
+const Sedes = ({ datos, recargar }) => {
+  const [nueva, setNueva] = useState("");
+  const [editar, setEditar] = useState(null); // { id, nombre }
+  const [msg, setMsg] = useState(null);
+  const [todas, setTodas] = useState(null);
+  const cargar = () => api("/clases/sedes").then((d) => setTodas(d)).catch(() => setTodas({ conSedes: false, sedes: [] }));
+  useEffect(() => {
+    cargar();
+  }, []);
+  const ok = (texto) => (setMsg({ ok: true, texto }), cargar(), recargar());
+  const fallo = (e) => setMsg({ ok: false, texto: e.message });
+  const crear = (e) => {
+    e.preventDefault();
+    api("/clases/sedes", { method: "POST", body: { nombre: nueva } }).then(() => (setNueva(""), ok(`✅ Sede «${nueva}» creada. Ahora dibuja su salón abajo.`))).catch(fallo);
+  };
+  const guardar = (x, cambios) => api(`/clases/sedes/${x.id}`, { method: "PUT", body: { nombre: x.nombre, ...cambios } });
+  if (!todas) return null;
+  if (!todas.conSedes)
+    return (
+      <div className="rd-kpi-ambar rd-aviso-t rounded-2xl border p-4 text-sm">
+        <b>📍 Sedes:</b> para manejar varias sedes (cada una con su horario y su salón) ejecuta la parte 42 (42_sedes_licencia.sql) en MySQL Workbench.
+      </div>
+    );
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+      <div>
+        <p className="text-sm font-black text-slate-800">📍 Sedes</p>
+        <p className="text-xs text-slate-500">Cada sede tiene su propio horario de clases, sus másters y su croquis de steps. Si el gimnasio tiene una sola, déjala con su nombre.</p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {todas.sedes.map((x) =>
+          editar?.id === x.id ? (
+            <form key={x.id} onSubmit={(e) => (e.preventDefault(), guardar({ ...x, nombre: editar.nombre }).then(() => (setEditar(null), ok("✅ Sede renombrada"))).catch(fallo))} className="flex items-center gap-1.5">
+              <input value={editar.nombre} onChange={(e) => setEditar({ ...editar, nombre: e.target.value })} maxLength={80} autoFocus className="px-3 py-1.5 rounded-xl border border-slate-200 text-sm" />
+              <button className="px-3 py-1.5 rounded-xl bg-teal-600 text-white text-xs font-black cursor-pointer">Guardar</button>
+              <button type="button" onClick={() => setEditar(null)} className="px-2 py-1.5 rounded-xl text-xs font-bold text-slate-500 cursor-pointer">Cancelar</button>
+            </form>
+          ) : (
+            <span key={x.id} className={`flex items-center gap-1 rounded-xl border px-3 py-1.5 text-sm font-bold ${x.activa ? "border-slate-200 text-slate-800" : "border-dashed border-slate-300 text-slate-400"}`}>
+              📍 {x.nombre}
+              <button type="button" onClick={() => setEditar({ id: x.id, nombre: x.nombre })} className="p-1 rounded-lg hover:bg-slate-100 cursor-pointer" title="Renombrar"><Pencil className="w-3.5 h-3.5" /></button>
+              <button type="button" onClick={() => guardar(x, { activa: !x.activa }).then(() => ok(x.activa ? `${x.nombre} quedó desactivada` : `✅ ${x.nombre} activa otra vez`)).catch(fallo)} className="px-1.5 py-0.5 rounded-lg text-[11px] font-bold text-slate-500 hover:bg-slate-100 cursor-pointer">{x.activa ? "Desactivar" : "Activar"}</button>
+            </span>
+          ),
+        )}
+      </div>
+      <form onSubmit={crear} className="flex flex-wrap items-center gap-2">
+        <input value={nueva} onChange={(e) => setNueva(e.target.value)} maxLength={80} placeholder="Nombre de la nueva sede (ej. Sede Norte)" className="flex-1 min-w-[200px] px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+        <button disabled={!nueva.trim()} className="px-4 py-2 rounded-xl bg-teal-600 disabled:opacity-40 text-white text-xs font-black flex items-center gap-1 cursor-pointer"><Plus className="w-3.5 h-3.5" /> Agregar sede</button>
+      </form>
+      {msg && <p className={`text-sm font-bold rounded-xl border p-3 ${msg.ok ? "rd-kpi-verde rd-aviso-t" : "text-rose-700 bg-rose-50 border-rose-200"}`}>{msg.texto}</p>}
+    </div>
+  );
+};
+
 const Configuracion = ({ datos, recargar }) => {
-  const { croquis, setCroquis, cargarCroquis } = useCroquis();
+  const sedes = datos.sedes || [];
+  const [sedeSalon, setSedeSalon] = useState(sedes[0]?.id || null);
+  const sedeOk = sedes.some((x) => x.id === sedeSalon) ? sedeSalon : sedes[0]?.id || null;
+  const { croquis, setCroquis, cargarCroquis } = useCroquis(sedeOk);
   const [borrador, setBorrador] = useState(null);
   const [minutos, setMinutos] = useState(30);
   const [msg, setMsg] = useState(null);
@@ -1064,15 +1176,16 @@ const Configuracion = ({ datos, recargar }) => {
   const sinGuardar = croquis && borrador && (JSON.stringify(borrador) !== JSON.stringify(croquis.steps) || Number(minutos) !== croquis.minutosReserva);
   const guardar = async () => {
     try {
-      const r = await api("/clases/croquis", { method: "PUT", body: { steps: borrador, minutosReserva: Number(minutos) } });
+      const r = await api("/clases/croquis", { method: "PUT", body: { sede: sedeOk, steps: borrador, minutosReserva: Number(minutos) } });
       setCroquis((c) => ({ ...c, steps: r.steps, minutosReserva: r.minutosReserva }));
-      setMsg({ ok: true, texto: "✅ Croquis guardado. Ya lo ven recepción, los profesores y los alumnos." });
+      setMsg({ ok: true, texto: `✅ Croquis${sedes.length > 1 ? ` de ${sedes.find((x) => x.id === sedeOk)?.nombre}` : ""} guardado. Ya lo ven recepción, los profesores y los alumnos.` });
     } catch (er) {
       setMsg({ ok: false, texto: er.message });
     }
   };
   return (
     <div className="space-y-5">
+      <Sedes datos={datos} recargar={recargar} />
       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-black text-slate-800">🎵 Disciplinas</p>
@@ -1124,8 +1237,15 @@ const Configuracion = ({ datos, recargar }) => {
       <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-sm font-black text-slate-800">🧱 Croquis del salón (steps)</p>
+            <p className="text-sm font-black text-slate-800">🧱 Croquis del salón (steps){sedes.length > 1 ? ` · ${sedes.find((x) => x.id === sedeOk)?.nombre}` : ""}</p>
             <p className="text-xs text-slate-500">Lo que guardes aquí lo ven todos: recepción, profesores y la app de los alumnos.</p>
+            {sedes.length > 1 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {sedes.map((x) => (
+                  <button key={x.id} type="button" disabled={!!sinGuardar && x.id !== sedeOk} title={sinGuardar && x.id !== sedeOk ? "Guarda o descarta los cambios antes de cambiar de sede" : ""} onClick={() => (setSedeSalon(x.id), setMsg(null))} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer disabled:opacity-40 ${sedeOk === x.id ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>📍 {x.nombre}</button>
+                ))}
+              </div>
+            )}
           </div>
           <label className="text-xs font-bold text-slate-600">
             <Clock className="inline w-3.5 h-3.5 -mt-0.5" /> El alumno reserva desde
@@ -1192,7 +1312,7 @@ export default function ClasesModule() {
         <>
           {!v && <SinSeleccion tema="clases" texto={esProfe ? "Elige una opción de arriba: «Mis discos» para anotar lo que dictarás o «Calificaciones» para ver cómo califican tus clases." : "Elige una opción de arriba: horario, reservas, discos, másters, asistencia o calificaciones."} />}
           {v === "horario" && <Horario datos={datos} recargar={cargar} yo={yo} onSteps={(id) => (setClaseSteps(id), setVista("steps"))} />}
-          {v === "steps" && <Steps yo={yo} claseInicial={claseSteps} />}
+          {v === "steps" && <Steps yo={yo} claseInicial={claseSteps} sedes={datos.sedes} />}
           {v === "discos" && (esProfe ? <MisDiscos /> : <ReporteDiscos datos={datos} puedeEditar={GESTIONA.includes(yo.rol)} />)}
           {v === "masters" && <Masters datos={datos} rol={yo.rol} />}
           {v === "reporte" && <ReporteAsistencia datos={datos} />}

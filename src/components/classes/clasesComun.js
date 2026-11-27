@@ -55,14 +55,14 @@ export function useDatosClases() {
   return { datos, error, faltanTablas, cargar };
 }
 
-/** Croquis del salón (GET /api/clases/croquis) */
-export function useCroquis() {
+/** Croquis del salón de una sede (GET /api/clases/croquis?sede=) */
+export function useCroquis(sedeId = null) {
   const [croquis, setCroquis] = useState(null);
   const cargar = useCallback(() => {
-    api("/clases/croquis")
+    api(`/clases/croquis${sedeId ? `?sede=${sedeId}` : ""}`)
       .then(setCroquis)
       .catch(() => setCroquis((c) => c || { ancho: 40, alto: 28, steps: [], minutosReserva: 30 }));
-  }, []);
+  }, [sedeId]);
   useEffect(() => {
     cargar();
   }, [cargar]);
@@ -85,3 +85,6 @@ export function useSesiones(desde, hasta, extra = "") {
   }, [cargar]);
   return { sesiones: ses, error, cargar };
 }
+
+/** Nombre de la sede (solo si el gimnasio tiene más de una) */
+export const nombreSede = (sedes, id) => ((sedes || []).length > 1 ? (sedes.find((x) => x.id === id)?.nombre || "") : "");

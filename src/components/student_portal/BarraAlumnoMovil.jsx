@@ -1,22 +1,28 @@
 // Barra de navegación inferior del portal del alumno en el celular (como una
-// app): Membresía, Rutina, Alimentación, Medidas y «Más» (citas, fisioterapia
-// y asistencias). En la PC no se muestra: ahí está el menú de la izquierda.
+// app): Membresía, Rutina, Comidas, Medidas, Clases y «Más» (citas,
+// fisioterapia y asistencias). En la PC no se muestra: ahí está el menú de la izquierda.
+// Solo muestra las secciones que el gimnasio tiene contratadas.
 import React, { useState } from "react";
+import { useGym } from "../../context/GymContext";
 
-const PRINCIPALES = [
-  { k: "membership", emoji: "💳", label: "Membresía" },
-  { k: "routine", emoji: "🏋️", label: "Rutina" },
-  { k: "nutrition", emoji: "🍽️", label: "Comidas" },
-  { k: "measurements", emoji: "📈", label: "Medidas" },
-];
-const MAS = [
-  { k: "appointments", emoji: "📅", label: "Avisos y citas" },
-  { k: "physio", emoji: "🩺", label: "Mi fisioterapia" },
-  { k: "attendance", emoji: "🙋", label: "Mis asistencias" },
-  { k: "clases", emoji: "🎵", label: "Clases grupales" },
+const SECCIONES = [
+  { k: "membership", modulo: "mi_membresia", emoji: "💳", label: "Membresía" },
+  { k: "routine", modulo: "mi_rutina", emoji: "🏋️", label: "Rutina" },
+  { k: "nutrition", modulo: "mi_dieta", emoji: "🍽️", label: "Comidas" },
+  { k: "measurements", modulo: "mis_medidas", emoji: "📈", label: "Medidas" },
+  { k: "clases", modulo: "mis_clases", emoji: "🎵", label: "Clases" },
+  { k: "appointments", modulo: "mis_citas", emoji: "📅", label: "Avisos y citas" },
+  { k: "physio", modulo: "mi_fisioterapia", emoji: "🩺", label: "Mi fisioterapia" },
+  { k: "attendance", modulo: "mis_asistencias", emoji: "🙋", label: "Mis asistencias" },
 ];
 
 export const BarraAlumnoMovil = ({ activa, onIr }) => {
+  const { currentUser } = useGym();
+  const mods = currentUser?.modules;
+  const visibles = SECCIONES.filter((x) => !Array.isArray(mods) || mods.includes(x.modulo));
+  // Hasta 5 botones abajo; si hay más, los últimos van en «Más»
+  const PRINCIPALES = visibles.length <= 5 ? visibles : visibles.slice(0, 4);
+  const MAS = visibles.length <= 5 ? [] : visibles.slice(4);
   const [mas, setMas] = useState(false);
   const enMas = MAS.some((m) => m.k === activa);
   const ir = (k) => {
@@ -43,8 +49,8 @@ export const BarraAlumnoMovil = ({ activa, onIr }) => {
         </div>
       )}
       <nav className="rd-barra-alumno md:hidden fixed left-0 right-0 bottom-0 z-[56] border-t px-2 pt-1.5 pb-[max(.5rem,env(safe-area-inset-bottom))]" aria-label="Secciones del portal">
-        <div className="grid grid-cols-5 gap-1">
-          {[...PRINCIPALES, { k: "_mas", emoji: "☰", label: "Más" }].map((m) => {
+        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${PRINCIPALES.length + (MAS.length ? 1 : 0)}, minmax(0, 1fr))` }}>
+          {[...PRINCIPALES, ...(MAS.length ? [{ k: "_mas", emoji: "☰", label: "Más" }] : [])].map((m) => {
             const on = m.k === "_mas" ? enMas || mas : activa === m.k;
             return (
               <button

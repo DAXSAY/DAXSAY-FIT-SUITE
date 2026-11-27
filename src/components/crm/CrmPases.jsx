@@ -160,7 +160,7 @@ const ESTADO_PASE = {
   no_concretado: { label: "No concretado", chip: "bg-rose-100 text-rose-800 border-rose-200" },
 };
 
-export const PanelPases = ({ onAbrirProspecto, gym = "RADICAL" }) => {
+export const PanelPases = ({ onAbrirProspecto, gym = "nuestro gimnasio" }) => {
   const [lista, setLista] = useState(null);
   const [error, setError] = useState("");
   const [filtro, setFiltro] = useState("no_concretado");

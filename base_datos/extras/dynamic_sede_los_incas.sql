@@ -7,7 +7,8 @@
 --     y les da su disciplina. Una disciplina queda con varios profesores.
 --  2. Les crea usuario con su nombre en minúsculas (mauricio, carmen…)
 --     y la contraseña inicial Clase2026! (al entrar se les pide cambiarla).
---  3. Desactiva las clases actuales del horario (no se borran: quedan en el
+--  3. Crea la sede «Sede Los Incas» (renombra «Sede principal» si es la única),
+--     desactiva las clases que tenga esa sede (no se borran: quedan en el
 --     historial de reservas y reportes) y carga las 35 clases de la foto.
 --  4. Quita de las disciplinas a los 5 profesores genéricos de la parte 38
 --     («Profesor Full Body», etc.) y los desactiva junto con sus usuarios.
@@ -15,7 +16,7 @@
 --  Clases grupales › Horario (clases) y › Disciplinas y salón (profesores).
 -- El croquis del salón se carga desde Disciplinas y salón › plantilla
 -- «Sede Los Incas · 46 steps + A–F».
--- Se puede ejecutar más de una vez.
+-- Requiere la parte 42 (sedes). Se puede ejecutar más de una vez.
 -- =====================================================================
 USE gestion_radicalgym;
 SET NAMES utf8mb4;
@@ -66,11 +67,16 @@ SELECT LOWER(e.nombres), '$2y$10$VyuvY0NIRlMNkha7bLnVhObEzKsETz9DUIjlw.ZKK7uKqBR
    AND NOT EXISTS (SELECT 1 FROM usuarios u WHERE u.idempleado = e.idempleado)
    AND NOT EXISTS (SELECT 1 FROM usuarios u WHERE u.usuario = LOWER(e.nombres));
 
--- 3) Horario de la foto (reemplaza el actual)
-UPDATE clases_grupales SET activa = 0 WHERE activa = 1;
+-- 3) Sede y horario de la foto (reemplaza el horario de esa sede)
+UPDATE sedes SET nombre = 'Sede Los Incas'
+ WHERE nombre = 'Sede principal' AND (SELECT n FROM (SELECT COUNT(*) AS n FROM sedes) x) = 1;
+INSERT INTO sedes (nombre, orden) SELECT 'Sede Los Incas', 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM sedes WHERE nombre = 'Sede Los Incas');
+SET @incas = (SELECT idsede FROM sedes WHERE nombre = 'Sede Los Incas');
 
-INSERT INTO clases_grupales (iddisciplina, dia_semana, hora_inicio, hora_fin, idempleado, sala)
-SELECT d.iddisciplina, h.dia, h.ini, h.fin, e.idempleado, 'Sede Los Incas'
+UPDATE clases_grupales SET activa = 0 WHERE activa = 1 AND (idsede = @incas OR idsede IS NULL);
+
+INSERT INTO clases_grupales (iddisciplina, dia_semana, hora_inicio, hora_fin, idempleado, idsede)
+SELECT d.iddisciplina, h.dia, h.ini, h.fin, e.idempleado, @incas
   FROM (
   SELECT 1 AS dia, '06:00' AS ini, '07:00' AS fin, 'Full Body' AS disc, 'Mauricio' AS prof UNION ALL
   SELECT 2 AS dia, '06:00' AS ini, '07:00' AS fin, 'Full Body' AS disc, 'Carmen' AS prof UNION ALL
