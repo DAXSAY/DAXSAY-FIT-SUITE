@@ -1,0 +1,343 @@
+// =====================================================================
+// MÁSTERS: clases especiales de fin de semana con costo aparte
+//  - Administración crea cada máster con su profesor, fecha, hora y dos
+//    precios: socio (membresía vigente) y público. Pueden cambiar cada semana.
+//  - Durante la semana se van inscribiendo: en recepción (alumno o persona
+//    de afuera) o el propio alumno desde su app (queda «por pagar»).
+//  - Recepción cobra (efectivo, Yape/Plin, tarjeta, transferencia), marca
+//    quién asistió y descarga la lista.
+// =====================================================================
+import { Router } from "express";
+import { consultar } from "../db.js";
+import { ErrorHttp } from "../seguridad.js";
+import { hoyLima, sumarDias } from "../congelamiento.js";
+
+const router = Router();
+const STAFF = ["admin", "reception"];
+const VEN = ["admin", "reception", "trainer", "instructor"];
+const METODOS = ["efectivo", "yape_plin", "tarjeta", "transferencia"];
+
+const txt = (v, max) => {
+  const s = String(v ?? "").trim();
+  return s ? s.slice(0, max) : null;
+};
+const fechaOk = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? String(v) : null);
+const horaOk = (v) => (/^\d{2}:\d{2}(:\d{2})?$/.test(String(v || "")) ? String(v).slice(0, 5) : null);
+const hhmm = (v) => (v ? String(v).slice(0, 5) : "");
+const dinero = (v) => Math.round(Number(v || 0) * 100) / 100;
+const exigir = (req, roles, msg) => {
+  if (!roles.includes(req.usuario.rol)) throw new ErrorHttp(403, msg || "No tienes permiso para esta acción");
+};
+
+let hay = { v: null, t: 0 };
+async function tablas() {
+  if (hay.v === true || Date.now() - hay.t < 20000) return hay.v;
+  const [f] = await consultar(
+    "SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('masters','master_inscripciones')",
+  );
+  hay = { v: Number(f?.n) === 2, t: Date.now() };
+  return hay.v;
+}
+async function exigirTablas() {
+  if (!(await tablas())) throw new ErrorHttp(503, "Falta crear las tablas de másters: ejecuta la parte 39 (39_masters.sql) en MySQL Workbench.");
+}
+export const tablasMasters = tablas;
+
+/** ¿Tiene membresía vigente hoy? (define el precio socio) */
+export async function esSocio(idalumno) {
+  if (!idalumno) return false;
+  const [m] = await consultar(
+    `SELECT 1 AS si FROM matriculas WHERE idalumno = ? AND estado IN ('activa','por_vencer','congelada')
+        AND fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?) LIMIT 1`,
+    [idalumno, hoyLima(), hoyLima()],
+  );
+  return !!m;
+}
+async function alumnoDe(req) {
+  const [u] = await consultar("SELECT idalumno FROM usuarios WHERE idusuario = ?", [req.usuario.idusuario]);
+  return u?.idalumno || null;
+}
+
+const SQL_MASTER = `
+  SELECT m.*, d.nombre AS disciplina, d.emoji, d.color,
+         TRIM(CONCAT(IFNULL(e.nombres,''),' ',IFNULL(e.apellidos,''))) AS profesor,
+         (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito') AS inscritos,
+         (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.pagado = 1) AS pagados,
+         (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.es_socio = 1) AS socios,
+         (SELECT COUNT(*) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.asistio = 1) AS asistieron,
+         (SELECT COALESCE(SUM(i.precio),0) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.pagado = 1) AS recaudado,
+         (SELECT COALESCE(SUM(i.precio),0) FROM master_inscripciones i WHERE i.idmaster = m.idmaster AND i.estado = 'inscrito' AND i.pagado = 0) AS por_cobrar
+    FROM masters m
+    LEFT JOIN disciplinas d ON d.iddisciplina = m.iddisciplina
+    LEFT JOIN empleados e ON e.idempleado = m.idempleado`;
+const masterJson = (f) => ({
+  id: f.idmaster,
+  titulo: f.titulo,
+  disciplinaId: f.iddisciplina,
+  disciplina: f.disciplina || "",
+  emoji: f.emoji || "🌟",
+  color: f.color || "ambar",
+  profesorId: f.idempleado,
+  profesor: [f.profesor, f.profesor_invitado].filter(Boolean).join(" · ") || "Por confirmar",
+  invitado: f.profesor_invitado || "",
+  fecha: String(f.fecha).slice(0, 10),
+  inicio: hhmm(f.hora_inicio),
+  fin: hhmm(f.hora_fin),
+  precioSocio: Number(f.precio_socio),
+  precioPublico: Number(f.precio_publico),
+  cupo: f.cupo,
+  sala: f.sala || "",
+  descripcion: f.descripcion || "",
+  estado: f.estado,
+  inscritos: Number(f.inscritos) || 0,
+  pagados: Number(f.pagados) || 0,
+  socios: Number(f.socios) || 0,
+  asistieron: Number(f.asistieron) || 0,
+  recaudado: Number(f.recaudado) || 0,
+  porCobrar: Number(f.por_cobrar) || 0,
+});
+
+// GET /api/masters?ver=proximos|pasados|todos
+router.get("/", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    const hoy = hoyLima();
+    const alumno = req.usuario.rol === "student";
+    const ver = alumno ? "proximos" : req.query.ver || "proximos";
+    const filtro = ver === "pasados" ? "WHERE m.fecha < ?" : ver === "todos" ? "WHERE ? IS NOT NULL" : "WHERE m.fecha >= ?";
+    let filas = (await consultar(`${SQL_MASTER} ${filtro} ORDER BY m.fecha ${ver === "pasados" ? "DESC" : "ASC"}, m.hora_inicio LIMIT 200`, [hoy])).map(masterJson);
+    if (alumno) {
+      filas = filas.filter((m) => m.estado === "abierto" || m.estado === "cerrado");
+      const yo = await alumnoDe(req);
+      const socio = await esSocio(yo);
+      const mias = yo
+        ? await consultar("SELECT idinscripcion, idmaster, pagado, precio FROM master_inscripciones WHERE idalumno = ? AND estado = 'inscrito'", [yo])
+        : [];
+      filas = filas.map((m) => {
+        const i = mias.find((x) => x.idmaster === m.id);
+        return {
+          ...m,
+          recaudado: undefined,
+          porCobrar: undefined,
+          miPrecio: socio ? m.precioSocio : m.precioPublico,
+          soySocio: socio,
+          lleno: !!m.cupo && m.inscritos >= m.cupo,
+          miInscripcion: i ? { id: i.idinscripcion, pagado: !!i.pagado, precio: Number(i.precio) } : null,
+        };
+      });
+    }
+    res.json({ hoy, masters: filas });
+  } catch (e) {
+    next(e);
+  }
+});
+
+async function validar(b) {
+  const titulo = txt(b.titulo, 100);
+  if (!titulo) throw new ErrorHttp(400, "Escribe el nombre del máster");
+  const fecha = fechaOk(b.fecha);
+  if (!fecha) throw new ErrorHttp(400, "Elige la fecha");
+  const inicio = horaOk(b.inicio);
+  const fin = horaOk(b.fin);
+  if (!inicio || !fin || fin <= inicio) throw new ErrorHttp(400, "Revisa la hora: la de fin debe ser después de la de inicio");
+  const precioSocio = dinero(b.precioSocio);
+  const precioPublico = dinero(b.precioPublico);
+  if (!(precioPublico > 0)) throw new ErrorHttp(400, "Pon el precio público");
+  if (precioSocio < 0 || precioSocio > precioPublico) throw new ErrorHttp(400, "El precio para socios no puede ser mayor que el público");
+  const cupo = Number(b.cupo) > 0 ? Math.min(999, Math.round(Number(b.cupo))) : null;
+  return {
+    titulo,
+    iddisciplina: Number(b.disciplinaId) || null,
+    idempleado: Number(b.profesorId) || null,
+    invitado: txt(b.invitado, 120),
+    fecha,
+    inicio,
+    fin,
+    precioSocio,
+    precioPublico,
+    cupo,
+    sala: txt(b.sala, 60),
+    descripcion: txt(b.descripcion, 400),
+  };
+}
+router.post("/", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    exigir(req, ["admin"], "Solo administración crea másters");
+    const v = await validar(req.body || {});
+    if (v.fecha < hoyLima()) throw new ErrorHttp(400, "La fecha ya pasó");
+    const r = await consultar(
+      `INSERT INTO masters (titulo, iddisciplina, idempleado, profesor_invitado, fecha, hora_inicio, hora_fin, precio_socio, precio_publico, cupo, sala, descripcion, idusuario_creador)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [v.titulo, v.iddisciplina, v.idempleado, v.invitado, v.fecha, v.inicio, v.fin, v.precioSocio, v.precioPublico, v.cupo, v.sala, v.descripcion, req.usuario.idusuario],
+    );
+    res.status(201).json({ ok: true, id: r.insertId });
+  } catch (e) {
+    next(e);
+  }
+});
+router.put("/:id(\\d+)", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    exigir(req, ["admin"], "Solo administración cambia los másters");
+    const v = await validar(req.body || {});
+    const estado = ["abierto", "cerrado", "realizado", "cancelado"].includes(req.body?.estado) ? req.body.estado : "abierto";
+    await consultar(
+      `UPDATE masters SET titulo=?, iddisciplina=?, idempleado=?, profesor_invitado=?, fecha=?, hora_inicio=?, hora_fin=?, precio_socio=?, precio_publico=?, cupo=?, sala=?, descripcion=?, estado=?
+        WHERE idmaster = ?`,
+      [v.titulo, v.iddisciplina, v.idempleado, v.invitado, v.fecha, v.inicio, v.fin, v.precioSocio, v.precioPublico, v.cupo, v.sala, v.descripcion, estado, Number(req.params.id)],
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET /api/masters/:id/inscritos (personal)
+router.get("/:id(\\d+)/inscritos", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    exigir(req, VEN, "La lista es para el personal");
+    const filas = await consultar(
+      `SELECT i.*, a.codigo FROM master_inscripciones i LEFT JOIN alumnos a ON a.idalumno = i.idalumno
+        WHERE i.idmaster = ? ORDER BY i.estado = 'anulado', i.creada_en`,
+      [Number(req.params.id)],
+    );
+    res.json({
+      inscritos: filas.map((f) => ({
+        id: f.idinscripcion,
+        alumnoId: f.idalumno,
+        codigo: f.codigo || "",
+        nombre: f.nombre,
+        dni: f.dni || "",
+        celular: f.celular || "",
+        socio: !!f.es_socio,
+        precio: Number(f.precio),
+        pagado: !!f.pagado,
+        metodo: f.metodo_pago || "",
+        pagadoEn: f.pagado_en ? String(f.pagado_en).replace("T", " ").slice(0, 16) : "",
+        asistio: !!f.asistio,
+        origen: f.origen,
+        estado: f.estado,
+        nota: f.nota || "",
+        registrado: String(f.creada_en).replace("T", " ").slice(0, 16),
+      })),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// POST /api/masters/:id/inscribir
+//  personal: { alumnoId } o { nombre, dni, celular }, + { pagado, metodo }
+//  alumno:   se inscribe él mismo; queda por pagar en recepción
+router.post("/:id(\\d+)/inscribir", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    const id = Number(req.params.id);
+    const [m] = await consultar("SELECT * FROM masters WHERE idmaster = ?", [id]);
+    if (!m) throw new ErrorHttp(404, "El máster no existe");
+    if (m.estado !== "abierto") throw new ErrorHttp(409, "Las inscripciones de este máster están cerradas");
+    if (String(m.fecha).slice(0, 10) < hoyLima()) throw new ErrorHttp(409, "Este máster ya pasó");
+    const b = req.body || {};
+    const alumno = req.usuario.rol === "student";
+    if (!alumno) exigir(req, STAFF, "Solo recepción y administración inscriben");
+    let idalumno = alumno ? await alumnoDe(req) : Number(b.alumnoId) || null;
+    let nombre = txt(b.nombre, 120);
+    let dni = txt(b.dni, 15);
+    let celular = txt(b.celular, 20);
+    if (idalumno) {
+      const [a] = await consultar("SELECT idalumno, nombres, apellidos, dni, telefono FROM alumnos WHERE idalumno = ?", [idalumno]).catch(() =>
+        consultar("SELECT idalumno, nombres, apellidos, dni, NULL AS telefono FROM alumnos WHERE idalumno = ?", [idalumno]),
+      );
+      if (!a) throw new ErrorHttp(404, "No existe ese alumno");
+      nombre = `${a.nombres} ${a.apellidos}`.trim();
+      dni = dni || a.dni || null;
+      celular = celular || a.telefono || null;
+      const [ya] = await consultar("SELECT idinscripcion FROM master_inscripciones WHERE idmaster = ? AND idalumno = ? AND estado = 'inscrito'", [id, idalumno]);
+      if (ya) throw new ErrorHttp(409, `${nombre.split(" ")[0]} ya está inscrito en este máster`);
+    } else {
+      if (!nombre) throw new ErrorHttp(400, "Escribe el nombre de la persona");
+      if (dni) {
+        const [ya] = await consultar("SELECT idinscripcion FROM master_inscripciones WHERE idmaster = ? AND dni = ? AND estado = 'inscrito'", [id, dni]);
+        if (ya) throw new ErrorHttp(409, "Esa persona (DNI) ya está inscrita");
+      }
+    }
+    if (m.cupo) {
+      const [c] = await consultar("SELECT COUNT(*) AS n FROM master_inscripciones WHERE idmaster = ? AND estado = 'inscrito'", [id]);
+      if (Number(c.n) >= m.cupo) throw new ErrorHttp(409, `Cupo lleno (${m.cupo} personas)`);
+    }
+    const socio = await esSocio(idalumno);
+    const precio = socio ? Number(m.precio_socio) : Number(m.precio_publico);
+    const pagado = !alumno && !!b.pagado;
+    const metodo = pagado ? (METODOS.includes(b.metodo) ? b.metodo : "efectivo") : null;
+    const r = await consultar(
+      `INSERT INTO master_inscripciones (idmaster, idalumno, nombre, dni, celular, es_socio, precio, pagado, metodo_pago, pagado_en, origen, nota, idusuario)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${pagado ? "NOW()" : "NULL"}, ?, ?, ?)`,
+      [id, idalumno, nombre, dni, celular, socio ? 1 : 0, precio, pagado ? 1 : 0, metodo, alumno ? "alumno" : "recepcion", txt(b.nota, 200), req.usuario.idusuario],
+    );
+    res.status(201).json({ ok: true, id: r.insertId, nombre, socio, precio, pagado });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// POST /api/masters/inscripciones/:id { accion: pagar|anular|asistio|no_asistio, metodo }
+router.post("/inscripciones/:id(\\d+)", async (req, res, next) => {
+  try {
+    await exigirTablas();
+    const id = Number(req.params.id);
+    const [i] = await consultar("SELECT * FROM master_inscripciones WHERE idinscripcion = ?", [id]);
+    if (!i) throw new ErrorHttp(404, "La inscripción no existe");
+    const accion = String(req.body?.accion || "");
+    if (req.usuario.rol === "student") {
+      if (accion !== "anular" || i.idalumno !== (await alumnoDe(req))) throw new ErrorHttp(403, "Solo puedes anular tu propia inscripción");
+      if (i.pagado) throw new ErrorHttp(409, "Ya pagaste: para anular acércate a recepción");
+    } else exigir(req, STAFF, "Solo recepción y administración");
+    if (accion === "pagar") {
+      const metodo = METODOS.includes(req.body?.metodo) ? req.body.metodo : "efectivo";
+      await consultar("UPDATE master_inscripciones SET pagado = 1, metodo_pago = ?, pagado_en = NOW(), idusuario = ? WHERE idinscripcion = ?", [metodo, req.usuario.idusuario, id]);
+    } else if (accion === "anular") {
+      await consultar("UPDATE master_inscripciones SET estado = 'anulado', idusuario = ? WHERE idinscripcion = ?", [req.usuario.idusuario, id]);
+    } else if (accion === "asistio" || accion === "no_asistio") {
+      await consultar("UPDATE master_inscripciones SET asistio = ?, idusuario = ? WHERE idinscripcion = ?", [accion === "asistio" ? 1 : 0, req.usuario.idusuario, id]);
+    } else throw new ErrorHttp(400, "Acción no válida");
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Aviso al alumno: másters nuevos publicados (próximos 10 días)
+export async function avisosMasters(req, hoy) {
+  if (req.usuario.rol !== "student" || !(await tablas())) return [];
+  const filas = await consultar(
+    `SELECT m.idmaster, m.titulo, m.fecha, m.hora_inicio, m.precio_socio, m.precio_publico, d.emoji
+       FROM masters m LEFT JOIN disciplinas d ON d.iddisciplina = m.iddisciplina
+      WHERE m.estado = 'abierto' AND m.fecha BETWEEN ? AND ?`,
+    [hoy, sumarDias(hoy, 10)],
+  );
+  if (!filas.length) return [];
+  const yo = await alumnoDe(req);
+  const socio = await esSocio(yo);
+  const ya = yo ? (await consultar("SELECT idmaster FROM master_inscripciones WHERE idalumno = ? AND estado = 'inscrito'", [yo])).map((x) => x.idmaster) : [];
+  const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+  return filas
+    .filter((f) => !ya.includes(f.idmaster))
+    .map((f) => {
+      const fecha = String(f.fecha).slice(0, 10);
+      const d = DIAS[new Date(`${fecha}T12:00:00Z`).getUTCDay()];
+      const precio = socio ? Number(f.precio_socio) : Number(f.precio_publico);
+      return {
+        id: `master-${f.idmaster}`,
+        tipo: "master",
+        nivel: "bajo",
+        titulo: `${f.emoji || "🌟"} Máster: ${f.titulo}`,
+        mensaje: `${d} ${Number(fecha.slice(8))} a las ${hhmm(f.hora_inicio)} · ${socio ? "precio socio" : "precio"} S/ ${precio.toFixed(2)}. Inscríbete desde Clases grupales.`,
+        fecha: hoy,
+        accion: { tipo: "ir", tab: "mis_clases", etiqueta: "Ver máster" },
+      };
+    });
+}
+
+export default router;

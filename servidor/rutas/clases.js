@@ -728,8 +728,26 @@ export async function avisosClases(req, hoy) {
     const faltan = (await sesiones(hoy, sumarDias(hoy, 1), { profesorId: idempleado })).filter(
       (s) => !s.disco && (s.fecha > hoy || aMin(s.fin) > ahora),
     );
-    if (!faltan.length) return [];
+    const avisos = [];
+    // Sábado y domingo: anotar los discos de toda la próxima semana
+    const dh = diaSemana(hoy);
+    if (dh >= 6) {
+      const lunes = sumarDias(hoy, 8 - dh);
+      const prox = (await sesiones(lunes, sumarDias(lunes, 6), { profesorId: idempleado })).filter((s) => !s.disco);
+      if (prox.length)
+        avisos.push({
+          id: `discos-semana-${lunes}-${prox.length}`,
+          tipo: "clase_sin_disco",
+          nivel: "medio",
+          titulo: "🎵 Anota los discos de la próxima semana",
+          mensaje: `Tienes ${prox.length} clase${prox.length === 1 ? "" : "s"} desde el lunes sin disco. Anótalos hoy para que recepción y los alumnos los vean.`,
+          fecha: hoy,
+          accion: { tipo: "ir", tab: "classes", etiqueta: "Anotar discos" },
+        });
+    }
+    if (!faltan.length) return avisos;
     return [
+      ...avisos,
       {
         id: `sin-disco-${faltan.map((s) => s.id).join("_")}`,
         tipo: "clase_sin_disco",

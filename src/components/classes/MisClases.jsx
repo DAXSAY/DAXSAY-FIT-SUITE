@@ -94,6 +94,69 @@ const Reservar = ({ s, croquis, onCerrar, onCambio }) => {
   );
 };
 
+/** Másters del fin de semana: precio según si es socio, inscribirse desde la app */
+const MastersAlumno = () => {
+  const [lista, setLista] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const cargar = () =>
+    api("/masters")
+      .then((d) => setLista(d.masters))
+      .catch(() => setLista([]));
+  useEffect(() => {
+    cargar();
+  }, []);
+  if (!lista || !lista.length) return null;
+  const soles = (n) => `S/ ${Number(n || 0).toFixed(2)}`;
+  const accion = async (m, tipo) => {
+    try {
+      if (tipo === "inscribir") {
+        const r = await api(`/masters/${m.id}/inscribir`, { method: "POST", body: {} });
+        setMsg({ ok: true, texto: `✅ ¡Te inscribiste en ${m.titulo}! Paga ${soles(r.precio)} en recepción antes del máster para asegurar tu lugar.` });
+      } else {
+        await api(`/masters/inscripciones/${m.miInscripcion.id}`, { method: "POST", body: { accion: "anular" } });
+        setMsg({ ok: true, texto: "Anulaste tu inscripción." });
+      }
+      cargar();
+    } catch (e) {
+      setMsg({ ok: false, texto: e.message });
+    }
+  };
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-black uppercase tracking-wider text-slate-500">🌟 Másters del fin de semana</p>
+      {msg && <p className={`text-sm font-bold rounded-xl border p-3 ${msg.ok ? "rd-kpi-verde rd-aviso-t" : "text-rose-700 bg-rose-50 border-rose-200"}`}>{msg.texto}</p>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {lista.map((m) => (
+          <div key={m.id} className={`rd-kpi-${m.color} rd-clase-card rounded-2xl p-3 space-y-1`}>
+            <p className="text-xs font-black">{DIAS[diaDe(m.fecha)]} {fechaBonita(m.fecha).split(" ").slice(1).join(" ")} · {m.inicio} – {m.fin}</p>
+            <p className="text-base font-black">{m.emoji} {m.titulo}</p>
+            <p className="text-xs">🧑‍🏫 {m.profesor}{m.sala ? ` · 📍 ${m.sala}` : ""}</p>
+            {m.descripcion && <p className="text-xs">📝 {m.descripcion}</p>}
+            <p className="text-sm">
+              💰 <b>{soles(m.miPrecio)}</b>
+              {m.soySocio ? <span className="text-xs"> · precio socio (público {soles(m.precioPublico)})</span> : <span className="text-xs"> · con membresía vigente pagas {soles(m.precioSocio)}</span>}
+            </p>
+            <div className="pt-1 flex flex-wrap items-center gap-2">
+              {m.miInscripcion ? (
+                <>
+                  <span className="text-xs font-black">{m.miInscripcion.pagado ? "✅ Inscrito y pagado" : `📝 Inscrito · paga ${soles(m.miInscripcion.precio)} en recepción`}</span>
+                  {!m.miInscripcion.pagado && <button type="button" onClick={() => accion(m, "anular")} className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 text-[11px] font-bold cursor-pointer">Anular</button>}
+                </>
+              ) : m.estado !== "abierto" ? (
+                <span className="text-xs font-bold">🔒 Inscripciones cerradas</span>
+              ) : m.lleno ? (
+                <span className="text-xs font-bold">Cupo lleno</span>
+              ) : (
+                <button type="button" onClick={() => accion(m, "inscribir")} className="px-3 py-1.5 rounded-xl bg-amber-500 text-white text-xs font-black cursor-pointer">🌟 Inscribirme</button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function MisClases() {
   const hoy = hoyISO();
   const { croquis } = useCroquis();
@@ -117,6 +180,7 @@ export default function MisClases() {
           El horario de la semana y el disco que dictará cada profesor. Puedes reservar tu step desde {minutos} minutos antes de la clase hasta que empiece. Te avisamos 2 horas antes. 🔔
         </p>
       </div>
+      <MastersAlumno />
       {error && <p className="text-sm font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">{error}</p>}
       {!sesiones && !error && <p className="text-sm text-slate-500">Cargando clases…</p>}
       {sesiones && !sesiones.length && (

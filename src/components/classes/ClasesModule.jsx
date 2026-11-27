@@ -11,7 +11,7 @@
 //                minutos para reservar.
 // =====================================================================
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Music, CalendarDays, LayoutGrid, Disc3, Settings2, Plus, ChevronLeft, ChevronRight, X, Pencil, Trash2, Check, Send, Users, Clock, Save, BarChart3 } from "lucide-react";
+import { Music, CalendarDays, LayoutGrid, Disc3, Settings2, Plus, ChevronLeft, ChevronRight, X, Pencil, Trash2, Check, Send, Users, Clock, Save, BarChart3, Star } from "lucide-react";
 import { api } from "../../api/cliente";
 import { useGym } from "../../context/GymContext";
 import { CabeceraModulo, AccionCabecera } from "../common/CabeceraModulo";
@@ -22,6 +22,7 @@ import { ingresoDeHoy } from "../../utils/codigoPersonal";
 import { hoyISO } from "../../utils/fecha";
 import { DIAS, DIAS_CORTO, COLORES, diaDe, lunesDe, fechaBonita, sumarDias, aMin, deMin, estadoVentana, useDatosClases, useCroquis, useSesiones } from "./clasesComun";
 import { Croquis, EditorCroquis, LeyendaCroquis } from "./Croquis";
+import Masters from "./Masters";
 
 const GESTIONA = ["admin", "reception"];
 const campo = "mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800";
@@ -461,7 +462,7 @@ const Steps = ({ yo, claseInicial }) => {
   const v = sesion ? estadoVentana(sesion, croquis?.minutosReserva || 30) : null;
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2 overflow-x-auto p-1.5 -mx-1.5">
         {sesiones.map((s) => (
           <button key={s.id} type="button" onClick={() => (setClaseId(s.claseId), setMensaje(null))} className={`rd-kpi-${s.color} shrink-0 rounded-xl border px-3 py-2 text-left cursor-pointer ${s.claseId === claseId ? "rd-clase-card ring-2 ring-teal-400" : "bg-white border-slate-200 text-slate-700"}`}>
             <p className="text-[11px] font-black">{s.inicio} – {s.fin}</p>
@@ -550,7 +551,9 @@ const Steps = ({ yo, claseInicial }) => {
 // ---------------------------------------------------------------------
 const MisDiscos = () => {
   const hoy = hoyISO();
-  const [semana, setSemana] = useState(0);
+  // Sábado y domingo se anotan los discos de la próxima semana
+  const finde = diaDe(hoy) >= 6;
+  const [semana, setSemana] = useState(finde ? 1 : 0);
   const desde = semana ? lunesDe(sumarDias(hoy, 7)) : hoy;
   const hasta = semana ? sumarDias(desde, 6) : sumarDias(lunesDe(hoy), 6);
   const { sesiones, error, cargar } = useSesiones(desde, hasta, "&mias=1");
@@ -575,7 +578,7 @@ const MisDiscos = () => {
         {["Esta semana", "Próxima semana"].map((l, i) => (
           <button key={l} type="button" onClick={() => setSemana(i)} className={`px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer ${semana === i ? "bg-teal-600 border-teal-600 text-white" : "bg-white border-slate-200 text-slate-600"}`}>{l}</button>
         ))}
-        <p className="text-xs text-slate-500">Escribe el disco de cada clase y pulsa «Enviar».</p>
+        <p className="text-xs text-slate-500">Escribe el disco de cada clase (un disco por día) y pulsa «Enviar». 📅 Sábado y domingo anota los de la próxima semana.</p>
       </div>
       <Error texto={error} />
       {msg && <p className={`text-sm font-bold rounded-xl border p-3 ${msg.ok ? "rd-kpi-verde rd-aviso-t" : "text-rose-700 bg-rose-50 border-rose-200"}`}>{msg.texto}</p>}
@@ -1017,6 +1020,7 @@ export default function ClasesModule() {
     { k: "horario", icono: CalendarDays, label: "Horario", tono: "teal" },
     { k: "steps", icono: LayoutGrid, label: "Steps y reservas", tono: "violet" },
     { k: "discos", icono: Disc3, label: esProfe ? "Mis discos" : "Discos", tono: "amber" },
+    { k: "masters", icono: Star, label: "Másters", tono: "amber" },
     { k: "reporte", icono: BarChart3, label: "Asistencia", tono: "teal" },
     ...(yo.rol === "admin" ? [{ k: "config", icono: Settings2, label: "Disciplinas y steps", tono: "rose" }] : []),
   ];
@@ -1044,6 +1048,7 @@ export default function ClasesModule() {
           {v === "horario" && <Horario datos={datos} recargar={cargar} yo={yo} onSteps={(id) => (setClaseSteps(id), setVista("steps"))} />}
           {v === "steps" && <Steps yo={yo} claseInicial={claseSteps} />}
           {v === "discos" && (esProfe ? <MisDiscos /> : <ReporteDiscos datos={datos} puedeEditar={GESTIONA.includes(yo.rol)} />)}
+          {v === "masters" && <Masters datos={datos} rol={yo.rol} />}
           {v === "reporte" && <ReporteAsistencia datos={datos} />}
           {v === "config" && yo.rol === "admin" && <Configuracion datos={datos} recargar={cargar} />}
         </>
